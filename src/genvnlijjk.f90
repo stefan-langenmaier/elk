@@ -10,7 +10,7 @@ subroutine genvnlijjk(ikp,vnlijjk)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   ikp     : k-point from non-reduced k-point set (in,integer)
+!   ikp     : k-point from non-reduced set (in,integer)
 !   vnlijjk : non-local Coulomb matrix elements
 !             (out,complex(nstsv,nstsv,nstsv,nkpt))
 ! !DESCRIPTION:
@@ -102,7 +102,7 @@ do ik=1,nkpt
   do ist2=1,nstsv
     do ist1=1,nstsv
 ! calculate the complex overlap density for all states
-      call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
+      call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
        wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt(:,:,:,ist1),zrhoir(:,ist1))
     end do
     do ist1=1,nstsv

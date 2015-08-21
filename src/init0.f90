@@ -44,7 +44,6 @@ call timesec(ts0)
 lmmaxvr=(lmaxvr+1)**2
 lmmaxapw=(lmaxapw+1)**2
 lmmaxmat=(lmaxmat+1)**2
-lmmaxinr=(lmaxinr+1)**2
 if (lmaxvr.gt.lmaxapw) then
   write(*,*)
   write(*,'("Error(init0): lmaxvr > lmaxapw : ",2I8)') lmaxvr,lmaxapw
@@ -128,11 +127,16 @@ else
   nspinor=1
   occmax=2.d0
 end if
-! number of spin-dependent first-variational functions per state
+! number of spin-dependent first-variational functions per state and map from
+! second- to first-variational spin index
 if (spinsprl) then
   nspnfv=2
+  jspnfv(1)=1
+  jspnfv(2)=2
 else
   nspnfv=1
+  jspnfv(1)=1
+  jspnfv(2)=1
 end if
 ! spin-polarised calculations require second-variational eigenvectors
 if (spinpol) tevecsv=.true.
@@ -196,6 +200,16 @@ if (.not.spinpol) spincore=.false.
 bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero
 bfsmcmt(:,:,:)=0.d0
+! number of independent spin components of the f_xc spin tensor
+if (spinpol) then
+  if (ncmag) then
+    nscfxc=10
+  else
+    nscfxc=3
+  end if
+else
+  nscfxc=1
+end if
 
 !----------------------------------!
 !     crystal structure set up     !
@@ -265,8 +279,6 @@ do is=1,nspecies
   nrcmt(is)=(nrmt(is)-1)/lradstp+1
   nrcmtmax=max(nrcmtmax,nrcmt(is))
 end do
-! meta-GGA requires that tau is expanded to lmaxvr everywhere in the muffin-tins
-if (xcgrad.eq.3) fracinr=0.d0
 ! set up atomic and muffin-tin radial meshes
 call genrmesh
 
@@ -511,8 +523,6 @@ iscl=0
 tlast=.false.
 ! set the Fermi energy to zero
 efermi=0.d0
-! set the Tran-Blaha '09 constant c to zero
-c_tb09=0.d0
 
 call timesec(ts1)
 timeinit=timeinit+ts1-ts0

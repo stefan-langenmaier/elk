@@ -36,12 +36,12 @@ if (trimvg) then
       zfft(ifg)=0.d0
     end if
   end do
-! Fourier transform back to real space
+! Fourier transform back to real-space
   call zfftifc(3,ngrid,1,zfft)
-! multiply trimmed potential by characteristic function in real space
+! multiply trimmed potential by characteristic function in real-space
   zfft(:)=dble(zfft(:))*cfunir(:)
 else
-! multiply potential by characteristic function in real space
+! multiply potential by characteristic function in real-space
   zfft(:)=veffir(:)*cfunir(:)
 end if
 ! Fourier transform back to G-space

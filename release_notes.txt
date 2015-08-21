@@ -1,3 +1,26 @@
+elk-1.4.22
+-Important:fixed bug in BSE calculations owing to incorrect rotation of
+ dielectric function matrix elements; thanks to Arkardy Davydov for pointing
+ this out
+-BSE is now three separate tasks: 185 writes the BSE Hamiltonian to file,
+ 186 diagonalises the Hamiltonian and 187 produces the BSE dielectric function;
+ thanks to Markus Meinert for suggesting this
+-adiabatic local density approximation (ALDA) for linear-response TDDFT now
+ available; see example 'diamond-TDDFT-ALDA'
+-added Markus' suggestion that the Tran-Blaha constant can now be read in with
+ the variable 'c_tb09'
+-added new variable 'highq'; set this to .true. and the most important
+ parameters are set for a high-quality, well-converged calculation; see the
+ settings in the file 'readinput.f90'; thanks to Igor Mazin for all the testing
+-removed the variables 'lmaxinr' and 'fracinr' as they were unnecessary
+-simplified TDDFT routines
+-Important: the variable 'radkpt' has been redefined and should be made larger
+ by 2π ; (sorry about this, the original scale for this variable was correct!)
+-fixed problem with MPI that caused some LDA+U runs to crash; thanks to Alaska
+ Subedi for pointing this out
+-added documentation
+-several minor bug fixes and optimisations
+
 elk-1.4.18
 -Important:fixed severe bug affecting spin-unpolarised native GGA functionals,
  thanks to Jiji Pulikkotil for pointing out a problem with Mg3Sb2 which led to

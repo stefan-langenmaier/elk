@@ -13,7 +13,9 @@ tasks
   120       ! compute momentum matrix elements
   121       ! compute RPA dielectric function with no local field contributions
   180       ! generate RPA dielectric function with local field contributions
-  185       ! compute BSE dielectric funcion
+  185       ! write the BSE Hamiltonian matrix to file
+  186       ! diagonalise the BSE matrix
+  187       ! compute BSE dielectric funcion
 
 ! this should be small (but not so small that it affects the results!) for a
 ! fast calculation because the wavefunctions used in the construction of the BSE

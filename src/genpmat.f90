@@ -146,11 +146,7 @@ if (spinorb) deallocate(gvmt,zfmt1,zfmt2)
 allocate(gwfir(ngrtot,3),zv(ngkmax))
 do jst=1,nstsv
   do ispn=1,nspinor
-    if (spinsprl) then
-      jspn=ispn
-    else
-      jspn=1
-    end if
+    jspn=jspnfv(ispn)
 ! compute the gradient
     gwfir(:,:)=0.d0
     do igp=1,ngp(jspn)

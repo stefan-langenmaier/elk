@@ -113,7 +113,8 @@ else if (task.eq.25) then
 else
 ! determine the k-point grid automatically from radkpt if required
   if (autokpt) then
-    ngridk(:)=int(radkpt*sqrt(bvec(1,:)**2+bvec(2,:)**2+bvec(3,:)**2))+1
+    t1=radkpt/twopi
+    ngridk(:)=int(t1*sqrt(bvec(1,:)**2+bvec(2,:)**2+bvec(3,:)**2))+1
   end if
 ! setup the default k-point box
   kptboxl(:,1)=vkloff(:)/dble(ngridk(:))

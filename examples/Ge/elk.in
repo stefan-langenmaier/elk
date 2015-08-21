@@ -9,9 +9,6 @@ tasks
  120
  121
 
-spinpol
- .true.
-
 spinorb
  .true.
 

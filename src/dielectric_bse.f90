@@ -5,13 +5,13 @@
 
 subroutine dielectric_bse
 use modmain
-use modmpi
 use modtest
 implicit none
 ! local variables
 integer a1,a2,ik1,jk1
 integer i1,j1,ist1,jst1
 integer iw,i,j,l
+integer iostat,nmbse_
 real(8) e,eji,t1,t2
 complex(8) eta,zv(3),zt1
 character(256) fname
@@ -19,6 +19,42 @@ character(256) fname
 real(8), allocatable :: w(:)
 complex(8), allocatable :: pmat(:,:,:)
 complex(8), allocatable :: sigma(:,:,:)
+! initialise global variables
+call init0
+call init1
+! read Fermi energy from a file
+call readfermi
+! get the eigenvalues from file
+do ik1=1,nkpt
+  call getevalsv(vkl(:,ik1),evalsv(:,ik1))
+end do
+! generate the BSE state index arrays
+call genidxbse
+! allocate global BSE arrays
+if (allocated(evalbse)) deallocate(evalbse)
+allocate(evalbse(nmbse))
+if (allocated(hmlbse)) deallocate(hmlbse)
+allocate(hmlbse(nmbse,nmbse))
+! read in the BSE eigenvectors and eigenvalues
+open(50,file='EVBSE.OUT',action='READ',form='UNFORMATTED',status='OLD', &
+ iostat=iostat)
+if (iostat.ne.0) then
+  write(*,*)
+  write(*,'("Error(dielectric_bse): error opening EVBSE.OUT")')
+  write(*,*)
+  stop
+end if
+read(50) nmbse_
+if (nmbse.ne.nmbse_) then
+  write(*,*)
+  write(*,'("Error(dielectric_bse): differing nmbse")')
+  write(*,'(" current   : ",I6)') nmbse
+  write(*,'(" EVBSE.OUT : ",I6)') nmbse_
+  stop
+end if
+read(50) evalbse
+read(50) hmlbse
+close(50)
 ! allocate local arrays
 allocate(w(nwdos))
 allocate(pmat(3,nstsv,nstsv))
@@ -62,7 +98,6 @@ do a2=1,nmbse
 end do
 zt1=zi*occmax*wkptnr/omega
 sigma(:,:,:)=zt1*sigma(:,:,:)
-! write the dielectric function to file
 ! loop over tensor components
 do l=1,noptcomp
   i=optcomp(1,l)
@@ -90,8 +125,10 @@ do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
 ! write sigma to test file
-call writetest(185,'BSE optical conductivity',nv=nwdos,tol=2.d-2,zva=sigma)
+call writetest(187,'BSE optical conductivity',nv=nwdos,tol=2.d-2,zva=sigma)
 deallocate(w,pmat,sigma)
+! deallocate global BSE arrays
+deallocate(evalbse,hmlbse)
 return
 end subroutine
 

@@ -21,7 +21,7 @@ beta0
 
 ! this variable determines the density of k-points for the phonon calculation
 radkpt
- 9.0
+ 50.0
 
 ngridq
  4 4 4

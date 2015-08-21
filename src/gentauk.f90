@@ -76,11 +76,7 @@ do ist=1,nstsv
   if (abs(wo).lt.epsocc) cycle
   t1=wo/omega
   do ispn=1,nspinor
-    if (spinsprl) then
-      jspn=ispn
-    else
-      jspn=1
-    end if
+    jspn=jspnfv(ispn)
     do i=1,3
       zfft(:)=0.d0
       do igk=1,ngk(jspn,ik)

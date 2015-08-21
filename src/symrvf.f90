@@ -38,8 +38,9 @@ real(8), intent(inout) :: rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag)
 real(8), intent(inout) :: rvfir(ngrtot,ndmag)
 ! local variables
 integer is,ia,ja,ias,jas
-integer isym,ir,lm,i,md
-integer lspl,ilspl,lspn,ilspn
+integer nrc,ld,ir,lm
+integer isym,lspl,ilspl
+integer lspn,ilspn,md,i
 real(8) sc(3,3),v(3),t1
 ! automatic arrays
 logical done(natmmax)
@@ -52,6 +53,8 @@ allocate(rvfmt1(lmmaxvr,nrmtmax,natmmax,ndmag))
 allocate(rvfmt2(lmmaxvr,nrmtmax,ndmag))
 t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
+  ld=lmmaxvr*lrstp
+  nrc=(nrmt(is)-1)/lrstp+1
 ! make copy of vector field for all atoms of current species
   do i=1,ndmag
     do ia=1,natoms(is)
@@ -75,7 +78,8 @@ do is=1,nspecies
 ! parallel transport of vector field
       lspl=lsplsymc(isym)
       do i=1,ndmag
-        call symrfmt(lrstp,is,symlatc(:,:,lspl),rvfmt1(:,:,ja,i),rvfmt2(:,:,i))
+        call rotrflm(symlatc(:,:,lspl),lmaxvr,nrc,ld,rvfmt1(:,:,ja,i), &
+         rvfmt2(:,:,i))
       end do
 ! global spin proper rotation matrix in Cartesian coordinates
       lspn=lspnsymc(isym)
@@ -117,7 +121,7 @@ do is=1,nspecies
         lspl=lsplsymc(isym)
         ilspl=isymlat(lspl)
         do i=1,ndmag
-          call symrfmt(lrstp,is,symlatc(:,:,ilspl),rvfmt(:,:,ias,i), &
+          call rotrflm(symlatc(:,:,ilspl),lmaxvr,nrc,ld,rvfmt(:,:,ias,i), &
            rvfmt(:,:,jas,i))
         end do
 ! inverse of global proper rotation matrix in Cartesian coordinates

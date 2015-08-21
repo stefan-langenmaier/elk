@@ -44,7 +44,7 @@ do i2=1,nvbse
     a2=ijkbse(i2,j2,ik2)
     l=l+1
 ! calculate the complex overlap density
-    call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
+    call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
      wfir2(:,:,ist2),wfir2(:,:,jst2),zrhomt,zrhoir)
 ! compute the Coulomb potential
     call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt(:,:,:,l))
@@ -67,7 +67,7 @@ do ik1=1,nkptnr
       jst1=jstbse(j1,ik1)
       a1=ijkbse(i1,j1,ik1)
 ! calculate the complex overlap density
-      call genzrho(.true.,wfmt1(:,:,:,:,ist1),wfmt1(:,:,:,:,jst1), &
+      call genzrho(.true.,spinpol,wfmt1(:,:,:,:,ist1),wfmt1(:,:,:,:,jst1), &
        wfir1(:,:,ist1),wfir1(:,:,jst1),zrhomt,zrhoir)
       l=0
       do i2=1,nvbse

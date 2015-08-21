@@ -13,14 +13,14 @@ integer iq,isym,it,n
 integer info1,info2
 real(8) vecqc(3),vgqc(3)
 real(8) v(3),t1
-complex(8) fxcp,zt1
+complex(8) vfxcp,zt1
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
 real(8), allocatable :: gqc(:)
 complex(8), allocatable :: expqmt(:,:,:)
-complex(8), allocatable :: vchi0(:,:,:),fxc(:,:,:)
+complex(8), allocatable :: vchi0(:,:,:),vfxc(:,:,:)
 complex(8), allocatable :: eps0(:,:,:),eps(:,:,:)
-complex(8), allocatable :: vce(:,:),a(:,:),work(:)
+complex(8), allocatable :: a(:,:),work(:)
 ! initialise global variables
 call init0
 call init1
@@ -49,9 +49,9 @@ end do
 allocate(ipiv(ngrpa))
 allocate(gqc(ngrpa))
 allocate(expqmt(lmmaxvr,nrcmtmax,natmtot))
-allocate(vchi0(ngrpa,ngrpa,nwrpa),fxc(ngrpa,ngrpa,nwrpa))
+allocate(vchi0(ngrpa,ngrpa,nwrpa),vfxc(ngrpa,ngrpa,nwrpa))
 allocate(eps0(ngrpa,ngrpa,nwrpa),eps(ngrpa,ngrpa,nwrpa))
-allocate(vce(ngrpa,ngrpa),a(ngrpa,ngrpa),work(ngrpa))
+allocate(a(ngrpa,ngrpa),work(ngrpa))
 ! generate the exp(iG.r) functions for all the MBPT G-vectors
 call genexpigr
 ! check q-vector is commensurate with k-point grid
@@ -104,21 +104,18 @@ do ig=1,ngrpa
   eps0(ig,ig,:)=eps0(ig,ig,:)+1.d0
   eps(ig,ig,:)=eps(ig,ig,:)+1.d0
 end do
-fxcp=0.d0
+vfxcp=0.d0
 it=0
 10 continue
-! compute vchi0 v^(-1/2) fxc v^(-1/2) vchi0
-call genfxc(vchi0,eps0,eps,fxc)
+! compute vchi0 v^(-1/2) f_xc v^(-1/2) vchi0
+call genvfxc(gqc,vchi0,eps0,eps,vfxc)
 ! begin loop over frequencies
 do iw=1,nwrpa
-! left multiply eps0 by vchi0 to get v^1/2 chi0 v^1/2 - v^1/2 chi0 v chi0 v^1/2
-  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vchi0(:,:,iw),ngrpa,eps0(:,:,iw), &
-   ngrpa,zzero,vce,ngrpa)
-! subtract v^1/2 chi0 fxc chi0 v^1/2
-  vce(:,:)=vce(:,:)-fxc(:,:,iw)
+! compute 1 - v^1/2 chi0 v^1/2 - v^(-1/2) f_xc v^(-1/2) vchi0
+  a(:,:)=eps0(:,:,iw)-vfxc(:,:,iw)
 ! invert this matrix
-  call zgetrf(ngrpa,ngrpa,vce,ngrpa,ipiv,info1)
-  call zgetri(ngrpa,vce,ngrpa,ipiv,work,ngrpa,info2)
+  call zgetrf(ngrpa,ngrpa,a,ngrpa,ipiv,info1)
+  call zgetri(ngrpa,a,ngrpa,ipiv,work,ngrpa,info2)
   if ((info1.ne.0).or.(info2.ne.0)) then
     write(*,*)
     write(*,'("Error(tddftlr): unable to invert epsilon")')
@@ -126,18 +123,16 @@ do iw=1,nwrpa
     write(*,*)
     stop
   end if
-! compute v^1/2 chi v^1/2 = vchi0 vce vchi0
-  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vchi0(:,:,iw),ngrpa,vce,ngrpa, &
-   zzero,a,ngrpa)
-  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,a,ngrpa,vchi0(:,:,iw),ngrpa, &
-   zzero,eps(:,:,iw),ngrpa)
+! left multiply by v^1/2 chi0 v^1/2
+  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vchi0(:,:,iw),ngrpa,a,ngrpa,zzero, &
+   eps(:,:,iw),ngrpa)
 ! compute epsilon = 1 + v^1/2 chi v^1/2
   do ig=1,ngrpa
     eps(ig,ig,iw)=1.d0+eps(ig,ig,iw)
   end do
 end do
 ! bootstrap f_xc
-if (fxctype.eq.2) then
+if (fxctype(1).eq.210) then
   it=it+1
   if (it.gt.500) then
     write(*,*)
@@ -146,8 +141,8 @@ if (fxctype.eq.2) then
     stop
   end if
 ! check for convergence
-  t1=abs(fxcp)-abs(fxc(1,1,1))
-  fxcp=fxc(1,1,1)
+  t1=abs(vfxcp)-abs(vfxc(1,1,1))
+  vfxcp=vfxc(1,1,1)
   if (abs(t1).gt.1.d-8) goto 10
 end if
 ! write G = G' = 0 components to file
@@ -175,8 +170,8 @@ write(*,'(" for component i, j = ",I1)') optcomp(1,1)
 write(*,'(" q-vector (lattice coordinates) : ")')
 write(*,'(3G18.10)') vecql
 write(*,'(" q-vector length : ",G18.10)') gqc(1)
-deallocate(ipiv,gqc,expqmt,vchi0,fxc)
-deallocate(eps0,eps,vce,a,work)
+deallocate(ipiv,gqc,expqmt,vchi0,vfxc)
+deallocate(eps0,eps,a,work)
 ! deallocate global exp(iG.r) arrays
 deallocate(expgmt,expgir)
 return

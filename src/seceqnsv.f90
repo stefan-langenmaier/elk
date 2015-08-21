@@ -24,17 +24,10 @@ real(8) ts0,ts1
 ! automatic arrays
 complex(8) zlflm(lmmaxvr,3)
 ! allocatable arrays
-real(8), allocatable :: bir(:,:)
-real(8), allocatable :: rwork(:)
-complex(8), allocatable :: wfmt1(:,:,:)
-complex(8), allocatable :: wfmt2(:,:)
-complex(8), allocatable :: wfmt3(:,:)
-complex(8), allocatable :: wfmt4(:,:,:)
-complex(8), allocatable :: gwfmt(:,:,:)
-complex(8), allocatable :: wfir1(:)
-complex(8), allocatable :: wfir2(:)
-complex(8), allocatable :: zv(:,:)
-complex(8), allocatable :: work(:)
+real(8), allocatable :: bir(:,:),rwork(:)
+complex(8), allocatable :: wfmt1(:,:,:),wfmt2(:,:),wfmt3(:,:),wfmt4(:,:,:)
+complex(8), allocatable :: gwfmt(:,:,:),wfir1(:),wfir2(:)
+complex(8), allocatable :: zv(:,:),work(:)
 ! external functions
 complex(8) zdotc,zfmtinp
 external zdotc,zfmtinp
@@ -211,8 +204,7 @@ if (spinpol) then
 !$OMP PRIVATE(igk,ifg,t1,ist,i,j,k)
 !$OMP DO
   do jst=1,nstfv
-    allocate(wfir1(ngrtot))
-    allocate(wfir2(ngrtot))
+    allocate(wfir1(ngrtot),wfir2(ngrtot))
     allocate(zv(ngkmax,nsc))
     wfir1(:)=0.d0
     do igk=1,ngk(1,ik)

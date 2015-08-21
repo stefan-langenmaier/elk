@@ -76,14 +76,14 @@ do ik=1,nkptnr
   end do
   if ((ntop-nvbse0+1).lt.1) then
     write(*,*)
-    write(*,'("Error(bse): not enough valence states, reduce nvbse")')
+    write(*,'("Error(genidxbse): not enough valence states, reduce nvbse")')
     write(*,*)
     stop
   end if
   if ((ntop+ncbse0).gt.nstsv) then
     write(*,*)
-    write(*,'("Error(bse): not enough conduction states, reduce ncbse or &
-     &increase nempty")')
+    write(*,'("Error(genidxbse): not enough conduction states")')
+    write(*,'(" reduce ncbse or increase nempty")')
     write(*,*)
     stop
   end if
@@ -100,8 +100,8 @@ do ik=1,nkptnr
     ist=istxbse(i)
     if (evalsv(ist,jk).gt.efermi) then
       write(*,*)
-      write(*,'("Error(bse): extra valence state above Fermi energy : ",I6)') &
-       ist
+      write(*,'("Error(genidxbse): extra valence state above Fermi energy : ",&
+       &I6)') ist
       write(*,'(" for k-point ",I8)') jk
       write(*,*)
       stop
@@ -109,7 +109,7 @@ do ik=1,nkptnr
     do k=1,nvbse0+i-1
       if (ist.eq.istbse(k,ik)) then
         write(*,*)
-        write(*,'("Error(bse): redundant extra valence state : ",I6)') ist
+        write(*,'("Error(genidxbse): redundant extra valence state : ",I6)') ist
         write(*,'(" for k-point ",I8)') jk
         write(*,*)
         stop
@@ -121,8 +121,8 @@ do ik=1,nkptnr
     jst=jstxbse(j)
     if (evalsv(jst,jk).lt.efermi) then
       write(*,*)
-      write(*,'("Error(bse): extra conduction state below Fermi energy : ",&
-       &I6)') jst
+      write(*,'("Error(genidxbse): extra conduction state below Fermi &
+       &energy : ",I6)') jst
       write(*,'(" for k-point ",I8)') jk
       write(*,*)
       stop
@@ -130,7 +130,8 @@ do ik=1,nkptnr
     do k=1,ncbse0+j-1
       if (jst.eq.jstbse(k,ik)) then
         write(*,*)
-        write(*,'("Error(bse): redundant extra conduction state : ",I6)') jst
+        write(*,'("Error(genidxbse): redundant extra conduction state : ",&
+         &I6)') jst
         write(*,'(" for k-point ",I8)') jk
         write(*,*)
         stop

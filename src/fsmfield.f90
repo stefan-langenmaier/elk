@@ -53,12 +53,10 @@ if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
     bfsmc(idm)=bfsmc(idm)+taufsm*(momtot(idm)-v(idm))
   end do
   do idm=1,ndmag
-    do is=1,nspecies
-      do ia=1,natoms(is)
-        ias=idxas(ia,is)
-        do ir=1,nrmt(is)
-          bxcmt(1,ir,ias,idm)=bxcmt(1,ir,ias,idm)+t1*bfsmc(idm)
-        end do
+    do ias=1,natmtot
+      is=idxis(ias)
+      do ir=1,nrmt(is)
+        bxcmt(1,ir,ias,idm)=bxcmt(1,ir,ias,idm)+t1*bfsmc(idm)
       end do
     end do
     do ir=1,ngrtot

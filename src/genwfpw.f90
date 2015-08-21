@@ -55,11 +55,7 @@ call genwfsv(.true.,.false.,.false.,ngp,igpig,evalsv,apwalm,evecfv,evecsv, &
 t0=sqrt(omega)
 do ist=1,nstsv
   do ispn=1,nspinor
-    if (spinsprl) then
-      jspn=ispn
-    else
-      jspn=1
-    end if
+    jspn=jspnfv(ispn)
 ! multiply wavefunction by characteristic function
     zfft(:)=wfir(:,ispn,ist)*cfunir(:)
 ! Fourier transform to G-space

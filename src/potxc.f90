@@ -109,7 +109,7 @@ do is=1,nspecies
       if (ncmag) then
 ! non-collinear (use Kubler's trick)
         do i=1,n
-! compute rhoup=(rho+sgn(m.B_ext)|m|)/2 and rhodn=(rho-sgn(m.B_ext)|m|)/2
+! compute rhoup=(rho+|m|)/2 and rhodn=(rho-|m|)/2
           t1=sqrt(mag(i,1)**2+mag(i,2)**2+mag(i,3)**2)
           rhoup(i)=0.5d0*(rho(i)+t1)
           rhodn(i)=0.5d0*(rho(i)-t1)

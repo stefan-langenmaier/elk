@@ -7,7 +7,9 @@ tasks
   120       ! compute momentum matrix elements
   121       ! compute RPA dielectric function with no local field contributions
   180       ! generate RPA dielectric function with local field contributions
-  185       ! compute BSE dielectric funcion
+  185       ! write BSE Hamiltonian matrix
+  186       ! diagonalise BSE matrix
+  187       ! generate BSE dielectric function
 
 scissor
  0.21
@@ -30,6 +32,9 @@ ncbse
 ! G-vector cut-off of local contribution to RPA
 gmaxrpa
   3.0
+
+swidth
+  0.005
 
 nempty
   10

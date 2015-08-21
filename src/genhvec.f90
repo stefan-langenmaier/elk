@@ -8,13 +8,12 @@ use modmain
 implicit none
 ! local variables
 logical lsym(48)
-integer nh(3),ihv(3,2),nht
+integer nh(3),nht,ih,jh
 integer nsym,isym,sym(3,3,48)
-integer ih,jh,i1,i2,i3,iv(3),k
+integer i1,i2,i3,iv(3),k
 real(8) hm2,v(3),t1
 ! allocatable arrays
-integer, allocatable :: idx(:)
-integer, allocatable :: iar(:)
+integer, allocatable :: idx(:),iar(:)
 real(8), allocatable :: h2(:)
 ! number of H-vectors in each dimension
 nh(:)=int(hmax*sqrt(avec(1,:)**2+avec(2,:)**2+avec(3,:)**2)/pi)+1
@@ -27,8 +26,8 @@ allocate(ivh(3,nht))
 if (allocated(mulh)) deallocate(mulh)
 allocate(mulh(nht))
 ! H-vector intervals
-ihv(:,1)=nh(:)/2-nh(:)+1
-ihv(:,2)=nh(:)/2
+inthv(:,1)=nh(:)/2-nh(:)+1
+inthv(:,2)=nh(:)/2
 ! find the subgroup of symmorphic, non-magnetic symmetries
 lsym(:)=.false.
 do isym=1,nsymcrys
@@ -46,9 +45,9 @@ if (.not.reduceh) nsym=1
 ! generate the symmetry inequivalent H-vectors and multiplicities
 hm2=hmax**2
 ih=0
-do i1=ihv(1,1),ihv(1,2)
-  do i2=ihv(2,1),ihv(2,2)
-    do i3=ihv(3,1),ihv(3,2)
+do i1=inthv(1,1),inthv(1,2)
+  do i2=inthv(2,1),inthv(2,2)
+    do i3=inthv(3,1),inthv(3,2)
       v(:)=dble(i1)*bvec(:,1)+dble(i2)*bvec(:,2)+dble(i3)*bvec(:,3)
       t1=v(1)**2+v(2)**2+v(3)**2
       if (t1.lt.hm2) then
@@ -89,7 +88,8 @@ do ih=1,nhvec
 end do
 deallocate(idx,iar,h2)
 if (allocated(ivhih)) deallocate(ivhih)
-allocate(ivhih(ihv(1,1):ihv(1,2),ihv(2,1):ihv(2,2),ihv(3,1):ihv(3,2)))
+allocate(ivhih(inthv(1,1):inthv(1,2),inthv(2,1):inthv(2,2), &
+ inthv(3,1):inthv(3,2)))
 if (allocated(vhc)) deallocate(vhc)
 allocate(vhc(3,nhvec))
 do ih=1,nhvec

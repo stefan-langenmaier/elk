@@ -191,7 +191,7 @@ deallocate(rfmt,grfmt)
 call timesec(ts1)
 timefor=timefor+ts1-ts0
 ! write total forces to test file
-call writetest(750,'total forces',nv=3*natmtot,tol=1.d-5,rva=forcetot)
+call writetest(750,'total forces',nv=3*natmtot,tol=1.d-4,rva=forcetot)
 return
 end subroutine
 !EOC

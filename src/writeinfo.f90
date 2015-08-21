@@ -225,7 +225,6 @@ write(fnum,*)
 write(fnum,'("Maximum angular momentum used for")')
 write(fnum,'(" APW functions                      : ",I4)') lmaxapw
 write(fnum,'(" potential and density              : ",I4)') lmaxvr
-write(fnum,'(" inner part of muffin-tin           : ",I4)') lmaxinr
 write(fnum,'(" H and O matrix elements outer loop : ",I4)') lmaxmat
 write(fnum,*)
 write(fnum,'("Total nuclear charge    : ",G18.10)') chgzn

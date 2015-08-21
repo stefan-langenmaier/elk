@@ -67,7 +67,6 @@ do it=1,maxit
 end do
 write(*,*)
 write(*,'("Warning(occupy): could not find Fermi energy")')
-stop
 10 continue
 ! find the density of states at the Fermi surface in units of
 ! states/Hartree/unit cell

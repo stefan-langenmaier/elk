@@ -34,7 +34,7 @@ complex(8), allocatable :: zrhoh(:)
 call sfacinit
 ! calculate the density structure factors
 allocate(zrhoh(nhvec))
-call zftrf(rhomt,rhoir,zrhoh)
+call zftrf(nhvec,ivh,vhc,rhomt,rhoir,zrhoh)
 open(50,file='SFACRHO.OUT',action='WRITE',form='FORMATTED')
 write(50,*)
 write(50,'("h k l indices transformed by vhmat matrix:")')

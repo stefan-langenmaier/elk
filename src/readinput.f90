@@ -26,6 +26,7 @@ use modscdft
 !BOC
 implicit none
 ! local variables
+logical highq
 integer is,js,ia,ias
 integer i,j,k,l,iv,iostat
 real(8) sc,sc1,sc2,sc3
@@ -51,7 +52,7 @@ tshift=.true.
 ngridk(:)=1
 vkloff(:)=0.d0
 autokpt=.false.
-radkpt=8.d0
+radkpt=40.d0
 reducek=1
 ngridq(:)=1
 reduceq=1
@@ -60,8 +61,6 @@ gmaxvr=12.d0
 lmaxapw=8
 lmaxvr=7
 lmaxmat=5
-lmaxinr=2
-fracinr=0.25d0
 trhonorm=.true.
 xctype(1)=3
 xctype(2)=0
@@ -224,13 +223,16 @@ ncxbse=0
 bsefull=.false.
 hxbse=.true.
 hdbse=.true.
-fxctype=1
+fxctype=0
 fxclrc(1)=0.d0
 fxclrc(2)=0.d0
 rndatposc=0.d0
 rndbfcmt=0.d0
 rndavec=0.d0
 ewbdg=0.5d0
+c_tb09=0.d0
+tc_tb09=.false.
+rndachi=0.1d0
 
 !--------------------------!
 !     read from elk.in     !
@@ -375,15 +377,13 @@ case('lmaxmat')
     stop
   end if
 case('lmaxinr')
-  read(50,*,err=20) lmaxinr
-  if (lmaxinr.lt.0) then
-    write(*,*)
-    write(*,'("Error(readinput): lmaxinr < 0 : ",I8)') lmaxinr
-    write(*,*)
-    stop
-  end if
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''lmaxinr'' is no longer used")')
 case('fracinr')
-  read(50,*,err=20) fracinr
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''fracinr'' is no longer used")')
 case('trhonorm')
   read(50,*,err=20) trhonorm
 case('spinpol')
@@ -1131,7 +1131,9 @@ case('gmaxrpa')
     stop
   end if
 case('fxctype')
-  read(50,*,err=20) fxctype
+  read(50,'(A256)',err=20) str
+  str=trim(str)//' 0 0'
+  read(str,*,err=20) fxctype
 case('fxclrc')
   read(50,'(A256)',err=20) str
   str=trim(str)//' 0.0'
@@ -1165,6 +1167,31 @@ case('ewbdg')
     write(*,'("Error(readinput): ewbdg <= 0 : ",G18.10)') ewbdg
     write(*,*)
     stop
+  end if
+case('c_tb09')
+  read(50,*,err=20) c_tb09
+! set flag to indicate Tran-Blaha constant has been read in
+  tc_tb09=.true.
+case('rndachi')
+  read(50,*,err=20) rndachi
+case('highq')
+  read(50,*,err=20) highq
+! parameter set for high-quality calculation
+  if (highq) then
+    rgkmax=7.5d0
+    gmaxvr=16.d0
+    lmaxapw=10
+    lmaxvr=8
+    lmaxmat=7
+    autoswidth=.true.
+    radkpt=60.d0
+    autokpt=.true.
+    vkloff(:)=0.d0
+    nempty=40
+    lradstp=2
+    epspot=1.d-7
+    epsengy=1.d-5
+    epsforce=1.d-4
   end if
 case('')
   goto 10
@@ -1235,6 +1262,10 @@ if (rndbfcmt.gt.0.d0) then
       end do
     end do
   end do
+end if
+! set fxctype to fxctype if required
+if (fxctype(1).eq.-1) then
+  fxctype(:)=xctype(:)
 end if
 ! find primitive cell if required
 if (primcell) call findprim

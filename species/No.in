@@ -2,7 +2,7 @@
  'nobelium'                                 : spname
   -102.000                                  : spzn
    472128.1174                              : spmass
-  0.198030E-06    2.2000   37.7303   800    : sprmin, rmt, sprmax, nrmt
+  0.198030E-06    2.2000   40.9226   800    : sprmin, rmt, sprmax, nrmt
   27                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

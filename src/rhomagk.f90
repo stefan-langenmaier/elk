@@ -88,11 +88,7 @@ do is=1,nspecies
         wfmt3(:,:,:)=0.d0
         i=0
         do ispn=1,nspinor
-          if (spinsprl) then
-            jspn=ispn
-          else
-            jspn=1
-          end if
+          jspn=jspnfv(ispn)
           do ist=1,nstfv
             i=i+1
             zt1=evecsv(i,j)
@@ -181,11 +177,7 @@ do j=1,nstsv
 ! generate spinor wavefunction from second-variational eigenvectors
     i=0
     do ispn=1,nspinor
-      if (spinsprl) then
-        jspn=ispn
-      else
-        jspn=1
-      end if
+      jspn=jspnfv(ispn)
       do ist=1,nstfv
         i=i+1
         zt1=evecsv(i,j)

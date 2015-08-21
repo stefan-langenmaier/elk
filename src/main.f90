@@ -52,7 +52,7 @@ do itask=1,ntasks
 ! check if task can be run with MPI
   if (lp_mpi.gt.0) then
     select case(task)
-    case(0,1,2,3,5,10,120,135,170,180,185,188,240,300)
+    case(0,1,2,3,5,120,135,136,170,180,185,188,240,300)
       continue
     case default
       write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi, &
@@ -113,7 +113,7 @@ do itask=1,ntasks
     call nonlinopt
   case(130)
     call writeexpmat
-  case(135)
+  case(135,136)
     call writewfpw
   case(140)
     call elnes
@@ -124,7 +124,11 @@ do itask=1,ntasks
   case(180)
     call epsinv_rpa
   case(185)
-    call bse
+    call writehmlbse
+  case(186)
+    call writeevbse
+  case(187)
+    call dielectric_bse
   case(188)
     call tddftlr
   case(190)
@@ -178,7 +182,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.4.18}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.4.22}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -206,13 +210,13 @@ end program
 !   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich, Torbj\"{o}rn
-!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr
-!   and Vladimir Nazarov. Special mention of David Singh's very useful book on
-!   the LAPW method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and
-!   the LAPW Method} (Kluwer Academic Publishers, Boston, 1994).} must also be
-!   made. Finally we would like to acknowledge the generous support of
-!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
-!   Training Networks initiative.
+!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr,
+!   Vladimir Nazarov, Kevin Krieger and Arkardy Davydov. Special mention of
+!   David Singh's very useful book on the LAPW method\footnote{D. J. Singh,
+!   {\it Planewaves, Pseudopotentials and the LAPW Method} (Kluwer Academic
+!   Publishers, Boston, 1994).} must also be made. Finally we would like to
+!   acknowledge the generous support of Karl-Franzens-Universit\"{a}t Graz, as
+!   well as the EU Marie-Curie Research Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -223,7 +227,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, March 2012
+!   Halle and Uppsala, May 2012
 !   \newpage
 !
 !   \section{Units}
@@ -555,12 +559,18 @@ end program
 !   more efficient if the field is applied in the $z$-direction.
 !
 !   \block{broydpm}{
-!   {\tt broydpm } & Broyden mixing parameters $\alpha$ and $w_0$ & real &
+!   {\tt broydpm} & Broyden mixing parameters $\alpha$ and $w_0$ & real &
 !    $(0.25,0.01)$}
 !   See {\tt mixtype} and {\tt mixsdb}.
 !
+!   \block{c\_tb09}{
+!   {\tt c\_tb09} & Tran-Blaha constant $c$ & real & -}
+!   Sets the constant $c$ in the Tran-Blaha '09 functional. Normally this is
+!   calculated from the density, but there may be situations where this needs to
+!   be adjusted by hand. See {\it Phys. Rev. Lett.} {\bf 102}, 226401 (2009).
+!
 !   \block{chgexs}{
-!   {\tt chgexs } & excess electronic charge & real & $0.0$}
+!   {\tt chgexs} & excess electronic charge & real & $0.0$}
 !   This controls the amount of charge in the unit cell beyond that required to
 !   maintain neutrality. It can be set positive or negative depending on whether
 !   electron or hole doping is required.
@@ -688,11 +698,6 @@ end program
 !   direction and not the magnitude set to $-1$, $-2$ or $-3$. See also
 !   {\tt momfix}, {\tt mommtfix}, {\tt taufsm} and {\tt spinpol}.
 !
-!   \block{fracinr}{
-!   {\tt fracinr} & fraction of the muffin-tin radius up to which {\tt lmaxinr}
-!    is used as the angular momentum cut-off & real & $0.25$}
-!   See {\tt lmaxinr}.
-!
 !   \block{fxclrc}{
 !   {\tt fxclrc} & parameters for the dynamical long-range contribution to the
 !    TDDFT exchange-correlation kernel & real(2) & $(0.0,0.0)$}
@@ -711,7 +716,15 @@ end program
 !   This variable has a lower bound which is enforced by the code as follows:
 !   $$ {\rm gmaxvr}\rightarrow\max\,({\rm gmaxvr},2\times{\rm gkmax}
 !    +{\rm epslat}) $$
-!   See {\tt rgkmax}.
+!   See {\tt rgkmax} and {\tt trimvg}.
+!
+!   \block{highq}{
+!   {\tt highq} & {\tt .true.} if a high quality parameter set should be used &
+!    logical & {\tt .false}}
+!   Setting this to {\tt .true.} results in some default parameters being
+!   changed to ensure good convergence in most situations. See the subroutine
+!   {\tt readinput} for the list of changed parameters and their values. These
+!   changes can be overruled by subsequent blocks in the input file.
 !
 !   \block{hmax}{
 !   {\tt hmax} & maximum length of reciprocal vectors $|{\bf H}|$ used for
@@ -778,13 +791,6 @@ end program
 !   \block{lmaxapw}{
 !   {\tt lmaxapw} & angular momentum cut-off for the APW functions & integer &
 !    $8$}
-!
-!   \block{lmaxinr}{
-!   {\tt lmaxinr} & angular momentum cut-off for the muffin-tin density and
-!    potential on the inner part of the muffin-tin & integer & 2}
-!   Close to the nucleus, the density and potential is almost spherical and
-!   therefore the spherical harmonic expansion can be truncated a low angular
-!   momentum. See also {\tt fracinr}.
 !
 !   \block{lmaxmat}{
 !   {\tt lmaxmat} & angular momentum cut-off for the outer-most loop in the
@@ -1030,10 +1036,11 @@ end program
 !
 !   \block{radkpt}{
 !   {\tt radkpt } & radius of sphere used to determine $k$-point density &
-!    real & $8.0$}
+!    real & $40.0$}
 !   Used for the automatic determination of the $k$-point mesh. If {\tt autokpt}
 !   is set to {\tt .true.} then the mesh sizes will be determined by
-!   $n_i=\lambda/|{\bf A}_i|+1$.
+!   $n_i=R_k|{\bf B}_i|+1$, where ${\bf B}_i$ are the primitive reciprocal
+!   lattice vectors.
 !
 !   \block{readalu}{
 !   {\tt readalu} & set to {\tt .true.} if the interpolation constant for
@@ -1236,8 +1243,10 @@ end program
 !   162 & Scanning-tunneling microscopy (STM) image. \\
 !   180 & Generate the RPA inverse dielectric function with local contributions
 !    and write it to file. \\
-!   185 & Solve the Bethe-Salpeter equation (BSE) and compute the BSE linear
-!    optical response tensor. \\
+!   185 & Write the Bethe-Salpeter equation (BSE) Hamiltonian to file. \\
+!   186 & Diagonalise the BSE Hamiltonian and write the eigenvectors and
+!         eigenvalues to file. \\
+!   187 & Output the BSE dielectric response function. \\
 !   188 & Time-dependent density functional theory (TDDFT) calculation of the
 !    $q\rightarrow 0$ dielectric response function including microscopic
 !    contributions. \\
@@ -1381,7 +1390,7 @@ end program
 !   magnetisation density of the form
 !   $$ {\bf m}^{\bf q}({\bf r})=(m_x({\bf r})\cos({\bf q \cdot r}),
 !    m_y({\bf r})\sin({\bf q \cdot r}),m_z({\bf r})), $$
-!    where $m_x$, $m_y$ and $m_z$ are lattice periodic. See also {\tt spinprl}.
+!   where $m_x$, $m_y$ and $m_z$ are lattice periodic. See also {\tt spinsprl}.
 !
 !   \block{wsfac}{
 !   {\tt wsfac} & energy window to be used when calculating density or magnetic

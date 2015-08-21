@@ -30,8 +30,7 @@ logical exist
 integer ik,nwork,n
 real(8) dv,etp,de,timetot
 ! allocatable arrays
-real(8), allocatable :: v(:)
-real(8), allocatable :: work(:)
+real(8), allocatable :: v(:),work(:)
 ! initialise global variables
 call init0
 call init1
@@ -165,6 +164,8 @@ do iscl=1,maxscl
 ! write the Fermi energy to file
     call writefermi
   end if
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
 ! generate the density and magnetisation
   call rhomag
 ! LDA+U

@@ -14,6 +14,7 @@ real(8) dph,a,b,t1
 real(8) forcetot1(3,maxatoms*maxspecies)
 complex(8) zt1,zt2
 complex(8) dyn(3,maxatoms,maxspecies)
+character(256) fext
 ! allocatable arrays
 real(8), allocatable :: veffmt1(:,:,:),veffir1(:)
 !------------------------!
@@ -54,12 +55,15 @@ ngrtot0=ngrtot
 10 continue
 natoms(1:nspecies)=natoms0(1:nspecies)
 ! find a dynamical matrix to calculate
-call dyntask(80)
+call dyntask(80,fext)
 ! if nothing more to do then reset input values and return
 if (iqph.eq.0) then
+  filext='.OUT'
   call readinput
   return
 end if
+! set the global file extension
+filext=fext
 write(*,'("Info(phononsc): working on ",A)') 'DYN'//trim(filext)
 ! phonon dry run: just generate empty DYN files
 if (task.eq.201) goto 10

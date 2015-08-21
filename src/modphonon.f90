@@ -55,13 +55,11 @@ complex(8), allocatable :: drhomt(:,:,:),drhoir(:)
 complex(8), allocatable :: dmagmt(:,:,:,:),dmagir(:,:)
 ! derivative of the effective potential
 complex(8), allocatable :: dveffmt(:,:,:),dveffir(:)
-! plane wave part of effective potential derivative
-complex(8), allocatable :: dveffpw(:)
 ! derivative of the exchange-correlation magnetic field
 complex(8), allocatable :: dbxcmt(:,:,:,:),dbxcir(:,:)
-! plane wave part of magnetic field derivative
-complex(8), allocatable :: dbxcpw(:,:)
-! k+q-vectors in lattice and Cartesian coordinates
+! plane wave part of the spinor effective potential
+complex(8), allocatable :: dveffpw(:,:,:)
+! k+q-vectors in lattice and Catesian coordinates
 real(8), allocatable :: vkql(:,:),vkqc(:,:)
 ! number of G+k+q-vectors for each k-point
 integer, allocatable :: ngkq(:,:)

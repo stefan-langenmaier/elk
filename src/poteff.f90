@@ -19,29 +19,20 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir
+integer is,ias,ir
 real(8) ts0,ts1
 call timesec(ts0)
 ! compute the Coulomb potential
 call potcoul
 ! compute the exchange-correlation potential
 call potxc
-! add Coulomb and exchange-correlation potentials together
-! muffin-tin part
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmtinr(is)
-      veffmt(1:lmmaxinr,ir,ias)=vclmt(1:lmmaxinr,ir,ias) &
-       +vxcmt(1:lmmaxinr,ir,ias)
-      veffmt(lmmaxinr:lmmaxvr,ir,ias)=0.d0
-    end do
-    do ir=nrmtinr(is)+1,nrmt(is)
-      veffmt(:,ir,ias)=vclmt(:,ir,ias)+vxcmt(:,ir,ias)
-    end do
+! effective potential from sum of Coulomb and exchange-correlation potentials
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    veffmt(:,ir,ias)=vclmt(:,ir,ias)+vxcmt(:,ir,ias)
   end do
 end do
-! interstitial part
 veffir(:)=vclir(:)+vxcir(:)
 call timesec(ts1)
 timepot=timepot+ts1-ts0

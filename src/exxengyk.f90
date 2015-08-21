@@ -91,7 +91,7 @@ do ik=1,nkptnr
       do ist=1,nstsv
         if (evalsv(ist,jkp).lt.efermi) then
 ! calculate the complex overlap density
-          call genzrho(.true.,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
+          call genzrho(.true.,spinpol,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
            wfir2(:,:,jst),wfir1(:,:,ist),zrhomt,zrhoir)
 ! calculate the Coulomb potential
           call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)

@@ -152,14 +152,6 @@ integer lmmaxvr
 integer lmaxmat
 ! (lmaxmat+1)^2
 integer lmmaxmat
-! fraction of muffin-tin radius which constitutes the inner part
-real(8) fracinr
-! maximum angular momentum in the inner part of the muffin-int
-integer lmaxinr
-! (lmaxinr+1)^2
-integer lmmaxinr
-! number of radial points to the inner part of the muffin-tin
-integer nrmtinr(maxspecies)
 ! index to (l,m) pairs
 integer, allocatable :: idxlm(:,:)
 ! inverse index to (l,m) pairs
@@ -208,6 +200,8 @@ logical spinsprl
 logical ssdph
 ! number of spin-dependent first-variational functions per state
 integer nspnfv
+! map from second- to first-variational spin index
+integer jspnfv(2)
 ! spin-spiral q-vector in lattice coordinates
 real(8) vqlss(3)
 ! spin-spiral q-vector in Cartesian coordinates
@@ -431,10 +425,10 @@ character(512) xcdescr
 integer xcspin
 ! exchange-correlation functional density gradient requirement
 integer xcgrad
-! exchange-correlation functional kinetic energy density requirement
-integer xctau
 ! Tran-Blaha '09 constant c [Phys. Rev. Lett. 102, 226401 (2009)]
 real(8) c_tb09
+! tc_tb09 is .true. if the Tran-Blaha constant has been read in
+logical tc_tb09
 ! muffin-tin charge density
 real(8), allocatable :: rhomt(:,:,:)
 ! interstitial real-space charge density
@@ -822,6 +816,8 @@ real(8) emaxelnes
 real(8) hmax
 ! H-vector transformation matrix
 real(8) vhmat(3,3)
+! integer grid intervals for each direction
+integer inthv(3,2)
 ! number of H-vectors
 integer nhvec
 ! H-vector integer coordinates (i1,i2,i3)
@@ -941,9 +937,11 @@ logical hxbse,hdbse
 !     Time-dependent density functional theory (TDDFT) variables     !
 !--------------------------------------------------------------------!
 ! exchange-correlation kernel type
-integer fxctype
+integer fxctype(3)
 ! parameters for long range correction (LRC) kernel
 real(8) fxclrc(2)
+! number of independent spin components of the f_xc spin tensor
+integer nscfxc
 
 !--------------------------!
 !     timing variables     !
@@ -1012,7 +1010,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,4,18 /
+data version / 1,4,22 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

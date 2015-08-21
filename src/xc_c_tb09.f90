@@ -17,6 +17,8 @@ real(8), allocatable :: rfmt1(:,:),rfmt2(:,:,:)
 ! external functions
 real(8) rfint
 external rfint
+! if Tran-Blaha constant has been read in return
+if (tc_tb09) return
 ! compute the gradient of the density
 allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3))
 allocate(grfir(ngrtot,3))

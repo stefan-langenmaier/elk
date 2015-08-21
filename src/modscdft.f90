@@ -17,6 +17,8 @@ integer, allocatable :: idxbdg(:,:)
 real(8), allocatable :: evalbdg(:)
 ! BdG inversion algorithm mixing parameter
 real(8) taubdg
+! magnitude of random numbers used to initialise the anomalous density
+real(8) rndachi
 
 end module
 

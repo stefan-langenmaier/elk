@@ -13,10 +13,10 @@ complex(8), intent(inout) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
 complex(8), intent(in) :: wfir(ngkmax,nspinor,nstsv)
 complex(8), intent(out) :: wfhk(nhvec,nspinor,nstsv)
 ! local variables
-integer igk,ig,ih,ist,ispn
+integer igk,ih,ist,ispn
 integer is,ia,ias,nrc,irc
-integer l,m,lm
-real(8) x,hk,tp(2)
+integer l,m,lm,i
+real(8) v(3),x,hk,tp(2)
 real(8) t0,t1,t2
 complex(8) zsum1,zsum2
 complex(8) zt1,zt2,zt3
@@ -29,20 +29,27 @@ wfhk(:,:,:)=0.d0
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
-do igk=1,ngk(1,ik)
-  ig=igkig(igk,1,ik)
-  if (gc(ig).lt.hmax) then
-    ih=ivhih(ivg(1,ig),ivg(2,ig),ivg(3,ig))
-    do ist=1,nstsv
-      do ispn=1,nspinor
-        wfhk(ih,ispn,ist)=wfir(igk,ispn,ist)
+i=1
+do ih=1,nhvec
+  v(:)=vhkc(:,ih)
+  do igk=i,ngk(1,ik)
+    t1=abs(v(1)-vgkc(1,igk,1,ik)) &
+      +abs(v(2)-vgkc(2,igk,1,ik)) &
+      +abs(v(3)-vgkc(3,igk,1,ik))
+    if (t1.lt.epslat) then
+      do ist=1,nstsv
+        do ispn=1,nspinor
+          wfhk(ih,ispn,ist)=wfir(igk,ispn,ist)
+        end do
       end do
-    end do
-  end if
+      if (igk.eq.i) i=igk
+    end if
+  end do
 end do
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+t0=fourpi/sqrt(omega)
 ! remove continuation of interstitial function into muffin-tin
 do igk=1,ngk(1,ik)
 ! generate the spherical harmonics Y_lm(G+k)
@@ -59,7 +66,7 @@ do igk=1,ngk(1,ik)
       ias=idxas(ia,is)
       do ist=1,nstsv
         do ispn=1,nspinor
-          zt1=fourpi*wfir(igk,ispn,ist)*sfacgk(igk,ias,1,ik)
+          zt1=t0*wfir(igk,ispn,ist)*sfacgk(igk,ias,1,ik)
           lm=0
           do l=0,lmaxvr
             zt2=zt1*zil(l)
@@ -75,7 +82,6 @@ do igk=1,ngk(1,ik)
     end do
   end do
 end do
-t0=fourpi/omega
 ! loop over H+k-vectors
 do ih=1,nhvec
 ! spherical coordinates of H+k

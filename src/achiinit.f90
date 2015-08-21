@@ -12,7 +12,6 @@ implicit none
 complex(8), intent(out) :: achi(nbdg,nbdg)
 ! local variables
 integer i,j
-real(8), parameter :: rndachi=0.1d0
 real(8) a,b
 do i=1,nbdg
   do j=1,nbdg
