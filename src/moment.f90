@@ -20,7 +20,7 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir,idm
+integer idm,is,ias,ir
 real(8) t1
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax)
@@ -37,16 +37,14 @@ end if
 ! find the muffin-tin moments
 mommttot(:)=0.d0
 do idm=1,ndmag
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      do ir=1,nrmt(is)
-        fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
-      end do
-      call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
-      mommt(idm,ias)=fourpi*y00*gr(nrmt(is))
-      mommttot(idm)=mommttot(idm)+mommt(idm,ias)
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ir=1,nrmt(is)
+      fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
     end do
+    call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
+    mommt(idm,ias)=fourpi*y00*gr(nrmt(is))
+    mommttot(idm)=mommttot(idm)+mommt(idm,ias)
   end do
 end do
 ! find the interstitial moments

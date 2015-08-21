@@ -19,11 +19,10 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv)
 integer, intent(in) :: ld
 complex(8), intent(out) :: dmat(ld,ld,nspinor,nspinor,nstsv)
 ! local variables
-integer ist,ispn,jspn
-integer is,ia,irc
-integer lmmax,i,j,n
-integer l,m1,m2,lm1,lm2
-real(8) t1,t2
+integer ist,ispn,jspn,is,ia
+integer nrc,nrci,nrc0,irc0,irc
+integer l,m1,m2,lm1,lm2,i,j
+real(8) t1
 complex(8) zq(2),z1
 ! automatic arrays
 logical done(nstfv,nspnfv)
@@ -42,13 +41,14 @@ if (lmax.gt.lmaxapw) then
   write(*,*)
   stop
 end if
-lmmax=(lmax+1)**2
 ! allocate local arrays
-allocate(wfmt1(lmmax,nrcmtmax,nstfv,nspnfv))
-allocate(wfmt2(lmmax,nrcmtmax,nspinor))
+allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv,nspnfv))
+allocate(wfmt2(lmmaxvr,nrcmtmax,nspinor))
 ! species and atom numbers
 is=idxis(ias)
 ia=idxia(ias)
+nrc=nrcmt(is)
+nrci=nrcmtinr(is)
 ! de-phasing factor for spin-spirals
 if (spinsprl.and.ssdph) then
   t1=-0.5d0*dot_product(vqcss(:),atposc(:,ia,is))
@@ -57,7 +57,6 @@ if (spinsprl.and.ssdph) then
 end if
 ! zero the density matrix
 dmat(:,:,:,:,:)=0.d0
-n=lmmax*nrcmt(is)
 done(:,:)=.false.
 ! begin loop over second-variational states
 do j=1,nstsv
@@ -73,44 +72,48 @@ do j=1,nstsv
         if (spinsprl.and.ssdph) z1=z1*zq(ispn)
         if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
           if (.not.done(ist,jspn)) then
-            call wavefmt(lradstp,lmax,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
-             evecfv(:,ist,jspn),lmmax,wfmt1(:,:,ist,jspn))
+            call wavefmt(lradstp,lmaxvr,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
+             evecfv(:,ist,jspn),lmmaxvr,wfmt1(:,:,ist,jspn))
             done(ist,jspn)=.true.
           end if
 ! add to spinor wavefunction
-          call zaxpy(n,z1,wfmt1(:,:,ist,jspn),1,wfmt2(:,:,ispn),1)
+          call zfmtadd(nrc,nrci,z1,wfmt1(:,:,ist,jspn),wfmt2(:,:,ispn))
         end if
       end do
     end do
   else
 ! spin-unpolarised wavefunction
-    call wavefmt(lradstp,lmax,ias,ngp,apwalm,evecfv(:,j,1),lmmax,wfmt2)
+    call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,j,1),lmmaxvr,wfmt2)
   end if
   do ispn=1,nspinor
     do jspn=1,nspinor
-      if (tspndg.and.(ispn.ne.jspn)) goto 20
+      if (tspndg.and.(ispn.ne.jspn)) cycle
       do l=lmin,lmax
+        if (l.le.lmaxinr) then
+          nrc0=nrc
+          irc0=1
+        else
+          nrc0=nrc-nrci
+          irc0=nrci+1
+        end if
         do m1=-l,l
           lm1=idxlm(l,m1)
           do m2=-l,l
             lm2=idxlm(l,m2)
-            if (tlmdg.and.(lm1.ne.lm2)) goto 10
-            do irc=1,nrcmt(is)
+            if (tlmdg.and.(lm1.ne.lm2)) cycle
+            do irc=irc0,nrc
               z1=wfmt2(lm1,irc,ispn)*conjg(wfmt2(lm2,irc,jspn))
               t1=rcmt(irc,is)**2
               fr1(irc)=dble(z1)*t1
               fr2(irc)=aimag(z1)*t1
             end do
-            call fderiv(-2,nrcmt(is),rcmt(:,is),fr1,gr)
-            t1=gr(nrcmt(is))
-            call fderiv(-2,nrcmt(is),rcmt(:,is),fr2,gr)
-            t2=gr(nrcmt(is))
-            dmat(lm1,lm2,ispn,jspn,j)=cmplx(t1,t2,8)
-10 continue
+            call fderiv(-2,nrc0,rcmt(irc0,is),fr1(irc0),gr(irc0))
+            t1=gr(nrc)
+            call fderiv(-2,nrc0,rcmt(irc0,is),fr2(irc0),gr(irc0))
+            dmat(lm1,lm2,ispn,jspn,j)=cmplx(t1,gr(nrc),8)
           end do
         end do
       end do
-20 continue
     end do
   end do
 ! end loop over second-variational states

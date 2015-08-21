@@ -37,10 +37,11 @@ do is=1,nspecies
           do ist1=1,nstsv
             allocate(zfmt(lmmaxvr,nrcmtmax))
 ! calculate the complex overlap density in spherical harmonics
-            zfmt(:,1:nrc)=conjg(wfcr(:,1:nrc,1))*wfmt(:,1:nrc,ias,1,ist1)
             if (spinpol) then
-              zfmt(:,1:nrc)=zfmt(:,1:nrc) &
-               +conjg(wfcr(:,1:nrc,2))*wfmt(:,1:nrc,ias,2,ist1)
+              call zfmtmul2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
+               wfmt(:,:,ias,1,ist1),wfmt(:,:,ias,2,ist1),zfmt)
+            else
+              call zfmtmul1(nrc,nrci,wfcr(:,:,1),wfmt(:,:,ias,1,ist1),zfmt)
             end if
             call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ist1))
             deallocate(zfmt)
@@ -51,7 +52,7 @@ do is=1,nspecies
 !$OMP DO
           do ist2=1,nstsv
             allocate(zfmt(lmmaxvr,nrcmtmax))
-            call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ist2),zfmt)
+            call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ist2),zfmt)
             do ist1=1,ist2
               z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ist1),zfmt)
 !$OMP CRITICAL

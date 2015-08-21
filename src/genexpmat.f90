@@ -97,7 +97,7 @@ do is=1,nspecies
 ! convert from spherical harmonics to spherical coordinates
       call zbsht(nrc,nrci,wfmt1,wfmt2(:,:,ist))
 ! multiply by exp(-iq.r) (conjugate because zfmtinp conjugates first function)
-      wfmt1(:,1:nrc)=wfmt2(:,1:nrc,ist)*conjg(expmt(:,1:nrc,ias))
+      call zfmtmul1(nrc,nrci,expmt(:,:,ias),wfmt2(:,:,ist),wfmt1)
 ! convert from spherical coordinates to spherical harmonics
       call zfsht(nrc,nrci,wfmt1,wfmt2(:,:,ist))
     end do

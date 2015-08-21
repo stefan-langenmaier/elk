@@ -17,7 +17,8 @@ complex(8), intent(in) :: zfir(ngtot)
 complex(8), intent(out) :: zfgp(ngp)
 ! local variables
 integer is,ia,ias,ig
-integer nrc,irc,l,m,lm
+integer nrc,nrci,irc
+integer lmax,l,m,lm
 real(8) t0,t1,t2
 complex(8) zsum1,zsum2,z1
 ! automatic arrays
@@ -42,6 +43,7 @@ do ig=1,ngp
   ylm(:)=ylmgp(:,ig)
   do is=1,nspecies
     nrc=nrcmt(is)
+    nrci=nrcmtinr(is)
 ! generate spherical Bessel functions
     do irc=1,nrc
       t1=gpc(ig)*rcmt(irc,is)
@@ -51,9 +53,14 @@ do ig=1,ngp
       ias=idxas(ia,is)
       z1=t0*conjg(sfacgp(ig,ias))
       do irc=1,nrc
+        if (irc.le.nrci) then
+          lmax=lmaxinr
+        else
+          lmax=lmaxvr
+        end if
         zsum1=jl(0,irc)*zfmt(1,irc,ias)*ylm(1)
         lm=1
-        do l=1,lmaxvr
+        do l=1,lmax
           lm=lm+1
           zsum2=zfmt(lm,irc,ias)*ylm(lm)
           do m=1-l,l

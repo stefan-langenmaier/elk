@@ -63,8 +63,8 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias
 integer ik,ist,idm,jdm
+integer is,ia,ias
 real(8) cb,vn,sum,f
 complex(8) z1
 ! allocatable arrays

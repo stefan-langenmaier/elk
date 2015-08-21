@@ -9,10 +9,11 @@ use modphonon
 use modmpi
 implicit none
 ! local variables
+integer iq,ik,jk,ikq
+integer ist,jst,nb,ip
 integer is,ia,ias,js,ja,jas
-integer nb,ip,iv(3),i,j,n
-integer iq,ik,jk,isym,ikq
-integer ist,jst,ir,irc
+integer nrc,nrci,irc
+integer isym,iv(3),i,j,n
 real(8) vl(3),x
 real(8) t1,t2,t3,t4,t5
 complex(8) z1
@@ -104,15 +105,12 @@ call sumrule(dynq)
 ! loop over all atoms
 do ias=1,natmtot
   is=idxis(ias)
+  nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
 ! convert potential to complex spherical harmonic expansion
-  irc=0
-  do ir=1,nrmt(is),lradstp
-    irc=irc+1
-    call rtozflm(lmaxvr,vsmt(:,ir,ias),zfmt(:,irc))
-  end do
+  call rtozfmt(nrc,nrci,lradstp,vsmt(:,:,ias),1,zfmt)
 ! compute the gradients of the Kohn-Sham potential for the rigid-ion term
-  call gradzfmt(lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,nrcmtmax,zfmt, &
-   gzfmt(:,:,:,ias))
+  call gradzfmt(nrc,nrci,rcmt(:,is),zfmt,nrcmtmax,gzfmt(:,:,:,ias))
 end do
 ! loop over phonon q-points
 do iq=1,nqpt

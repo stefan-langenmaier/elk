@@ -42,9 +42,9 @@ complex(8), intent(in) :: wfir(ngkmax,nspinor,nstsv)
 complex(8), intent(out) :: pmat(3,nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,jst
-integer is,ia,ias
-integer nrc,nrci,ir,irc
-integer itp,igp,ifg,i
+integer is,ia,ias,i
+integer nrc,nrci,irc
+integer lmmax,itp,igp,ifg
 real(8) cso
 complex(8) z1,z2,z11,z12,z21,z22,z31,z32
 ! allocatable arrays
@@ -73,12 +73,8 @@ do is=1,nspecies
     ias=idxas(ia,is)
 ! compute gradient of potential for spin-orbit correction if required
     if (spinorb) then
-      irc=0
-      do ir=1,nrmt(is),lradstp
-        irc=irc+1
-        call rtozflm(lmaxvr,vsmt(:,ir,ias),zfmt1(:,irc,1))
-      end do
-      call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax,zfmt1,gvmt)
+      call rtozfmt(nrc,nrci,lradstp,vsmt(:,:,ias),1,zfmt1)
+      call gradzfmt(nrc,nrci,rcmt(:,is),zfmt1,nrcmtmax,gvmt)
 ! convert to spherical coordinates
       do i=1,3
         zfmt1(:,1:nrc,1)=gvmt(:,1:nrc,i)
@@ -88,8 +84,8 @@ do is=1,nspecies
     do jst=1,nstsv
       do ispn=1,nspinor
 ! compute the gradient of the wavefunction
-        call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax, &
-         wfmt(:,:,ias,ispn,jst),gwfmt(:,:,:,ispn))
+        call gradzfmt(nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,jst),nrcmtmax, &
+         gwfmt(:,:,:,ispn))
       end do
 ! add spin-orbit correction if required
       if (spinorb) then
@@ -99,7 +95,12 @@ do is=1,nspecies
         end do
 ! compute sigma x (grad V(r)) psi(r)
         do irc=1,nrc
-          do itp=1,lmmaxvr
+          if (irc.le.nrci) then
+            lmmax=lmmaxinr
+          else
+            lmmax=lmmaxvr
+          end if
+          do itp=1,lmmax
             z1=zfmt1(itp,irc,1)
             z2=zfmt1(itp,irc,2)
             z11=gvmt(itp,irc,1)*z1

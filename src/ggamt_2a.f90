@@ -31,12 +31,12 @@ is=idxis(ias)
 nr=nrmt(is)
 nri=nrmtinr(is)
 ! compute grad^2 rho in spherical coordinates
-call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rhomt(:,:,ias),rfmt)
-call rbsht(nr,nri,rfmt,g2rho)
+call grad2rfmt(nr,nri,spr(:,is),rhomt(:,:,ias),rfmt)
+call rbsht(nr,nri,1,rfmt,1,g2rho)
 ! compute grad rho in spherical coordinates
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rhomt(:,:,ias),grfmt)
+call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
 do i=1,3
-  call rbsht(nr,nri,grfmt(:,:,i),gvrho(:,:,i))
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,gvrho(:,:,i))
 end do
 ! (grad rho)^2
 grho2(:,1:nr)=gvrho(:,1:nr,1)**2+gvrho(:,1:nr,2)**2+gvrho(:,1:nr,3)**2

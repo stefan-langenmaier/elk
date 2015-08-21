@@ -56,8 +56,8 @@ do is=1,nspecies
     irc=irc+1
     rcmt(irc,is)=spr(ir,is)
     if (spr(ir,is).lt.t1) then
-      nrmtinr(is)=ir-1
-      nrcmtinr(is)=irc-1
+      nrmtinr(is)=ir
+      nrcmtinr(is)=irc
     end if
   end do
 end do

@@ -15,10 +15,9 @@ complex(8), intent(out) :: bmat(nstsv,nstsv)
 ! local variables
 integer ist,jst,ispn,is,ias
 integer nrc,nrci,ir,irc
-real(8) t1
+integer lmmax,itp
+real(8) t0,t1
 complex(8) z1
-! automatic arrays
-complex(8) zflm(lmmaxvr)
 ! allocatable arrays
 complex(8), allocatable :: zfmt(:,:,:),zfir(:,:)
 ! external functions
@@ -38,12 +37,22 @@ do jst=1,nstsv
     nrci=nrcmtinr(is)
 ! apply magnetic field to spinor wavefunction
     do irc=1,nrc
-      zfmt(:,irc,1)=bmt(:,irc,ias,ndmag)*wfmt(:,irc,ias,1,jst)
-      zfmt(:,irc,2)=-bmt(:,irc,ias,ndmag)*wfmt(:,irc,ias,2,jst)
+      if (irc.le.nrci) then
+        lmmax=lmmaxinr
+      else
+        lmmax=lmmaxvr
+      end if
+      do itp=1,lmmax
+        t1=bmt(itp,irc,ias,ndmag)
+        zfmt(itp,irc,1)=t1*wfmt(itp,irc,ias,1,jst)
+        zfmt(itp,irc,2)=-t1*wfmt(itp,irc,ias,2,jst)
+      end do
       if (ncmag) then
-        zflm(:)=cmplx(bmt(:,irc,ias,1),bmt(:,irc,ias,2),8)
-        zfmt(:,irc,1)=zfmt(:,irc,1)+conjg(zflm(:))*wfmt(:,irc,ias,2,jst)
-        zfmt(:,irc,2)=zfmt(:,irc,2)+zflm(:)*wfmt(:,irc,ias,1,jst)
+        do itp=1,lmmax
+          z1=cmplx(bmt(itp,irc,ias,1),bmt(itp,irc,ias,2),8)
+          zfmt(itp,irc,1)=zfmt(itp,irc,1)+conjg(z1)*wfmt(itp,irc,ias,2,jst)
+          zfmt(itp,irc,2)=zfmt(itp,irc,2)+z1*wfmt(itp,irc,ias,1,jst)
+        end do
       end if
     end do
     do ist=1,jst
@@ -59,12 +68,13 @@ end do
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
-t1=omega/dble(ngtot)
+t0=omega/dble(ngtot)
 do jst=1,nstsv
 ! apply magnetic field to spinor wavefunction
   do ir=1,ngtot
-    zfir(ir,1)=bir(ir,ndmag)*wfir(ir,1,jst)
-    zfir(ir,2)=-bir(ir,ndmag)*wfir(ir,2,jst)
+    t1=bir(ir,ndmag)
+    zfir(ir,1)=t1*wfir(ir,1,jst)
+    zfir(ir,2)=-t1*wfir(ir,2,jst)
   end do
   if (ncmag) then
     do ir=1,ngtot
@@ -76,7 +86,7 @@ do jst=1,nstsv
   do ist=1,jst
     do ispn=1,nspinor
       z1=zdotc(ngtot,wfir(:,ispn,ist),1,zfir(:,ispn),1)
-      bmat(ist,jst)=bmat(ist,jst)+t1*z1
+      bmat(ist,jst)=bmat(ist,jst)+t0*z1
     end do
   end do
 end do

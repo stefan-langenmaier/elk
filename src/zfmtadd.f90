@@ -12,16 +12,16 @@ complex(8), intent(in) :: za
 complex(8), intent(in) :: zfmt1(lmmaxvr,nr)
 complex(8), intent(inout) :: zfmt2(lmmaxvr,nr)
 ! local variables
-integer nro,ir
+integer nr0,ir0,ir
 ! add on inner part of muffin-tin
 do ir=1,nri
   call zaxpy(lmmaxinr,za,zfmt1(:,ir),1,zfmt2(:,ir),1)
 end do
 ! add on outer part of muffin-tin
-if (nr.eq.nri) return
-nro=nr-nri
-ir=nri+1
-call zaxpy(lmmaxvr*nro,za,zfmt1(:,ir),1,zfmt2(:,ir),1)
+nr0=nr-nri
+if (nr0.eq.0) return
+ir0=nri+1
+call zaxpy(lmmaxvr*nr0,za,zfmt1(:,ir0),1,zfmt2(:,ir0),1)
 return
 end subroutine
 

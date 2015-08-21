@@ -6,15 +6,13 @@
 !BOP
 ! !ROUTINE: plot3d
 ! !INTERFACE:
-subroutine plot3d(fnum,nf,lmax,ld,rfmt,rfir)
+subroutine plot3d(fnum,nf,rfmt,rfir)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   fnum : plot file number (in,integer)
 !   nf   : number of functions (in,integer)
-!   lmax : maximum angular momentum (in,integer)
-!   ld   : leading dimension (in,integer)
-!   rfmt : real muffin-tin function (in,real(ld,nrmtmax,natmtot,nf))
+!   rfmt : real muffin-tin function (in,real(lmmaxvr,nrmtmax,natmtot,nf))
 !   rfir : real intersitial function (in,real(ngtot,nf))
 ! !DESCRIPTION:
 !   Produces a 3D plot of the real functions contained in arrays {\tt rfmt} and
@@ -30,9 +28,7 @@ implicit none
 ! arguments
 integer, intent(in) :: fnum
 integer, intent(in) :: nf
-integer, intent(in) :: lmax
-integer, intent(in) :: ld
-real(8), intent(in) :: rfmt(ld,nrmtmax,natmtot,nf)
+real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot,nf)
 real(8), intent(in) :: rfir(ngtot,nf)
 ! local variables
 integer np,ip,ip1,ip2,ip3,i
@@ -69,7 +65,7 @@ end do
 np=ip
 ! evaluate the functions at the grid points
 do i=1,nf
-  call rfarray(lmax,ld,rfmt(:,:,:,i),rfir(:,i),np,vpl,fp(:,i))
+  call rfarray(np,vpl,rfmt(:,:,:,i),rfir(:,i),fp(:,i))
 end do
 ! write functions to file
 write(fnum,'(3I6," : grid size")') np3d(:)

@@ -28,8 +28,7 @@ use modldapu
 implicit none
 ! arguments
 integer, intent(in) :: is
-integer, intent(in) :: l
-integer, intent(in) :: k
+integer, intent(in) :: l,k
 real(8), intent(in) :: lambda
 ! local variables
 integer ias,io,nr,ir

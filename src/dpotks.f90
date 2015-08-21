@@ -8,21 +8,21 @@ use modmain
 use modphonon
 implicit none
 ! local variables
-integer is,ias
+integer is,ias,nr,ir
 ! allocatable arrays
 complex(8), allocatable :: zfmt(:,:)
 ! compute the exchange-correlation potential derivative
 ! (at this stage the density derivative is in spherical coordinates)
 call dpotxc
 ! convert density derivative to spherical harmonics
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(zfmt,is)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(zfmt,is,nr)
 !$OMP DO
 do ias=1,natmtot
   allocate(zfmt(lmmaxvr,nrmtmax))
   is=idxis(ias)
-  call zcopy(lmmaxvr*nrmt(is),drhomt(:,:,ias),1,zfmt,1)
-  call zgemm('N','N',lmmaxvr,nrmt(is),lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt, &
-   lmmaxvr,zzero,drhomt(:,:,ias),lmmaxvr)
+  nr=nrmt(is)
+  call zcopy(lmmaxvr*nr,drhomt(:,:,ias),1,zfmt,1)
+  call zfsht(nr,nrmtinr(is),zfmt,drhomt(:,:,ias))
   deallocate(zfmt)
 end do
 !$OMP END DO
@@ -32,11 +32,18 @@ call dpotcoul
 ! add to the Kohn-Sham potential derivative
 do ias=1,natmtot
   is=idxis(ias)
-  call zaxpy(lmmaxvr*nrmt(is),zone,dvclmt(:,:,ias),1,dvsmt(:,:,ias),1)
+  call zfmtadd(nrmt(is),nrmtinr(is),zone,dvclmt(:,:,ias),dvsmt(:,:,ias))
 end do
 call zaxpy(ngtot,zone,dvclir,1,dvsir,1)
 ! remove the gradient part of the potential derivative for displaced muffin-tin
-call zaxpy(lmmaxvr*nrmt(isph),zone,gvsmt,1,dvsmt(:,:,iasph),1)
+call zfmtadd(nrmt(isph),nrmtinr(isph),zone,gvsmt,dvsmt(:,:,iasph))
+! zero high (l,m) components on inner part of muffin-tin
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmtinr(is)
+    dvsmt(lmmaxinr+1:lmmaxvr,ir,ias)=0.d0
+  end do
+end do
 return
 end subroutine
 

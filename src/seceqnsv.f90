@@ -139,7 +139,7 @@ do ias=1,natmtot
     end if
 ! apply vector potential if required
     if (afieldpol) then
-      call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax,wfmt1(:,:,jst),gwfmt)
+      call gradzfmt(nrc,nrci,rcmt(:,is),wfmt1(:,:,jst),nrcmtmax,gwfmt)
       do irc=1,nrc
         wfmt3(:,irc)=afieldc(1)*gwfmt(:,irc,1) &
                     +afieldc(2)*gwfmt(:,irc,2) &

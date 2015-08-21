@@ -13,9 +13,7 @@ complex(8) zrho0
 ! automatic arrays
 real(8) vn(nrmtmax),vn0(nspecies)
 ! allocatable arrays
-complex(8), allocatable :: zrhoir(:)
-complex(8), allocatable :: zvclmt(:,:,:)
-complex(8), allocatable :: zvclir(:)
+complex(8), allocatable :: zrhoir(:),zvclmt(:,:,:),zvclir(:)
 allocate(zrhoir(ngtot))
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
 allocate(zvclir(ngtot))
@@ -35,8 +33,8 @@ do is=1,nspecies
   end do
 end do
 ! solve the complex Poisson's equation
-call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
- zvclir,zrho0)
+call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
+ zvclmt,zvclir,zrho0)
 ! compute the nuclear-nuclear energy
 engynn=0.d0
 do ias=1,natmtot

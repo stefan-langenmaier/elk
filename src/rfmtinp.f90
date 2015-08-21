@@ -6,15 +6,17 @@
 !BOP
 ! !ROUTINE: rfmtinp
 ! !INTERFACE:
-real(8) function rfmtinp(lrstp,lmax,nr,r,ld,rfmt1,rfmt2)
+real(8) function rfmtinp(lrstp,nr,nri,r,rfmt1,rfmt2)
+! !USES:
+use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   lrstp : radial step length (in,integer)
-!   lmax  : maximum angular momentum (in,integer)
 !   nr    : number of radial mesh points (in,integer)
+!   nri   : number of radial mesh points on the inner part of the muffin-tin
+!           (in,integer)
 !   r     : radial mesh (in,real(nr))
-!   ld    : the leading dimension (in,integer)
-!   rfmt1 : first real function inside muffin-tin (in,real(ld,nr))
-!   rfmt2 : second real function inside muffin-tin (in,real(ld,nr))
+!   rfmt1 : first real function inside muffin-tin (in,real(lmmaxvr,nr))
+!   rfmt2 : second real function inside muffin-tin (in,real(lmmaxvr,nr))
 ! !DESCRIPTION:
 !   Calculates the inner product of two real fuctions in the muffin-tin. So
 !   given two real functions of the form
@@ -33,14 +35,12 @@ real(8) function rfmtinp(lrstp,lmax,nr,r,ld,rfmt1,rfmt2)
 implicit none
 ! arguments
 integer, intent(in) :: lrstp
-integer, intent(in) :: lmax
-integer, intent(in) :: nr
+integer, intent(in) :: nr,nri
 real(8), intent(in) :: r(nr)
-integer, intent(in) :: ld
-real(8), intent(in) :: rfmt1(ld,nr)
-real(8), intent(in) :: rfmt2(ld,nr)
+real(8), intent(in) :: rfmt1(lmmaxvr,nr)
+real(8), intent(in) :: rfmt2(lmmaxvr,nr)
 ! local variables
-integer lmmax,ir,irc
+integer ir,irc
 ! automatic arrays
 real(8) rc(nr),fr(nr),gr(nr)
 ! external functions
@@ -52,24 +52,24 @@ if (lrstp.le.0) then
   write(*,*)
   stop
 end if
-if (lmax.lt.0) then
-  write(*,*)
-  write(*,'("Error(rfmtinp): lmax < 0 : ",I8)') lmax
-  write(*,*)
-  stop
-end if
 if (nr.le.0) then
   write(*,*)
   write(*,'("Error(rfmtinp): nr <= 0 : ",I8)') nr
   write(*,*)
   stop
 end if
-lmmax=(lmax+1)**2
 irc=0
-do ir=1,nr,lrstp
+! inner part of muffin-tin
+do ir=1,nri,lrstp
   irc=irc+1
   rc(irc)=r(ir)
-  fr(irc)=ddot(lmmax,rfmt1(:,ir),1,rfmt2(:,ir),1)*r(ir)**2
+  fr(irc)=ddot(lmmaxinr,rfmt1(:,ir),1,rfmt2(:,ir),1)*r(ir)**2
+end do
+! outer part of muffin-tin
+do ir=nri+lrstp,nr,lrstp
+  irc=irc+1
+  rc(irc)=r(ir)
+  fr(irc)=ddot(lmmaxvr,rfmt1(:,ir),1,rfmt2(:,ir),1)*r(ir)**2
 end do
 call fderiv(-1,irc,rc,fr,gr)
 rfmtinp=gr(irc)

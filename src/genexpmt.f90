@@ -11,7 +11,8 @@ real(8), intent(in) :: vpc(3)
 complex(8), intent(out) :: expmt(lmmaxvr,nrcmtmax,natmtot)
 ! local variables
 integer is,ia,ias
-integer nrc,irc,l,m,lm
+integer nrc,nrci,irc
+integer lmax,l,m,lm
 real(8) pc,tp(2),t1
 complex(8) z1
 ! automatic arrays
@@ -26,11 +27,17 @@ call sphcrd(vpc,pc,tp)
 call genylm(lmaxvr,tp,ylm)
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   do irc=1,nrc
+    if (irc.le.nrci) then
+      lmax=lmaxinr
+    else
+      lmax=lmaxvr
+    end if
     t1=pc*rcmt(irc,is)
-    call sbessel(lmaxvr,t1,jl)
+    call sbessel(lmax,t1,jl)
     lm=0
-    do l=0,lmaxvr
+    do l=0,lmax
       z1=fourpi*jl(l)*zil(l)
       do m=-l,l
         lm=lm+1
@@ -39,14 +46,18 @@ do is=1,nspecies
     end do
   end do
 ! convert to spherical coordinates
-  call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1,lmmaxvr, &
-   zzero,zfmt2,lmmaxvr)
+  call zbsht(nrc,nrci,zfmt1,zfmt2)
 ! mutiply by phase factors and store for all atoms
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     t1=dot_product(vpc(:),atposc(:,ia,is))
     z1=cmplx(cos(t1),sin(t1),8)
-    expmt(:,1:nrc,ias)=z1*zfmt2(:,1:nrc)
+    do irc=1,nrci
+      expmt(1:lmmaxinr,irc,ias)=z1*zfmt2(1:lmmaxinr,irc)
+    end do
+    do irc=nrci+1,nrc
+      expmt(:,irc,ias)=z1*zfmt2(:,irc)
+    end do
   end do
 end do
 deallocate(zfmt1,zfmt2)

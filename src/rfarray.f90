@@ -3,27 +3,27 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine rfarray(lmax,ld,rfmt,rfir,np,vpl,fp)
+subroutine rfarray(np,vpl,rfmt,rfir,fp)
 use modmain
 implicit none
 ! arguments
-integer, intent(in) :: lmax
-integer, intent(in) :: ld
-real(8), intent(in) :: rfmt(ld,nrmtmax,natmtot)
-real(8), intent(in) :: rfir(ngtot)
 integer, intent(in) :: np
 real(8), intent(in) :: vpl(3,np)
+real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot)
+real(8), intent(in) :: rfir(ngtot)
 real(8), intent(out) :: fp(np)
 ! local variables
-integer ia,is,ias,ir0,ir
-integer ip,i1,i2,i3,i,j
-integer l,m,lm,ig,ifg
+integer ia,is,ias
+integer nr,nri,ir0,ir
+integer lmax,l,m,lm
+integer ig,ifg,ip
+integer i1,i2,i3,i,j
 real(8) rmt2,r,tp(2),sum,ya(4),t1,t2
 real(8) v1(3),v2(3),v3(3),v4(3),v5(3)
+! automatic arrays
+real(8) rlm(lmmaxvr)
 ! allocatable arrays
-real(8), allocatable :: rlm(:)
 complex(8), allocatable :: zfft(:)
-allocate(rlm((lmax+1)**2))
 allocate(zfft(ngtot))
 ! Fourier transform rfir to G-space
 zfft(:)=rfir(:)
@@ -36,6 +36,8 @@ do ip=1,np
   call r3mv(avec,v2,v1)
 ! check if point is in a muffin-tin
   do is=1,nspecies
+    nr=nrmt(is)
+    nri=nrmtinr(is)
     rmt2=rmt(is)**2
     do ia=1,natoms(is)
       ias=idxas(ia,is)
@@ -49,8 +51,8 @@ do ip=1,np
             t1=v5(1)**2+v5(2)**2+v5(3)**2
             if (t1.lt.rmt2) then
               call sphcrd(v5,r,tp)
-              call genrlm(lmax,tp,rlm)
-              do ir=1,nrmt(is)
+              call genrlm(lmaxvr,tp,rlm)
+              do ir=1,nr
                 if (spr(ir,is).ge.r) then
                   if (ir.le.2) then
                     ir0=1
@@ -60,6 +62,11 @@ do ip=1,np
                     ir0=ir-2
                   end if
                   r=max(r,spr(1,is))
+                  if (ir0.le.nri) then
+                    lmax=lmaxinr
+                  else
+                    lmax=lmaxvr
+                  end if
                   sum=0.d0
                   do l=0,lmax
                     do m=-l,l
@@ -81,7 +88,7 @@ do ip=1,np
       end do
     end do
   end do
-! otherwise use interstitial function
+! otherwise use direct Fourier transform of interstitial function
   sum=0.d0
   do ig=1,ngvec
     ifg=igfft(ig)
@@ -91,7 +98,7 @@ do ip=1,np
 10 continue
   fp(ip)=sum
 end do
-deallocate(rlm,zfft)
+deallocate(zfft)
 return
 
 contains

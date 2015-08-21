@@ -36,14 +36,14 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the density in spherical coordinates
-    call rbsht(nr,nri,rhomt(:,:,ias),rho)
+    call rbsht(nr,nri,1,rhomt(:,:,ias),1,rho)
     if (spinpol) then
 !------------------------!
 !     spin-polarised     !
 !------------------------!
 ! magnetisation in spherical coordinates
       do idm=1,ndmag
-        call rbsht(nr,nri,magmt(:,:,ias,idm),mag(:,idm))
+        call rbsht(nr,nri,1,magmt(:,:,ias,idm),1,mag(:,idm))
       end do
       if (ncmag) then
 ! non-collinear (use Kubler's trick)
@@ -76,7 +76,7 @@ do is=1,nspecies
     end if
     if (tsh) then
 ! convert fxc to spherical harmonics if required
-      call rfsht(nr,nri,fxc,fxcmt(:,:,ias))
+      call rfsht(nr,nri,1,fxc,1,fxcmt(:,:,ias))
     else
       call dcopy(n,fxc,1,fxcmt(:,:,ias),1)
     end if

@@ -36,17 +36,16 @@ external rfmtinp,zdotc
 allocate(rfmt(lmmaxvr,nrmtmax))
 ! Coulomb energy from core states
 engyvcl=0.d0
-do is=1,nspecies
+do ias=1,natmtot
+  is=idxis(ias)
   nr=nrmt(is)
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    if (spincore) then
-      rfmt(1,1:nr)=(rhocr(1:nr,ias,1)+rhocr(1:nr,ias,2))/y00
-    else
-      rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
-    end if
-    engyvcl=engyvcl+rfmtinp(1,0,nrmt(is),spr(:,is),lmmaxvr,rfmt,vclmt(:,:,ias))
-  end do
+  rfmt(:,:)=0.d0
+  if (spincore) then
+    rfmt(1,1:nr)=(rhocr(1:nr,ias,1)+rhocr(1:nr,ias,2))/y00
+  else
+    rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
+  end if
+  engyvcl=engyvcl+rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vclmt(:,:,ias))
 end do
 deallocate(rfmt)
 engykn=engykncr

@@ -41,7 +41,7 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,is,ia,ias
 integer nr,nrc,nrci,ir,irc
-integer itp,igk,ifg,i,j
+integer lmmax,itp,igk,ifg,i,j
 real(8) t0,t1,t2,t3,t4
 real(8) ts0,ts1
 complex(8) zq(2),z1,z2
@@ -121,7 +121,12 @@ do is=1,nspecies
           irc=0
           do ir=1,nr,lradstp
             irc=irc+1
-            do itp=1,lmmaxvr
+            if (irc.le.nrci) then
+              lmmax=lmmaxinr
+            else
+              lmmax=lmmaxvr
+            end if
+            do itp=1,lmmax
               z1=wfmt3(itp,irc,1)
               z2=wfmt3(itp,irc,2)
               t1=dble(z1)**2+aimag(z1)**2
@@ -138,7 +143,12 @@ do is=1,nspecies
           irc=0
           do ir=1,nr,lradstp
             irc=irc+1
-            do itp=1,lmmaxvr
+            if (irc.le.nrci) then
+              lmmax=lmmaxinr
+            else
+              lmmax=lmmaxvr
+            end if
+            do itp=1,lmmax
               t1=dble(wfmt3(itp,irc,1))**2+aimag(wfmt3(itp,irc,1))**2
               t2=dble(wfmt3(itp,irc,2))**2+aimag(wfmt3(itp,irc,2))**2
               rhomt(itp,ir,ias)=rhomt(itp,ir,ias)+t0*(t1+t2)
@@ -151,8 +161,13 @@ do is=1,nspecies
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          rhomt(:,ir,ias)=rhomt(:,ir,ias) &
-           +t0*(dble(wfmt3(:,irc,1))**2+aimag(wfmt3(:,irc,1))**2)
+          if (irc.le.nrci) then
+            lmmax=lmmaxinr
+          else
+            lmmax=lmmaxvr
+          end if
+          rhomt(1:lmmax,ir,ias)=rhomt(1:lmmax,ir,ias) &
+           +t0*(dble(wfmt3(1:lmmax,irc,1))**2+aimag(wfmt3(1:lmmax,irc,1))**2)
         end do
       end if
 !$OMP END CRITICAL

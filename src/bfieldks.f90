@@ -7,8 +7,7 @@ subroutine bfieldks
 use modmain
 implicit none
 ! local variables
-integer is,ia,ias
-integer ld,nrc,idm
+integer idm,is,ia,ias,nrc
 real(8) cb,t1
 if (.not.spinpol) return
 ! coupling constant of the external field (g_e/4c)
@@ -16,7 +15,6 @@ cb=gfacte/(4.d0*solsc)
 !------------------------------------!
 !     muffin-tin Kohn-Sham field     !
 !------------------------------------!
-ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(is,ia,nrc,idm,t1)
 !$OMP DO
@@ -26,8 +24,7 @@ do ias=1,natmtot
   nrc=nrcmt(is)
 ! exchange-correlation magnetic field in spherical coordinates
   do idm=1,ndmag
-    call dgemm('N','N',lmmaxvr,nrc,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-     bxcmt(:,:,ias,idm),ld,0.d0,bsmt(:,:,ias,idm),lmmaxvr)
+    call rbsht(nrc,nrcmtinr(is),lradstp,bxcmt(:,:,ias,idm),1,bsmt(:,:,ias,idm))
   end do
 ! add the external magnetic field
   t1=cb*(bfcmt(3,ia,is)+bfieldc(3))

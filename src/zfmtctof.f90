@@ -9,18 +9,25 @@ implicit none
 ! arguments
 real(8), intent(inout) :: zfmt(2,lmmaxvr,nrmtmax,natmtot)
 ! local variables
-integer ld,is,ias,lm,i
-ld=2*lmmaxvr*lradstp
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,lm,i)
+integer ld1,ld2,is,ias,ir,lm
+ld2=2*lmmaxvr
+ld1=ld2*lradstp
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(is,ir,lm)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
+  do ir=1,nrmtinr(is),lradstp
+    zfmt(:,lmmaxinr+1:lmmaxvr,ir,ias)=0.d0
+  end do
 ! interpolate with a clamped spline
   do lm=1,lmmaxvr
-    do i=1,2
-      call rfinterp(nrcmt(is),rcmt(:,is),ld,zfmt(i,lm,1,ias),nrmt(is), &
-       spr(:,is),2*lmmaxvr,zfmt(i,lm,1,ias))
-    end do
+! real part
+    call rfinterp(nrcmt(is),rcmt(:,is),ld1,zfmt(1,lm,1,ias),nrmt(is), &
+     spr(:,is),ld2,zfmt(1,lm,1,ias))
+! imaginary part
+    call rfinterp(nrcmt(is),rcmt(:,is),ld1,zfmt(2,lm,1,ias),nrmt(is), &
+     spr(:,is),ld2,zfmt(2,lm,1,ias))
   end do
 end do
 !$OMP END DO

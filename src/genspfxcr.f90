@@ -13,8 +13,7 @@ real(8), intent(out) :: fxcmt(lmmaxvr,nrmtmax,natmtot,4,4)
 real(8), intent(out) :: fxcir(ngtot,4,4)
 ! local variables
 integer idm,is,ia,ias
-integer nr,nri,ir
-integer ld,i,j,n
+integer nr,nri,ir,ld,i,j,n
 real(8) t1
 ! allocatable arrays
 real(8), allocatable :: rho(:),rhoup(:),rhodn(:)
@@ -47,12 +46,12 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the density in spherical coordinates
-    call rbsht(nr,nri,rhomt(:,:,ias),rho)
+    call rbsht(nr,nri,1,rhomt(:,:,ias),1,rho)
     do idm=1,ndmag
 ! magnetisation in spherical coordinates
-      call rbsht(nr,nri,magmt(:,:,ias,idm),mag(:,idm))
+      call rbsht(nr,nri,1,magmt(:,:,ias,idm),1,mag(:,idm))
 ! B_xc in spherical coordinates
-      call rbsht(nr,nri,bxcmt(:,:,ias,idm),bxc(:,idm))
+      call rbsht(nr,nri,1,bxcmt(:,:,ias,idm),1,bxc(:,idm))
     end do
     if (ncmag) then
 ! non-collinear (use Kubler's trick)
@@ -99,7 +98,7 @@ do is=1,nspecies
       do j=i,4
         if (tsh) then
 ! convert to spherical harmonics if required
-          call rfsht(nr,nri,fxc(:,i,j),fxcmt(:,:,ias,i,j))
+          call rfsht(nr,nri,1,fxc(:,i,j),1,fxcmt(:,:,ias,i,j))
         else
           call dcopy(n,fxc(:,i,j),1,fxcmt(:,:,ias,i,j),1)
         end if

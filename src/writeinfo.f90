@@ -110,6 +110,7 @@ do is=1,nspecies
   write(fnum,'(" atomic mass : ",G18.10)') spmass(is)
   write(fnum,'(" muffin-tin radius : ",G18.10)') rmt(is)
   write(fnum,'(" number of radial points in muffin-tin : ",I6)') nrmt(is)
+  write(fnum,'(" number on inner part of muffin-tin    : ",I6)') nrmtinr(is)
   write(fnum,'(" atomic positions (lattice), magnetic fields (Cartesian) :")')
   do ia=1,natoms(is)
     write(fnum,'(I4," : ",3F12.8,"  ",3F12.8)') ia,atposl(:,ia,is), &

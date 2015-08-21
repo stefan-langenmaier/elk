@@ -93,9 +93,9 @@ do ik=1,nkptnr
           call genzrho(.true.,spinpol,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
            wfir2(:,:,jst),wfir1(:,:,ist),zrhomt,zrhoir)
 ! calculate the Coulomb potential
-          call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
-          call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
-           zrhoir,nrcmtmax,zvclmt,zvclir,zrho0)
+          call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
+          call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq, &
+           sfacgq,zrhoir,nrcmtmax,zvclmt,zvclir,zrho0)
           z1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
           t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
 !$OMP CRITICAL
@@ -126,15 +126,15 @@ do is=1,nspecies
           do ist=1,nstsv
             if (evalsv(ist,jkp).lt.efermi) then
 ! calculate the complex overlap density in spherical harmonics
-              zfmt(:,1:nrc)=conjg(wfcr(:,1:nrc,1))*wfmt1(:,1:nrc,ias,1,ist)
               if (spinpol) then
-                zfmt(:,1:nrc)=zfmt(:,1:nrc) &
-                 +conjg(wfcr(:,1:nrc,2))*wfmt1(:,1:nrc,ias,2,ist)
+                call zfmtmul2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
+                 wfmt1(:,:,ias,1,ist),wfmt1(:,:,ias,2,ist),zfmt)
+              else
+                call zfmtmul1(nrc,nrci,wfcr(:,:,1),wfmt1(:,:,ias,1,ist),zfmt)
               end if
               call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ias))
 ! calculate the Coulomb potential
-              call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ias), &
-               zvclmt(:,:,ias))
+              call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ias),zvclmt(:,:,ias))
               z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ias), &
                zvclmt(:,:,ias))
 !$OMP CRITICAL

@@ -7,7 +7,8 @@ subroutine xc_c_tb09
 use modmain
 implicit none
 ! local variables
-integer is,ias,nr,nri,ir,itp,i
+integer is,ias,nr,nri,ir
+integer lmmax,itp,i
 real(8), parameter :: alpha=-0.012d0, beta=1.023d0
 real(8) t1
 ! allocatable arrays
@@ -26,8 +27,8 @@ call gradrf(rhomt,rhoir,grfmt,grfir)
 allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(rfmt1,rfmt2) &
-!$OMP PRIVATE(is,nr,nri) &
-!$OMP PRIVATE(i,ir,itp,t1)
+!$OMP PRIVATE(is,nr,nri,i,ir) &
+!$OMP PRIVATE(lmmax,itp,t1)
 !$OMP DO
 do ias=1,natmtot
   allocate(rfmt1(lmmaxvr,nrmtmax),rfmt2(lmmaxvr,nrmtmax,3))
@@ -35,20 +36,25 @@ do ias=1,natmtot
   nr=nrmt(is)
   nri=nrmtinr(is)
 ! convert muffin-tin density to spherical coordinates
-  call rbsht(nr,nri,rhomt(:,:,ias),rfmt1)
+  call rbsht(nr,nri,1,rhomt(:,:,ias),1,rfmt1)
 ! convert muffin-tin gradient to spherical coordinates
   do i=1,3
-    call rbsht(nr,nri,grfmt(:,:,ias,i),rfmt2(:,:,i))
+    call rbsht(nr,nri,1,grfmt(:,:,ias,i),1,rfmt2(:,:,i))
   end do
 ! integrand in muffin-tin
   do ir=1,nr
-    do itp=1,lmmaxvr
+    if (ir.le.nri) then
+      lmmax=lmmaxinr
+    else
+      lmmax=lmmaxvr
+    end if
+    do itp=1,lmmax
       t1=sqrt(rfmt2(itp,ir,1)**2+rfmt2(itp,ir,2)**2+rfmt2(itp,ir,3)**2)
       rfmt1(itp,ir)=t1/rfmt1(itp,ir)
     end do
   end do
 ! convert to spherical harmonics
-  call rfsht(nr,nri,rfmt1,rfmt(:,:,ias))
+  call rfsht(nr,nri,1,rfmt1,1,rfmt(:,:,ias))
   deallocate(rfmt1,rfmt2)
 end do
 !$OMP END DO

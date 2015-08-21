@@ -32,7 +32,7 @@ reducebf=0.75d0
 ! global fixed spin moment direction
 fixspin=-1
 ! open MAE_INFO.OUT
-open(71,file='MAE_INFO.OUT',action='WRITE',form='FORMATTED')
+if (mp_mpi) open(71,file='MAE_INFO.OUT',action='WRITE',form='FORMATTED')
 im(:)=1
 em(1)=1.d8
 em(2)=-1.d8
@@ -71,28 +71,30 @@ do itp=1,npmae
 end do
 ! magnetic anisotropy energy
 de=em(2)-em(1)
-write(71,*)
-write(71,'("Minimum energy point : ",I6)') im(1)
-write(71,'("Maximum energy point : ",I6)') im(2)
-write(71,*)
-write(71,'("Estimated magnetic anisotropy energy (MAE) : ",G18.10)') de
-write(71,*)
-write(71,'("MAE per unit volume : ",G18.10)') de/omega
-close(71)
-open(50,file='MAE.OUT',action='WRITE',form='FORMATTED')
-write(50,'(G18.10)') de
-close(50)
-open(50,file='MAEPUV.OUT',action='WRITE',form='FORMATTED')
-write(50,'(G18.10)') de/omega
-close(50)
-write(*,*)
-write(*,'("Info(mae):")')
-write(*,'(" Estimated magnetic anisotropy energy written to MAE.OUT")')
-write(*,'(" MAE per unit volume written to MAEPUV.OUT")')
-write(*,*)
-write(*,'(" Number of fixed spin moment directions used : ",I6)') npmae
-write(*,*)
-write(*,'(" Additional information written to MAE_INFO.OUT")')
+if (mp_mpi) then
+  write(71,*)
+  write(71,'("Minimum energy point : ",I6)') im(1)
+  write(71,'("Maximum energy point : ",I6)') im(2)
+  write(71,*)
+  write(71,'("Estimated magnetic anisotropy energy (MAE) : ",G18.10)') de
+  write(71,*)
+  write(71,'("MAE per unit volume : ",G18.10)') de/omega
+  close(71)
+  open(50,file='MAE.OUT',action='WRITE',form='FORMATTED')
+  write(50,'(G18.10)') de
+  close(50)
+  open(50,file='MAEPUV.OUT',action='WRITE',form='FORMATTED')
+  write(50,'(G18.10)') de/omega
+  close(50)
+  write(*,*)
+  write(*,'("Info(mae):")')
+  write(*,'(" Estimated magnetic anisotropy energy written to MAE.OUT")')
+  write(*,'(" MAE per unit volume written to MAEPUV.OUT")')
+  write(*,*)
+  write(*,'(" Number of fixed spin moment directions used : ",I6)') npmae
+  write(*,*)
+  write(*,'(" Additional information written to MAE_INFO.OUT")')
+end if
 ! restore original input parameters
 spinpol=spinpol0
 spinorb=spinorb0

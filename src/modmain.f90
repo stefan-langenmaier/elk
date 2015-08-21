@@ -441,10 +441,18 @@ real(8), allocatable :: wiq2(:)
 real(8), allocatable :: rbshtvr(:,:)
 ! real forward SHT matrix for lmaxvr
 real(8), allocatable :: rfshtvr(:,:)
+! real backward SHT matrix for lmaxinr
+real(8), allocatable :: rbshtinr(:,:)
+! real forward SHT matrix for lmaxinr
+real(8), allocatable :: rfshtinr(:,:)
 ! complex backward SHT matrix for lmaxvr
 complex(8), allocatable :: zbshtvr(:,:)
 ! complex forward SHT matrix for lmaxvr
 complex(8), allocatable :: zfshtvr(:,:)
+! complex backward SHT matrix for lmaxinr
+complex(8), allocatable :: zbshtinr(:,:)
+! complex forward SHT matrix for lmaxinr
+complex(8), allocatable :: zfshtinr(:,:)
 
 !-----------------------------------------!
 !     potential and density variables     !
@@ -1066,7 +1074,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 2,2,5 /
+data version / 2,2,8 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

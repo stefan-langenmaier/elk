@@ -9,47 +9,48 @@ implicit none
 ! arguments
 real(8), intent(inout) :: gwf2mt(lmmaxvr,nrmtmax,natmtot)
 ! local variables
-integer is,ia,ias,ist,i
-integer l,m,lm,ir,itp
-real(8) t1
-! automatic arrays
-complex(8) zftp(lmmaxvr)
+integer ist,is,ias
+integer nr,nri,ir
+integer l,m,lm,i
 ! allocatable arrays
-complex(8), allocatable :: wfmt(:,:)
-complex(8), allocatable :: gwfmt(:,:,:)
+complex(8), allocatable :: wfmt(:,:),gwfmt(:,:,:),zfmt(:,:)
 allocate(wfmt(lmmaxvr,nrmtmax))
 allocate(gwfmt(lmmaxvr,nrmtmax,3))
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ist=1,spnst(is)
-      if (spcore(ist,is).and.(spk(ist,is).eq.spl(ist,is)+1)) then
-        l=spl(ist,is)
-        do m=-l,l
-          lm=idxlm(l,m)
-          wfmt(:,1:nrmt(is))=0.d0
-          do ir=1,nrmt(is)
-            wfmt(lm,ir)=rwfcr(ir,1,ist,ias)/spr(ir,is)
-          end do
-          call gradzfmt(lmaxvr,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,wfmt,gwfmt)
-          do i=1,3
-            do ir=1,nrmt(is)
-              call zgemv('N',lmmaxvr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-               gwfmt(:,ir,i),1,zzero,zftp,1)
-              do itp=1,lmmaxvr
-                t1=dble(zftp(itp))**2+aimag(zftp(itp))**2
+allocate(zfmt(lmmaxvr,nrmtmax))
+do ias=1,natmtot
+  is=idxis(ias)
+  nr=nrmt(is)
+  nri=nrmtinr(is)
+  do ist=1,spnst(is)
+    if (spcore(ist,is).and.(spk(ist,is).eq.spl(ist,is)+1)) then
+      l=spl(ist,is)
+      do m=-l,l
+        lm=idxlm(l,m)
+        wfmt(:,1:nr)=0.d0
+        do ir=1,nr
+          wfmt(lm,ir)=rwfcr(ir,1,ist,ias)/spr(ir,is)
+        end do
+        call gradzfmt(nr,nri,spr(:,is),wfmt,nrmtmax,gwfmt)
+        do i=1,3
+          call zbsht(nr,nri,gwfmt(:,:,i),zfmt)
+! inner part of muffin-tin
+          do ir=1,nri
 ! factor of 2 from spin
-                gwf2mt(itp,ir,ias)=gwf2mt(itp,ir,ias)+2.d0*t1
-              end do
-            end do
+            gwf2mt(1:lmmaxinr,ir,ias)=gwf2mt(1:lmmaxinr,ir,ias) &
+             +2.d0*(dble(zfmt(1:lmmaxinr,ir))**2+aimag(zfmt(1:lmmaxinr,ir))**2)
+          end do
+! outer part of muffin tin
+          do ir=nri+1,nr
+            gwf2mt(:,ir,ias)=gwf2mt(:,ir,ias) &
+             +2.d0*(dble(zfmt(:,ir))**2+aimag(zfmt(:,ir))**2)
           end do
         end do
-      end if
-    end do
-! end loops over atoms and species
+      end do
+    end if
   end do
+! end loops over atoms
 end do
-deallocate(wfmt,gwfmt)
+deallocate(wfmt,gwfmt,zfmt)
 return
 end subroutine
 

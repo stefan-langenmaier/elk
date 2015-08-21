@@ -1,3 +1,11 @@
+elk-2.2.8
+-Important: fixed serious bug discovered by Jan Balluff and Markus Meinert which
+ produced erroneous magnetic moments with GGA; this only affects version 2.2.5;
+ sorry about that
+-even more substantial speed-ups for most parts of the code
+-fixed MPI problem with the magnetic anisotropy energy (MAE) routine reported by
+ Konrad Bussmann and José A. Flores-Livas
+-minor bug fixes and improvements
 
 elk-2.2.5
 -dramatic speed-up for most parts of the code thanks to some (fairly obvious)

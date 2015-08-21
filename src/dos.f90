@@ -35,9 +35,9 @@ use modtest
 implicit none
 ! local variables
 logical tsqaz
-integer lmmax,l0,l1,l,m,lm
-integer is,ia,ias,nsd,ispn,jspn
 integer nsk(3),ik,jk,ist,iw
+integer nsd,ispn,jspn,is,ia,ias
+integer lmmax,l0,l1,l,m,lm
 real(8) dw,th,sps(2),vl(3),vc(3)
 real(8) v1(3),v2(3),v3(3),t1
 complex(8) su2(2,2),dm1(2,2),dm2(2,2)

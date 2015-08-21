@@ -8,12 +8,11 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer is,ias,ik
-integer ir,irc,idm
-integer ld,it,n
+integer ik,idm,is,ias
+integer nr,nrc,nrci,n,it
 real(8) tau,resp,t1
 ! allocatable arrays
-real(8), allocatable :: rfmt(:,:,:),rfir(:)
+real(8), allocatable :: rfmt1(:,:,:),rfmt2(:,:),rfir(:)
 real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 real(8), allocatable :: dvxmt(:,:,:),dvxir(:)
 real(8), allocatable :: dbxmt(:,:,:,:),dbxir(:,:)
@@ -22,13 +21,12 @@ complex(8), allocatable :: vnlcv(:,:,:,:),vnlvv(:,:,:)
 real(8) rfinp
 external rfinp
 if (iscl.lt.1) return
-ld=lmmaxvr*lradstp
 ! calculate nonlocal matrix elements
 allocate(vnlcv(ncrmax,natmtot,nstsv,nkpt))
 allocate(vnlvv(nstsv,nstsv,nkpt))
 call oepvnl(vnlcv,vnlvv)
 ! allocate local arrays
-allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
+allocate(rfmt1(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot),dvxir(ngtot))
 if (spinpol) then
   allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag))
@@ -91,20 +89,19 @@ do it=1,maxitoep
 !$OMP DO
   do ias=1,natmtot
     is=idxis(ias)
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-     dvxmt(:,:,ias),lmmaxvr,0.d0,rfmt(:,:,ias),ld)
+    call rfsht(nrcmt(is),nrcmtinr(is),1,dvxmt(:,:,ias),lradstp,rfmt1(:,:,ias))
     do idm=1,ndmag
-      call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-       dbxmt(:,:,ias,idm),lmmaxvr,0.d0,rvfmt(:,:,ias,idm),ld)
+      call rfsht(nrcmt(is),nrcmtinr(is),1,dbxmt(:,:,ias,idm),lradstp, &
+       rvfmt(:,:,ias,idm))
     end do
   end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! symmetrise the residuals
-  call symrf(lradstp,rfmt,dvxir)
+  call symrf(lradstp,rfmt1,dvxir)
   if (spinpol) call symrvf(lradstp,rvfmt,dbxir)
 ! magnitude of residuals
-  resoep=sqrt(abs(rfinp(lradstp,rfmt,rfmt,dvxir,dvxir)))
+  resoep=sqrt(abs(rfinp(lradstp,rfmt1,rfmt1,dvxir,dvxir)))
   do idm=1,ndmag
     t1=rfinp(lradstp,rvfmt(:,:,:,idm),rvfmt(:,:,:,idm),dbxir(:,idm), &
      dbxir(:,idm))
@@ -121,21 +118,22 @@ do it=1,maxitoep
   end if
   resp=resoep
 ! update complex potential and field
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,irc,ir,idm)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(rfmt2,is,nrc,nrci,idm)
 !$OMP DO
   do ias=1,natmtot
+    allocate(rfmt2(lmmaxvr,nrcmtmax))
     is=idxis(ias)
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
+    nrc=nrcmt(is)
+    nrci=nrcmtinr(is)
 ! convert residual to spherical coordinates and subtract from complex potential
-      call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr,rfmt(:,ir,ias),1, &
-       1.d0,zvxmt(:,irc,ias),2)
-      do idm=1,ndmag
-        call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr, &
-         rvfmt(:,ir,ias,idm),1,1.d0,zbxmt(:,irc,ias,idm),2)
-      end do
+    call rbsht(nrc,nrci,lradstp,rfmt1(:,:,ias),1,rfmt2)
+    zvxmt(:,1:nrc,ias)=zvxmt(:,1:nrc,ias)-tau*rfmt2(:,1:nrc)
+    do idm=1,ndmag
+      call rbsht(nrc,nrci,lradstp,rvfmt(:,:,ias,idm),1,rfmt2)
+      zbxmt(:,1:nrc,ias,idm)=zbxmt(:,1:nrc,ias,idm)-tau*rfmt2(:,1:nrc)
     end do
+    deallocate(rfmt2)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -146,37 +144,36 @@ do it=1,maxitoep
 ! end iteration loop
 end do
 ! generate the real potential and field
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,irc,ir,idm)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(rfmt2,is,nrc,nrci,idm)
 !$OMP DO
 do ias=1,natmtot
+  allocate(rfmt2(lmmaxvr,nrcmtmax))
   is=idxis(ias)
-  irc=0
-  do ir=1,nrmt(is),lradstp
-    irc=irc+1
-! convert to real spherical harmonics
-    call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,zvxmt(:,irc,ias),2, &
-     0.d0,rfmt(:,ir,ias),1)
-    do idm=1,ndmag
-      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-       zbxmt(:,irc,ias,idm),2,0.d0,rvfmt(:,ir,ias,idm),1)
-    end do
+  nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
+  rfmt2(:,1:nrc)=dble(zvxmt(:,1:nrc,ias))
+  call rfsht(nrc,nrci,1,rfmt2,lradstp,rfmt1(:,:,ias))
+  do idm=1,ndmag
+    rfmt2(:,1:nrc)=dble(zbxmt(:,1:nrc,ias,idm))
+    call rfsht(nrc,nrci,1,rfmt2,lradstp,rvfmt(:,:,ias,idm))
   end do
+  deallocate(rfmt2)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! convert potential and field from a coarse to a fine radial mesh
-call rfmtctof(rfmt)
+call rfmtctof(rfmt1)
 do idm=1,ndmag
   call rfmtctof(rvfmt(:,:,:,idm))
 end do
 ! add to existing (density derived) correlation potential and field
 do ias=1,natmtot
   is=idxis(ias)
-  do ir=1,nrmt(is)
-    vxcmt(:,ir,ias)=vxcmt(:,ir,ias)+rfmt(:,ir,ias)
-    do idm=1,ndmag
-      bxcmt(:,ir,ias,idm)=bxcmt(:,ir,ias,idm)+rvfmt(:,ir,ias,idm)
-    end do
+  nr=nrmt(is)
+  vxcmt(:,1:nr,ias)=vxcmt(:,1:nr,ias)+rfmt1(:,1:nr,ias)
+  do idm=1,ndmag
+    bxcmt(:,1:nr,ias,idm)=bxcmt(:,1:nr,ias,idm)+rvfmt(:,1:nr,ias,idm)
   end do
 end do
 vxcir(:)=vxcir(:)+dble(zvxir(:))
@@ -186,7 +183,7 @@ end do
 ! symmetrise the exchange potential and field
 call symrf(1,vxcmt,vxcir)
 if (spinpol) call symrvf(1,bxcmt,bxcir)
-deallocate(rfmt,rfir,vnlcv,vnlvv)
+deallocate(rfmt1,rfir,vnlcv,vnlvv)
 deallocate(dvxmt,dvxir)
 if (spinpol) then
   deallocate(rvfmt,rvfir)

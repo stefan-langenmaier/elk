@@ -11,16 +11,16 @@ integer, intent(in) :: nr,nri
 complex(8), intent(in) :: zfmt1(lmmaxvr,nr)
 complex(8), intent(out) :: zfmt2(lmmaxvr,nr)
 ! local variables
-integer nro,ir
+integer nr0,ir0
 ! transform the inner part of the muffin-tin
-call zgemm('N','N',lmmaxvr,nri,lmmaxinr,zone,zbshtvr,lmmaxvr,zfmt1,lmmaxvr, &
+call zgemm('N','N',lmmaxinr,nri,lmmaxinr,zone,zbshtinr,lmmaxinr,zfmt1,lmmaxvr, &
  zzero,zfmt2,lmmaxvr)
 ! transform the outer part of the muffin-tin
 if (nr.eq.nri) return
-nro=nr-nri
-ir=nri+1
-call zgemm('N','N',lmmaxvr,nro,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1(:,ir), &
- lmmaxvr,zzero,zfmt2(:,ir),lmmaxvr)
+nr0=nr-nri
+ir0=nri+1
+call zgemm('N','N',lmmaxvr,nr0,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1(:,ir0), &
+ lmmaxvr,zzero,zfmt2(:,ir0),lmmaxvr)
 return
 end subroutine
 

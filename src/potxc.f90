@@ -96,14 +96,14 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the density in spherical coordinates
-    call rbsht(nr,nri,rhomt(:,:,ias),rho)
+    call rbsht(nr,nri,1,rhomt(:,:,ias),1,rho)
     if (spinpol) then
 !------------------------!
 !     spin-polarised     !
 !------------------------!
 ! magnetisation in spherical coordinates
       do idm=1,ndmag
-        call rbsht(nr,nri,magmt(:,:,ias,idm),mag(:,idm))
+        call rbsht(nr,nri,1,magmt(:,:,ias,idm),1,mag(:,idm))
       end do
       if (ncmag) then
 ! non-collinear (use Kubler's trick)
@@ -178,7 +178,7 @@ do is=1,nspecies
       end if
 ! convert field to spherical harmonics
       do idm=1,ndmag
-        call rfsht(nr,nri,bxc(:,idm),bxcmt(:,:,ias,idm))
+        call rfsht(nr,nri,1,bxc(:,idm),1,bxcmt(:,:,ias,idm))
       end do
     else
 !--------------------------!
@@ -213,10 +213,10 @@ do is=1,nspecies
       end if
     end if
 ! convert exchange and correlation energy densities to spherical harmonics
-    call rfsht(nr,nri,ex,exmt(:,:,ias))
-    call rfsht(nr,nri,ec,ecmt(:,:,ias))
+    call rfsht(nr,nri,1,ex,1,exmt(:,:,ias))
+    call rfsht(nr,nri,1,ec,1,ecmt(:,:,ias))
 ! convert exchange-correlation potential to spherical harmonics
-    call rfsht(nr,nri,vxc,vxcmt(:,:,ias))
+    call rfsht(nr,nri,1,vxc,1,vxcmt(:,:,ias))
   end do
 end do
 !------------------------------------------!
