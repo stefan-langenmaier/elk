@@ -264,7 +264,6 @@ write(*,'(" for components")')
 do l=1,noptcomp
   write(*,'("  a = ",I1,", b = ",I1,", c = ",I1)') optcomp(1:3,l)
 end do
-write(*,*)
 deallocate(w,chiw,chi2w)
 return
 end subroutine

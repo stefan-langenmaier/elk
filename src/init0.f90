@@ -23,7 +23,7 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer ist,l,m,lm,iv(3)
-real(8) sum
+real(8) rsum,t1
 real(8) ts0,ts1
 
 !-------------------------------!
@@ -195,8 +195,8 @@ call r3minv(bvec,binv)
 call r3mv(bvec,vqlss,vqcss)
 do is=1,nspecies
   do ia=1,natoms(is)
-! map atomic lattice coordinates to [0,1) if not in molecule mode
-    if (.not.molecule) call r3frac(epslat,atposl(:,ia,is),iv)
+! map atomic lattice coordinates to [0,1)
+    call r3frac(epslat,atposl(:,ia,is),iv)
 ! determine atomic Cartesian coordinates
     call r3mv(avec,atposl(:,ia,is),atposc(:,ia,is))
   end do
@@ -210,16 +210,14 @@ call checkmt
 !     vector fields E and A     !
 !-------------------------------!
 efieldpol=.false.
-if ((abs(efieldc(1)).gt.epslat).or.(abs(efieldc(2)).gt.epslat).or. &
- (abs(efieldc(3)).gt.epslat)) then
+if (sum(abs(efieldc(:))).gt.epslat) then
   efieldpol=.true.
   tshift=.false.
 ! electric field vector in lattice coordinates
   call r3mv(ainv,efieldc,efieldl)
 end if
 afieldpol=.false.
-if ((abs(afieldc(1)).gt.epslat).or.(abs(afieldc(2)).gt.epslat).or. &
- (abs(afieldc(3)).gt.epslat)) then
+if (sum(abs(afieldc(:))).gt.epslat) then
   afieldpol=.true.
 ! vector potential added in second-variational step
   tevecsv=.true.
@@ -238,6 +236,8 @@ call findsymcrys
 call findsymsite
 ! check if fixed spin moments are invariant under the symmetry group
 call checkfsm
+! check if real symmetric eigen solver can be used
+if (.not.tsyminv) tseqr=.false.
 
 !-----------------------!
 !     radial meshes     !
@@ -259,30 +259,34 @@ call genrmesh
 !     charges and number of states     !
 !--------------------------------------!
 chgzn=0.d0
-chgcr=0.d0
+chgcrtot=0.d0
 chgval=0.d0
 spnstmax=0
+nstcr=0
 do is=1,nspecies
 ! nuclear charge
-  chgzn=chgzn+spzn(is)*dble(natoms(is))
+  chgzn=chgzn+spzn(is)*natoms(is)
 ! find the maximum number of atomic states
   spnstmax=max(spnstmax,spnst(is))
 ! compute the electronic charge for each species, as well as the total core and
 ! valence charge
   spze(is)=0.d0
+  chgcr(is)=0.d0
   do ist=1,spnst(is)
     spze(is)=spze(is)+spocc(ist,is)
     if (spcore(ist,is)) then
-      chgcr=chgcr+dble(natoms(is))*spocc(ist,is)
+      chgcr(is)=chgcr(is)+spocc(ist,is)
+      nstcr=nstcr+2*spk(ist,is)*natoms(is)
     else
-      chgval=chgval+dble(natoms(is))*spocc(ist,is)
+      chgval=chgval+spocc(ist,is)*natoms(is)
     end if
   end do
+  chgcrtot=chgcrtot+chgcr(is)*natoms(is)
 end do
 ! add excess charge
 chgval=chgval+chgexs
 ! total charge
-chgtot=chgcr+chgval
+chgtot=chgcrtot+chgval
 if (chgtot.lt.1.d-8) then
   write(*,*)
   write(*,'("Error(init0): zero total charge")')
@@ -302,12 +306,12 @@ if (nspecies.gt.0) then
     gkmax=rgkmax/rmt(isgkmax)
   else if (isgkmax.eq.-1) then
 ! use average muffin-tin radius
-    sum=0.d0
+    rsum=0.d0
     do is=1,nspecies
-      sum=sum+dble(natoms(is))*rmt(is)
+      rsum=rsum+dble(natoms(is))*rmt(is)
     end do
-    sum=sum/dble(natmtot)
-    gkmax=rgkmax/sum
+    rsum=rsum/dble(natmtot)
+    gkmax=rgkmax/rsum
   else
 ! use minimum muffin-tin radius
     gkmax=rgkmax/minval(rmt(1:nspecies))
@@ -416,6 +420,8 @@ allocate(veffir(ngrtot))
 if (allocated(veffig)) deallocate(veffig)
 allocate(veffig(ngvec))
 ! allocate muffin-tin charge and moment arrays
+if (allocated(chgcrlk)) deallocate(chgcrlk)
+allocate(chgcrlk(natmtot))
 if (allocated(chgmt)) deallocate(chgmt)
 allocate(chgmt(natmtot))
 if (allocated(mommt)) deallocate(mommt)
@@ -466,6 +472,13 @@ end if
 !-----------------------!
 !     miscellaneous     !
 !-----------------------!
+! Poisson solver pseudocharge density constant l + n(l)
+if (nspecies.gt.0) then
+  t1=gmaxvr*maxval(rmt(1:nspecies))
+else
+  t1=gmaxvr*2.d0
+end if
+lnpsd=max(int(t1)-6,lmaxvr+1)
 ! determine the nuclear-nuclear energy
 call energynn
 ! get smearing function description

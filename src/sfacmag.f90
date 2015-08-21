@@ -1,5 +1,5 @@
 
-! Copyright (C) 2010 Alexey I. Baranov.
+! Copyright (C) 2010 A. I. Baranov and F. Wagner.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -30,13 +30,9 @@ character(256) fname
 ! allocatable arrays
 complex(8), allocatable :: zmagh(:)
 if (.not.spinpol) return
-! initialise universal variables
-call init0
-call init1
-! generate the H-vectors
-call genhvec
-! read density and potentials from file
-call readstate
+! initialise the structure factor specific variables
+call sfacinit
+! generate the magnetic structure factors
 allocate(zmagh(nhvec))
 do idm=1,ndmag
   call zftrf(magmt(:,:,:,idm),magir(:,idm),zmagh)
@@ -86,6 +82,7 @@ if (ndmag.eq.1) then
   write(*,'(" (this corresponds to the z-component of the magnetisation)")')
 end if
 write(*,*)
+write(*,'(" Energy window : ",2G18.10)') wsfac(:)
 return
 end subroutine
 !EOC

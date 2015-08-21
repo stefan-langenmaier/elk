@@ -86,7 +86,6 @@ close(50)
 write(*,*)
 write(*,'("Info(moke):")')
 write(*,'(" complex Kerr angle in degrees written to KERR.OUT")')
-write(*,*)
 deallocate(w,sig1,sig2,kerr)
 return
 end subroutine

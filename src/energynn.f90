@@ -17,14 +17,14 @@ real(8), allocatable :: jlgr(:,:,:)
 complex(8), allocatable :: zrhoir(:)
 complex(8), allocatable :: zvclmt(:,:,:)
 complex(8), allocatable :: zvclir(:)
-allocate(jlgr(0:lmaxvr+npsden+1,ngvec,nspecies))
+allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
 allocate(zrhoir(ngrtot))
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
 allocate(zvclir(ngrtot))
 ! set the density to zero
 zrhoir(:)=0.d0
 ! compute the required spherical Bessel functions
-call genjlgpr(lmaxvr+npsden+1,gc,jlgr)
+call genjlgpr(lnpsd+1,gc,jlgr)
 ! generate the nuclear monopole potentials
 t1=1.d0/y00
 do is=1,nspecies
@@ -34,6 +34,7 @@ do is=1,nspecies
     ias=idxas(ia,is)
     do ir=1,nrmt(is)
       zvclmt(1,ir,ias)=t1*vn(ir)
+      zvclmt(2:,ir,ias)=0.d0
     end do
   end do
 end do

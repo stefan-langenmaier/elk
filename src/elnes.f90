@@ -110,7 +110,6 @@ close(50)
 write(*,*)
 write(*,'("Info(elnes):")')
 write(*,'(" ELNES double differential cross-section written to ELNES.OUT")')
-write(*,*)
 ! write ELNES distribution to test file
 call writetest(140,'ELNES cross-section',nv=nwdos,tol=1.d-2,rva=ddcs)
 deallocate(e,f,ddcs,expmt)

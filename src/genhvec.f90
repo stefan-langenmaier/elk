@@ -41,6 +41,8 @@ do isym=1,nsymlat
     sym(:,:,nsym)=symlat(:,:,isym)
   end if
 end do
+! use only the identity element if no reduction is required
+if (.not.reduceh) nsym=1
 ! generate the symmetry inequivalent H-vectors and multiplicities
 hm2=hmax**2
 ih=0

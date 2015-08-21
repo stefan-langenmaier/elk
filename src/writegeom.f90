@@ -24,8 +24,8 @@ implicit none
 ! arguments
 logical, intent(in) :: topt
 ! local variables
-integer is,ia
-real(8) v(3)
+integer is,ia,i
+real(8) v1(3),v2(3)
 if (topt) then
   open(50,file='GEOMETRY_OPT'//trim(filext),action='WRITE',form='FORMATTED')
 else
@@ -61,13 +61,17 @@ do is=1,nspecies
   write(50,'(I4,T40," : natoms; atpos, bfcmt below")') natoms(is)
   do ia=1,natoms(is)
     if (molecule) then
-! write Cartesian coordinates for the molecular case
-      call r3mv(avec,atposl(:,ia,is),v)
+! map lattice coordinates to [-0.5,0.5) and write as Cartesian coordinates
+      v1(:)=atposl(:,ia,is)
+      do i=1,3
+        if (v1(i).gt.0.5d0) v1(i)=v1(i)-1.d0
+      end do
+      call r3mv(avec,v1,v2)
     else
 ! otherwise write lattice coordinates
-      v(:)=atposl(:,ia,is)
+      v2(:)=atposl(:,ia,is)
     end if
-    write(50,'(3F14.8,"  ",3F12.8)') v(:),bfcmt(:,ia,is)
+    write(50,'(3F14.8,"  ",3F12.8)') v2(:),bfcmt(:,ia,is)
   end do
 end do
 close(50)

@@ -87,7 +87,7 @@ do iscl=1,maxscl
     tlast=.true.
   end if
 ! compute the exchange-correlation potential for hybrid functionals
-  if (hybmix.lt.1.d0) call potxc
+  if (hybrid) call potxc
 ! synchronise MPI processes
   call mpi_barrier(mpi_comm_world,ierror)
 !$OMP PARALLEL DEFAULT(SHARED) &

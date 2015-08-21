@@ -41,7 +41,7 @@ else
 end if
 ! OEP, Hartree-Fock, RPA epsilon, BSE or RDMFT
 if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.180).or. &
- (task.eq.185).or.(task.eq.300)) then
+ (task.eq.185).or.(task.eq.188).or.(task.eq.300)) then
   ngridq(:)=ngridk(:)
 end if
 ! allocate the q-point arrays
@@ -119,44 +119,11 @@ if (xctype(1).lt.0) then
     zbxir(:,:)=0.d0
   end if
 end if
-if ((task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
-! allocate the kinetic matrix elements for Hartree-Fock/RDMFT
-  if (allocated(kinmatc)) deallocate(kinmatc)
-  allocate(kinmatc(nstsv,nstsv,nkpt))
-end if
 if (task.eq.300) then
   if (allocated(vclmat)) deallocate(vclmat)
   allocate(vclmat(nstsv,nstsv,nkpt))
   if (allocated(dkdc)) deallocate(dkdc)
   allocate(dkdc(nstsv,nstsv,nkpt))
-end if
-
-!--------------------------!
-!     phonon variables     !
-!--------------------------!
-if (task.eq.202) then
-  if (allocated(drhomt)) deallocate(drhomt)
-  allocate(drhomt(lmmaxvr,nrcmtmax,natmtot))
-  if (allocated(drhoir)) deallocate(drhoir)
-  allocate(drhoir(ngrtot))
-  if (allocated(dveffpw)) deallocate(dveffpw)
-  allocate(dveffpw(ngrtot))
-  if (allocated(dveffmt)) deallocate(dveffmt)
-  allocate(dveffmt(lmmaxvr,nrcmtmax,natmtot))
-  if (allocated(dveffir)) deallocate(dveffir)
-  allocate(dveffir(ngrtot))
-  if (allocated(dmagmt)) deallocate(dmagmt)
-  if (allocated(dmagir)) deallocate(dmagir)
-  if (allocated(dbxcpw)) deallocate(dbxcpw)
-  if (allocated(dbxcmt)) deallocate(dbxcmt)
-  if (allocated(dbxcir)) deallocate(dbxcir)
-  if (spinpol) then
-    allocate(dmagmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-    allocate(dmagir(ngrtot,ndmag))
-    allocate(dbxcpw(ngrtot,ndmag))
-    allocate(dbxcmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-    allocate(dbxcir(ngrtot,ndmag))
-  end if
 end if
 
 call timesec(ts1)

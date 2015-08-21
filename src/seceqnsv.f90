@@ -116,12 +116,10 @@ do is=1,nspecies
           do irc=1,nrc
             call lopzflm(lmaxvr,wfmt1(:,irc,jst),lmmaxvr,zlflm)
             t1=socfr(irc,ias)
-            do lm=1,lmmaxvr
-              wfmt4(lm,irc,1)=wfmt4(lm,irc,1)+t1*zlflm(lm,3)
-              wfmt4(lm,irc,2)=wfmt4(lm,irc,2)-t1*zlflm(lm,3)
-              wfmt4(lm,irc,3)=wfmt4(lm,irc,3)+t1*(zlflm(lm,1) &
-               +cmplx(aimag(zlflm(lm,2)),-dble(zlflm(lm,2)),8))
-            end do
+            wfmt4(:,irc,1)=wfmt4(:,irc,1)+t1*zlflm(:,3)
+            wfmt4(:,irc,2)=wfmt4(:,irc,2)-t1*zlflm(:,3)
+            wfmt4(:,irc,3)=wfmt4(:,irc,3)+t1*(zlflm(:,1) &
+             +cmplx(aimag(zlflm(:,2)),-dble(zlflm(:,2)),8))
           end do
         end if
       else

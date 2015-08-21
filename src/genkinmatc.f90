@@ -48,22 +48,18 @@ do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
   allocate(evalfv(nstfv,nspnfv))
-  allocate(evecfv(nmatmax,nstfv))
-  allocate(evecsv(nstsv,nstsv))
-  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-  allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-  allocate(wfir(ngrtot,nspinor,nstsv))
-  allocate(c(nstsv,nstsv))
-  if (spinpol) allocate(bmat(nstsv,nstsv))
-!$OMP CRITICAL
-  write(*,'("Info(genkinmatc): ",I6," of ",I6," k-points")') ik,nkpt
-!$OMP END CRITICAL
+  allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 ! solve the first- and second-variational secular equations
   call seceqn(ik,evalfv,evecfv,evecsv)
 ! write the first variational eigenvalues/vectors to file (this ensures the
 ! phase in eigenvectors is the same for subsequent matrix element evaluations)
   call putevalfv(ik,evalfv)
   call putevecfv(ik,evecfv)
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+  allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+  allocate(wfir(ngrtot,nspinor,nstsv))
+  allocate(c(nstsv,nstsv))
+  if (spinpol) allocate(bmat(nstsv,nstsv))
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &

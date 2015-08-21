@@ -1,0 +1,169 @@
++------------------------------+
+|     Eliashberg equations     |
++------------------------------+
+ 
+Temperature range :   0.5297312490       4.237849992    
+Number of temperature steps :     40
+Number of Pade approximant input points :   80
+Number of output frequencies :     2000
+Fermionic Matsubara frequency cut-off :   0.5844444835E-01
+ 
+Temperature (kelvin) :   0.6224342176    
+Number of Matsubara frequencies :   4799
+Eliashberg equations converged in    115 iterations
+ 
+Temperature (kelvin) :   0.7151371862    
+Number of Matsubara frequencies :   4187
+Eliashberg equations converged in     75 iterations
+ 
+Temperature (kelvin) :   0.8078401548    
+Number of Matsubara frequencies :   3716
+Eliashberg equations converged in     75 iterations
+ 
+Temperature (kelvin) :   0.9005431233    
+Number of Matsubara frequencies :   3342
+Eliashberg equations converged in     75 iterations
+ 
+Temperature (kelvin) :   0.9932460919    
+Number of Matsubara frequencies :   3037
+Eliashberg equations converged in     76 iterations
+ 
+Temperature (kelvin) :    1.085949060    
+Number of Matsubara frequencies :   2785
+Eliashberg equations converged in     77 iterations
+ 
+Temperature (kelvin) :    1.178652029    
+Number of Matsubara frequencies :   2572
+Eliashberg equations converged in     79 iterations
+ 
+Temperature (kelvin) :    1.271354998    
+Number of Matsubara frequencies :   2390
+Eliashberg equations converged in     82 iterations
+ 
+Temperature (kelvin) :    1.364057966    
+Number of Matsubara frequencies :   2233
+Eliashberg equations converged in     85 iterations
+ 
+Temperature (kelvin) :    1.456760935    
+Number of Matsubara frequencies :   2096
+Eliashberg equations converged in     89 iterations
+ 
+Temperature (kelvin) :    1.549463903    
+Number of Matsubara frequencies :   1976
+Eliashberg equations converged in     93 iterations
+ 
+Temperature (kelvin) :    1.642166872    
+Number of Matsubara frequencies :   1869
+Eliashberg equations converged in     98 iterations
+ 
+Temperature (kelvin) :    1.734869841    
+Number of Matsubara frequencies :   1773
+Eliashberg equations converged in    104 iterations
+ 
+Temperature (kelvin) :    1.827572809    
+Number of Matsubara frequencies :   1687
+Eliashberg equations converged in    111 iterations
+ 
+Temperature (kelvin) :    1.920275778    
+Number of Matsubara frequencies :   1610
+Eliashberg equations converged in    120 iterations
+ 
+Temperature (kelvin) :    2.012978746    
+Number of Matsubara frequencies :   1539
+Eliashberg equations converged in    130 iterations
+ 
+Temperature (kelvin) :    2.105681715    
+Number of Matsubara frequencies :   1475
+Eliashberg equations converged in    142 iterations
+ 
+Temperature (kelvin) :    2.198384683    
+Number of Matsubara frequencies :   1416
+Eliashberg equations converged in    157 iterations
+ 
+Temperature (kelvin) :    2.291087652    
+Number of Matsubara frequencies :   1362
+Eliashberg equations converged in    175 iterations
+ 
+Temperature (kelvin) :    2.383790621    
+Number of Matsubara frequencies :   1312
+Eliashberg equations converged in    200 iterations
+ 
+Temperature (kelvin) :    2.476493589    
+Number of Matsubara frequencies :   1266
+Eliashberg equations converged in    232 iterations
+ 
+Temperature (kelvin) :    2.569196558    
+Number of Matsubara frequencies :   1223
+Eliashberg equations converged in    279 iterations
+ 
+Temperature (kelvin) :    2.661899526    
+Number of Matsubara frequencies :   1183
+Eliashberg equations converged in    349 iterations
+ 
+Temperature (kelvin) :    2.754602495    
+Number of Matsubara frequencies :   1146
+Eliashberg equations converged in    468 iterations
+ 
+Temperature (kelvin) :    2.847305463    
+Number of Matsubara frequencies :   1112
+Eliashberg equations converged in    720 iterations
+ 
+Temperature (kelvin) :    2.940008432    
+Number of Matsubara frequencies :   1079
+Failed to converge: possibly close to T_c
+ 
+Temperature (kelvin) :    3.032711401    
+Number of Matsubara frequencies :   1049
+Failed to converge: possibly close to T_c
+ 
+Temperature (kelvin) :    3.125414369    
+Number of Matsubara frequencies :   1020
+Failed to converge: possibly close to T_c
+ 
+Temperature (kelvin) :    3.218117338    
+Number of Matsubara frequencies :    993
+Eliashberg equations converged in    323 iterations
+ 
+Temperature (kelvin) :    3.310820306    
+Number of Matsubara frequencies :    967
+Eliashberg equations converged in      1 iterations
+ 
+Temperature (kelvin) :    3.403523275    
+Number of Matsubara frequencies :    943
+Eliashberg equations converged in     41 iterations
+ 
+Temperature (kelvin) :    3.496226244    
+Number of Matsubara frequencies :    920
+Eliashberg equations converged in      1 iterations
+ 
+Temperature (kelvin) :    3.588929212    
+Number of Matsubara frequencies :    898
+Eliashberg equations converged in     17 iterations
+ 
+Temperature (kelvin) :    3.681632181    
+Number of Matsubara frequencies :    878
+Eliashberg equations converged in      1 iterations
+ 
+Temperature (kelvin) :    3.774335149    
+Number of Matsubara frequencies :    858
+Eliashberg equations converged in      9 iterations
+ 
+Temperature (kelvin) :    3.867038118    
+Number of Matsubara frequencies :    840
+Eliashberg equations converged in      1 iterations
+ 
+Temperature (kelvin) :    3.959741086    
+Number of Matsubara frequencies :    822
+Eliashberg equations converged in      6 iterations
+ 
+Temperature (kelvin) :    4.052444055    
+Number of Matsubara frequencies :    805
+Eliashberg equations converged in      1 iterations
+ 
+Temperature (kelvin) :    4.145147024    
+Number of Matsubara frequencies :    789
+Eliashberg equations converged in      1 iterations
+ 
+Temperature (kelvin) :    4.237849992    
+Number of Matsubara frequencies :    773
+Eliashberg equations converged in      5 iterations

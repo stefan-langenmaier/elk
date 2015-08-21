@@ -38,7 +38,7 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ias,ld,io1,io2
+integer ias,ld,io,jo
 integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
 real(8) t1
 complex(8) zt1,zsum
@@ -46,33 +46,30 @@ complex(8) zt1,zsum
 complex(8) zv(ngp)
 ld=ngp+nlotot
 ias=idxas(ia,is)
+lm1=0
 do l1=0,lmaxmat
   do m1=-l1,l1
-    lm1=idxlm(l1,m1)
-    do io1=1,apword(l1,is)
+    lm1=lm1+1
+    do io=1,apword(l1,is)
       zv(:)=0.d0
-      do l3=0,lmaxapw
+      lm3=0
+      do l3=0,lmaxmat
         do m3=-l3,l3
-          lm3=idxlm(l3,m3)
+          lm3=lm3+1
           if (lm1.ge.lm3) then
-            do io2=1,apword(l3,is)
+            do jo=1,apword(l3,is)
               zsum=0.d0
               do l2=0,lmaxvr
                 if (mod(l1+l2+l3,2).eq.0) then
                   do m2=-l2,l2
                     lm2=idxlm(l2,m2)
-                    if ((l2.eq.0).or.(l1.ge.l3)) then
-                      zt1=gntyry(lm1,lm2,lm3)*haa(io1,l1,io2,l3,lm2,ias)
-                    else
-                      zt1=gntyry(lm1,lm2,lm3)*haa(io1,l3,io2,l1,lm2,ias)
-                    end if
-                    zsum=zsum+zt1
+                    zsum=zsum+gntyry(lm1,lm2,lm3)*haa(lm2,jo,l3,io,l1,ias)
                   end do
                 end if
               end do
               if (lm1.eq.lm3) zsum=zsum*0.5d0
               if (abs(dble(zsum))+abs(aimag(zsum)).gt.1.d-14) then
-                call zaxpy(ngp,zsum,apwalm(:,io2,lm3,ias),1,zv,1)
+                call zaxpy(ngp,zsum,apwalm(:,jo,lm3,ias),1,zv,1)
               end if
             end do
           end if
@@ -80,28 +77,28 @@ do l1=0,lmaxmat
       end do
       if (tapp) then
 ! apply the Hamiltonian to a set of vectors
-        call zmatinpv(ngp,zone,apwalm(:,io1,lm1,ias),zv,nstfv,nmatmax,v,h)
+        call zmatinpv(ngp,zone,apwalm(:,io,lm1,ias),zv,nstfv,nmatmax,v,h)
       else
 ! compute the matrix explicitly
-        call zmatinp(tpmat,ngp,zone,apwalm(:,io1,lm1,ias),zv,ld,h)
+        call zmatinp(ngp,zone,apwalm(:,io,lm1,ias),zv,ld,h)
       end if
     end do
   end do
 end do
 ! kinetic surface contribution
 t1=0.25d0*rmt(is)**2
+lm1=0
 do l1=0,lmaxmat
   do m1=-l1,l1
-    lm1=idxlm(l1,m1)
-    do io1=1,apword(l1,is)
-      do io2=1,apword(l1,is)
-        zt1=t1*apwfr(nrmt(is),1,io1,l1,ias)*apwdfr(io2,l1,ias)
+    lm1=lm1+1
+    do io=1,apword(l1,is)
+      do jo=1,apword(l1,is)
+        zt1=t1*apwfr(nrmt(is),1,io,l1,ias)*apwdfr(jo,l1,ias)
         if (tapp) then
-          call zmatinpv(ngp,zt1,apwalm(:,io1,lm1,ias),apwalm(:,io2,lm1,ias), &
+          call zmatinpv(ngp,zt1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias), &
            nstfv,nmatmax,v,h)
         else
-          call zmatinp(tpmat,ngp,zt1,apwalm(:,io1,lm1,ias), &
-           apwalm(:,io2,lm1,ias),ld,h)
+          call zmatinp(ngp,zt1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias),ld,h)
         end if
       end do
     end do

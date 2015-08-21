@@ -152,13 +152,9 @@ do it=1,maxitoep
 !$OMP END DO
 !$OMP END PARALLEL
   end do
-!$OMP PARALLEL WORKSHARE
   zvxir(:)=zvxir(:)-tau*dvxir(:)
-!$OMP END PARALLEL WORKSHARE
   do idm=1,ndmag
-!$OMP PARALLEL WORKSHARE
     zbxir(:,idm)=zbxir(:,idm)-tau*dbxir(:,idm)
-!$OMP END PARALLEL WORKSHARE
   end do
 ! end iteration loop
 end do

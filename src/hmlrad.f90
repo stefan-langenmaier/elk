@@ -31,44 +31,51 @@ implicit none
 ! local variables
 integer is,ia,ias,nr,ir
 integer l1,l2,l3,m2,lm2
-integer ilo,ilo1,ilo2,io,io1,io2
+integer ilo,jlo,io,jo
 real(8) t1
+! allocatable arrays
+real(8), allocatable :: fr(:),gr(:),cf(:,:)
 ! automatic arrays
-real(8) r2(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) r2(nrmtmax)
 ! begin loops over atoms and species
 do is=1,nspecies
   nr=nrmt(is)
-  do ir=1,nr
-    r2(ir)=spr(ir,is)**2
-  end do
+  r2(1:nr)=spr(1:nr,is)**2
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(fr,gr,cf,ias) &
+!$OMP PRIVATE(l1,l2,l3,io,jo,ir) &
+!$OMP PRIVATE(m2,lm2,t1,ilo,jlo)
+!$OMP DO
   do ia=1,natoms(is)
+    allocate(fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax))
     ias=idxas(ia,is)
 !---------------------------!
 !     APW-APW integrals     !
 !---------------------------!
     do l1=0,lmaxmat
-      do io1=1,apword(l1,is)
-        do l3=0,lmaxapw
-          do io2=1,apword(l3,is)
+      do io=1,apword(l1,is)
+        do l3=0,lmaxmat
+          do jo=1,apword(l3,is)
             if (l1.eq.l3) then
               do ir=1,nr
-                fr(ir)=apwfr(ir,1,io1,l1,ias)*apwfr(ir,2,io2,l3,ias)*r2(ir)
+                fr(ir)=apwfr(ir,1,io,l1,ias)*apwfr(ir,2,jo,l3,ias)*r2(ir)
               end do
               call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-              haa(io1,l1,io2,l3,1,ias)=gr(nr)/y00
+              haa(1,jo,l3,io,l1,ias)=gr(nr)/y00
             else
-              haa(io1,l1,io2,l3,1,ias)=0.d0
+              haa(1,jo,l3,io,l1,ias)=0.d0
             end if
             if (l1.ge.l3) then
+              lm2=1
               do l2=1,lmaxvr
                 do m2=-l2,l2
-                  lm2=idxlm(l2,m2)
+                  lm2=lm2+1
                   do ir=1,nr
-                    t1=apwfr(ir,1,io1,l1,ias)*apwfr(ir,1,io2,l3,ias)*r2(ir)
+                    t1=apwfr(ir,1,io,l1,ias)*apwfr(ir,1,jo,l3,ias)*r2(ir)
                     fr(ir)=t1*veffmt(lm2,ir,ias)
                   end do
                   call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-                  haa(io1,l1,io2,l3,lm2,ias)=gr(nr)
+                  haa(lm2,jo,l3,io,l1,ias)=gr(nr)
                 end do
               end do
             end if
@@ -88,9 +95,9 @@ do is=1,nspecies
               fr(ir)=lofr(ir,1,ilo,ias)*apwfr(ir,2,io,l3,ias)*r2(ir)
             end do
             call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-            hloa(ilo,io,l3,1,ias)=gr(nr)/y00
+            hloa(1,io,l3,ilo,ias)=gr(nr)/y00
           else
-            hloa(ilo,io,l3,1,ias)=0.d0
+            hloa(1,io,l3,ilo,ias)=0.d0
           end if
           do l2=1,lmaxvr
             do m2=-l2,l2
@@ -100,7 +107,7 @@ do is=1,nspecies
                 fr(ir)=t1*veffmt(lm2,ir,ias)
               end do
               call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-              hloa(ilo,io,l3,lm2,ias)=gr(nr)
+              hloa(lm2,io,l3,ilo,ias)=gr(nr)
             end do
           end do
         end do
@@ -109,34 +116,37 @@ do is=1,nspecies
 !-----------------------------------------------!
 !     local-orbital-local-orbital integrals     !
 !-----------------------------------------------!
-    do ilo1=1,nlorb(is)
-      l1=lorbl(ilo1,is)
-      do ilo2=1,nlorb(is)
-        l3=lorbl(ilo2,is)
+    do ilo=1,nlorb(is)
+      l1=lorbl(ilo,is)
+      do jlo=1,nlorb(is)
+        l3=lorbl(jlo,is)
         if (l1.eq.l3) then
           do ir=1,nr
-            fr(ir)=lofr(ir,1,ilo1,ias)*lofr(ir,2,ilo2,ias)*r2(ir)
+            fr(ir)=lofr(ir,1,ilo,ias)*lofr(ir,2,jlo,ias)*r2(ir)
           end do
           call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-          hlolo(ilo1,ilo2,1,ias)=gr(nr)/y00
+          hlolo(1,jlo,ilo,ias)=gr(nr)/y00
         else
-          hlolo(ilo1,ilo2,1,ias)=0.d0
+          hlolo(1,jlo,ilo,ias)=0.d0
         end if
         do l2=1,lmaxvr
           do m2=-l2,l2
             lm2=idxlm(l2,m2)
             do ir=1,nr
-              t1=lofr(ir,1,ilo1,ias)*lofr(ir,1,ilo2,ias)*r2(ir)
+              t1=lofr(ir,1,ilo,ias)*lofr(ir,1,jlo,ias)*r2(ir)
               fr(ir)=t1*veffmt(lm2,ir,ias)
             end do
             call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-            hlolo(ilo1,ilo2,lm2,ias)=gr(nr)
+            hlolo(lm2,jlo,ilo,ias)=gr(nr)
           end do
         end do
       end do
     end do
+    deallocate(fr,gr,cf)
 ! end loops over atoms and species
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end do
 return
 end subroutine

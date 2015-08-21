@@ -47,7 +47,7 @@ do ispn=1,nspnfv
      evecfv(:,:,ispn))
   else
 ! directly
-    call seceqnfv(nmat(ispn,ik),ngk(ispn,ik),igkig(:,ispn,ik), &
+    call seceqnfv(nmat(ispn,ik),ngk(ispn,ik),igkig(:,ispn,ik),vkc(:,ik), &
      vgkc(:,:,ispn,ik),apwalm(:,:,:,:,ispn),evalfv(:,ispn),evecfv(:,:,ispn))
   end if
 end do

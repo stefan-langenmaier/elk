@@ -28,16 +28,21 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir,nr
-integer l,ilo,ilo1,ilo2,io
+integer is,ia,ias,nr
+integer ilo,jlo,l,io
+! allocatable arrays
+real(8), allocatable :: fr(:),gr(:),cf(:,:)
 ! automatic arrays
-real(8) r2(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) r2(nrmtmax)
 do is=1,nspecies
   nr=nrmt(is)
-  do ir=1,nr
-    r2(ir)=spr(ir,is)**2
-  end do
+  r2(1:nr)=spr(1:nr,is)**2
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(fr,gr,cf,ias) &
+!$OMP PRIVATE(ilo,jlo,l,io)
+!$OMP DO
   do ia=1,natoms(is)
+    allocate(fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax))
     ias=idxas(ia,is)
 !--------------------------------------!
 !     APW-local-orbital integtrals     !
@@ -45,9 +50,7 @@ do is=1,nspecies
     do ilo=1,nlorb(is)
       l=lorbl(ilo,is)
       do io=1,apword(l,is)
-        do ir=1,nr
-          fr(ir)=apwfr(ir,1,io,l,ias)*lofr(ir,1,ilo,ias)*r2(ir)
-        end do
+        fr(1:nr)=apwfr(1:nr,1,io,l,ias)*lofr(1:nr,1,ilo,ias)*r2(1:nr)
         call fderiv(-1,nr,spr(:,is),fr,gr,cf)
         oalo(io,ilo,ias)=gr(nr)
       end do
@@ -55,19 +58,20 @@ do is=1,nspecies
 !-----------------------------------------------!
 !     local-orbital-local-orbital integrals     !
 !-----------------------------------------------!
-    do ilo1=1,nlorb(is)
-      l=lorbl(ilo1,is)
-      do ilo2=1,nlorb(is)
-        if (lorbl(ilo2,is).eq.l) then
-          do ir=1,nr
-            fr(ir)=lofr(ir,1,ilo1,ias)*lofr(ir,1,ilo2,ias)*r2(ir)
-          end do
+    do ilo=1,nlorb(is)
+      l=lorbl(ilo,is)
+      do jlo=1,nlorb(is)
+        if (lorbl(jlo,is).eq.l) then
+          fr(1:nr)=lofr(1:nr,1,ilo,ias)*lofr(1:nr,1,jlo,ias)*r2(1:nr)
           call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-          ololo(ilo1,ilo2,ias)=gr(nr)
+          ololo(ilo,jlo,ias)=gr(nr)
         end if
       end do
     end do
+    deallocate(fr,gr,cf)
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end do
 return
 end subroutine

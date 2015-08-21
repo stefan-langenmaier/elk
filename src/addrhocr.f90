@@ -10,9 +10,9 @@ subroutine addrhocr
 ! !USES:
 use modmain
 ! !DESCRIPTION:
-!   Adds the core density to the muffin-tin and interstitial densities. A
-!   uniform background density is added in the interstitial region to take into
-!   account leakage of core charge from the muffin-tin spheres.
+!   Adds the core density and magnetisation to the muffin-tin functions. Also
+!   computes the amount of leakage of core charge from the muffin-tin spheres
+!   into the interstitial.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)
@@ -22,16 +22,14 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer nr,ir,ispn
-real(8) sum1,sum2
-real(8) v(3),t1,t2
+real(8) sum,v(3),t1,t2
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
-sum1=0.d0
-sum2=0.d0
 do is=1,nspecies
   nr=nrmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
+    sum=0.d0
 ! loop over spin channels
     do ispn=1,nspncr
       do ir=1,nr
@@ -41,8 +39,10 @@ do is=1,nspecies
       end do
 ! compute the core charge inside the muffin-tins
       call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-      sum1=sum1+fourpi*gr(nr)
+      sum=sum+fourpi*gr(nr)
     end do
+! core leakage charge
+    chgcrlk(ias)=chgcr(is)-sum
 ! add to the magnetisation in the case of a spin-polarised core
     if (spincore) then
       if (ncmag) then
@@ -63,12 +63,7 @@ do is=1,nspecies
       end if
     end if
   end do
-  sum2=sum2+dble(natoms(is))*(4.d0*pi/3.d0)*rmt(is)**3
 end do
-! add remaining core charge to interstitial density
-chgcrlk=chgcr-sum1
-t1=chgcrlk/(omega-sum2)
-rhoir(:)=rhoir(:)+t1
 return
 end subroutine
 !EOC

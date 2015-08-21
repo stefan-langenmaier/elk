@@ -12,12 +12,16 @@ integer, intent(out) :: isym
 integer, intent(out) :: iq
 ! local variables
 integer lspl,iv(3)
-real(8) s(3,3),v1(3),v2(3),t1
+real(8) v1(3),v2(3),t1
 do isym=1,nsymcrys
   lspl=lsplsymc(isym)
-  s(:,:)=dble(symlat(:,:,lspl))
-  call r3mtv(s,vpl,v1)
+! multiply transpose of symmetry matrix with vpl
+  v1(:)=symlat(1,:,lspl)*vpl(1) &
+       +symlat(2,:,lspl)*vpl(2) &
+       +symlat(3,:,lspl)*vpl(3)
+! map vector components to [0,1) interval
   call r3frac(epslat,v1,iv)
+! search q-points for this vector
   do iq=1,nqpt
     v2(:)=vql(:,iq)
     call r3frac(epslat,v2,iv)

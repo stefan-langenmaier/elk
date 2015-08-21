@@ -101,7 +101,11 @@ do l=1,noptcomp
             eji=eji+delta(jst,ist,jk)
           end if
 ! scissor correction
-          eji=eji+scissor
+          if (scissor.ne.0.d0) then
+            t1=(eji+scissor)/eji
+            zt1=zt1*t1**2
+            eji=eji+scissor
+          end if
         end if
         if (abs(eji).gt.1.d-8) then
           t1=occsv(ist,jk)*(1.d0-occsv(jst,jk)/occmax)/eji
@@ -186,7 +190,6 @@ write(*,'(" for components")')
 do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
-write(*,*)
 deallocate(w,sigma)
 if (usegdft) deallocate(delta)
 return

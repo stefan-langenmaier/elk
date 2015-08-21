@@ -1,7 +1,7 @@
 
 ! Copyright (C) 2009 J. K. Dewhurst, S. Sharma and E. K. U. Gross
-! This file is distributed under the terms of the GNU Lesser General Public
-! License. See the file COPYING for license details.
+! This file is distributed under the terms of the GNU General Public License.
+! See the file COPYING for license details.
 
 module modtest
 
@@ -42,6 +42,13 @@ if ((present(iva)).or.(present(rva)).or.(present(zva))) then
     write(*,'("Error(writetest): missing argument nv")')
     write(*,*)
     stop
+  else
+    if (nv.le.0) then
+      write(*,*)
+      write(*,'("Error(writetest): nv <= 0 : ",I8)') nv
+      write(*,*)
+      stop
+    end if
   end if
 end if
 if ((present(rv)).or.(present(rva)).or.(present(zv)).or.(present(zva))) then
@@ -59,31 +66,29 @@ if (present(iv)) then
   write(90,'(I8,I4)') 1,1
   write(90,'(2I8)') 1,iv
 else if (present(rv)) then
-  write(90,'(I8,I4)') 1,2
+  write(90,'(I8,I4)') 2,1
   write(90,'(G22.12)') tol
   write(90,'(I8,G22.12)') 1,rv
 else if (present(zv)) then
-  write(90,'(I8,I4)') 2,2
+  write(90,'(I8,I4)') 3,1
   write(90,'(G22.12)') tol
-  write(90,'(I8,G22.12)') 1,dble(zv)
-  write(90,'(I8,G22.12)') 2,aimag(zv)
+  write(90,'(I8,2G22.12)') 1,dble(zv),aimag(zv)
 else if (present(iva)) then
-  write(90,'(I8,I4)') nv,1
+  write(90,'(I8,I4)') 1,nv
   do i=1,nv
     write(90,'(2I8)') i,iva(i)
   end do
 else if (present(rva)) then
-  write(90,'(I8,I4)') nv,2
+  write(90,'(I8,I4)') 2,nv
   write(90,'(G22.12)') tol
   do i=1,nv
     write(90,'(I8,G22.12)') i,rva(i)
   end do
 else if (present(zva)) then
-  write(90,'(I8,I4)') 2*nv,2
+  write(90,'(I8,I4)') 3,nv
   write(90,'(G22.12)') tol
   do i=1,nv
-    write(90,'(I8,G22.12)') 2*i-1,dble(zva(i))
-    write(90,'(I8,G22.12)') 2*i,aimag(zva(i))
+    write(90,'(I8,2G22.12)') i,dble(zva(i)),aimag(zva(i))
   end do
 end if
 close(90)

@@ -115,9 +115,8 @@ case(63)
   write(*,'(" 3D wavefunction modulus squared written to WF3D.OUT")')
 end select
 if (task.ne.162) then
-  write(*,'(" for k-point ",I6," and state ",I6)') kstlist(1,1),kstlist(2,1)
+  write(*,'(" for k-point ",I8," and state ",I6)') kstlist(1,1),kstlist(2,1)
 end if
-write(*,*)
 deallocate(evecfv,evecsv)
 return
 end subroutine

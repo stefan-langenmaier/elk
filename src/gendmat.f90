@@ -105,9 +105,9 @@ do j=1,nstsv
               fr1(irc)=dble(zt1)*t1
               fr2(irc)=aimag(zt1)*t1
             end do
-            call fderiv(-1,nrcmt(is),rcmt(:,is),fr1,gr,cf)
+            call fderiv(-2,nrcmt(is),rcmt(:,is),fr1,gr,cf)
             t1=gr(nrcmt(is))
-            call fderiv(-1,nrcmt(is),rcmt(:,is),fr2,gr,cf)
+            call fderiv(-2,nrcmt(is),rcmt(:,is),fr2,gr,cf)
             t2=gr(nrcmt(is))
             dmat(lm1,lm2,ispn,jspn,j)=cmplx(t1,t2,8)
 10 continue

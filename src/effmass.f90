@@ -173,7 +173,6 @@ write(*,*)
 write(*,'("Info(effmass):")')
 write(*,'(" effective mass tensor for each state written to EFFMASS.OUT")')
 write(*,'(" for k-point (lattice) ",3G18.10)') vklem
-write(*,*)
 deallocate(ipiv,a,b,c)
 return
 end subroutine

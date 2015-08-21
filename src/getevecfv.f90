@@ -39,7 +39,7 @@ real(8) vkl_(3),v(3)
 real(8) si(3,3),t1
 complex(8) zt1
 ! allocatable arrays
-complex(8), allocatable :: evecfvt(:,:)
+complex(8), allocatable :: evecfv_(:,:)
 ! find the equivalent k-point number and crystal symmetry element
 call findkpt(vpl,isym,ik)
 ! find the record length
@@ -87,7 +87,7 @@ end if
 t1=abs(vpl(1)-vkl(1,ik))+abs(vpl(2)-vkl(2,ik))+abs(vpl(3)-vkl(3,ik))
 if (t1.lt.epslat) return
 ! allocate temporary eigenvector array
-allocate(evecfvt(nmatmax,nstfv))
+allocate(evecfv_(nmatmax,nstfv))
 ! index to spatial rotation in lattice point group
 lspl=lsplsymc(isym)
 ! the inverse of the spatial symmetry rotates k into p
@@ -100,7 +100,7 @@ do ispn=1,nspnfv
   if (tvzsymc(isym)) then
 ! translation vector is zero
     do igk=1,ngk(ispn,ik)
-      evecfvt(igk,:)=evecfv(igk,:,ispn)
+      evecfv_(igk,:)=evecfv(igk,:,ispn)
     end do
   else
 ! non-zero translation vector gives a phase factor
@@ -108,7 +108,7 @@ do ispn=1,nspnfv
       ig=igkig(igk,ispn,ik)
       t1=-twopi*dot_product(dble(ivg(:,ig)),vtlsymc(:,isym))
       zt1=cmplx(cos(t1),sin(t1),8)
-      evecfvt(igk,:)=zt1*evecfv(igk,:,ispn)
+      evecfv_(igk,:)=zt1*evecfv(igk,:,ispn)
     end do
   end if
 ! inverse rotation used because transformation is passive
@@ -120,12 +120,11 @@ do ispn=1,nspnfv
         +abs(v(2)-vgpl(2,igp,ispn)) &
         +abs(v(3)-vgpl(3,igp,ispn))
       if (t1.lt.epslat) then
-        evecfv(igp,:,ispn)=evecfvt(igk,:)
+        evecfv(igp,:,ispn)=evecfv_(igk,:)
         if (igp.eq.i) i=i+1
-        goto 10
+        exit
       end if
     end do
-10 continue
   end do
 end do
 !---------------------------------------------------------!
@@ -138,7 +137,7 @@ if (nlotot.gt.0) then
   do ispn=1,nspnfv
 ! make a copy of the local-orbital coefficients
     do i=ngk(ispn,ik)+1,nmat(ispn,ik)
-      evecfvt(i,:)=evecfv(i,:,ispn)
+      evecfv_(i,:)=evecfv(i,:,ispn)
     end do
     do is=1,nspecies
       do ia=1,natoms(is)
@@ -157,7 +156,7 @@ if (nlotot.gt.0) then
           lm=idxlm(l,-l)
           i=ngk(ispn,ik)+idxlo(lm,ilo,ias)
           j=ngk(ispn,ik)+idxlo(lm,ilo,jas)
-          call rotzflm(symlatc(:,:,lspl),l,l,nstfv,nmatmax,evecfvt(j,1), &
+          call rotzflm(symlatc(:,:,lspl),l,l,nstfv,nmatmax,evecfv_(j,1), &
            evecfv(i,1,ispn))
           evecfv(i:i+2*l,:,ispn)=zt1*evecfv(i:i+2*l,:,ispn)
         end do
@@ -165,7 +164,7 @@ if (nlotot.gt.0) then
     end do
   end do
 end if
-deallocate(evecfvt)
+deallocate(evecfv_)
 return
 end subroutine
 !EOC

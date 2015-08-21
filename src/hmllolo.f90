@@ -14,30 +14,30 @@ integer, intent(in) :: ngp
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ld,ias,ilo1,ilo2
+integer ld,ias,ilo,jlo
 integer l1,l2,l3,m1,m2,m3
 integer lm1,lm2,lm3
 integer ist,i,j,k,ki,kj
 complex(8) zsum
 ld=ngp+nlotot
 ias=idxas(ia,is)
-do ilo1=1,nlorb(is)
-  l1=lorbl(ilo1,is)
+do ilo=1,nlorb(is)
+  l1=lorbl(ilo,is)
   do m1=-l1,l1
     lm1=idxlm(l1,m1)
-    i=ngp+idxlo(lm1,ilo1,ias)
-    do ilo2=1,nlorb(is)
-      l3=lorbl(ilo2,is)
+    i=ngp+idxlo(lm1,ilo,ias)
+    do jlo=1,nlorb(is)
+      l3=lorbl(jlo,is)
       do m3=-l3,l3
         lm3=idxlm(l3,m3)
-        j=ngp+idxlo(lm3,ilo2,ias)
+        j=ngp+idxlo(lm3,jlo,ias)
         if (i.le.j) then
           zsum=0.d0
           do l2=0,lmaxvr
             if (mod(l1+l2+l3,2).eq.0) then
               do m2=-l2,l2
                 lm2=idxlm(l2,m2)
-                zsum=zsum+gntyry(lm1,lm2,lm3)*hlolo(ilo1,ilo2,lm2,ias)
+                zsum=zsum+gntyry(lm1,lm2,lm3)*hlolo(lm2,jlo,ilo,ias)
               end do
             end if
           end do
@@ -57,11 +57,7 @@ do ilo1=1,nlorb(is)
 !$OMP END PARALLEL
           else
 ! calculate the matrix elements
-            if (tpmat) then
-              k=i+((j-1)*j)/2
-            else
-              k=i+(j-1)*ld
-            end if
+            k=i+(j-1)*ld
             h(k)=h(k)+zsum
           end if
         end if

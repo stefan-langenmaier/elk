@@ -65,7 +65,7 @@ do isym=1,nsymlat
     end do
     do ja=1,natoms(is)
 ! apply lattice symmetry to atomic positions
-      call r3mv(sl,apl2(:,ja,is),v)
+      v(:)=sl(:,1)*apl2(1,ja,is)+sl(:,2)*apl2(2,ja,is)+sl(:,3)*apl2(3,ja,is)
 ! map coordinates to [0,1)
       call r3frac(epslat,v,iv)
 ! check if atomic positions are invariant

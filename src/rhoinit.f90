@@ -21,9 +21,8 @@ use modmain
 !BOC
 implicit none
 ! local variables
-! polynomial order of smooth step function
-integer, parameter :: n=4
-integer lmax,lmmax,l,m,lm,ir,irc
+integer, parameter :: lmax=1
+integer lmmax,l,m,lm,ir,irc
 integer is,ia,ias,ig,ifg
 real(8) x,t1,t2
 complex(8) zt1,zt2,zt3
@@ -31,16 +30,17 @@ complex(8) zt1,zt2,zt3
 real(8) fr(spnrmax),gr(spnrmax),cf(4,spnrmax)
 ! allocatable arrays
 real(8), allocatable :: jlgr(:,:)
-real(8), allocatable :: th(:,:)
+real(8), allocatable :: th(:)
 real(8), allocatable :: ffacg(:)
 complex(8), allocatable :: zfmt(:,:)
 complex(8), allocatable :: zfft(:)
-! maximum angular momentum for density initialisation
-lmax=1
+! external functions
+real(8) erf
+external erf
 lmmax=(lmax+1)**2
 ! allocate local arrays
 allocate(jlgr(0:lmax,nrcmtmax))
-allocate(th(nrmtmax,nspecies))
+allocate(th(spnrmax))
 allocate(ffacg(ngvec))
 allocate(zfmt(lmmax,nrcmtmax))
 allocate(zfft(ngrtot))
@@ -55,8 +55,9 @@ end if
 zfft(:)=0.d0
 do is=1,nspecies
 ! generate smooth step function
-  do ir=1,nrmt(is)
-    th(ir,is)=(spr(ir,is)/rmt(is))**n
+  do ir=1,spnr(is)
+    x=0.5d0*gmaxvr*(spr(ir,is)-rmt(is))
+    th(ir)=0.5d0*(1.d0+erf(x))
   end do
   do ig=1,ngvec
     do ir=1,spnr(is)
@@ -67,12 +68,7 @@ do is=1,nspecies
       else
         t1=1.d0
       end if
-      t2=t1*sprho(ir,is)*spr(ir,is)**2
-      if (ir.lt.nrmt(is)) then
-        fr(ir)=th(ir,is)*t2
-      else
-        fr(ir)=t2
-      end if
+      fr(ir)=t1*th(ir)*sprho(ir,is)*spr(ir,is)**2
     end do
     call fderiv(-1,spnr(is),spr(:,is),fr,gr,cf)
     ffacg(ig)=(fourpi/omega)*gr(spnr(is))
@@ -124,7 +120,7 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ir=1,nrmt(is)
-      t2=(t1+(1.d0-th(ir,is))*sprho(ir,is))/y00
+      t2=(t1+sprho(ir,is))/y00
       rhomt(1,ir,ias)=rhomt(1,ir,ias)+t2
     end do
   end do

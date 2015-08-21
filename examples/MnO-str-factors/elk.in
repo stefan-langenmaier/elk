@@ -21,7 +21,7 @@
 ! with vhmat. They have zero intensity for  X-ray structure factors but are of
 ! non-zero intensity in case of magnetic structure factors.
 !
-! Example by Alexey Baranov.
+! Example by Alexey I. Baranov.
 
 tasks
   0
@@ -73,6 +73,15 @@ ngridk
 ! maximum |H|
 hmax
  6.0
+
+! H-vectors are reduced by the symmorphic crystal symmetries
+reduceh
+ .true.
+
+! uncomment the following lines to define an energy window for which only the
+! orbitals within this window will contribute to the structure factors
+!wsfac
+! -1.0 -0.1
 
 ! H-vector transformation matrix for the conventional cell (cubic, a=8.397946)
 ! in the usual matrix row-column setting and applied directly as H' = MH but

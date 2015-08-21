@@ -93,6 +93,8 @@ integer spl(maxspst,maxspecies)
 integer spk(maxspst,maxspecies)
 ! spcore is .true. if species state is core
 logical spcore(maxspst,maxspecies)
+! total number of core states
+integer nstcr
 ! state eigenvalue for each species
 real(8) speval(maxspst,maxspecies)
 ! state occupancy for each species
@@ -231,6 +233,8 @@ integer isymlat(48)
 real(8) symlatc(3,3,48)
 ! tshift is .true. if atomic basis is allowed to be shifted
 logical tshift
+! tsyminv is .true. if the crystal has inversion symmetry
+logical tsyminv
 ! maximum of symmetries allowed
 integer, parameter :: maxsymcrys=192
 ! number of crystal symmetries
@@ -279,7 +283,7 @@ real(8), allocatable :: vgc(:,:)
 real(8), allocatable :: gc(:)
 ! spherical harmonics of the G-vectors
 complex(8), allocatable :: ylmg(:,:)
-! structure factor for the G-vectors
+! structure factors for the G-vectors
 complex(8), allocatable :: sfacg(:,:)
 ! G-space characteristic function: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
@@ -420,6 +424,8 @@ integer xctau
 real(8), allocatable :: rhomt(:,:,:)
 ! interstitial real-space charge density
 real(8), allocatable :: rhoir(:)
+! trhonorm is .true. if the density is to be normalised after every iteration
+logical trhonorm
 ! muffin-tin magnetisation vector field
 real(8), allocatable :: magmt(:,:,:,:)
 ! interstitial magnetisation vector field
@@ -428,8 +434,8 @@ real(8), allocatable :: magir(:,:)
 real(8), allocatable :: vclmt(:,:,:)
 ! interstitial real-space Coulomb potential
 real(8), allocatable :: vclir(:)
-! order of polynomial for pseudocharge density
-integer npsden
+! Poisson solver pseudocharge density constant l + n(l)
+integer lnpsd
 ! muffin-tin exchange-correlation potential
 real(8), allocatable :: vxcmt(:,:,:)
 ! interstitial real-space exchange-correlation potential
@@ -473,6 +479,12 @@ character(256) mixdescr
 ! adaptive mixing parameter
 real(8) beta0
 real(8) betamax
+! subspace dimension for Pulay mixing
+integer mixsdp
+! subspace dimension for Broyden mixing
+integer mixsdb
+! Broyden mixing parameters alpha and w0
+real(8) broydpm(2)
 
 !-------------------------------------!
 !     charge and moment variables     !
@@ -481,10 +493,12 @@ real(8) betamax
 real(8) epschg
 ! total nuclear charge
 real(8) chgzn
+! core charges
+real(8) chgcr(maxspecies)
 ! total core charge
-real(8) chgcr
+real(8) chgcrtot
 ! core leakage charge
-real(8) chgcrlk
+real(8), allocatable :: chgcrlk(:)
 ! total valence charge
 real(8) chgval
 ! excess charge
@@ -578,10 +592,6 @@ real(8) dlefe
 integer, allocatable :: nmat(:,:)
 ! maximum nmat over all k-points
 integer nmatmax
-! tpmat is .true. if packed matrices are to be used
-logical tpmat
-! size of packed matrices (or nmat^2 if tpmat is .false.)
-integer, allocatable :: npmat(:,:)
 ! index to the position of the local-orbitals in the H and O matrices
 integer, allocatable :: idxlo(:,:,:)
 ! APW-local-orbital overlap integrals
@@ -596,6 +606,9 @@ real(8), allocatable :: hloa(:,:,:,:,:)
 real(8), allocatable :: hlolo(:,:,:,:)
 ! complex Gaunt coefficient array
 complex(8), allocatable :: gntyry(:,:,:)
+! tseqr is .true. if the first-variational secular equation is to be solved as a
+! real symmetric eigenvalue problem
+logical tseqr
 ! tseqit is .true. if the first-variational secular equation is to be solved
 ! iteratively
 logical tseqit
@@ -648,7 +661,7 @@ integer, parameter :: maxkst=20
 ! number of k-point and states indices in user-defined list
 integer nkstlist
 ! user-defined list of k-point and state indices
-integer kstlist(3,maxkst)
+integer kstlist(2,maxkst)
 
 !------------------------------!
 !     core state variables     !
@@ -780,7 +793,7 @@ real(8) sqados(3)
 real(8) vecql(3)
 ! maximum initial-state energy allowed in ELNES transitions
 real(8) emaxelnes
-! maximum |H| for diffraction vectors
+! maximum |H| for density or magnetisation structure factors
 real(8) hmax
 ! H-vector transformation matrix
 real(8) vhmat(3,3)
@@ -790,6 +803,10 @@ integer nhvec
 integer, allocatable :: ivh(:,:)
 ! H-vector multiplicity
 integer, allocatable :: mulh(:)
+! structure factor energy window
+real(8) wsfac(2)
+! reduceh is .true. if the H-vectors are reduced with the crystal symmetries
+logical reduceh
 
 !-------------------------------------!
 !     1D/2D/3D plotting variables     !
@@ -835,21 +852,23 @@ complex(8), allocatable :: zvxmt(:,:,:)
 complex(8), allocatable :: zvxir(:)
 complex(8), allocatable :: zbxmt(:,:,:,:)
 complex(8), allocatable :: zbxir(:,:)
+! hybrid is .true. if a hybrid functional is to be used
+logical hybrid
 ! hybrid functional mixing parameter
 real(8) hybmix
 
-!------------------------------------!
-!     many-body theory variables     !
-!------------------------------------!
-! |G| cut-off for the RPA dielectric response function
+!--------------------------------------------------------!
+!     many-body perturbation theory (MBPT) variables     !
+!--------------------------------------------------------!
+! |G| cut-off for the RPA dielectric function
 real(8) gmaxrpa
-! number of G vectors for the RPA dielectric response function
+! number of G-vectors for the RPA dielectric function
 integer ngrpa
 ! number of RPA frequencies
 integer nwrpa
 ! complex RPA frequencies
 complex(8), allocatable :: wrpa(:)
-! exp(iG.r) functions for all RPA G vectors
+! exp(iG.r) functions for all MBPT G-vectors
 complex(8), allocatable :: expgmt(:,:,:,:)
 complex(8), allocatable :: expgir(:,:)
 
@@ -858,6 +877,14 @@ complex(8), allocatable :: expgir(:,:)
 !-------------------------------------------------!
 ! number of valence and conduction states for transitions
 integer nvbse,ncbse
+! default number of valence and conduction states
+integer nvbse0,ncbse0
+! maximum number of extra valence and conduction states
+integer, parameter :: maxxbse=20
+! number of extra valence and conduction states
+integer nvxbse,ncxbse
+! extra valence and conduction states
+integer istxbse(maxxbse),jstxbse(maxxbse)
 ! total number of transitions
 integer nvcbse
 ! size of blocks in BSE Hamiltonian matrix
@@ -877,6 +904,14 @@ real(8), allocatable :: evalbse(:)
 ! if bsefull is .true. then the full BSE Hamiltonian is calculated, otherwise
 ! only the Hermitian block
 logical bsefull
+
+!--------------------------------------------------------------------!
+!     Time-dependent density functional theory (TDDFT) variables     !
+!--------------------------------------------------------------------!
+! exchange-correlation kernel type
+integer fxctype
+! parameters for long range correction (LRC) kernel
+real(8) fxclrc(2)
 
 !--------------------------!
 !     timing variables     !
@@ -946,7 +981,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,2,20 /
+data version / 1,3,15 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

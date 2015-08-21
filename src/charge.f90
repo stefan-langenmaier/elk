@@ -21,7 +21,7 @@ use modtest
 implicit none
 ! local variables
 integer is,ia,ias,ir
-real(8) sum,t1
+real(8) sum
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 ! find the muffin-tin charges
@@ -45,14 +45,6 @@ end do
 chgir=sum*omega/dble(ngrtot)
 ! total calculated charge
 chgcalc=chgmttot+chgir
-t1=chgtot/chgcalc
-if (abs(t1-1.d0).gt.epschg) then
-  write(*,*)
-  write(*,'("Warning(charge): total charge density incorrect for s.c. &
-   &loop ",I5)') iscl
-  write(*,'(" Calculated : ",G18.10)') chgcalc
-  write(*,'(" Required   : ",G18.10)') chgtot
-end if
 ! write calculated total charge to test file
 call writetest(400,'calculated total charge',tol=1.d-6,rv=chgcalc)
 return

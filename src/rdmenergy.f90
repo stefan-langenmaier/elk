@@ -11,6 +11,7 @@ subroutine rdmenergy
 use modmain
 use modrdm
 use modmpi
+use modtest
 ! !DESCRIPTION:
 !   Calculates RDMFT total energy (free energy for finite temperatures).
 !
@@ -80,6 +81,8 @@ if (rdmtemp.gt.0.d0) then
   call rdmentropy
   engytot=engytot-rdmtemp*rdmentrpy
 end if
+! write total energy to test file
+call writetest(300,'RDMFT total energy',tol=1.d-6,rv=engytot)
 return
 end subroutine
 !EOC

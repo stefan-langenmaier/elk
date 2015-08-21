@@ -9,49 +9,33 @@ use modphonon
 use modtest
 implicit none
 ! local variables
-integer n,ik,iq,i,j
+integer nb,ik,iq,i,j
 integer i1,i2,i3,iw
 integer lwork,info
-real(8) wmin,wmax,wd,dw,wlog
-real(8) v(3),lambda,tc,t1
+real(8) wmin,wmax,wd,dw
+real(8) wlog,wrms,lambda,tc
+real(8) v(3),t1
 ! allocatable arrays
-real(8), allocatable :: wq(:,:)
-real(8), allocatable :: wp(:)
-real(8), allocatable :: gq(:,:)
-real(8), allocatable :: a2fp(:)
-real(8), allocatable :: w(:)
-real(8), allocatable :: a2f(:)
-real(8), allocatable :: f(:),g(:),cf(:,:)
-real(8), allocatable :: rwork(:)
-complex(8), allocatable :: dynq(:,:,:)
-complex(8), allocatable :: dynp(:,:)
-complex(8), allocatable :: dynr(:,:,:)
+real(8), allocatable :: wq(:,:),wp(:),gq(:,:),a2fp(:)
+real(8), allocatable :: w(:),a2f(:),rwork(:)
+complex(8), allocatable :: dynq(:,:,:),dynp(:,:),dynr(:,:,:)
 complex(8), allocatable :: ev(:,:),b(:,:)
-complex(8), allocatable :: a2fmq(:,:,:)
-complex(8), allocatable :: a2fmr(:,:,:)
-complex(8), allocatable :: a2fmp(:,:)
+complex(8), allocatable :: a2fmq(:,:,:),a2fmr(:,:,:),a2fmp(:,:)
 complex(8), allocatable :: work(:)
 ! initialise universal variables
 call init0
 call init1
 call init2
-n=3*natmtot
-allocate(wq(n,nqpt))
-allocate(wp(n))
-allocate(gq(n,nqpt))
-allocate(a2fp(n))
-allocate(w(nwdos))
-allocate(a2f(nwdos))
-allocate(f(nwdos),g(nwdos),cf(4,nwdos))
-allocate(rwork(3*n))
-allocate(dynq(n,n,nqpt))
-allocate(dynp(n,n))
-allocate(dynr(n,n,ngridq(1)*ngridq(2)*ngridq(3)))
-allocate(ev(n,n),b(n,n))
-allocate(a2fmq(n,n,nqpt))
-allocate(a2fmr(n,n,ngridq(1)*ngridq(2)*ngridq(3)))
-allocate(a2fmp(n,n))
-lwork=2*n
+nb=3*natmtot
+allocate(wq(nb,nqpt),wp(nb),gq(nb,nqpt),a2fp(nb))
+allocate(w(nwdos),a2f(nwdos),rwork(3*nb))
+allocate(dynq(nb,nb,nqpt),dynp(nb,nb))
+allocate(dynr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(ev(nb,nb),b(nb,nb))
+allocate(a2fmq(nb,nb,nqpt))
+allocate(a2fmr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(a2fmp(nb,nb))
+lwork=2*nb
 allocate(work(lwork))
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
@@ -74,17 +58,17 @@ do iq=1,nqpt
   call dyndiag(dynq(:,:,iq),wq(:,iq),ev)
 ! construct a complex matrix from the phonon eigenvectors such that its
 ! eigenvalues squared are the phonon linewidths divided by the frequency
-  do i=1,n
+  do i=1,nb
     if (wq(i,iq).gt.1.d-8) then
       t1=sqrt(abs(gq(i,iq)/wq(i,iq)))
     else
       t1=0.d0
     end if
-    do j=1,n
+    do j=1,nb
       b(i,j)=t1*conjg(ev(j,i))
     end do
   end do
-  call zgemm('N','N',n,n,n,zone,ev,n,b,n,zzero,a2fmq(:,:,iq),n)
+  call zgemm('N','N',nb,nb,nb,zone,ev,nb,b,nb,zzero,a2fmq(:,:,iq),nb)
 end do
 ! Fourier transform the matrices to real-space
 call dynqtor(a2fmq,a2fmr)
@@ -93,7 +77,7 @@ wmin=0.d0
 wmax=0.d0
 do iq=1,nqpt
   wmin=min(wmin,wq(1,iq))
-  wmax=max(wmax,wq(n,iq))
+  wmax=max(wmax,wq(nb,iq))
 end do
 wmax=wmax+(wmax-wmin)*0.1d0
 wmin=wmin-(wmax-wmin)*0.1d0
@@ -118,10 +102,10 @@ do i1=0,ngrdos-1
 ! compute the alpha^2F matrix at this particular q-point
       call dynrtoq(v,a2fmr,a2fmp)
 ! diagonlise the alpha^2F matrix
-      call zheev('N','U',n,a2fmp,n,a2fp,work,lwork,rwork,info)
+      call zheev('N','U',nb,a2fmp,nb,a2fp,work,lwork,rwork,info)
 ! square the eigenvalues to recover the linewidths divided by the frequency
       a2fp(:)=a2fp(:)**2
-      do i=1,n
+      do i=1,nb
         t1=(wp(i)-wmin)/dw+1.d0
         iw=nint(t1)
         if ((iw.ge.1).and.(iw.le.nwdos)) then
@@ -151,45 +135,16 @@ write(*,'("Info(alpha2f):")')
 write(*,'(" Eliashberg function written to ALPHA2F.OUT")')
 ! write the Eliashberg function to test file
 call writetest(250,'Eliashberg function',nv=nwdos,tol=1.d-2,rva=a2f)
-! compute the total lambda
-do iw=1,nwdos
-  if (w(iw).gt.1.d-8) then
-    f(iw)=a2f(iw)/w(iw)
-  else
-    f(iw)=0.d0
-  end if
-end do
-call fderiv(-1,nwdos,w,f,g,cf)
-lambda=2.d0*g(nwdos)
-open(50,file='LAMBDA.OUT',action='WRITE',form='FORMATTED')
+! compute lambda, logarithmic average frequency, RMS average frequency and
+! McMillan-Allen-Dynes superconducting critical temperature
+call mcmillan(w,a2f,lambda,wlog,wrms,tc)
+open(50,file='MCMILLAN.OUT',action='WRITE',form='FORMATTED')
 write(50,*)
-write(50,'("Electron-phonon mass enhancement parameter, lambda : ",G18.10)') &
- lambda
-close(50)
-write(*,*)
-write(*,'("Info(alpha2f):")')
-write(*,'(" Electron-phonon mass enhancement parameter, lambda, written to &
- &LAMBDA.OUT")')
-! write lambda to test file
-call writetest(251,'Electron-phonon mass enhancement parameter, lambda', &
- tol=1.d-2,rv=lambda)
-! compute the logarithmic average frequency
-do iw=1,nwdos
-  if (w(iw).gt.1.d-8) then
-    f(iw)=a2f(iw)*log(w(iw))/w(iw)
-  else
-    f(iw)=0.d0
-  end if
-end do
-call fderiv(-1,nwdos,w,f,g,cf)
-t1=(2.d0/lambda)*g(nwdos)
-wlog=exp(t1)
-! compute McMillan-Allen-Dynes superconducting critical temperature
-t1=(-1.04d0*(1.d0+lambda))/(lambda-mustar-0.62d0*lambda*mustar)
-tc=(wlog/(1.2d0*kboltz))*exp(t1)
-open(50,file='TC_MCMILLAN.OUT',action='WRITE',form='FORMATTED')
+write(50,'("Electron-phonon coupling constant, lambda : ",G18.10)') lambda
 write(50,*)
 write(50,'("Logarithmic average frequency : ",G18.10)') wlog
+write(50,*)
+write(50,'("RMS average frequency : ",G18.10)') wrms
 write(50,*)
 write(50,'("Coulomb pseudopotential, mu* : ",G18.10)') mustar
 write(50,*)
@@ -199,10 +154,14 @@ write(50,*)
 close(50)
 write(*,*)
 write(*,'("Info(alpha2f):")')
-write(*,'(" McMillan-Allen-Dynes superconducting critical temperature, T_c,&
- & written to TC_MCMILLAN.OUT")')
-write(*,*)
-deallocate(wq,wp,gq,a2fp,w,a2f,f,g,cf)
+write(*,'(" Electron-phonon coupling constant, lambda;")')
+write(*,'(" logarithmic and RMS average frequencies;")')
+write(*,'(" and McMillan-Allen-Dynes superconducting critical temperature")')
+write(*,'(" written to MCMILLAN.OUT")')
+! write lambda to test file
+call writetest(251,'Electron-phonon coupling constant, lambda',tol=1.d-2, &
+ rv=lambda)
+deallocate(wq,wp,gq,a2fp,w,a2f)
 deallocate(rwork,dynq,dynp,dynr,ev,b)
 deallocate(a2fmq,a2fmr,a2fmp,work)
 return

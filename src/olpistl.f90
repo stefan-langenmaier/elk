@@ -72,11 +72,7 @@ else
 !$OMP PRIVATE(i,k,iv,ig)
 !$OMP DO
   do j=1,ngp
-    if (tpmat) then
-      k=((j-1)*j)/2
-    else
-      k=(j-1)*ld
-    end if
+    k=(j-1)*ld
     do i=1,j
       k=k+1
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))

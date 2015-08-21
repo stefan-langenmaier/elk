@@ -127,7 +127,6 @@ if (task.eq.100) then
 else
   write(*,'(" in terms of separate eigenvalues minus the Fermi energy")')
 end if
-write(*,*)
 return
 end subroutine
 

@@ -14,8 +14,6 @@ real(8), intent(out) :: dv
 integer, intent(inout) :: nwork
 real(8), intent(inout) :: work(*)
 ! local variables
-! maximum subspace dimension for the Pulay mixer
-integer, parameter :: maxsd=3
 select case(mtype)
 case(1)
 ! adaptive linear mixing
@@ -27,17 +25,18 @@ case(1)
 case(2)
 ! Pulay mixing
   if (nwork.le.0) then
-    nwork=2*maxsd*n
+    nwork=2*mixsdp*n
     return
   end if
-  call mixpulay(iscl,n,maxsd,v,work,work(n*maxsd+1),dv)
+  call mixpulay(iscl,n,mixsdp,v,work,work(n*mixsdp+1),dv)
 case(3)
-! Anderson mixing
+! Broyden mixing
   if (nwork.le.0) then
-    nwork=8*n
+    nwork=(4+2*mixsdb)*n+mixsdb**2
     return
   end if
-  call mixander(iscl,beta0,n,v,work,work(3*n+1),work(6*n+1),dv)
+  call mixbroyden(iscl,n,mixsdb,broydpm(1),broydpm(2),v,work,work(2*n+1), &
+   work(4*n+1),work((4+mixsdb)*n+1),work((4+2*mixsdb)*n+1),dv)
 case default
   write(*,*)
   write(*,'("Error(mixerifc): mtype not defined : ",I8)') mtype
@@ -58,7 +57,7 @@ case(1)
 case(2)
   mixdescr='Pulay mixing, Chem. Phys. Lett. 73, 393 (1980)'
 case(3)
-  mixdescr='Anderson mixing, J. Assoc. Comput. Mach. 12, 547 (1964)'
+  mixdescr='Broyden mixing, J. Phys. A: Math. Gen. 17, L317 (1984)'
 case default
   write(*,*)
   write(*,'("Error(getmixdata): mixtype not defined : ",I8)') mtype

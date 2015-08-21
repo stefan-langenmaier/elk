@@ -41,8 +41,8 @@ complex(8), intent(out) :: zfh(nhvec)
 integer is,ia,ias
 integer nrc,irc,ir
 integer ih,ig,l,m,lm
-real(8) vhl(3),vhc(3),hc,tp(2)
-real(8) x,t1,t2,t3
+real(8) vhl(3),vhc(3),hc
+real(8) tp(2),x,t1,t2
 complex(8) zsum1,zsum2
 complex(8) zt1,zt2,zt3
 ! automatic arrays
@@ -144,10 +144,10 @@ do ih=1,nhvec
         fr2(irc)=aimag(zsum1)
       end do
       call fderiv(-1,nrc,rcmt(:,is),fr1,gr,cf)
-      t2=gr(nrc)
+      t1=gr(nrc)
       call fderiv(-1,nrc,rcmt(:,is),fr2,gr,cf)
-      t3=gr(nrc)
-      zfh(ih)=zfh(ih)+(fourpi/omega)*conjg(zt1)*cmplx(t2,t3,8)
+      t2=gr(nrc)
+      zfh(ih)=zfh(ih)+(fourpi/omega)*conjg(zt1)*cmplx(t1,t2,8)
     end do
   end do
 end do

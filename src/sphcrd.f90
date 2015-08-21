@@ -26,21 +26,21 @@ real(8), intent(in) :: v(3)
 real(8), intent(out) :: r
 real(8), intent(out) :: tp(2)
 ! local variables
-real(8), parameter :: twopi=6.2831853071795864769d0
+real(8), parameter :: pi=3.1415926535897932385d0
 real(8), parameter :: eps=1.d-14
 real(8) t1
 r=sqrt(v(1)**2+v(2)**2+v(3)**2)
 if (r.gt.eps) then
   t1=v(3)/r
-  if (t1.gt.1.d0) then
-    t1=1.d0
-  else if (t1.lt.-1.d0) then
-    t1=-1.d0
+  if (t1.ge.1.d0) then
+    tp(1)=0.d0
+  else if (t1.le.-1.d0) then
+    tp(1)=pi
+  else
+    tp(1)=acos(t1)
   end if
-  tp(1)=acos(t1)
   if ((abs(v(1)).gt.eps).or.(abs(v(2)).gt.eps)) then
     tp(2)=atan2(v(2),v(1))
-    if (tp(2).lt.0.d0) tp(2)=tp(2)+twopi
   else
     tp(2)=0.d0
   end if

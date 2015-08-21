@@ -10,7 +10,7 @@ subroutine bandstr
 ! !USES:
 use modmain
 ! !DESCRIPTION:
-!   Produces a band structure along the path in reciprocal-space which connects
+!   Produces a band structure along the path in reciprocal space which connects
 !   the vertices in the array {\tt vvlp1d}. The band structure is obtained from
 !   the second-variational eigenvalues and is written to the file {\tt BAND.OUT}
 !   with the Fermi energy set to zero. If required, band structures are plotted
@@ -181,7 +181,6 @@ end do
 close(50)
 write(*,*)
 write(*,'(" vertex location lines written to BANDLINES.OUT")')
-write(*,*)
 deallocate(e)
 if (task.eq.21) deallocate(bc)
 return

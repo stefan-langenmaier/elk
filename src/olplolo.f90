@@ -14,18 +14,18 @@ integer, intent(in) :: ngp
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ld,ias,ilo1,ilo2,l,m,lm
+integer ld,ias,ilo,jlo,l,m,lm
 integer ist,i,j,k,ki,kj
 ld=ngp+nlotot
 ias=idxas(ia,is)
-do ilo1=1,nlorb(is)
-  l=lorbl(ilo1,is)
-  do ilo2=1,nlorb(is)
-    if (lorbl(ilo2,is).eq.l) then
+do ilo=1,nlorb(is)
+  l=lorbl(ilo,is)
+  do jlo=1,nlorb(is)
+    if (lorbl(jlo,is).eq.l) then
       do m=-l,l
         lm=idxlm(l,m)
-        i=ngp+idxlo(lm,ilo1,ias)
-        j=ngp+idxlo(lm,ilo2,ias)
+        i=ngp+idxlo(lm,ilo,ias)
+        j=ngp+idxlo(lm,jlo,ias)
         if (i.le.j) then
           if (tapp) then
 ! apply the overlap operator to v
@@ -36,19 +36,15 @@ do ilo1=1,nlorb(is)
               k=(ist-1)*nmatmax
               ki=k+i
               kj=k+j
-              o(ki)=o(ki)+ololo(ilo1,ilo2,ias)*v(kj)
-              if (i.ne.j) o(kj)=o(kj)+ololo(ilo1,ilo2,ias)*v(ki)
+              o(ki)=o(ki)+ololo(ilo,jlo,ias)*v(kj)
+              if (i.ne.j) o(kj)=o(kj)+ololo(ilo,jlo,ias)*v(ki)
             end do
 !$OMP END DO
 !$OMP END PARALLEL
           else
 ! calculate the matrix elements
-            if (tpmat) then
-              k=i+((j-1)*j)/2
-            else
-              k=i+(j-1)*ld
-            end if
-            o(k)=o(k)+ololo(ilo1,ilo2,ias)
+            k=i+(j-1)*ld
+            o(k)=o(k)+ololo(ilo,jlo,ias)
           end if
         end if
       end do

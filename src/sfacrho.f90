@@ -1,5 +1,5 @@
 
-! Copyright (C) 2010 Alexey I. Baranov.
+! Copyright (C) 2010 A. I. Baranov and F. Wagner.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -14,8 +14,10 @@ use modmain
 !   the total electron density
 !   $$ F({\bf H})=\int_{\Omega}d^3r\,\rho({\bf r})e^{i{\bf H}\cdot{\bf r}}, $$
 !   to the file {\tt SFACRHO.OUT}. The lattice coordinates $(h,k,l)$ of the
-!   $\bf H$-vectors in this file are transformed by the matrix {\tt vhmat}. See
-!   also routines {\tt zftrf} and {\tt genhvec}.
+!   $\bf H$-vectors in this file are transformed by the matrix {\tt vhmat}. If
+!   and energy window is set using the variable {\tt wsfac}, then only those
+!   states within the window are used to compute the density. See also routines
+!   {\tt zftrf} and {\tt genhvec}.
 !
 ! !REVISION HISTORY:
 !   Created July 2010 (Alexey I. Baranov)
@@ -28,15 +30,10 @@ integer ih
 real(8) v(3),h,a,b,r
 ! allocatable arrays
 complex(8), allocatable :: zrhoh(:)
-! initialise universal variables
-call init0
-call init1
-! generate the H-vectors
-call genhvec
-! read density and potentials from file
-call readstate
+! initialise the structure factor specific variables
+call sfacinit
+! calculate the density structure factors
 allocate(zrhoh(nhvec))
-! calculate structure factors
 call zftrf(rhomt,rhoir,zrhoh)
 open(50,file='SFACRHO.OUT',action='WRITE',form='FORMATTED')
 write(50,*)
@@ -77,6 +74,7 @@ close(50)
 write(*,*)
 write(*,'("Info(sfacrho): density structure factors written to SFACRHO.OUT")')
 write(*,*)
+write(*,'(" Energy window : ",2G18.10)') wsfac(:)
 return
 end subroutine
 !EOC

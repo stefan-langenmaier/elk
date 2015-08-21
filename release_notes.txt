@@ -1,3 +1,69 @@
+elk-1.3.15
+-fixed serious bug introduced in the last version affecting some tasks (for
+ example DOS plots) for crystals with non-symorphic symmetries; thanks to
+ Vladimir Nazarov and Daniel Rohr for pointing this out
+-VM also fixed the graphene example, in which the atomic coordinates were
+ (embarrassingly) incorrect; also included a high-precision DOS plot to
+ demonstrate the Dirac-like band structure
+-SS, JKD, Antonio Sanna and Hardy Gross added a new TDDFT functional, called the
+ 'bootstrap' kernel, which produces remarkably good linear optical response
+ functions (article currently in preparation); see the example 'LiF-TDDFT'
+-Antonio Sanna added the Eliashberg equations for finding the superconducting
+ gap as a function of temperature; see the example 'Al-Eliashberg'
+-improved the electron-phonon coupling calculation (task=240); this is faster,
+ more accurate and now works for spin-spirals; now also parallelised with MPI
+-removed packed matrix format everwhere in the code, along with the variable
+ 'tpmat'; the first-variational matrices are now stored in upper triangular
+ format; this takes more memory, but is faster
+-Anton Kozhevnikov fixed a small problem with calculating the nuclear-nuclear
+ energy
+-various optimisations, simplifications and minor bug fixes
+-this version of the code with be used in the CECAM Tutorial
+Notes for developers
+-the order of indeices for the q- and w-dependent inverse dielectric function,
+ epsinv, have changed from (w,G,G') to (G,G',w)
+
+elk-1.3.2
+-linear response time-dependent density functional theory (TDDFT) now available
+ for calculating the q->0 dielectric response; see the example 'LiF-TDDFT'
+ (experimental)
+-fixed a problem with the BSE calculation which made the response function too
+ large
+-added the possibility of using arbitrary states in the BSE kernel thanks to
+ discussions with Markus Meinert; this enables the calulation of core state BSE
+ spectra; see the example 'CaO-BSE-core' (experimental)
+-MM also added an X-ray magnetic circular dichroism (XMCD) example: 'Fe-XMCD'
+-BSE calculations are now faster, thanks to discussions with MM
+-Alexey Baranov made several changes to the structure factor code, including
+ adding an energy window, 'wsfac', for the calculations; see the example
+ 'MnO-str-factors'
+-Tyrel McQueen suggested a way to speed up the Hartree-Fock calculation; this
+ has been implemented and also considerably speeds up OEP and RDMFT
+-TMcQ also made some ongoing changes to the hybrid functional code
+-made the radial Dirac and Schrodinger integrators yet more stable; thanks to AB
+ and Frank Wagner for discussions
+-fixed a problem with the ordinary RPA dielectric function; only affects
+ calculations which have a scissor shift which made epsilon slightly too small
+-real symmetric diagonalisation now used for the first-variational eigenvalue
+ problem for crystals with inversion symmetry; this can speed up the calculation
+ by a factor of three; this is thanks to discussions with Lars Nordstrom;
+ Important: the atomic basis may be shifted to a different position and old
+ output files may need to be reconverged
+-fixed a stability problem which occurs when using GGA functionals by removing
+ G-vector truncation of the effective potential introduced in version 1.0.16;
+ thanks to Greg Walker for discovering this
+-LDA+U calculations are now faster thanks to fast evaluation of the atomic
+ density matrix
+-Broyden mixing scheme now available: this seems to be both fast and stable
+ (use 'mixtype=3')
+-removed Anderson mixing
+-improved starting guess for the density in ground-state calculations
+-upgraded to LAPACK 3.3.1
+-various optimisations and simplifications
+Notes for developers
+-the arrays haa, halo, hlolo, oalo, ololo are now smaller and the indexing has
+ been rearranged
+
 elk-1.2.20
 -the Bethe-Salpeter equation (BSE) for linear optics now works beyond the
  Tamm-Dankoff approximation
@@ -28,7 +94,8 @@ elk-1.2.15
 -Simone Chiesa, Anton Kozhevnikov and Adolfo Eguiluz found a problem in the
  plotting of the partial DOS which has now been fixed
 -the first-variational eigenvalue matrices can now be stored and diagonalised in
- non-packed storage mode: use 'tpmat=.false.'. This can speed up calculations at the expense of memory
+ non-packed storage mode: use 'tpmat=.false.'. This can speed up calculations at
+ the expense of memory
 -Tyrel McQueen found a bug in the 'findprim' routine, now fixed
 -TMcQ also suggested a change to how the code connects the points of the
  'plot1d' vertices

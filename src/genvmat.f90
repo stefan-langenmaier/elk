@@ -50,9 +50,6 @@ do ik=1,nkpt
   allocate(evecsv(nstsv,nstsv))
   allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
   allocate(wfir(ngrtot,nspinor,nstsv))
-!$OMP CRITICAL
-  write(*,'("Info(genvmat): ",I6," of ",I6," k-points")') ik,nkpt
-!$OMP END CRITICAL
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &

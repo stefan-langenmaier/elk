@@ -33,62 +33,37 @@ complex(8) zrho01,zrho02,zt1,zt2
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
 integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:)
-real(8), allocatable :: vgkcnr(:,:)
-real(8), allocatable :: gkcnr(:)
-real(8), allocatable :: tpgkcnr(:,:)
-real(8), allocatable :: vgqc(:,:)
-real(8), allocatable :: tpgqc(:,:)
-real(8), allocatable :: gqc(:)
-real(8), allocatable :: jlgqr(:,:,:)
-real(8), allocatable :: jlgq0r(:,:,:)
-complex(8), allocatable :: sfacgknr(:,:)
-complex(8), allocatable :: apwalm(:,:,:,:)
-complex(8), allocatable :: evecfv(:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: ylmgq(:,:)
-complex(8), allocatable :: sfacgq(:,:)
-complex(8), allocatable :: wfmt1(:,:,:,:,:)
-complex(8), allocatable :: wfmt2(:,:,:,:,:)
-complex(8), allocatable :: wfir1(:,:,:)
-complex(8), allocatable :: wfir2(:,:,:)
-complex(8), allocatable :: zrhomt(:,:,:)
-complex(8), allocatable :: zrhoir(:)
-complex(8), allocatable :: zvclmt(:,:,:)
-complex(8), allocatable :: zvclir(:)
+real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:),gkcnr(:),tpgkcnr(:,:)
+real(8), allocatable :: vgqc(:,:),tpgqc(:,:),gqc(:)
+real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
+complex(8), allocatable :: sfacgknr(:,:),apwalm(:,:,:,:)
+complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
+complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
+complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
+complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
+complex(8), allocatable :: zrhomt(:,:,:,:),zrhoir(:,:)
+complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
 ! external functions
 complex(8) zfinp
 external zfinp
 ! allocate local arrays
 allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax))
-allocate(vgkcnr(3,ngkmax))
-allocate(gkcnr(ngkmax))
-allocate(tpgkcnr(2,ngkmax))
-allocate(vgqc(3,ngvec))
-allocate(tpgqc(2,ngvec))
-allocate(gqc(ngvec))
-allocate(jlgqr(0:lmaxvr+npsden+1,ngvec,nspecies))
-allocate(jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
-allocate(sfacgknr(ngkmax,natmtot))
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
-allocate(ylmgq(lmmaxvr,ngvec))
-allocate(sfacgq(ngvec,natmtot))
+allocate(vgklnr(3,ngkmax),vgkcnr(3,ngkmax),gkcnr(ngkmax),tpgkcnr(2,ngkmax))
+allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
+allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
+allocate(sfacgknr(ngkmax,natmtot),apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
+allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv))
-allocate(wfir2(ngrtot,nspinor,nstsv))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot))
-allocate(zrhoir(ngrtot))
-allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot))
-allocate(zvclir(ngrtot))
+allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,nstsv),zrhoir(ngrtot,nstsv))
+allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
-! generate G+k vectors for non-reduced k-point ikp
+! generate G+k-vectors for non-reduced k-point ikp
 call gengpvec(vkl(:,ikp),vkc(:,ikp),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
+! generate the spherical coordinates of the G+k-vectors
 do igk=1,ngknr
   call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
 end do
@@ -118,7 +93,7 @@ do ik=1,nkpt
   iq=iqmap(iv(1),iv(2),iv(3))
   v(:)=vkc(:,ik)-vkc(:,ikp)
   do ig=1,ngvec
-! determine G+q vectors
+! determine G+q-vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
 ! G+q-vector length and (theta, phi) coordinates
     call sphcrd(vgqc(:,ig),gqc(ig),tpgqc(:,ig))
@@ -131,39 +106,36 @@ do ik=1,nkpt
   call findigp0(ngvec,gqc,igq0)
   sfacgq0(:)=sfacgq(igq0,:)
 ! compute the required spherical Bessel functions
-  call genjlgpr(lmaxvr+npsden+1,gqc,jlgqr)
+  call genjlgpr(lnpsd+1,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 !----------------------------------------------!
 !     valence-valence-valence contribution     !
 !----------------------------------------------!
-  do ist1=1,nstsv
-    do ist2=1,nstsv
-! calculate the complex overlap density
+  do ist2=1,nstsv
+    do ist1=1,nstsv
+! calculate the complex overlap density for all states
       call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
-       wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
+       wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt(:,:,:,ist1),zrhoir(:,ist1))
+    end do
+    do ist1=1,nstsv
 ! compute the potential and G=0 coefficient of the density
-      call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
-      call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq,zrhoir, &
-       nrcmtmax,zvclmt,zvclir,zrho02)
-      zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
+      call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist1),zvclmt)
+      call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
+       zrhoir(:,ist1),nrcmtmax,zvclmt,zvclir,zrho02)
+      zt1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho02)**2+aimag(zrho02)**2)
       vnlijjk(ist1,ist1,ist2,ik)=wkptnr*dble(zt1)+t1
       do ist3=1,nstsv
         if (ist1.lt.ist3) then
-! calculate the complex overlap density
-          call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist3), &
-           wfir2(:,:,ist2),wfir1(:,:,ist3),zrhomt,zrhoir)
-          zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
+          zt1=zfinp(.true.,zrhomt(:,:,:,ist3),zvclmt,zrhoir(:,ist3),zvclir)
 ! compute the density coefficient of the smallest G+q-vector
-          call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt,zrhoir,zrho01)
+          call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist3), &
+           zrhoir(:,ist3),zrho01)
           zt2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
           vnlijjk(ist3,ist1,ist2,ik)=wkptnr*zt1+zt2
-! end loop over ist3
         end if
       end do
-! end loop over ist2
     end do
-! end loop over ist1
   end do
 ! calculate the lower diagonal
   do ist1=1,nstsv

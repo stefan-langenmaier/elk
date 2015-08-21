@@ -13,16 +13,16 @@ integer is,ia,ias
 ! output charges
 write(fnum,*)
 write(fnum,'("Charges :")')
-write(fnum,'(" core",T30,": ",G18.10)') chgcr
-write(fnum,'(" core leakage",T30,": ",G18.10)') chgcrlk
+write(fnum,'(" core",T30,": ",G18.10)') chgcrtot
 write(fnum,'(" valence",T30,": ",G18.10)') chgval
 write(fnum,'(" interstitial",T30,": ",G18.10)') chgir
-write(fnum,'(" muffin-tins")')
+write(fnum,'(" muffin-tins (core leakage)")')
 do is=1,nspecies
   write(fnum,'("  species : ",I4," (",A,")")') is,trim(spsymb(is))
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    write(fnum,'("   atom ",I4,T30,": ",G18.10)') ia,chgmt(ias)
+    write(fnum,'("   atom ",I4,T30,": ",G18.10," (",G18.10,")")') ia, &
+     chgmt(ias),chgcrlk(ias)
   end do
 end do
 write(fnum,'(" total in muffin-tins",T30,": ",G18.10)') chgmttot

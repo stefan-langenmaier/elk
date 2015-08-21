@@ -25,6 +25,16 @@ implicit none
 ! local variables
 integer is,ia,ias,ir
 real(8) t1,t2
+if (.not.trhonorm) return
+! check error in total charge
+t1=chgcalc/chgtot-1.d0
+if (abs(t1).gt.epschg) then
+  write(*,*)
+  write(*,'("Warning(rhonorm): total charge density incorrect for s.c. &
+   &loop ",I5)') iscl
+  write(*,'(" Calculated : ",G18.10)') chgcalc
+  write(*,'(" Required   : ",G18.10)') chgtot
+end if
 ! error in average density
 t1=(chgtot-chgcalc)/omega
 ! add the constant difference to the density

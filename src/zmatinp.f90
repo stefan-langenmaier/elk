@@ -6,9 +6,8 @@
 !BOP
 ! !ROUTINE: zmatinp
 ! !INTERFACE:
-subroutine zmatinp(tpmat,n,alpha,x,y,ld,a)
+subroutine zmatinp(n,alpha,x,y,ld,a)
 ! !INPUT/OUTPUT PARAMETERS:
-!   tpmat : .true. if A is in packed storage (in,logical)
 !   n     : length of vectors (in,integer)
 !   alpha : complex constant (in,complex)
 !   x     : first input vector (in,complex(n))
@@ -19,7 +18,7 @@ subroutine zmatinp(tpmat,n,alpha,x,y,ld,a)
 !   Performs the rank-2 operation
 !   $$ A_{ij}\rightarrow\alpha{\bf x}_i^*{\bf y}_j+\alpha^*{\bf y}_i^*{\bf x}_j
 !    +A_{ij}. $$
-!   This is similar to the {\tt BLAS} routine {\tt zhpr2}, except that here a
+!   This is similar to the {\tt BLAS} routine {\tt zher2}, except that here a
 !   matrix of inner products is formed instead of an outer product of vectors.
 !
 ! !REVISION HISTORY:
@@ -28,7 +27,6 @@ subroutine zmatinp(tpmat,n,alpha,x,y,ld,a)
 !BOC
 implicit none
 ! arguments
-logical, intent(in) :: tpmat
 integer, intent(in) :: n
 complex(8), intent(in) :: alpha
 complex(8), intent(in) :: x(n)
@@ -45,11 +43,7 @@ complex(8) zt1
 !$OMP PRIVATE(k,zt1,a1,b1)
 !$OMP DO
 do j=1,n
-  if (tpmat) then
-    k=((j-1)*j)/2
-  else
-    k=(j-1)*ld
-  end if
+  k=(j-1)*ld
   zt1=alpha*conjg(x(j))
   if (abs(dble(zt1)).gt.eps) then
     if (abs(aimag(zt1)).gt.eps) then

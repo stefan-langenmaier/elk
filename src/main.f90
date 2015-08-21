@@ -9,6 +9,7 @@ use modmain
 use modmpi
 implicit none
 ! local variables
+logical exist
 integer itask
 ! initialise MPI execution environment
 call mpi_init(ierror)
@@ -19,26 +20,43 @@ call mpi_comm_rank(mpi_comm_world,lp_mpi,ierror)
 ! determine if the local process is the master
 if (lp_mpi.eq.0) then
   mp_mpi=.true.
+  write(*,*)
+  write(*,'("Elk code started")')
 else
   mp_mpi=.false.
 end if
 ! read input files
 call readinput
+! check if Elk is already running in this directory
+if (mp_mpi) then
+  inquire(file='RUNNING',exist=exist)
+  if (exist) then
+    write(*,*)
+    write(*,'("Info(main): multiple copies of Elk running in this directory")')
+    write(*,'("(this could be intentional, or result from a previous crash,")')
+    write(*,'(" or arise from an incorrect MPI compilation)")')
+  else
+    open(50,file='RUNNING')
+    close(50)
+  end if
+end if
 ! perform the appropriate task
 do itask=1,ntasks
   task=tasks(itask)
+  if (mp_mpi) then
+    write(*,*)
+    write(*,'("Info(main): current task : ",I6)') task
+  end if
 ! synchronise MPI processes
   call mpi_barrier(mpi_comm_world,ierror)
-  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.170).and. &
-   (task.ne.180).and.(task.ne.185).and.(task.ne.300)) then
-    write(*,*)
-    write(*,'("Info(main): MPI process ",I8," idle for task ",I8)') lp_mpi,task
+  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.135).and. &
+   (task.ne.180).and.(task.ne.185).and.(task.ne.240).and.(task.ne.300)) then
+    write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi,task
     cycle
   end if
   select case(task)
   case(-1)
     write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
-    stop
   case(0,1,2,3)
     call gndstate
   case(5,6)
@@ -85,24 +103,24 @@ do itask=1,ntasks
     call nonlinopt
   case(130)
     call writeexpmat
+  case(135)
+    call writewfpw
   case(140)
     call elnes
-  case(170)
-    call writewfpw
   case(180)
     call epsinv_rpa
   case(185)
     call bse
+  case(188)
+    call tddftlr
   case(190)
     call geomplot
   case(195)
     call sfacrho
   case(196)
     call sfacmag
-  case(201,202)
+  case(200,205)
     call phonon
-  case(200)
-    call phononsc
   case(210)
     call phdos
   case(220)
@@ -110,11 +128,13 @@ do itask=1,ntasks
   case(230)
     call writephn
   case(240)
-    call epcouple
+    call ephcouple
   case(245)
     call phlwidth
   case(250)
     call alpha2f
+  case(260)
+    call eliashberg
   case(300)
     call rdmft
   case(400)
@@ -128,13 +148,19 @@ do itask=1,ntasks
     stop
   end select
 end do
+if (mp_mpi) then
+  open(50,file='RUNNING')
+  close(50,status='DELETE')
+  write(*,*)
+  write(*,'("Elk code stopped")')
+end if
 ! terminate MPI execution environment
 call mpi_finalize(ierror)
 stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.2.20}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.15}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -152,7 +178,7 @@ end program
 !   implement new developments in the field of density functional theory and
 !   beyond.
 !
-!   \section{Acknowledgements}
+!   \section{Acknowledgments}
 !   Lots of people contributed to the Elk code with ideas, checking and testing,
 !   writing code or documentation and general encouragement. They include
 !   Claudia Ambrosch-Draxl, Clas Persson, Christian Brouder, Rickard Armiento,
@@ -162,12 +188,13 @@ end program
 !   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich, Torbj\"{o}rn
-!   Bj\"{o}rkman, Martin Stankovski and Jerzy Goraus. Special mention of David
-!   Singh's very useful book on the LAPW method\footnote{D. J. Singh, {\it
-!   Planewaves, Pseudopotentials and the LAPW Method} (Kluwer Academic
-!   Publishers, Boston, 1994).} must also be made. Finally we would like to
-!   acknowledge the generous support of Karl-Franzens-Universit\"{a}t Graz, as
-!   well as the EU Marie-Curie Research Training Networks initiative.
+!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert and Daniel
+!   Rohr. Special mention of David Singh's very useful book on the LAPW
+!   method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and the LAPW
+!   Method} (Kluwer Academic Publishers, Boston, 1994).} must also be made.
+!   Finally we would like to acknowledge the generous support of
+!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
+!   Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -178,7 +205,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, March 2011
+!   Halle and Uppsala, June 2011
 !   \newpage
 !
 !   \section{Units}
@@ -227,7 +254,21 @@ end program
 !    \begin{verbatim}
 !     export OMP_NUM_THREADS=x
 !    \end{verbatim}
-!    where x is the number of cores available on a particular node.
+!    where x is the number of cores available on a particular node. Elk also
+!    makes use of nested OpenMP parallelism, meaning that there are nested
+!    parallel loops in parts of the code, the iterative diagonaliser being one
+!    such example. These nested loops can be run in parallel by setting
+!    \begin{verbatim}
+!     export OMP_NESTED=true
+!    \end{verbatim}
+!    Be aware that using this option can actually degrade performance if too
+!    many threads are created. To avoid such oversubscription, you may need to
+!    adjust related OpenMP variables including {\tt OMP\_THREAD\_LIMIT},
+!    {\tt OMP\_MAX\_ACTIVE\_LEVELS} and {\tt OMP\_DYNAMIC} (there may also be
+!    additional compiler-specific environment variables that can be set).
+!    Finally, some vendor-supplied BLAS/LAPACK libraries use OpenMP internally,
+!    for example MKL from Intel and ACML from AMD; refer to their documentation
+!    for usage.
 !    \item
 !    The message passing interface (MPI) is particularly suitable for running
 !    Elk accross multiple nodes of a cluster, with scaling to hundreds of
@@ -375,8 +416,7 @@ end program
 !   {\tt avec(2)} & second lattice vector & real(3) & $(0.0,1.0,0.0)$ \\
 !   \hline
 !   {\tt avec(3)} & third lattice vector & real(3) & $(0.0,0.0,1.0)$}
-!   Lattice vectors of the crystal in atomic units (Bohr). If {\tt molecule} is
-!   {\tt .true.} then these vectors are not used.
+!   Lattice vectors of the crystal in atomic units (Bohr).
 !
 !   \block{beta0}{
 !   {\tt beta0} & adaptive mixing parameter & real & $0.05$}
@@ -404,6 +444,11 @@ end program
 !   entire unit cell. To apply magnetic fields in particular muffin-tins use the
 !   {\tt bfcmt} vectors in the {\tt atoms} block. Collinear calculations are
 !   more efficient if the field is applied in the $z$-direction.
+!
+!   \block{broydpm}{
+!   {\tt broydpm } & Broyden mixing parameters $\alpha$ and $w_0$ & real &
+!    $(0.25,0.01)$}
+!   See {\tt mixtype} and {\tt mixsdb}.
 !
 !   \block{chgexs}{
 !   {\tt chgexs } & excess electronic charge & real & $0.0$}
@@ -539,9 +584,17 @@ end program
 !    is used as the angular momentum cut-off & real & $0.25$}
 !   See {\tt lmaxinr}.
 !
+!   \block{fxclrc}{
+!   {\tt fxclrc} & parameters for the dynamical long-range contribution to the
+!    TDDFT exchange-correlation kernel & real(2) & $(0.0,0.0)$}
+!   These are the parameters $\alpha$ and $\beta$ for the kernel proposed in
+!   {\it Phys. Rev. B} {\bf 72}, 125203 (2005), namely
+!   $$ f_{xc}({\bf G},{\bf G}',{\bf q},\omega)=-\frac{\alpha+\beta\omega^2}{q^2}
+!    \delta_{{\bf G},{\bf G}'}\delta_{{\bf G},{\bf 0}}. $$
+!
 !   \block{gmaxrpa}{
-!   {\tt gmaxrpa} & maximum length of $|{\bf G}|$ for computing the RPA inverse
-!    dielectric function with local field contributions & real & $4.0$}
+!   {\tt gmaxrpa} & maximum length of $|{\bf G}|$ for computing RPA dielectric
+!    response function & real & $3.0$}
 !
 !   \block{gmaxvr}{
 !   {\tt gmaxvr} & maximum length of $|{\bf G}|$ for expanding the interstitial
@@ -554,7 +607,12 @@ end program
 !   \block{hmax}{
 !   {\tt hmax} & maximum length of reciprocal vectors $|{\bf H}|$ used for
 !    calculating X-ray and magnetic structure factors & real & $6.0$}
-!   See also {\tt vhmat}.
+!   See also {\tt vhmat}, {\tt reduceh} and {\tt wsfac}.
+!
+!   \block{hybrid}{
+!   {\tt hybrid} & {\tt .true} if a hybrid functional is to be used when running
+!    a Hartree-Fock calculation & logical & {\tt .false}}
+!   See also {\tt hybmix} and {\tt xctype}.
 !
 !   \block{intraband}{
 !   {\tt intraband} & {\tt .true.} if the intraband (Drude-like) contribution is
@@ -666,8 +724,17 @@ end program
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   1 & Adaptive linear mixing \\
 !   2 & Pulay mixing, {\it Chem. Phys. Lett.} {\bf 73}, 393 (1980) \\
-!   3 & Anderson mixing, {\it J. Assoc. Comput. Mach.} {\bf 12}, 547 (1965)
+!   3 & Broyden mixing, {\it J. Phys. A: Math. Gen.} {\bf 17}, L317 (1984)
 !   \end{tabularx}
+!
+!   \block{mixsdb}{
+!   {\tt mixsdb} & subspace dimension for Broyden mixing & integer & 5}
+!   This is the number of mixing vectors which define the subspace in which the
+!   Hessian matrix is calculated. See {\tt mixtype} and {\tt broydpm}.
+!
+!   \block{mixsdp}{
+!   {\tt mixsdp} & subspace dimension for Pulay mixing & integer & 3}
+!   See {\tt mixsdb} and {\tt mixtype}.
 !
 !   \block{molecule}{
 !   {\tt molecule} & {\tt .true.} if the system is an isolated molecule &
@@ -772,6 +839,11 @@ end program
 !   {\tt nstfsp} & number of states to be included in the Fermi surface plot
 !    file & integer & 6}
 !
+!   \block{ntemp}{
+!   {\tt ntemp} & number of temperature steps & integer & 20}
+!   This is the number of temperature steps to be used in the Eliashberg gap
+!   and thermodynamic properties calculations.
+!
 !   \block{nvbse}{
 !   {\tt nvbse} & number of valence states to be used for BSE calculations &
 !    integer & 2}
@@ -874,6 +946,11 @@ end program
 !   start of the self-consistent loop to break spin symmetry, while at the end
 !   of the loop the field will be effectively zero, i.e. infinitesimal. See
 !   {\tt bfieldc} and {\tt atoms}.
+!
+!   \block{reduceh}{
+!   {\tt reduceh} & set to {\tt .true.} if the reciprocal ${\bf H}$-vectors
+!    should be reduced by the symmorphic crystal symmetries & logical & .true.}
+!   See {\tt hmax} and {\tt vmat}.
 !
 !   \block{reducek}{
 !   {\tt reducek} & type of reduction of the $k$-point set & integer & 1}
@@ -1027,33 +1104,39 @@ end program
 !    sites. \\
 !   120 & Output of the momentum matrix elements
 !    $\langle\Psi_{i{\bf k}}|-i\nabla|\Psi_{j{\bf k}}\rangle$. \\
-!   121 & Linear optical response tensor. \\
+!   121 & Linear optical dielectric response tensor calculated within the random
+!    phase approximation (RPA) and in the $q\rightarrow 0$ limit, with no
+!    microscopic contributions. \\
 !   122 & Magneto optical Kerr effect (MOKE) angle. \\
 !   125 & Non-linear optical second harmonic generation. \\
 !   130 & Output matrix elements of the type
 !    $\langle\Psi_{i{\bf k+q}}|\exp[i({\bf G+q})\cdot{\bf r}]|
 !    \Psi_{j{\bf k}}\rangle$. \\
+!   135 & Output all wavefunctions expanded in the plane wave basis up to a
+!    cut-off defined by {\tt rgkmax}.
+!   \end{tabularx}
+!
+!   \begin{tabularx}{\textwidth}[h]{lX}
 !   140 & Energy loss near edge structure (ELNES). \\
 !   142, 143 & 2/3D plot of the electric field
 !    ${\bf E}({\bf r})\equiv\nabla V_{\rm C}({\bf r})$. \\
 !   152, 153 & 2/3D plot of
 !    ${\bf m}({\bf r})\times{\bf B}_{\rm xc}({\bf r})$. \\
-!   162 & Scanning-tunneling microscopy (STM) image.
-!   \end{tabularx}
-!
-!   \begin{tabularx}{\textwidth}[h]{lX}
-!   170 & Write the low and high plane wave wavefunctions to file. \\
+!   162 & Scanning-tunneling microscopy (STM) image. \\
 !   180 & Generate the RPA inverse dielectric function with local contributions
 !    and write it to file. \\
 !   185 & Solve the Bethe-Salpeter equation (BSE) and compute the BSE linear
 !    optical response tensor. \\
+!   188 & Time-dependent density functional theory (TDDFT) calculation of the
+!    $q\rightarrow 0$ dielectric response function including microscopic
+!    contributions. \\
 !   190 & Write the atomic geometry to file for plotting with XCrySDen and
 !    V\_Sim. \\
 !   195 & Calculation of X-ray density structure factors. \\
 !   196 & Calculation of magnetic structure factors. \\
 !   200 & Calculation of dynamical matrices on a $q$-point set defined by
 !    {\tt ngridq}. \\
-!   201 & Phonon dry run: just produce a set of empty DYN files. \\
+!   205 & Phonon dry run: just produce a set of empty DYN files. \\
 !   210 & Phonon density of states. \\
 !   220 & Phonon dispersion plot. \\
 !   230 & Phonon frequencies and eigenvectors for an arbitrary $q$-point. \\
@@ -1126,17 +1209,19 @@ end program
 !   from a given density matrix and set of Slater parameters at the end of the
 !   self-consistent cycle.
 !
-!   \block{tpmat}{
-!   {\tt tpmat} & set to {\tt .true.} if the first-variational matrices are to
-!    be stored in packed form & logical & {\tt .true.}}
-!   Storing the secular equation matrices $H$ and $O$ in packed form is more
-!   memory efficient, but may result in slower diagonalisation than when stored
-!   in upper triangular form.
-!
 !   \block{tseqit}{
 !   {\tt tseqit} & set to {\tt .true.} if the first-variational secular equation
 !    should be solved iteratively & logical & {\tt .false.}}
 !   See also {\tt nseqit}.
+!
+!   \block{tseqr}{
+!   {\tt tseqr} & set to {\tt .true.} if a real symmetric eigenvalue solver
+!    should be used for crystals which have inversion symmetry & logical &
+!    {\tt .true.}}
+!   For crystals with inversion symmetry, the first-variational Hamiltonian and
+!   overlap matrices can be made real by using appropriate transformations. In
+!   this case, a real symmetric (instead of complex Hermitian) eigenvalue solver
+!   can be used. This makes the calculation about three times faster.
 !
 !   \block{tshift}{
 !   {\tt tshift} & set to {\tt .true.} if the crystal can be shifted so that the
@@ -1153,7 +1238,7 @@ end program
 !   structure factor output files {\tt SFACRHO.OUT} and {\tt SFACMAG.OUT}. It is
 !   stored in the usual row-column setting and applied directly as
 !   ${\bf H}'=M{\bf H}$ to every vector but {\em only} when writing the output
-!   files. See also {\tt hmax}.
+!   files. See also {\tt hmax} and {\tt reduceh}.
 !
 !   \block{vklem}{
 !   {\tt vklem} & the $k$-point in lattice coordinates at which to compute the
@@ -1180,6 +1265,12 @@ end program
 !    real(3) & $(0.0,0.0,0.0)$}
 !   See {\tt ngridk}.
 !
+!   \block{wsfac}{
+!   {\tt wsfac} & energy window to be used when calculating density or magnetic
+!    structure factors & real(2) & $(-10^6,10^6)$}
+!   Only those states with eigenvalues within this window will contribute to the
+!   density or magnetisation. See also {\tt hmax} and {\tt vhmat}.
+!
 !   \block{xctype}{
 !   {\tt xctype} & integers defining the type of exchange-correlation functional
 !    to be used & integer(3) & $(3,0,0)$}
@@ -1187,6 +1278,8 @@ end program
 !   other value may be used for external libraries. Currently implemented are:
 !
 !   \begin{tabularx}{\textwidth}[h]{lX}
+!   $-n$ & Exact-exchange optimised effective potential (EXX-OEP) method with
+!    correlation energy and potential given by functional number $n$ \\
 !   1 & No exchange-correlation funtional ($E_{\rm xc}\equiv 0$) \\
 !   2 & LDA, Perdew-Zunger/Ceperley-Alder, {\it Phys. Rev. B} {\bf 23}, 5048
 !    (1981) \\
@@ -1254,6 +1347,7 @@ end program
 !     write(*,'("Error(readinput): natoms <= 0 : ",I8)') natoms(is)
 !     write(*,'(" for species ",I4)') is
 !     write(*,*)
+!     stop
 !    \end{verbatim}
 !   \item Wherever possible, real numbers outputted as ASCII data should be
 !    formatted with the {\tt G18.10} specifier.

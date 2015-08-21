@@ -56,43 +56,42 @@ do is=1,nspecies
   done(:)=.false.
 ! loop over atoms
   do ia=1,natoms(is)
-    if (.not.done(ia)) then
-      ias=idxas(ia,is)
-      do ir=1,nrmt(is),lrstp
-        rfmt(:,ir,ias)=0.d0
-      end do
+    if (done(ia)) cycle
+    ias=idxas(ia,is)
+    do ir=1,nrmt(is),lrstp
+      rfmt(:,ir,ias)=0.d0
+    end do
 ! loop over crystal symmetries
-      do isym=1,nsymcrys
+    do isym=1,nsymcrys
 ! index to spatial rotation lattice symmetry
-        lspl=lsplsymc(isym)
+      lspl=lsplsymc(isym)
 ! equivalent atom index (symmetry rotates atom ja into atom ia)
-        ja=ieqatom(ia,is,isym)
+      ja=ieqatom(ia,is,isym)
 ! apply the rotation to the muffin-tin function
-        call symrfmt(lrstp,is,symlatc(:,:,lspl),rfmt1(:,:,ja),rfmt2)
+      call symrfmt(lrstp,is,symlatc(:,:,lspl),rfmt1(:,:,ja),rfmt2)
 ! accumulate in original function array
-        do ir=1,nrmt(is),lrstp
-          rfmt(:,ir,ias)=rfmt(:,ir,ias)+rfmt2(:,ir)
-        end do
-      end do
-! normalise
       do ir=1,nrmt(is),lrstp
-        rfmt(:,ir,ias)=t1*rfmt(:,ir,ias)
+        rfmt(:,ir,ias)=rfmt(:,ir,ias)+rfmt2(:,ir)
       end do
-      done(ia)=.true.
+    end do
+! normalise
+    do ir=1,nrmt(is),lrstp
+      rfmt(:,ir,ias)=t1*rfmt(:,ir,ias)
+    end do
+    done(ia)=.true.
 ! rotate into equivalent atoms
-      do isym=1,nsymcrys
-        ja=ieqatom(ia,is,isym)
-        if (.not.done(ja)) then
-          jas=idxas(ja,is)
-          lspl=lsplsymc(isym)
+    do isym=1,nsymcrys
+      ja=ieqatom(ia,is,isym)
+      if (.not.done(ja)) then
+        jas=idxas(ja,is)
+        lspl=lsplsymc(isym)
 ! inverse symmetry (which rotates atom ia into atom ja)
-          ilspl=isymlat(lspl)
+        ilspl=isymlat(lspl)
 ! rotate symmetrised function into equivalent muffin-tin
-          call symrfmt(lrstp,is,symlatc(:,:,ilspl),rfmt(:,:,ias),rfmt(:,:,jas))
-          done(ja)=.true.
-        end if
-      end do
-    end if
+        call symrfmt(lrstp,is,symlatc(:,:,ilspl),rfmt(:,:,ias),rfmt(:,:,jas))
+        done(ja)=.true.
+      end if
+    end do
   end do
 end do
 deallocate(rfmt1,rfmt2)

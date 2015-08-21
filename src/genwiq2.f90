@@ -51,11 +51,6 @@ external polynom
 ! allocate global wiq2 array
 if (allocated(wiq2)) deallocate(wiq2)
 allocate(wiq2(ngridq(1)*ngridq(2)*ngridq(3)))
-! if system is a molecule wiq2 should be zero
-if (molecule) then
-  wiq2(:)=0
-  return
-end if
 ! begin loop over q-points, note that the vectors vqc are assumed to be in the
 ! first Brillouin zone
 do iq=1,nqpt

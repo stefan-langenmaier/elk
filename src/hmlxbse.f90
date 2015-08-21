@@ -12,9 +12,9 @@ integer ik2
 ! allocatable arrays
 real(8), allocatable :: jlgr(:,:,:)
 ! allocate local arrays
-allocate(jlgr(0:lmaxvr+npsden+1,ngvec,nspecies))
+allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
 ! compute the required spherical Bessel functions
-call genjlgpr(lmaxvr+npsden+1,gc,jlgr)
+call genjlgpr(lnpsd+1,gc,jlgr)
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
 do ik2=1,nkptnr

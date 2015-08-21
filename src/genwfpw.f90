@@ -3,10 +3,11 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genwfpw(vpl,ngp,igpig,vgpl,gpc,tpgpc,sfacgp,wfpw,wfpwh)
+subroutine genwfpw(twfpwh,vpl,ngp,igpig,vgpl,gpc,tpgpc,sfacgp,wfpw,wfpwh)
 use modmain
 implicit none
 ! arguments
+logical, intent(in) :: twfpwh
 real(8), intent(in) :: vpl(3)
 integer, intent(in) :: ngp(nspnfv)
 integer, intent(in) :: igpig(ngkmax,nspnfv)
@@ -76,13 +77,15 @@ end do
 !---------------------------------!
 !     muffin-tin contribution     !
 !---------------------------------!
-! initialise the high G+p wavefunction
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    wfpwh(:,1:nrcmt(is),ias,:,:)=wfmt(:,1:nrcmt(is),ias,:,:)
+! initialise the high G+p wavefunction if required
+if (twfpwh) then
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      ias=idxas(ia,is)
+      wfpwh(:,1:nrcmt(is),ias,:,:)=wfmt(:,1:nrcmt(is),ias,:,:)
+    end do
   end do
-end do
+end if
 t1=fourpi/sqrt(omega)
 ! loop over first-variational spin components
 do ispn=1,nspnfv
@@ -91,7 +94,7 @@ do ispn=1,nspnfv
   else
     jspn0=1; jspn1=nspinor
   end if
-! loop over G+p vectors
+! loop over G+p-vectors
   do igp=1,ngp(ispn)
 ! generate the spherical harmonics Y_lm(G+p)
     call genylm(lmaxvr,tpgpc(:,igp,ispn),ylm)
@@ -132,18 +135,20 @@ do ispn=1,nspnfv
             zt2=t1*cmplx(t2,t3,8)
 ! low G+p wavefunction
             wfpw(igp,jspn,ist)=wfpw(igp,jspn,ist)+zt1*zt2
-! high G+p wavefunction
-            do irc=1,nrc
-              lm=0
-              do l=0,lmaxvr
-                zt3=t1*jl(l,irc)*zt2*zil(l)
-                do m=-l,l
-                  lm=lm+1
-                  wfpwh(lm,irc,ias,jspn,ist)=wfpwh(lm,irc,ias,jspn,ist) &
-                   -zt3*conjg(ylm(lm))
+! high G+p wavefunction if required
+            if (twfpwh) then
+              do irc=1,nrc
+                lm=0
+                do l=0,lmaxvr
+                  zt3=t1*jl(l,irc)*zt2*zil(l)
+                  do m=-l,l
+                    lm=lm+1
+                    wfpwh(lm,irc,ias,jspn,ist)=wfpwh(lm,irc,ias,jspn,ist) &
+                     -zt3*conjg(ylm(lm))
+                  end do
                 end do
               end do
-            end do
+            end if
           end do
 ! end loop over states
         end do

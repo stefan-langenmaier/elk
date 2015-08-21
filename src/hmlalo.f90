@@ -31,16 +31,17 @@ do ilo=1,nlorb(is)
     lm1=idxlm(l1,m1)
     i=ngp+idxlo(lm1,ilo,ias)
     if (tapp) hi(:)=0.d0
+    lm3=0
     do l3=0,lmaxmat
       do m3=-l3,l3
-        lm3=idxlm(l3,m3)
+        lm3=lm3+1
         do io=1,apword(l3,is)
           zsum=0.d0
           do l2=0,lmaxvr
             if (mod(l1+l2+l3,2).eq.0) then
               do m2=-l2,l2
                 lm2=idxlm(l2,m2)
-                zsum=zsum+gntyry(lm1,lm2,lm3)*hloa(ilo,io,l3,lm2,ias)
+                zsum=zsum+gntyry(lm1,lm2,lm3)*hloa(lm2,io,l3,ilo,ias)
               end do
             end if
           end do
@@ -51,11 +52,7 @@ do ilo=1,nlorb(is)
               hi(1:ngp)=hi(1:ngp)+zsum*apwalm(1:ngp,io,lm3,ias)
             else
 ! calculate the matrix elements
-              if (tpmat) then
-                k=((i-1)*i)/2
-              else
-                k=(i-1)*ld
-              end if
+              k=(i-1)*ld
               do j=1,ngp
                 k=k+1
                 h(k)=h(k)+conjg(zsum*apwalm(j,io,lm3,ias))

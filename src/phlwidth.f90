@@ -7,7 +7,7 @@ subroutine phlwidth
 use modmain
 implicit none
 ! local variables
-integer n,i,j,iq,iv
+integer nb,i,j,iq,iv
 integer lwork,info
 real(8) gmin,gmax
 ! allocatable arrays
@@ -24,17 +24,17 @@ complex(8), allocatable :: work(:)
 ! initialise universal variables
 call init0
 call init2
-n=3*natmtot
-allocate(wq(n))
-allocate(gq(n,nqpt))
-allocate(gp(n,npp1d))
-allocate(rwork(3*n))
-allocate(dynq(n,n,nqpt))
-allocate(ev(n,n),b(n,n))
-allocate(gmq(n,n,nqpt))
-allocate(gmr(n,n,ngridq(1)*ngridq(2)*ngridq(3)))
-allocate(gmp(n,n))
-lwork=2*n
+nb=3*natmtot
+allocate(wq(nb))
+allocate(gq(nb,nqpt))
+allocate(gp(nb,npp1d))
+allocate(rwork(3*nb))
+allocate(dynq(nb,nb,nqpt))
+allocate(ev(nb,nb),b(nb,nb))
+allocate(gmq(nb,nb,nqpt))
+allocate(gmr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(gmp(nb,nb))
+lwork=2*nb
 allocate(work(lwork))
 ! read in the dynamical matrices
 call readdyn(dynq)
@@ -48,12 +48,12 @@ do iq=1,nqpt
   call dyndiag(dynq(:,:,iq),wq,ev)
 ! construct a complex matrix from the phonon eigenvectors such that its
 ! eigenvalues squared are the phonon linewidths
-  do i=1,n
-    do j=1,n
+  do i=1,nb
+    do j=1,nb
       b(i,j)=sqrt(abs(gq(i,iq)))*conjg(ev(j,i))
     end do
   end do
-  call zgemm('N','N',n,n,n,zone,ev,n,b,n,zzero,gmq(:,:,iq),n)
+  call zgemm('N','N',nb,nb,nb,zone,ev,nb,b,nb,zzero,gmq(:,:,iq),nb)
 end do
 ! Fourier transform the gamma matrices to real-space
 call dynqtor(gmq,gmr)
@@ -66,11 +66,11 @@ do iq=1,npp1d
 ! compute the gamma matrix at this particular q-point
   call dynrtoq(vplp1d(:,iq),gmr,gmp)
 ! diagonalise the gamma matrix
-  call zheev('N','U',n,gmp,n,gp(:,iq),work,lwork,rwork,info)
+  call zheev('N','U',nb,gmp,nb,gp(:,iq),work,lwork,rwork,info)
 ! square the eigenvalues to recover the linewidths
   gp(:,iq)=gp(:,iq)**2
   gmin=min(gmin,gp(1,iq))
-  gmax=max(gmax,gp(n,iq))
+  gmax=max(gmax,gp(nb,iq))
 end do
 gmax=gmax+(gmax-gmin)*0.5d0
 gmin=gmin-(gmax-gmin)*0.5d0
@@ -84,7 +84,7 @@ end do
 close(50)
 ! output the phonon linewidth dispersion
 open(50,file='PHLWIDTH.OUT',action='WRITE',form='FORMATTED')
-do i=1,n
+do i=1,nb
   do iq=1,npp1d
     write(50,'(2G18.10)') dpp1d(iq),gp(i,iq)
   end do
@@ -95,7 +95,6 @@ write(*,*)
 write(*,'("Info(phlwidth):")')
 write(*,'(" phonon linewidth dispersion written to PHLWIDTH.OUT")')
 write(*,'(" vertex location lines written to PHLWLINES.OUT")')
-write(*,*)
 deallocate(wq,gq,gp,rwork,dynq)
 deallocate(ev,b,gmq,gmr,gmp,work)
 return

@@ -21,7 +21,7 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir,lmax
+integer is,ia,ias,ir
 real(8) t1
 complex(8) zrho0
 ! automatic arrays
@@ -32,7 +32,7 @@ complex(8), allocatable :: zrhomt(:,:,:)
 complex(8), allocatable :: zrhoir(:)
 complex(8), allocatable :: zvclmt(:,:,:)
 complex(8), allocatable :: zvclir(:)
-allocate(jlgr(0:lmaxvr+npsden+1,ngvec,nspecies))
+allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
 allocate(zrhomt(lmmaxvr,nrmtmax,natmtot))
 allocate(zrhoir(ngrtot))
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
@@ -49,8 +49,7 @@ end do
 ! store real interstitial charge density in complex array
 zrhoir(:)=rhoir(:)
 ! compute the required spherical Bessel functions
-lmax=lmaxvr+npsden+1
-call genjlgpr(lmax,gc,jlgr)
+call genjlgpr(lnpsd+1,gc,jlgr)
 ! solve the complex Poisson's equation in the muffin-tins
 call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
 ! add the nuclear monopole potentials

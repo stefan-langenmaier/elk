@@ -7,8 +7,8 @@ subroutine projsbf
 use modmain
 implicit none
 ! local variables
-integer is,ia,ias,ir
-integer idm,lmax,lm
+integer is,ia,ias
+integer ir,idm,lm
 real(8) t1
 complex(8) zrho0
 ! allocatable arrays
@@ -29,7 +29,7 @@ allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
 allocate(rfir(ngrtot))
 allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3))
 allocate(grfir(ngrtot,3))
-allocate(jlgr(0:lmaxvr+npsden+1,ngvec,nspecies))
+allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
 allocate(zrhomt(lmmaxvr,nrmtmax,natmtot))
 allocate(zrhoir(ngrtot))
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
@@ -82,8 +82,7 @@ end do
 ! store real interstitial divergence in a complex array
 zrhoir(:)=rfir(:)
 ! compute the required spherical Bessel functions
-lmax=lmaxvr+npsden+1
-call genjlgpr(lmax,gc,jlgr)
+call genjlgpr(lnpsd+1,gc,jlgr)
 ! solve the complex Poisson's equation
 call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
 call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &

@@ -16,7 +16,8 @@ use modldapu
 !   written to the file {\tt INFO.OUT}. First- and second-variational
 !   eigenvalues, eigenvectors and occupancies are written to the unformatted
 !   files {\tt EVALFV.OUT}, {\tt EVALSV.OUT}, {\tt EVECFV.OUT}, {\tt EVECSV.OUT}
-!   and {\tt OCCSV.OUT}.
+!   and {\tt OCCSV.OUT}. The density, magnetisation, effective potential and
+!   magnetic field are written to {\tt STATE.OUT}.
 !
 ! !REVISION HISTORY:
 !   Created October 2002 (JKD)
@@ -79,13 +80,10 @@ if (mp_mpi) then
 end if
 ! initialise or read the charge density and potentials from file
 iscl=0
-if ((task.eq.1).or.(task.eq.3)) then
+if ((task.eq.1).or.(task.eq.3).or.(task.eq.202)) then
   call readstate
   if (mp_mpi) write(60,'("Potential read in from STATE.OUT")')
   if (autolinengy) call readfermi
-else if (task.eq.200) then
-  call phscveff
-  if (mp_mpi) write(60,'("Supercell potential constructed from STATE.OUT")')
 else
   call rhoinit
   call poteff
@@ -169,6 +167,8 @@ do iscl=1,maxscl
   end do
 !$OMP END DO
 !$OMP END PARALLEL
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
 ! broadcast eigenvalue array to every process
   do ik=1,nkpt
     lp=mod(ik-1,np_mpi)

@@ -63,91 +63,90 @@ do is=1,nspecies
   end do
   done(:)=.false.
   do ia=1,natoms(is)
-    if (.not.done(ia)) then
-      ias=idxas(ia,is)
-      do ir=1,nrmt(is),lrstp
-        rvfmt(:,ir,ias,:)=0.d0
-      end do
+    if (done(ia)) cycle
+    ias=idxas(ia,is)
+    do ir=1,nrmt(is),lrstp
+      rvfmt(:,ir,ias,:)=0.d0
+    end do
 ! begin loop over crystal symmetries
-      do isym=1,nsymcrys
+    do isym=1,nsymcrys
 ! equivalent atom
-        ja=ieqatom(ia,is,isym)
+      ja=ieqatom(ia,is,isym)
 ! parallel transport of vector field
-        lspl=lsplsymc(isym)
-        do i=1,ndmag
-          call symrfmt(lrstp,is,symlatc(:,:,lspl),rvfmt1(:,:,ja,i), &
-           rvfmt2(:,:,i))
-        end do
+      lspl=lsplsymc(isym)
+      do i=1,ndmag
+        call symrfmt(lrstp,is,symlatc(:,:,lspl),rvfmt1(:,:,ja,i),rvfmt2(:,:,i))
+      end do
 ! global spin proper rotation matrix in Cartesian coordinates
+      lspn=lspnsymc(isym)
+      md=symlatd(lspn)
+      sc(:,:)=dble(md)*symlatc(:,:,lspn)
+! global spin rotation of vector field
+      if (ncmag) then
+! non-collinear case
+        do ir=1,nrmt(is),lrstp
+          do lm=1,lmmaxvr
+            v(:)=sc(:,1)*rvfmt2(lm,ir,1) &
+                +sc(:,2)*rvfmt2(lm,ir,2) &
+                +sc(:,3)*rvfmt2(lm,ir,3)
+            rvfmt(lm,ir,ias,:)=rvfmt(lm,ir,ias,:)+v(:)
+          end do
+        end do
+      else
+! collinear case
+        do ir=1,nrmt(is),lrstp
+          do lm=1,lmmaxvr
+            rvfmt(lm,ir,ias,1)=rvfmt(lm,ir,ias,1)+sc(3,3)*rvfmt2(lm,ir,1)
+          end do
+        end do
+      end if
+! end loop over crystal symmetries
+    end do
+! normalise
+    do ir=1,nrmt(is),lrstp
+      rvfmt(:,ir,ias,:)=t1*rvfmt(:,ir,ias,:)
+    end do
+! mark atom as done
+    done(ia)=.true.
+! rotate into equivalent atoms
+    do isym=1,nsymcrys
+      ja=ieqatom(ia,is,isym)
+      if (.not.done(ja)) then
+        jas=idxas(ja,is)
+! parallel transport of vector field (using operation inverse)
+        lspl=lsplsymc(isym)
+        ilspl=isymlat(lspl)
+        do i=1,ndmag
+          call symrfmt(lrstp,is,symlatc(:,:,ilspl),rvfmt(:,:,ias,i), &
+           rvfmt(:,:,jas,i))
+        end do
+! inverse of global proper rotation matrix in Cartesian coordinates
         lspn=lspnsymc(isym)
-        md=symlatd(lspn)
-        sc(:,:)=dble(md)*symlatc(:,:,lspn)
+        ilspn=isymlat(lspn)
+        md=symlatd(ilspn)
+        sc(:,:)=dble(md)*symlatc(:,:,ilspn)
 ! global spin rotation of vector field
         if (ncmag) then
 ! non-collinear case
           do ir=1,nrmt(is),lrstp
             do lm=1,lmmaxvr
-              v(:)=sc(:,1)*rvfmt2(lm,ir,1) &
-                  +sc(:,2)*rvfmt2(lm,ir,2) &
-                  +sc(:,3)*rvfmt2(lm,ir,3)
-              rvfmt(lm,ir,ias,:)=rvfmt(lm,ir,ias,:)+v(:)
+              v(:)=rvfmt(lm,ir,jas,:)
+              rvfmt(lm,ir,jas,:)=sc(:,1)*v(1)+sc(:,2)*v(2)+sc(:,3)*v(3)
             end do
           end do
         else
 ! collinear case
           do ir=1,nrmt(is),lrstp
             do lm=1,lmmaxvr
-              rvfmt(lm,ir,ias,1)=rvfmt(lm,ir,ias,1)+sc(3,3)*rvfmt2(lm,ir,1)
+              rvfmt(lm,ir,jas,1)=sc(3,3)*rvfmt(lm,ir,jas,1)
             end do
           end do
         end if
-! end loop over crystal symmetries
-      end do
-! normalise
-      do ir=1,nrmt(is),lrstp
-        rvfmt(:,ir,ias,:)=t1*rvfmt(:,ir,ias,:)
-      end do
 ! mark atom as done
-      done(ia)=.true.
-! rotate into equivalent atoms
-      do isym=1,nsymcrys
-        ja=ieqatom(ia,is,isym)
-        if (.not.done(ja)) then
-          jas=idxas(ja,is)
-! parallel transport of vector field (using operation inverse)
-          lspl=lsplsymc(isym)
-          ilspl=isymlat(lspl)
-          do i=1,ndmag
-            call symrfmt(lrstp,is,symlatc(:,:,ilspl),rvfmt(:,:,ias,i), &
-             rvfmt(:,:,jas,i))
-          end do
-! inverse of global proper rotation matrix in Cartesian coordinates
-          lspn=lspnsymc(isym)
-          ilspn=isymlat(lspn)
-          md=symlatd(ilspn)
-          sc(:,:)=dble(md)*symlatc(:,:,ilspn)
-! global spin rotation of vector field
-          if (ncmag) then
-! non-collinear case
-            do ir=1,nrmt(is),lrstp
-              do lm=1,lmmaxvr
-                v(:)=rvfmt(lm,ir,jas,:)
-                rvfmt(lm,ir,jas,:)=sc(:,1)*v(1)+sc(:,2)*v(2)+sc(:,3)*v(3)
-              end do
-            end do
-          else
-! collinear case
-            do ir=1,nrmt(is),lrstp
-              do lm=1,lmmaxvr
-                rvfmt(lm,ir,jas,1)=sc(3,3)*rvfmt(lm,ir,jas,1)
-              end do
-            end do
-          end if
-! mark atom as done
-          done(ja)=.true.
-        end if
-      end do
-    end if
+        done(ja)=.true.
+      end if
+    end do
+! end loop over atoms and species
   end do
 end do
 deallocate(rvfmt1,rvfmt2)

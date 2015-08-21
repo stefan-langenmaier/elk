@@ -37,7 +37,7 @@ if ((iscl.ge.2).or.(task.eq.1).or.(task.eq.3)) then
   call getevecfv(vpl,vgpl,evecfv)
 else
 ! initialise the eigenvectors to canonical basis vectors
-  evecfv(:,:)=0.d0
+  evecfv(1:nmatp,:)=0.d0
   do ist=1,nstfv
     evecfv(ist,ist)=1.d0
   end do
@@ -47,7 +47,7 @@ do it=1,nseqit
 ! operate with H and O on the current vectors
 !$OMP PARALLEL SECTIONS DEFAULT(SHARED) PRIVATE(is,ia)
 !$OMP SECTION
-  h(:,:)=0.d0
+  h(1:nmatp,:)=0.d0
   do is=1,nspecies
     do ia=1,natoms(is)
       call hmlaa(.true.,is,ia,ngp,apwalm,evecfv,h)
@@ -57,7 +57,7 @@ do it=1,nseqit
   end do
   call hmlistl(.true.,ngp,igpig,vgpc,evecfv,h)
 !$OMP SECTION
-  o(:,:)=0.d0
+  o(1:nmatp,:)=0.d0
   do is=1,nspecies
     do ia=1,natoms(is)
       call olpaa(.true.,is,ia,ngp,apwalm,evecfv,o)
@@ -73,8 +73,8 @@ do it=1,nseqit
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
       evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
-      h(:,ist)=t1*h(:,ist)
-      o(:,ist)=t1*o(:,ist)
+      h(1:nmatp,ist)=t1*h(1:nmatp,ist)
+      o(1:nmatp,ist)=t1*o(1:nmatp,ist)
     end if
 ! estimate the eigenvalue
     evalfv(ist)=dble(zdotc(nmatp,evecfv(:,ist),1,h(:,ist),1))
@@ -84,7 +84,7 @@ do it=1,nseqit
      -t1*o(1:nmatp,ist))
   end do
 ! normalise again
-  o(:,:)=0.d0
+  o(1:nmatp,:)=0.d0
   do is=1,nspecies
     do ia=1,natoms(is)
       call olpaa(.true.,is,ia,ngp,apwalm,evecfv,o)
@@ -98,7 +98,7 @@ do it=1,nseqit
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
       evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
-      o(:,ist)=t1*o(:,ist)
+      o(1:nmatp,ist)=t1*o(1:nmatp,ist)
     end if
 ! end loop over states
   end do
@@ -119,7 +119,7 @@ do it=1,nseqit
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
       evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
-      o(:,ist)=t1*o(:,ist)
+      o(1:nmatp,ist)=t1*o(1:nmatp,ist)
     end if
   end do
 !$OMP END DO

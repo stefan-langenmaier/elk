@@ -39,7 +39,7 @@ integer l
 ! rescale limit
 real(8), parameter :: rsc=1.d150
 real(8), parameter :: rsci=1.d0/rsc
-real(8) xi,j0,j1,jt,t1,t2
+real(8) xi,j0,j1,jt,t1
 if ((lmax.lt.0).or.(lmax.gt.50)) then
   write(*,*)
   write(*,'("Error(sbessel): lmax out of range : ",I8)') lmax
@@ -56,11 +56,9 @@ end if
 if (x.lt.1.d-8) then
   jl(0)=1.d0
   t1=1.d0
-  t2=1.d0
   do l=1,lmax
-    t1=t1/dble(2*l+1)
-    t2=t2*x
-    jl(l)=t2*t1
+    t1=t1*x/dble(2*l+1)
+    jl(l)=t1
   end do
   return
 end if
@@ -68,7 +66,7 @@ xi=1.d0/x
 ! for x < lmax recurse down
 if (x.lt.dble(lmax)) then
   if (lmax.eq.0) then
-    jl(0)=sin(x)/x
+    jl(0)=sin(x)*xi
     return
   end if
 ! start from truly random numbers
@@ -107,9 +105,7 @@ if (x.lt.dble(lmax)) then
 else
 ! for large x recurse up
   jl(0)=sin(x)*xi
-  if (lmax.eq.0) return
   jl(1)=(jl(0)-cos(x))*xi
-  if (lmax.eq.1) return
   j0=jl(0)
   j1=jl(1)
   do l=2,lmax

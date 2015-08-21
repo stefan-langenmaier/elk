@@ -9,7 +9,9 @@ implicit none
 logical exist
 integer i,j,k,n
 integer nv_,nv,vt_,vt,iv_,iv
-real(8) tol,rv_,rv,t1,t2
+real(8) rv_,rv,a,b
+real(8) tol,t1,t2
+complex(8) zv_,zv
 character(256) fname_,fname,descr
 n=0
 do i=0,999
@@ -28,8 +30,17 @@ do i=0,999
     open(91,file=trim(fname),action='READ',form='FORMATTED')
     read(90,*,err=10) descr
     read(91,*,err=20) descr
-    read(90,*,err=10) nv_,vt_
-    read(91,*,err=20) nv,vt
+    read(90,*,err=10) vt_,nv_
+    read(91,*,err=20) vt,nv
+    if (vt_.ne.vt) then
+      write(*,*)
+      write(*,'("Error(testcheck): differing variable type")')
+      write(*,'(" for quantity ''",A,"''")') trim(descr)
+      write(*,'(" ",A," : ",I8)') trim(fname_),vt_
+      write(*,'(" ",A,"  : ",I8)') trim(fname),vt
+      write(*,*)
+      stop
+    end if
     if (nv_.ne.nv) then
       write(*,*)
       write(*,'("Error(testcheck): differing number of variables")')
@@ -45,16 +56,8 @@ do i=0,999
       write(*,*)
       stop
     end if
-    if (vt_.ne.vt) then
-      write(*,*)
-      write(*,'("Error(testcheck): differing variable type")')
-      write(*,'(" for quantity ''",A,"''")') trim(descr)
-      write(*,'(" ",A," : ",I8)') trim(fname_),vt_
-      write(*,'(" ",A,"  : ",I8)') trim(fname),vt
-      write(*,*)
-      stop
-    end if
     if (vt.eq.1) then
+! integer variables
       do j=1,nv
         read(90,*,err=10) k,iv_
         if (j.ne.k) goto 10
@@ -71,6 +74,7 @@ do i=0,999
         end if
       end do
     else if (vt.eq.2) then
+! real variables
       read(90,*,err=10) tol
       read(91,*,err=20) tol
       do j=1,nv
@@ -94,6 +98,33 @@ do i=0,999
           stop
         end if
       end do
+    else if (vt.eq.3) then
+! complex variables
+      read(90,*,err=10) tol
+      read(91,*,err=20) tol
+      do j=1,nv
+        read(90,*,err=10) k,a,b
+        zv_=cmplx(a,b,8)
+        if (j.ne.k) goto 10
+        read(91,*,err=20) k,a,b
+        zv=cmplx(a,b,8)
+        if (j.ne.k) goto 20
+        t1=abs(zv_-zv)
+        t2=abs(zv_)*tol
+        if ((t1.gt.t2).and.(abs(rv_).gt.1.d-4)) then
+          write(*,*)
+          write(*,'("Error(testcheck): variable ",I8," outside tolerance")') j
+          write(*,'(" for quantity ''",A,"''")') trim(descr)
+          write(*,'(" ",A," (correct value)",T40," : ",2G22.12)') &
+           trim(fname_),zv_
+          write(*,'(" ",A,T40," : ",2G22.12)') trim(fname),zv
+          write(*,'(" difference",T40," : ",G22.12)') t1
+          write(*,'(" required relative tolerance",T40," : ",G22.12)') tol
+          write(*,'(" required absolute tolerance",T40," : ",G22.12)') t2
+          write(*,*)
+          stop
+        end if
+      end do
     else
       write(*,*)
       write(*,'("Error(testcheck): variable type not defined : ",I8)') vt
@@ -108,11 +139,9 @@ end do
 if (n.eq.0) then
   write(*,*)
   write(*,'("Warning(testcheck): no tests found")')
-  write(*,*)
 else
   write(*,*)
   write(*,'("Info(testcheck): passed all tests")')
-  write(*,*)
 end if
 return
 10 continue

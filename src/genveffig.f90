@@ -24,21 +24,9 @@ integer ig,ifg
 ! allocatable arrays
 complex(8), allocatable :: zfft(:)
 allocate(zfft(ngrtot))
-! Fourier transform effective potential to G-space
-zfft(:)=veffir(:)
-call zfftifc(3,ngrid,-1,zfft)
-! zero Fourier components for |G| > 2*gkmax
-do ig=1,ngrtot
-  if (gc(ig).gt.2.d0*gkmax) then
-    ifg=igfft(ig)
-    zfft(ifg)=0.d0
-  end if
-end do
-! Fourier transform back to real space
-call zfftifc(3,ngrid,1,zfft)
-! multiply by characteristic function
-zfft(:)=dble(zfft(:))*cfunir(:)
-! Fourier transform back to G-space
+! multiply effective potential by characteristic function
+zfft(:)=veffir(:)*cfunir(:)
+! Fourier transform to G-space
 call zfftifc(3,ngrid,-1,zfft)
 ! store in global array
 do ig=1,ngvec

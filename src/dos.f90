@@ -48,10 +48,8 @@ character(256) fname
 ! allocatable arrays
 integer, allocatable :: igkignr(:,:)
 ! low precision for band/spin character array saves memory
-real(4), allocatable :: bc(:,:,:,:,:)
-real(4), allocatable :: sc(:,:,:)
-real(8), allocatable :: vgklnr(:,:,:)
-real(8), allocatable :: vgkcnr(:,:,:)
+real(4), allocatable :: bc(:,:,:,:,:),sc(:,:,:)
+real(8), allocatable :: vgklnr(:,:,:),vgkcnr(:,:,:)
 real(8), allocatable :: gkcnr(:,:),tpgkcnr(:,:,:)
 real(8), allocatable :: w(:),e(:,:,:),f(:,:)
 real(8), allocatable :: g(:),dt(:,:),dp(:,:,:)
@@ -73,7 +71,7 @@ lmmax=(lmax+1)**2
 if (dosssum) then
   nsd=1
 else
-  nsd=2
+  nsd=nspinor
 end if
 if (dosmsum) then
   l0=0; l1=lmax
@@ -138,14 +136,11 @@ end if
 !$OMP DO
 do ik=1,nkptnr
   allocate(igkignr(ngkmax,nspnfv))
-  allocate(vgklnr(3,ngkmax,nspnfv))
-  allocate(vgkcnr(3,ngkmax,nspnfv))
-  allocate(gkcnr(ngkmax,nspnfv))
-  allocate(tpgkcnr(2,ngkmax,nspnfv))
+  allocate(vgklnr(3,ngkmax,nspnfv),vgkcnr(3,ngkmax,nspnfv))
+  allocate(gkcnr(ngkmax,nspnfv),tpgkcnr(2,ngkmax,nspnfv))
   allocate(sfacgknr(ngkmax,natmtot,nspnfv))
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-  allocate(evecfv(nmatmax,nstfv,nspnfv))
-  allocate(evecsv(nstsv,nstsv))
+  allocate(evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv))
   allocate(dmat(lmmax,lmmax,nspinor,nspinor,nstsv))
   allocate(sdmat(nspinor,nspinor,nstsv))
   allocate(a(lmmax,lmmax))
@@ -165,14 +160,14 @@ do ik=1,nkptnr
         vc(:)=vc(:)-0.5d0*vqcss(:)
       end if
     end if
-! generate the G+k vectors
+! generate the G+k-vectors
     call gengpvec(vl,vc,ngknr(ispn),igkignr(:,ispn),vgklnr(:,:,ispn), &
      vgkcnr(:,:,ispn))
-! generate the spherical coordinates of the G+k vectors
+! generate the spherical coordinates of the G+k-vectors
     do igk=1,ngknr(ispn)
       call sphcrd(vgkcnr(:,igk,ispn),gkcnr(igk,ispn),tpgkcnr(:,igk,ispn))
     end do
-! generate structure factors for G+k vectors
+! generate structure factors for G+k-vectors
     call gensfacgp(ngknr(ispn),vgkcnr(:,:,ispn),ngkmax,sfacgknr(:,:,ispn))
 ! find the matching coefficients
     call match(ngknr(ispn),gkcnr(:,ispn),tpgkcnr(:,:,ispn),sfacgknr(:,:,ispn), &
@@ -417,7 +412,6 @@ write(*,*)
 write(*,'(" Fermi energy is at zero in plot")')
 write(*,*)
 write(*,'(" DOS units are states/Hartree/unit cell")')
-write(*,*)
 ! write the total DOS to test file
 call writetest(10,'total DOS',nv=nwdos*nsd,tol=2.d-2,rva=dt)
 deallocate(bc,sc,w,e,f,g,dt,dp)

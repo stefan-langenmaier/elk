@@ -10,9 +10,10 @@ use modmpi
 implicit none
 ! local variables
 integer ik,jk,a,b
-integer ist,jst,i,j
+integer ist,jst,i,j,k
 integer ntop,lwork,info
 real(8) h0,t1
+character(256) fname
 ! allocatable arrays
 integer, allocatable :: idx(:)
 real(8), allocatable :: rwork(:)
@@ -25,6 +26,25 @@ call init0
 call init1
 call init2
 call init3
+! check if the BSE extra valence or conduction states are in range
+do i=1,nvxbse
+  ist=istxbse(i)
+  if ((ist.lt.1).or.(ist.gt.nstsv)) then
+    write(*,*)
+    write(*,'("Error(bse): extra valence state out of range : ",I8)') ist
+    write(*,*)
+    stop
+  end if
+end do
+do j=1,ncxbse
+  jst=jstxbse(j)
+  if ((jst.lt.1).or.(jst.gt.nstsv)) then
+    write(*,*)
+    write(*,'("Error(bse): extra conduction state out of range : ",I8)') jst
+    write(*,*)
+    stop
+  end if
+end do
 ! read density and potentials from file
 call readstate
 ! read Fermi energy from a file
@@ -54,7 +74,18 @@ if ((abs(t1-0.5d0).gt.0.01d0).and.mp_mpi) then
   write(*,*)
   stop
 end if
-! number of transitions
+! number of valence states for transitions
+nvbse=nvbse0+nvxbse
+! number of conduction states for transitions
+ncbse=ncbse0+ncxbse
+if ((nvbse.le.0).or.(ncbse.le.0)) then
+  write(*,*)
+  write(*,'("Error(bse): invalid number of valence or conduction transition &
+   &states : ",2I8)') nvbse,ncbse
+  write(*,*)
+  stop
+end if
+! total number of transitions
 nvcbse=nvbse*ncbse
 ! block size in BSE matrix
 nbbse=nvcbse*nkptnr
@@ -91,13 +122,13 @@ do ik=1,nkptnr
       exit
     end if
   end do
-  if ((ntop-nvbse+1).lt.1) then
+  if ((ntop-nvbse0+1).lt.1) then
     write(*,*)
     write(*,'("Error(bse): not enough valence states, reduce nvbse")')
     write(*,*)
     stop
   end if
-  if ((ntop+ncbse).gt.nstsv) then
+  if ((ntop+ncbse0).gt.nstsv) then
     write(*,*)
     write(*,'("Error(bse): not enough conduction states, reduce ncbse or &
      &increase nempty")')
@@ -105,12 +136,55 @@ do ik=1,nkptnr
     stop
   end if
 ! index from BSE valence states to second-variational state numbers
-  do i=1,nvbse
-    istbse(i,ik)=idx(ntop-nvbse+i)
+  do i=1,nvbse0
+    istbse(i,ik)=idx(ntop-nvbse0+i)
   end do
 ! index from BSE conduction states to second-variational state numbers
-  do j=1,ncbse
+  do j=1,ncbse0
     jstbse(j,ik)=idx(ntop+j)
+  end do
+! add extra states to the list
+  do i=1,nvxbse
+    ist=istxbse(i)
+    if (evalsv(ist,jk).gt.efermi) then
+      write(*,*)
+      write(*,'("Error(bse): extra valence state above Fermi energy : ",I6)') &
+       ist
+      write(*,'(" for k-point ",I8)') jk
+      write(*,*)
+      stop
+    end if
+    do k=1,nvbse0+i-1
+      if (ist.eq.istbse(k,ik)) then
+        write(*,*)
+        write(*,'("Error(bse): redundant extra valence state : ",I6)') ist
+        write(*,'(" for k-point ",I8)') jk
+        write(*,*)
+        stop
+      end if
+    end do
+    istbse(nvbse0+i,ik)=ist
+  end do
+  do j=1,ncxbse
+    jst=jstxbse(j)
+    if (evalsv(jst,jk).lt.efermi) then
+      write(*,*)
+      write(*,'("Error(bse): extra conduction state below Fermi energy : ",&
+       &I6)') jst
+      write(*,'(" for k-point ",I8)') jk
+      write(*,*)
+      stop
+    end if
+    do k=1,ncbse0+j-1
+      if (jst.eq.jstbse(k,ik)) then
+        write(*,*)
+        write(*,'("Error(bse): redundant extra conduction state : ",I6)') jst
+        write(*,'(" for k-point ",I8)') jk
+        write(*,*)
+        stop
+      end if
+    end do
+    jstbse(ncbse0+j,ik)=jst
   end do
 ! index from BSE valence-conduction pair and k-point to location in BSE matrix
   do i=1,nvbse
@@ -123,12 +197,13 @@ do ik=1,nkptnr
 end do
 deallocate(idx)
 ! read in the RPA inverse dielectric function for q = 0
-allocate(epsinv(nwrpa,ngrpa,ngrpa))
-call getepsinv_rpa(vql(:,iq0),epsinv)
+allocate(epsinv(ngrpa,ngrpa,nwrpa))
+fname='EPSINV_RPA.OUT'
+call getcf2pt(fname,vql(:,iq0),ngrpa,nwrpa,epsinv)
 ! compute the G = G' = q = 0 part of the direct kernel
 h0=-2.d0/twopi**2
 h0=h0*(6.d0*pi**2*(wkptnr/omega))**(1.d0/3.d0)
-h0=h0*fourpi*epsinv(1,1,1)
+h0=h0*fourpi*dble(epsinv(1,1,1))
 ! synchronise MPI processes
 call mpi_barrier(mpi_comm_world,ierror)
 if (mp_mpi) then
@@ -158,7 +233,7 @@ end do
 deallocate(epsinv)
 ! add the exchange matrix elements
 call hmlxbse
-! generate the exp(iG.r) functions for all the RPA G vectors
+! generate the exp(iG.r) functions for all the MBPT G-vectors
 call genexpigr
 ! add the direct matrix elements
 call hmldbse
@@ -203,22 +278,24 @@ else
   deallocate(rwork,work)
 end if
 ! write the BSE eigenvalues to file
-open(50,file='EIGVAL_BSE.OUT',action='WRITE',form='FORMATTED')
-write(50,'(I6," : nmbse")') nmbse
-if (bsefull) then
-  do a=1,nmbse
-    write(50,'(I6,2G18.10)') a,dble(w(a)),aimag(w(a))
-  end do
-  deallocate(w)
-else
-  do a=1,nmbse
-    write(50,'(I6,G18.10)') a,evalbse(a)
-  end do
+if (mp_mpi) then
+  open(50,file='EIGVAL_BSE.OUT',action='WRITE',form='FORMATTED')
+  write(50,'(I6," : nmbse")') nmbse
+  if (bsefull) then
+    do a=1,nmbse
+      write(50,'(I6,2G18.10)') a,dble(w(a)),aimag(w(a))
+    end do
+    deallocate(w)
+  else
+    do a=1,nmbse
+      write(50,'(I6,G18.10)') a,evalbse(a)
+    end do
+  end if
+  close(50)
 end if
-close(50)
 ! calculate the macroscopic dielectric tensor
-call dielectric_bse
-! deallocate global RPA and BSE arrays
+if (mp_mpi) call dielectric_bse
+! deallocate global MBPT and BSE arrays
 deallocate(istbse,jstbse,ijkbse,hmlbse,evalbse)
 return
 end subroutine

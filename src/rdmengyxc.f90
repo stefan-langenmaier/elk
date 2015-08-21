@@ -28,11 +28,11 @@ real(8), allocatable :: vnlijji(:,:,:)
 if (rdmxctype.eq.0) then
   engyx=0.d0
   return
-! Hartree-Fock functional
 else if (rdmxctype.eq.1) then
+! Hartree-Fock functional
   t1=0.5d0/occmax
-! Power functional
 else if (rdmxctype.eq.2) then
+! Power functional
   if (spinpol) then
     t1=0.5d0
   else

@@ -145,7 +145,7 @@ if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6)) then
 ! exact exchange for OEP-EXX or Hartree-Fock on last self-consistent loop
   if (tlast) call exxengy
 ! mix exact and DFT exchange energies for hybrid functionals
-  if (hybmix.lt.1.d0) then
+  if (hybrid) then
     t1=rfinp(1,rhomt,exmt,rhoir,exir)
     engyx=hybmix*engyx+(1.d0-hybmix)*t1
   end if
@@ -156,7 +156,7 @@ end if
 ! correlation energy from the density
 engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
 if ((task.eq.5).or.(task.eq.6)) then
-  if (hybmix.lt.1.d0) then
+  if (hybrid) then
 ! fraction of DFT correlation energy for hybrid functionals
     t1=rfinp(1,rhomt,ecmt,rhoir,ecir)
     engyc=(1.d0-hybmix)*t1

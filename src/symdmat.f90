@@ -60,75 +60,75 @@ do is=1,nspecies
   end do
   done(:)=.false.
   do ia=1,natoms(is)
-    if (.not.done(ia)) then
-      ias=idxas(ia,is)
-      dmat(:,:,:,:,ias)=0.d0
-      do isym=1,nsymcrys
+    if (done(ia)) cycle
+    ias=idxas(ia,is)
+    dmat(:,:,:,:,ias)=0.d0
+    do isym=1,nsymcrys
+      lspl=lsplsymc(isym)
+      lspn=lspnsymc(isym)
+! equivalent atom index (symmetry rotates atom ja into atom ia)
+      ja=ieqatom(ia,is,isym)
+! apply (l,m) symmetry matrix as U*D*conjg(U')
+      do ispn=1,nspinor
+        do jspn=1,nspinor
+          call zgemm('N','N',lmmax,lmmax,lmmax,zone,ulm(:,:,lspl),lmmax, &
+           dm1(:,:,ispn,jspn,ja),lmmax,zzero,dm2,lmmax)
+          call zgemm('N','C',lmmax,lmmax,lmmax,zone,dm2,lmmax,ulm(:,:,lspl), &
+           lmmax,zzero,dm3(:,:,ispn,jspn),lmmax)
+        end do
+      end do
+! apply SU(2) symmetry matrix as U*D*conjg(U') and add
+      if (spinpol) then
+        do lm1=1,lmmax
+          do lm2=1,lmmax
+            dm4(:,:)=dm3(lm1,lm2,:,:)
+            call z2mm(su2(:,:,lspn),dm4,dm5)
+            call z2mmct(dm5,su2(:,:,lspn),dm4)
+            dmat(lm1,lm2,:,:,ias)=dmat(lm1,lm2,:,:,ias)+dm4(:,:)
+          end do
+        end do
+      else
+        dmat(1:lmmax,1:lmmax,1,1,ias)=dmat(1:lmmax,1:lmmax,1,1,ias) &
+         +dm3(1:lmmax,1:lmmax,1,1)
+      end if
+! end loop over crystal symmetries
+    end do
+! normalise
+    dmat(:,:,:,:,ias)=t1*dmat(:,:,:,:,ias)
+    done(ia)=.true.
+! rotate into equivalent atoms
+    do isym=1,nsymcrys
+      ja=ieqatom(ia,is,isym)
+      if (.not.done(ja)) then
+        jas=idxas(ja,is)
         lspl=lsplsymc(isym)
         lspn=lspnsymc(isym)
-! equivalent atom index (symmetry rotates atom ja into atom ia)
-        ja=ieqatom(ia,is,isym)
-! apply (l,m) symmetry matrix as U*D*conjg(U')
+! apply (l,m) symmetry matrix as conjg(U')*D*U (rotates atom ia into atom ja)
         do ispn=1,nspinor
           do jspn=1,nspinor
-            call zgemm('N','N',lmmax,lmmax,lmmax,zone,ulm(:,:,lspl),lmmax, &
-             dm1(:,:,ispn,jspn,ja),lmmax,zzero,dm2,lmmax)
-            call zgemm('N','C',lmmax,lmmax,lmmax,zone,dm2,lmmax,ulm(:,:,lspl), &
+            call zgemm('C','N',lmmax,lmmax,lmmax,zone,ulm(:,:,lspl),lmmax, &
+             dmat(:,:,ispn,jspn,ias),ld,zzero,dm2,lmmax)
+            call zgemm('N','N',lmmax,lmmax,lmmax,zone,dm2,lmmax,ulm(:,:,lspl), &
              lmmax,zzero,dm3(:,:,ispn,jspn),lmmax)
           end do
         end do
-! apply SU(2) symmetry matrix as U*D*conjg(U') and add
+! apply SU(2) symmetry matrix as conjg(U')*D*U
         if (spinpol) then
           do lm1=1,lmmax
             do lm2=1,lmmax
               dm4(:,:)=dm3(lm1,lm2,:,:)
-              call z2mm(su2(:,:,lspn),dm4,dm5)
-              call z2mmct(dm5,su2(:,:,lspn),dm4)
-              dmat(lm1,lm2,:,:,ias)=dmat(lm1,lm2,:,:,ias)+dm4(:,:)
+              call z2mctm(su2(:,:,lspn),dm4,dm5)
+              call z2mm(dm5,su2(:,:,lspn),dm4)
+              dmat(lm1,lm2,:,:,jas)=dm4(:,:)
             end do
           end do
         else
-          dmat(1:lmmax,1:lmmax,1,1,ias)=dmat(1:lmmax,1:lmmax,1,1,ias) &
-           +dm3(1:lmmax,1:lmmax,1,1)
+          dmat(1:lmmax,1:lmmax,1,1,jas)=dm3(1:lmmax,1:lmmax,1,1)
         end if
-! end loop over crystal symmetries
-      end do
-! normalise
-      dmat(:,:,:,:,ias)=t1*dmat(:,:,:,:,ias)
-      done(ia)=.true.
-! rotate into equivalent atoms
-      do isym=1,nsymcrys
-        ja=ieqatom(ia,is,isym)
-        if (.not.done(ja)) then
-          jas=idxas(ja,is)
-          lspl=lsplsymc(isym)
-          lspn=lspnsymc(isym)
-! apply (l,m) symmetry matrix as conjg(U')*D*U (rotates atom ia into atom ja)
-          do ispn=1,nspinor
-            do jspn=1,nspinor
-              call zgemm('C','N',lmmax,lmmax,lmmax,zone,ulm(:,:,lspl),lmmax, &
-               dmat(:,:,ispn,jspn,ias),ld,zzero,dm2,lmmax)
-              call zgemm('N','N',lmmax,lmmax,lmmax,zone,dm2,lmmax, &
-               ulm(:,:,lspl),lmmax,zzero,dm3(:,:,ispn,jspn),lmmax)
-            end do
-          end do
-! apply SU(2) symmetry matrix as conjg(U')*D*U
-          if (spinpol) then
-            do lm1=1,lmmax
-              do lm2=1,lmmax
-                dm4(:,:)=dm3(lm1,lm2,:,:)
-                call z2mctm(su2(:,:,lspn),dm4,dm5)
-                call z2mm(dm5,su2(:,:,lspn),dm4)
-                dmat(lm1,lm2,:,:,jas)=dm4(:,:)
-              end do
-            end do
-          else
-            dmat(1:lmmax,1:lmmax,1,1,jas)=dm3(1:lmmax,1:lmmax,1,1)
-          end if
-          done(ja)=.true.
-        end if
-      end do
-    end if
+        done(ja)=.true.
+      end if
+    end do
+! end loop over atoms and species
   end do
 end do
 deallocate(zflm,ulm,su2)

@@ -121,8 +121,8 @@ do ist=1,nstsv
     do jst=1,nstsv
       if (evalsv(jst,ik).gt.efermi) then
 ! calculate the overlap density
-        call genzrho(.false.,wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst),wfir(:,:,ist), &
-         wfir(:,:,jst),zrhomt,zrhoir)
+        call genzrho(.false.,wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst), &
+         wfir(:,:,ist),wfir(:,:,jst),zrhomt,zrhoir)
         zt1=conjg(vnlvv(ist,jst,ik))
         zt1=zt1-zfinp(.false.,zrhomt,zvxmt,zrhoir,zvxir)
 ! spin-polarised case

@@ -15,8 +15,8 @@ use modmain
 !   tgp     : .true. if wfir should be in G+p-space, otherwise in real-space
 !             (in,logical)
 !   tocc    : .true. if only occupied wavefunctions are required (in,logical)
-!   ngp     : number of G+p vectors (in,integer(nspnfv))
-!   igpig   : index from G+p vectors to G vectors (in,integer(ngkmax,nspnfv))
+!   ngp     : number of G+p-vectors (in,integer(nspnfv))
+!   igpig   : index from G+p-vectors to G-vectors (in,integer(ngkmax,nspnfv))
 !   evalsvp : second-variational eigenvalue for every state (in,real(nstsv))
 !   apwalm  : APW matching coefficients
 !             (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))

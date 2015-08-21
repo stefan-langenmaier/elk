@@ -57,7 +57,7 @@ case(0)
   write(fnum,'("+-------------------------------------------------+")')
   write(fnum,'("| Ground-state run starting from atomic densities |")')
   write(fnum,'("+-------------------------------------------------+")')
-case(1,200)
+case(1,201,202)
   write(fnum,*)
   write(fnum,'("+------------------------------------------+")')
   write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
@@ -179,6 +179,16 @@ end if
 write(fnum,*)
 write(fnum,'("Number of Bravais lattice symmetries : ",I4)') nsymlat
 write(fnum,'("Number of crystal symmetries         : ",I4)') nsymcrys
+if (tsyminv) then
+  write(fnum,'("Crystal has inversion symmetry")')
+else
+  write(fnum,'("Crystal has no inversion symmetry")')
+end if
+if (tseqr) then
+  write(fnum,'("Real symmetric eigensolver will be used")')
+else
+  write(fnum,'("Complex Hermitian eigensolver will be used")')
+end if
 write(fnum,*)
 if (autokpt) then
   write(fnum,'("Radius of sphere used to determine k-point grid density : ",&
@@ -213,7 +223,7 @@ end if
 write(fnum,'("Maximum |G+k| for APW functions       : ",G18.10)') gkmax
 write(fnum,'("Maximum (1/2)|G+k|^2                  : ",G18.10)') 0.5d0*gkmax**2
 write(fnum,'("Maximum |G| for potential and density : ",G18.10)') gmaxvr
-write(fnum,'("Polynomial order for pseudocharge density : ",I4)') npsden
+write(fnum,'("Constant for pseudocharge density : ",I4)') lnpsd
 write(fnum,'("Radial integration step length : ",I4)') lradstp
 write(fnum,*)
 write(fnum,'("G-vector grid sizes : ",3I6)') ngrid(1),ngrid(2),ngrid(3)
@@ -226,7 +236,7 @@ write(fnum,'(" inner part of muffin-tin           : ",I4)') lmaxinr
 write(fnum,'(" H and O matrix elements outer loop : ",I4)') lmaxmat
 write(fnum,*)
 write(fnum,'("Total nuclear charge    : ",G18.10)') chgzn
-write(fnum,'("Total core charge       : ",G18.10)') chgcr
+write(fnum,'("Total core charge       : ",G18.10)') chgcrtot
 write(fnum,'("Total valence charge    : ",G18.10)') chgval
 write(fnum,'("Total excess charge     : ",G18.10)') chgexs
 write(fnum,'("Total electronic charge : ",G18.10)') chgtot
@@ -235,12 +245,13 @@ write(fnum,'("Effective Wigner radius, r_s : ",G18.10)') rwigner
 write(fnum,*)
 write(fnum,'("Number of empty states         : ",I4)') nempty
 write(fnum,'("Total number of valence states : ",I4)') nstsv
+write(fnum,'("Total number of core states    : ",I4)') nstcr
 write(fnum,*)
 write(fnum,'("Total number of local-orbitals : ",I4)') nlotot
 write(fnum,*)
 if ((task.eq.5).or.(task.eq.6)) then
   write(fnum,'("Hartree-Fock calculation using Kohn-Sham states")')
-  if (hybmix.lt.1.d0) then
+  if (hybrid) then
     write(fnum,'(" hybrid functional, mixing parameter : ",G18.10)') hybmix
   end if
 end if

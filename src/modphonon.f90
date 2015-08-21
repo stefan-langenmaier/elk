@@ -21,38 +21,25 @@ real(8) deltaph
 real(8) avec0(3,3)
 ! original inverse of lattice vector matrix
 real(8) ainv0(3,3)
+! original inverse reciprocal lattice vector matrix
+real(8) binv0(3,3)
 ! original number of atoms
 integer natoms0(maxspecies)
 integer natmtot0
 ! original atomic positions in Cartesian coordinates
 real(8) atposc0(3,maxatoms,maxspecies)
 ! original G-vector grid sizes
-integer ngrid0(3)
-integer ngrtot0
-! original effective potentials
-real(8), allocatable :: veffmt0(:,:,:)
-real(8), allocatable :: veffir0(:)
-! derivative of the density w.r.t. atomic displacement
-complex(8), allocatable :: drhomt(:,:,:)
-complex(8), allocatable :: drhoir(:)
-! derivative of the magnetisation w.r.t. atomic displacement
-complex(8), allocatable :: dmagmt(:,:,:,:)
-complex(8), allocatable :: dmagir(:,:)
-! derivative of the effective potential
-complex(8), allocatable :: dveffmt(:,:,:)
-complex(8), allocatable :: dveffir(:)
-! plane wave part of effective potential derivative
-complex(8), allocatable :: dveffpw(:)
-! derivative of the exchange-correlation magnetic field
-complex(8), allocatable :: dbxcmt(:,:,:,:)
-complex(8), allocatable :: dbxcir(:,:)
-! plane wave part of magnetic field derivative
-complex(8), allocatable :: dbxcpw(:,:)
+integer ngrid0(3),ngrtot0
+! G-vector classification index which allows the Hamiltonian to be rearranged in
+! banded diagonal form
+integer, allocatable :: igph(:)
 ! number of vectors for writing out frequencies and eigenvectors
 integer nphwrt
 ! vectors in lattice coordinates for writing out frequencies and eigenvectors
 real(8), allocatable :: vqlwrt(:,:)
 ! Coulomb pseudopotential
 real(8) mustar
+! number of temperatures for the Eliashberg equations and therman properties
+integer ntemp
 
 end module

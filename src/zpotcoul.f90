@@ -17,7 +17,7 @@ use modmain
 !   igp0   : index of the shortest G+p-vector (in,integer)
 !   gpc    : G+p-vector lengths (in,real(ngvec))
 !   jlgpr  : spherical Bessel functions for evergy G+p-vector and muffin-tin
-!            radius (in,real(0:lmaxvr+npsden+1,ngvec,nspecies))
+!            radius (in,real(0:lnpsd+1,ngvec,nspecies))
 !   ylmgp  : spherical harmonics of the G+p-vectors (in,complex(lmmaxvr,ngvec))
 !   sfacgp : structure factors of the G+p-vectors (in,complex(ngvec,natmtot))
 !   zrhoir : interstitial charge density (in,complex(ngrtot))
@@ -56,7 +56,7 @@ use modmain
 !   $$ \rho_{ij;lm}^{\rm P}=\frac{(2l+2N_i+3)!!}{2^N_iN_i!(2l+1)!!}\left(
 !    q_{ij;lm}^{\rm MT}-q_{ij;lm}^{\rm I}\right) $$
 !   and $N_i\approx\frac{1}{2}R_iG_{\rm max}$ is generally a good choice.
-!   The pseudocharge in reciprocal-space is given by
+!   The pseudocharge in reciprocal space is given by
 !   $$ \rho^{\rm P}({\bf G})=\rho^{\rm I}({\bf G})+\sum_{ij;lm}2^{N_i}N_i!
 !    \frac{4\pi(-i)^l}{\Omega R_i^l}\frac{j_{l+N_i+1}(GR_i)}{(GR_i)^{N_i+1}}
 !    \rho_{ij;lm}^{\rm P}\exp(-i{\bf G}\cdot{\bf r}_{ij})Y_{lm}(\hat{\bf G}) $$
@@ -95,7 +95,7 @@ integer, intent(in) :: ld1
 real(8), intent(in) :: r(ld1,nspecies)
 integer, intent(in) :: igp0
 real(8), intent(in) :: gpc(ngvec)
-real(8), intent(in) :: jlgpr(0:lmaxvr+npsden+1,ngvec,nspecies)
+real(8), intent(in) :: jlgpr(0:lnpsd+1,ngvec,nspecies)
 complex(8), intent(in) :: ylmgp(lmmaxvr,ngvec)
 complex(8), intent(in) :: sfacgp(ngvec,natmtot)
 complex(8), intent(in) :: zrhoir(ngrtot)
@@ -106,16 +106,13 @@ complex(8), intent(out) :: zrho0
 ! local variables
 integer is,ia,ias,l,m,lm
 integer ir,ig,ifg
-real(8) fpo,t1
+real(8) fpo,t0,t1,t2
 complex(8) zsum1,zsum2,zt1,zt2
 ! automatic arrays
 real(8) rmtl(0:lmaxvr+3,nspecies)
 real(8) rl(ld1,0:lmaxvr)
-complex(8) vilm(lmmaxvr)
-complex(8) qmt(lmmaxvr,natmtot)
-complex(8) qi(lmmaxvr,natmtot)
-complex(8) zl(0:lmaxvr)
-complex(8) zrp(lmmaxvr)
+complex(8) qlm(lmmaxvr,natmtot)
+complex(8) zl(0:lmaxvr),zlm(1:lmmaxvr)
 ! external functions
 real(8) factnm
 external factnm
@@ -136,7 +133,7 @@ do is=1,nspecies
       t1=dble(2*l+1)*rmtl(l+1,is)/fourpi
       do m=-l,l
         lm=lm+1
-        qmt(lm,ias)=t1*zvclmt(lm,nr(is),ias)
+        qlm(lm,ias)=t1*zvclmt(lm,nr(is),ias)
       end do
     end do
   end do
@@ -144,75 +141,75 @@ end do
 ! Fourier transform density to G-space and store in zvclir
 zvclir(:)=zrhoir(:)
 call zfftifc(3,ngrid,-1,zvclir)
-! find the multipole moments of the interstitial charge density
-qi(:,:)=0.d0
+! subtract the multipole moments of the interstitial charge density
 do is=1,nspecies
   do l=0,lmaxvr
-    zl(l)=fourpi*zil(l)*rmtl(l+3,is)
+    zl(l)=fourpi*zil(l)*rmtl(l+2,is)
   end do
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ig=1,ngvec
       ifg=igfft(ig)
       if (gpc(ig).gt.epslat) then
-        zt1=zvclir(ifg)*sfacgp(ig,ias)/(gpc(ig)*rmt(is))
+        zt1=zvclir(ifg)*sfacgp(ig,ias)/gpc(ig)
         lm=0
         do l=0,lmaxvr
-          zt2=zt1*zl(l)*jlgpr(l+1,ig,is)
+          zt2=jlgpr(l+1,ig,is)*zt1*zl(l)
           do m=-l,l
             lm=lm+1
-            qi(lm,ias)=qi(lm,ias)+zt2*conjg(ylmgp(lm,ig))
+            qlm(lm,ias)=qlm(lm,ias)-zt2*conjg(ylmgp(lm,ig))
           end do
         end do
       else
         t1=(fourpi/3.d0)*rmtl(3,is)*y00
-        qi(1,ias)=qi(1,ias)+t1*zvclir(ifg)
+        qlm(1,ias)=qlm(1,ias)-t1*zvclir(ifg)
       end if
     end do
   end do
 end do
 ! find the smooth pseudocharge within the muffin-tin whose multipoles are the
 ! difference between the real muffin-tin and interstitial multipoles
+t0=factnm(2*lnpsd+3,2)
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     lm=0
     do l=0,lmaxvr
-! note the factor 2^N*N! is omitted because of reciprocal term in the
-! form-factor
-      t1=factnm(2*(l+npsden)+3,2)/(factnm(2*l+1,2)*rmtl(l,is))
+      t1=t0/(factnm(2*l+1,2)*rmtl(l,is))
       zt1=t1*conjg(zil(l))
       do m=-l,l
         lm=lm+1
-        zrp(lm)=zt1*(qmt(lm,ias)-qi(lm,ias))
+        zlm(lm)=zt1*qlm(lm,ias)
       end do
     end do
 ! add the pseudocharge and real interstitial densities in G-space
     do ig=1,ngvec
       ifg=igfft(ig)
       if (gpc(ig).gt.epslat) then
+        t1=gpc(ig)*rmt(is)
+        t2=1.d0/t1**(lnpsd+1)
         zsum1=0.d0
         lm=0
         do l=0,lmaxvr
           lm=lm+1
-          zsum2=zrp(lm)*ylmgp(lm,ig)
+          zsum2=zlm(lm)*ylmgp(lm,ig)
           do m=-l+1,l
             lm=lm+1
-            zsum2=zsum2+zrp(lm)*ylmgp(lm,ig)
+            zsum2=zsum2+zlm(lm)*ylmgp(lm,ig)
           end do
-          zsum1=zsum1+jlgpr(npsden+l+1,ig,is)*zsum2
+          zsum1=zsum1+t2*zsum2
+          t2=t2*t1
         end do
-        t1=gpc(ig)*rmt(is)
-        zt1=fpo*conjg(sfacgp(ig,ias))/(t1**(npsden+1))
+        zt1=fpo*jlgpr(lnpsd+1,ig,is)*conjg(sfacgp(ig,ias))
         zvclir(ifg)=zvclir(ifg)+zt1*zsum1
       else
-        t1=fpo*y00/factnm(2*npsden+3,2)
-        zvclir(ifg)=zvclir(ifg)+t1*zrp(1)
+        t1=fpo*y00/factnm(2*lnpsd+3,2)
+        zvclir(ifg)=zvclir(ifg)+t1*zlm(1)
       end if
     end do
   end do
 end do
-! set zrho0 (pseudocharge density coefficient of the smallest G+p vector)
+! set zrho0 (pseudocharge density coefficient of the smallest G+p-vector)
 ifg=igfft(igp0)
 zrho0=zvclir(ifg)
 zvclir(ifg)=0.d0
@@ -228,18 +225,19 @@ end do
 ! match potentials at muffin-tin boundary by adding homogeneous solution
 do is=1,nspecies
 ! compute (r/R_mt)^l
+  t1=1.d0/rmt(is)
   do ir=1,nr(is)
-    t1=r(ir,is)/rmt(is)
+    t2=t1*r(ir,is)
     rl(ir,0)=1.d0
     do l=1,lmaxvr
-      rl(ir,l)=rl(ir,l-1)*t1
+      rl(ir,l)=rl(ir,l-1)*t2
     end do
   end do
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! find the spherical harmonic expansion of the interstitial potential at the
 ! muffin-tin radius
-    vilm(:)=0.d0
+    zlm(:)=0.d0
     do ig=1,ngvec
       ifg=igfft(ig)
       zt1=fourpi*zvclir(ifg)*sfacgp(ig,ias)
@@ -248,7 +246,7 @@ do is=1,nspecies
         zt2=jlgpr(l,ig,is)*zt1*zil(l)
         do m=-l,l
           lm=lm+1
-          vilm(lm)=vilm(lm)+zt2*conjg(ylmgp(lm,ig))
+          zlm(lm)=zlm(lm)+zt2*conjg(ylmgp(lm,ig))
         end do
       end do
     end do
@@ -257,7 +255,7 @@ do is=1,nspecies
     do l=0,lmaxvr
       do m=-l,l
         lm=lm+1
-        zt1=vilm(lm)-zvclmt(lm,nr(is),ias)
+        zt1=zlm(lm)-zvclmt(lm,nr(is),ias)
         do ir=1,nr(is)
           zvclmt(lm,ir,ias)=zvclmt(lm,ir,ias)+zt1*rl(ir,l)
         end do

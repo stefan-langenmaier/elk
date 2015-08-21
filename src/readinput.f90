@@ -59,7 +59,7 @@ lmaxvr=7
 lmaxmat=5
 lmaxinr=2
 fracinr=0.25d0
-npsden=9
+trhonorm=.true.
 xctype(1)=3
 xctype(2)=0
 xctype(3)=0
@@ -74,6 +74,10 @@ maxscl=200
 mixtype=1
 beta0=0.05d0
 betamax=1.d0
+mixsdp=3
+mixsdb=5
+broydpm(1)=0.25d0
+broydpm(2)=0.01d0
 epspot=1.d-6
 epsengy=1.d-4
 epsforce=5.d-4
@@ -188,6 +192,7 @@ rdmtemp=0.d0
 
 reducebf=1.d0
 ptnucl=.true.
+tseqr=.true.
 tseqit=.false.
 nseqit=40
 tauseq=0.1d0
@@ -201,20 +206,30 @@ spincore=.false.
 solscf=1.d0
 emaxelnes=-1.2d0
 hmax=6.d0
+wsfac(1)=-1.d6; wsfac(2)=1.d6
 vhmat(:,:)=0.d0
 vhmat(1,1)=1.d0
 vhmat(2,2)=1.d0
 vhmat(3,3)=1.d0
+reduceh=.true.
+hybrid=.false.
 hybmix=1.d0
-tpmat=.true.
 ecvcut=-3.5d0
 esccut=-0.4d0
 gmaxrpa=3.d0
+ntemp=20
 
 ! BSE defaults
-nvbse=2
-ncbse=3
+nvbse0=2
+ncbse0=3
+nvxbse=0
+ncxbse=0
 bsefull=.false.
+
+! TDDFT defaults
+fxctype=1
+fxclrc(1)=0.d0
+fxclrc(2)=0.d0
 
 !--------------------------!
 !     read from elk.in     !
@@ -366,14 +381,8 @@ case('lmaxinr')
   end if
 case('fracinr')
   read(50,*,err=20) fracinr
-case('npsden')
-  read(50,*,err=20) npsden
-  if (npsden.lt.2) then
-    write(*,*)
-    write(*,'("Error(readinput): npsden < 2 : ",I8)') npsden
-    write(*,*)
-    stop
-  end if
+case('trhonorm')
+  read(50,*,err=20) trhonorm
 case('spinpol')
   read(50,*,err=20) spinpol
 case('spinorb')
@@ -442,6 +451,32 @@ case('betamax')
   if ((betamax.lt.0.d0).or.(betamax.gt.1.d0)) then
     write(*,*)
     write(*,'("Error(readinput): betmax not in [0,1] : ",G18.10)') betamax
+    write(*,*)
+    stop
+  end if
+case('mixsdp')
+  read(50,*,err=20) mixsdp
+  if (mixsdp.lt.2) then
+    write(*,*)
+    write(*,'("Error(readinput): mixsdp < 2 : ",I8)') mixsdp
+    write(*,*)
+    stop
+  end if
+case('mixsdb')
+  read(50,*,err=20) mixsdb
+  if (mixsdb.lt.2) then
+    write(*,*)
+    write(*,'("Error(readinput): mixsdb < 2 : ",I8)') mixsdb
+    write(*,*)
+    stop
+  end if
+case('broydpm')
+  read(50,*,err=20) broydpm(:)
+  if ((broydpm(1).lt.0.d0).or.(broydpm(1).gt.1.d0).or. &
+      (broydpm(2).lt.0.d0).or.(broydpm(2).gt.1.d0)) then
+    write(*,*)
+    write(*,'("Error(readinput): invalid Broyden mixing parameters : ",&
+     &2G18.10)') broydpm
     write(*,*)
     stop
   end if
@@ -786,7 +821,6 @@ case('kstlist')
       nkstlist=i-1
       goto 10
     end if
-    str=trim(str)//' 1 1'
     read(str,*,iostat=iostat) kstlist(:,i)
     if (iostat.ne.0) then
       write(*,*)
@@ -877,6 +911,12 @@ case('rdmmaxscl')
   end if
 case('maxitn')
   read(50,*,err=20) maxitn
+  if (maxitn.lt.1) then
+    write(*,*)
+    write(*,'("Error(readinput): maxitn < 1 : ",I8)') maxitn
+    write(*,*)
+    stop
+  end if
 case('maxitc')
   read(50,*,err=20) maxitc
 case('taurdmn')
@@ -929,6 +969,8 @@ case('reducebf')
   end if
 case('ptnucl')
   read(50,*,err=20) ptnucl
+case('tseqr')
+  read(50,*,err=20) tseqr
 case('tseqit')
   read(50,*,err=20) tseqit
 case('nseqit')
@@ -977,10 +1019,16 @@ case('hmax')
     write(*,*)
     stop
   end if
+case('wsfac')
+  read(50,*,err=20) wsfac(:)
 case('vhmat')
   read(50,*,err=20) vhmat(1,:)
   read(50,*,err=20) vhmat(2,:)
   read(50,*,err=20) vhmat(3,:)
+case('reduceh')
+  read(50,*,err=20) reduceh
+case('hybrid')
+  read(50,*,err=20) hybrid
 case('hybmix')
   read(50,*,err=20) hybmix
   if ((hybmix.lt.0.d0).or.(hybmix.gt.1.d0)) then
@@ -989,28 +1037,78 @@ case('hybmix')
     write(*,*)
     stop
   end if
-case('tpmat')
-  read(50,*,err=20) tpmat
 case('ecvcut')
   read(50,*,err=20) ecvcut
 case('esccut')
   read(50,*,err=20) esccut
 case('nvbse')
-  read(50,*,err=20) nvbse
-  if (nvbse.lt.1) then
+  read(50,*,err=20) nvbse0
+  if (nvbse0.lt.0) then
     write(*,*)
-    write(*,'("Error(readinput): nvbse < 1 : ",I8)') nvbse
+    write(*,'("Error(readinput): nvbse < 0 : ",I8)') nvbse0
     write(*,*)
     stop
   end if
 case('ncbse')
-  read(50,*,err=20) ncbse
-  if (ncbse.lt.1) then
+  read(50,*,err=20) ncbse0
+  if (ncbse0.lt.0) then
     write(*,*)
-    write(*,'("Error(readinput): ncbse < 1 : ",I8)') ncbse
+    write(*,'("Error(readinput): ncbse < 0 : ",I8)') ncbse0
     write(*,*)
     stop
   end if
+case('istxbse')
+  do i=1,maxxbse
+    read(50,'(A256)',err=20) str
+    if (trim(str).eq.'') then
+      if (i.eq.1) then
+        write(*,*)
+        write(*,'("Error(readinput): empty BSE extra valence state list")')
+        write(*,*)
+        stop
+      end if
+      nvxbse=i-1
+      goto 10
+    end if
+    read(str,*,iostat=iostat) istxbse(i)
+    if (iostat.ne.0) then
+      write(*,*)
+      write(*,'("Error(readinput): error reading BSE valence state list")')
+      write(*,'("(blank line required after istxbse block)")')
+      write(*,*)
+      stop
+    end if
+  end do
+  write(*,*)
+  write(*,'("Error(readinput): BSE extra valence state list too long")')
+  write(*,*)
+  stop
+case('jstxbse')
+  do i=1,maxxbse
+    read(50,'(A256)',err=20) str
+    if (trim(str).eq.'') then
+      if (i.eq.1) then
+        write(*,*)
+        write(*,'("Error(readinput): empty BSE extra conduction state list")')
+        write(*,*)
+        stop
+      end if
+      ncxbse=i-1
+      goto 10
+    end if
+    read(str,*,iostat=iostat) jstxbse(i)
+    if (iostat.ne.0) then
+      write(*,*)
+      write(*,'("Error(readinput): error reading BSE conduction state list")')
+      write(*,'("(blank line required after jstxbse block)")')
+      write(*,*)
+      stop
+    end if
+  end do
+  write(*,*)
+  write(*,'("Error(readinput): BSE extra conduction state list too long")')
+  write(*,*)
+  stop
 case('bsefull')
   read(50,*,err=20) bsefull
 case('gmaxrpa')
@@ -1018,6 +1116,20 @@ case('gmaxrpa')
   if (gmaxrpa.lt.0.d0) then
     write(*,*)
     write(*,'("Error(readinput): gmaxrpa < 0 : ",G18.10)') gmaxrpa
+    write(*,*)
+    stop
+  end if
+case('fxctype')
+  read(50,*,err=20) fxctype
+case('fxclrc')
+  read(50,'(A256)',err=20) str
+  str=trim(str)//' 0.0'
+  read(str,*,err=20) fxclrc(:)
+case('ntemp')
+  read(50,*,err=20) ntemp
+  if (ntemp.lt.1) then
+    write(*,*)
+    write(*,'("Error(readinput): ntemp < 1 : ",I8)') ntemp
     write(*,*)
     stop
   end if
@@ -1056,8 +1168,6 @@ if (molecule) then
       atposl(:,ia,is)=v(:)
     end do
   end do
-  primcell=.false.
-  tshift=.false.
 end if
 ! find primitive cell if required
 if (primcell) call findprim
