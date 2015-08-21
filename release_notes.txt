@@ -1,3 +1,22 @@
+elk-1.3.20
+-added directionality to the TDDFT code; thanks also to Vladimir Nazarov for
+ discussions
+-a pre-print is now available for the new TDDFT 'bootstrap' kernel:
+ arXiv:1107.0199v1 [cond-mat.mtrl-sci]
+-added the scissor correction to the RPA inverse dielectric function in
+ EPSINV_RPA.OUT
+-fixed a problem with running geometry optimisation with MPI; thanks to Arkady
+ Davydov and Antonio Sanna for discussions
+-geometry optmimisation has changed: now the geometry, interatomic distances,
+ final total energies and forces are stored for each optimisation step in
+ GEOMETRY_OPT.OUT, IADIST_OPT.OUT, TOTENERGY_OPT.OUT and FORCES_OPT.OUT
+-removed geometry optmisation from the ground-state calculation and put it in a
+ separate subroutine
+-reduced pseudocharge density constant (lnpsd) because the spherical bessel
+ function order could be too large; may change total energies slightly
+-q-points and weights written to QPOINTS.OUT
+-minor changes and optimisations
+
 elk-1.3.15
 -fixed serious bug introduced in the last version affecting some tasks (for
  example DOS plots) for crystals with non-symorphic symmetries; thanks to

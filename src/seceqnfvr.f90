@@ -208,6 +208,7 @@ if (info.ne.0) then
     write(*,'(" Order of overlap matrix : ",I8)') nmatp
     write(*,*)
   end if
+  stop
 end if
 evalfv(1:nstfv)=w(1:nstfv)
 ! reconstruct the complex eigenvectors

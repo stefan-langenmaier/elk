@@ -28,7 +28,7 @@ integer, parameter :: maxwf=40000
 integer, parameter :: nin=80
 ! maximum number of iterations
 integer, parameter :: maxit=1000
-integer nwf,nout
+integer nwf,nwfcl,nout
 integer itemp,it,i,m,n
 ! convergence tolerance
 real(8), parameter :: eps=1.d-12
@@ -53,9 +53,9 @@ call mcmillan(w,a2f,lambda,wlog,wrms,tc)
 ! Matsubara frequency cut-off
 wfmax=60.d0*wrms
 ! minumum temperature
-tmin=tc/2.d0
+tmin=tc/6.d0
 ! maximum temperature
-tmax=4.d0*tc
+tmax=3.d0*tc
 ! temperature step size
 dtemp=(tmax-tmin)/dble(ntemp)
 ! maximum number of fermionic Matsubara frequencies
@@ -87,7 +87,9 @@ write(62,'("Temperature range : ",2G18.10)') tmin,tmax
 write(62,'("Number of temperature steps : ",I6)') ntemp
 write(62,'("Number of Pade approximant input points : ",I4)') nin
 write(62,'("Number of output frequencies : ",I8)') nout
-write(62,'("Fermionic Matsubara frequency cut-off : ",G18.10)') wfmax
+write(62,'("Fermionic Matsubara frequency cut-off")')
+write(62,'(" phonons : ",G18.10)') wfmax
+write(62,'(" Coulomb : ",G18.10)') wrms
 d0(:)=1.d-4
 z0(:)=1.d0
 ! main loop over temperature
@@ -100,7 +102,12 @@ do itemp=1,ntemp
 ! number of Matsubara frequencies
   nwf=nint(wfmax/(2.d0*t0))+nin
   if (nwf.gt.maxwf) nwf=maxwf
-  write(62,'("Number of Matsubara frequencies : ",I6)') nwf
+  nwfcl=nint(wrms/(2.d0*t0))
+  if (nwfcl.gt.nwf) nwfcl=nwf
+  if (nwfcl.lt.1) nwfcl=1
+  write(62,'("Number of Matsubara frequencies")')
+  write(62,'(" phonons : ",I8)') nwf
+  write(62,'(" Coulomb : ",I8)') nwfcl
 ! generate fermionic Matsubara frequencies
   do m=-nwf,nwf
     wf(m)=t0*dble(2*m+1)
@@ -134,7 +141,7 @@ do itemp=1,ntemp
     z0(0:nwf)=z(0:nwf)
 ! Coulomb part of summation
     dmu=0.d0
-    do n=0,nwf
+    do n=0,nwfcl
       dmu=dmu+mustar*d0(n)*z(n)/r(n)
     end do
     dmu=dmu*2.d0

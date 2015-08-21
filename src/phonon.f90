@@ -74,7 +74,7 @@ else
   nph=1
 end if
 ! initial supercell density constructed from atomic densities
-task=201
+trdstate=.false.
 ! loop over cos and sin displacements
 do p=0,nph
 ! restore input values
@@ -86,7 +86,7 @@ do p=0,nph
 ! run the ground-state calculation
   call gndstate
 ! subsequent calculations will read in this supercell potential
-  task=202
+  trdstate=.true.
 ! store the total force for the first displacement
   do ias=1,natmtot
     forcetot1(:,ias)=forcetot(:,ias)
@@ -128,8 +128,6 @@ do p=0,nph
     end do
   end do
 end do
-! restore task number
-task=200
 20 continue
 ! write dynamical matrix row to file
 do is=1,nspecies

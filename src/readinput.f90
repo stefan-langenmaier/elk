@@ -115,6 +115,7 @@ dosssum=.false.
 lmirep=.true.
 spinpol=.false.
 spinorb=.false.
+maxgeostp=200
 tau0atm=0.2d0
 nstfsp=6
 lradstp=4
@@ -618,6 +619,14 @@ case('dosssum')
   read(50,*,err=20) dosssum
 case('lmirep')
   read(50,*,err=20) lmirep
+case('maxgeostp')
+  read(50,*,err=20) maxgeostp
+  if (maxgeostp.le.0) then
+    write(*,*)
+    write(*,'("Error(readinput): maxgeostp <= 0 : ",I8)') maxgeostp
+    write(*,*)
+    stop
+  end if
 case('tau0atm')
   read(50,*,err=20) tau0atm
 case('nstfsp')
@@ -661,7 +670,7 @@ case('optcomp')
       noptcomp=i-1
       goto 10
     end if
-    str=trim(str)//' 1'
+    str=trim(str)//' 1 1'
     read(str,*,iostat=iostat) optcomp(:,i)
     if (iostat.ne.0) then
       write(*,*)

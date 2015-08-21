@@ -49,7 +49,7 @@ SRC_routines = \
  genlofr.f90 atom.f90 writefermi.f90 writekpts.f90 fsmfield.f90 mossbauer.f90 \
  occupy.f90 writelinen.f90 writeinfo.f90 readinput.f90 readspecies.f90 \
  charge.f90 moment.f90 writesym.f90 genidxlo.f90 gencore.f90 addrhocr.f90 \
- gengvec.f90 genshtmat.f90 plot1d.f90 plot2d.f90 plot3d.f90 updatpos.f90 \
+ gengvec.f90 genshtmat.f90 plot1d.f90 plot2d.f90 plot3d.f90 \
  writeiad.f90 symvect.f90 vecplot.f90 genylmg.f90 linengy.f90 init0.f90 \
  init1.f90 gengpvec.f90 genveffig.f90 gencfun.f90 genapwfr.f90 seceqnfv.f90 \
  seceqnsv.f90 seceqnss.f90 getngkmax.f90 dos.f90 rhoinit.f90 potplot.f90 \
@@ -60,7 +60,7 @@ SRC_routines = \
  hmlistl.f90 hmlaa.f90 hmlalo.f90 hmllolo.f90 init2.f90 init3.f90 writelsj.f90 \
  wavefcr.f90 gradrf.f90 dbxcplot.f90 effmass.f90 projsbf.f90 seceqnhf.f90 \
  writelat.f90 energynn.f90 findigp0.f90 writeengy.f90 writechg.f90 \
- writeforce.f90 genjlgpr.f90 findkpt.f90 putevalfv.f90 getevalfv.f90 \
+ writeforces.f90 genjlgpr.f90 findkpt.f90 putevalfv.f90 getevalfv.f90 \
  putevalsv.f90 getevalsv.f90 putoccsv.f90 getoccsv.f90 putevecfv.f90 \
  getevecfv.f90 putevecsv.f90 getevecsv.f90 delevec.f90 genvmatk.f90 \
  genvmat.f90 genwfsv.f90 genwfsvp.f90 gendmat.f90 findsymsite.f90 geomplot.f90 \
@@ -73,7 +73,7 @@ SRC_routines = \
  ggair_sp_2a.f90 ggamt_sp_2b.f90 ggair_sp_2b.f90 writeqpts.f90 potefield.f90 \
  findswidth.f90 wfcrplot.f90 zftrf.f90 genhvec.f90 sfacrho.f90 sfacmag.f90 \
  sfacinit.f90 findqpt.f90 seceqnfvz.f90 seceqnfvr.f90 genpmat.f90 \
- writepmat.f90 getpmat.f90
+ writepmat.f90 getpmat.f90 geomopt.f90 geomstep.f90
 
 SRC_phonon = \
  phonon.f90 dyntask.f90 genphsc.f90 phdisp.f90 readdyn.f90 dynqtor.f90 \

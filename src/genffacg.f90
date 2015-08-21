@@ -3,21 +3,21 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genffacg(is,ngv,ffacg)
+subroutine genffacg
 use modmain
 implicit none
-! arguments
-integer, intent(in) :: is
-integer, intent(in) :: ngv
-real(8), intent(out) :: ffacg(ngv)
 ! local variables
-integer ig
+integer is,ig
 real(8) t1,t2
+if (allocated(ffacg)) deallocate(ffacg)
+allocate(ffacg(ngrtot,nspecies))
 t1=fourpi/omega
-ffacg(1)=(t1/3.d0)*rmt(is)**3
-do ig=2,ngv
-  t2=gc(ig)*rmt(is)
-  ffacg(ig)=t1*(sin(t2)-t2*cos(t2))/(gc(ig)**3)
+do is=1,nspecies
+  ffacg(1,is)=(t1/3.d0)*rmt(is)**3
+  do ig=2,ngrtot
+    t2=gc(ig)*rmt(is)
+    ffacg(ig,is)=t1*(sin(t2)-t2*cos(t2))/(gc(ig)**3)
+  end do
 end do
 return
 end subroutine

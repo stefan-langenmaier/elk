@@ -3,7 +3,7 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine writeforce(fnum)
+subroutine writeforces(fnum)
 use modmain
 implicit none
 ! arguments
@@ -26,7 +26,6 @@ do is=1,nspecies
     write(fnum,'("   total magnitude",T30,": ",F14.8)') t1
   end do
 end do
-call flushifc(fnum)
 return
 end subroutine
 

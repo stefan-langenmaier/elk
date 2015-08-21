@@ -4,16 +4,17 @@
 ! See the file COPYING for license details.
 
 !BOP
-! !ROUTINE: updatpos
+! !ROUTINE: geomstep
 ! !INTERFACE:
-subroutine updatpos
+subroutine geomstep
 ! !USES:
 use modmain
+use modmpi
 ! !DESCRIPTION:
-!   Updates the current atomic positions according to the force on each atom. If
-!   ${\bf r}_{ij}^m$ is the position and ${\bf F}_{ij}^m$ is the force acting on
-!   it for atom $j$ of species $i$ and after time step $m$, then the new
-!   position is calculated by
+!   Makes a geometry optimisation step and updates the current atomic positions
+!   according to the force on each atom. If ${\bf r}_{ij}^m$ is the position and
+!   ${\bf F}_{ij}^m$ is the force acting on it for atom $j$ of species $i$ and
+!   after time step $m$, then the new position is calculated by
 !   $$ {\bf r}_{ij}^{m+1}={\bf r}_{ij}^m+\tau_{ij}^m\left({\bf F}_{ij}^m
 !    +{\bf F}_{ij}^{m-1}\right), $$
 !   where $\tau_{ij}^m$ is a parameter governing the size of the displacement.
@@ -26,13 +27,13 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ik,ispn,is,ia,ias
+integer is,ia,ias,n
 real(8) t1
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the dot-product between the current and previous total force
-    t1=dot_product(forcetot(:,ias),forcetp(:,ias))
+    t1=dot_product(forcetot(:,ias),forcetotp(:,ias))
 ! if the force is in the same direction then increase step size parameter
     if (t1.gt.0.d0) then
       tauatm(ias)=tauatm(ias)+tau0atm
@@ -42,33 +43,22 @@ do is=1,nspecies
 ! check for negative mass
     if (spmass(is).gt.0.d0) then
       atposc(:,ia,is)=atposc(:,ia,is)+tauatm(ias)*(forcetot(:,ias) &
-       +forcetp(:,ias))
+       +forcetotp(:,ias))
     end if
   end do
 end do
+! each MPI process should have identical atomic positions
+n=3*maxatoms*maxspecies
+call mpi_bcast(atposc,n,mpi_double_precision,0,mpi_comm_world,ierror)
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the lattice coordinates of the atomic positions
     call r3mv(ainv,atposc(:,ia,is),atposl(:,ia,is))
 ! set the previous to the current total force
-    forcetp(:,ias)=forcetot(:,ias)
+    forcetotp(:,ias)=forcetot(:,ias)
   end do
 end do
-! check for overlapping muffin-tins
-call checkmt
-! generate structure factors for G-vectors
-call gensfacgp(ngvec,vgc,ngvec,sfacg)
-! generate the characteristic function
-call gencfun
-! generate structure factors for G+k-vectors
-do ik=1,nkpt
-  do ispn=1,nspnfv
-    call gensfacgp(ngk(ispn,ik),vgkc(:,:,ispn,ik),ngkmax,sfacgk(:,:,ispn,ik))
-  end do
-end do
-! determine the new nuclear-nuclear energy
-call energynn
 return
 end subroutine
 !EOC

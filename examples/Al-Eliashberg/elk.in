@@ -34,29 +34,33 @@ ngridq
 ! k-point grid density is determined by the radius radkpt
 ! (only used for the phonon calculation)
 radkpt
-  30.0
+  40.0
 
-! fine k-point mesh required for the electron-phonon coupling
+! require accurate forces
+lmaxmat
+  6
+
+! fine k-point mesh required for the electron-phonon coupling (must be
+! commensurate with q-point mesh)
 ngridk
- 16 16 16
+  24 24 24
 
-vkloff
-  0.5 0.5 0.5
+! tight convergence for forces
+epspot
+  1.e-7
 
 ! use Broyden mixing
 mixtype
   3
-
-rgkmax
-  6.0
 
 avec
   1.0  1.0  0.0
   1.0  0.0  1.0
   0.0  1.0  1.0
 
+! we use the LDA equilibrium lattice constant
 scale
-  3.8267
+  3.7653
 
 sppath
   '../../species/'

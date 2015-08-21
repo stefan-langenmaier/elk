@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: forcek
 ! !INTERFACE:
-subroutine forcek(ik,ffacg)
+subroutine forcek(ik)
 ! !USES:
 use modmain
 ! !DESCRIPTION:
@@ -21,7 +21,6 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ik
-real(8), intent(in) :: ffacg(ngvec,nspecies)
 ! local variables
 integer ispn,jspn,jspn0,jspn1
 integer is,ia,ias,ist,jst

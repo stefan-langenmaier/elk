@@ -85,7 +85,6 @@ real(8) ts0,ts1
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:)
 real(8), allocatable :: grfmt(:,:,:)
-real(8), allocatable :: ffacg(:,:)
 ! external functions
 real(8) rfmtinp
 external rfmtinp
@@ -134,7 +133,6 @@ call symvect(.false.,forcecr)
 ! set the IBS forces to zero
 forceibs(:,:)=0.d0
 if (tfibs) then
-  allocate(ffacg(ngvec,nspecies))
 ! integral of effective potential with gradient of valence density
   do is=1,nspecies
     nr=nrmt(is)
@@ -149,21 +147,16 @@ if (tfibs) then
       end do
     end do
   end do
-! generate the smooth step function form factors
-  do is=1,nspecies
-    call genffacg(is,ngvec,ffacg(:,is))
-  end do
 ! compute k-point dependent contribution to the IBS force
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
   do ik=1,nkpt
-    call forcek(ik,ffacg)
+    call forcek(ik)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! symmetrise IBS force
   call symvect(.false.,forceibs)
-  deallocate(ffacg)
 end if
 ! total force
 do ias=1,natmtot

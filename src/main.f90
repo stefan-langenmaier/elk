@@ -57,9 +57,11 @@ do itask=1,ntasks
   select case(task)
   case(-1)
     write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
-  case(0,1,2,3)
+  case(0,1)
     call gndstate
-  case(5,6)
+  case(2,3)
+    call geomopt
+  case(5)
     call hartfock
   case(10)
     call dos
@@ -160,7 +162,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.15}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.20}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -188,11 +190,11 @@ end program
 !   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich, Torbj\"{o}rn
-!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert and Daniel
-!   Rohr. Special mention of David Singh's very useful book on the LAPW
-!   method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and the LAPW
-!   Method} (Kluwer Academic Publishers, Boston, 1994).} must also be made.
-!   Finally we would like to acknowledge the generous support of
+!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr
+!   and Vladimir Nazarov. Special mention of David Singh's very useful book on
+!   the LAPW method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and
+!   the LAPW Method} (Kluwer Academic Publishers, Boston, 1994).} must also be
+!   made. Finally we would like to acknowledge the generous support of
 !   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
 !   Training Networks initiative.
 !
@@ -205,7 +207,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, June 2011
+!   Halle and Uppsala, July 2011
 !   \newpage
 !
 !   \section{Units}
@@ -271,7 +273,7 @@ end program
 !    for usage.
 !    \item
 !    The message passing interface (MPI) is particularly suitable for running
-!    Elk accross multiple nodes of a cluster, with scaling to hundreds of
+!    Elk across multiple nodes of a cluster, with scaling to hundreds of
 !    processors possible. To enable MPI, comment out the indicated line in
 !    {\tt elk/src/Makefile} and set the variable {\tt F90} in {\tt elk/make.inc}
 !    to the MPI version of Fortran 90 (usually {\tt mpif90}). Then run
@@ -542,10 +544,10 @@ end program
 !   See {\tt epspot}.
 !
 !   \block{epsforce}{
-!   {\tt epsforce} & convergence tolerance for the forces during a structural
+!   {\tt epsforce} & convergence tolerance for the forces during a geometry
 !    optimisation run & real & $5\times 10^{-4}$}
 !   If the mean absolute value of the atomic forces is less than {\tt epsforce}
-!   then the structural optimisation run is ended. See {\tt tasks}.
+!   then the geometry optimisation run is ended. See {\tt tasks}.
 !
 !   \block{epslat}{
 !   {\tt epslat } & vectors with lengths less than this are considered zero &
@@ -564,9 +566,9 @@ end program
 !   If the RMS change in the effective potential and magnetic field is smaller
 !   than {\tt epspot} and the absolute change in the total energy is less than
 !   {\tt epsengy}, then the self-consistent loop is considered converged
-!   and exited. For structural optimisation runs this results in the forces
-!   being calculated, the atomic positions updated and the loop restarted. See
-!   also {\tt epsengy} and {\tt maxscl}.
+!   and exited. For geometry optimisation runs this results in the forces being
+!   calculated, the atomic positions updated and the loop restarted. See also
+!   {\tt epsengy} and {\tt maxscl}.
 !
 !   \block{emaxelnes}{
 !   {\tt emaxelnes} & maximum allowed initial-state eigenvalue for ELNES
@@ -1036,6 +1038,18 @@ end program
 !   {\tt sppath} & path where the species files can be found & string & null}
 !   Note that the forward slash {\tt /} at the end of the path must be included.
 !
+!   \block{ssdph}{
+!   {\tt ssdph} & set to {\tt .true.} if a complex de-phasing factor is to be
+!    used in spin-spiral calculations & logical & {\tt .true.}}
+!   If this is {\tt .true.} then spin-spiral wavefunctions in each muffin-tin at
+!   position ${\bf r}_{\alpha}$ are de-phased by the matrix
+!   $$ \begin{pmatrix} e^{-i{\bf q}\cdot{\bf r}_{\alpha}/2} & 0 \\
+!    0 & e^{i{\bf q}\cdot{\bf r}_{\alpha}/2} \end{pmatrix}. $$
+!   In simple situations, this has the advantage of producing magnon dynamical
+!   matrices which are already in diagonal form. This option should be used with
+!   care, and a full understanding of the spin-spiral configuration is required.
+!   See {\tt spinsprl}.
+!
 !   \block{stype}{
 !   {\tt stype} & integer defining the type of smearing to be used & integer &
 !    $0$}
@@ -1067,10 +1081,10 @@ end program
 !   -1 & Write out the version number of the code. \\
 !   0 & Ground state run starting from the atomic densities. \\
 !   1 & Resumption of ground-state run using density in {\tt STATE.OUT}. \\
-!   2 & Structural optimisation run starting from the atomic densities, with
+!   2 & Geometry optimisation run starting from the atomic densities, with
 !    atomic positions written to {\tt GEOMETRY.OUT}. \\
-!   3 & Resumption of structural optimisation run using density in
-!    {\tt STATE.OUT} but with positions from {\tt elk.in}. \\
+!   3 & Resumption of geometry optimisation run using density in {\tt STATE.OUT}
+!    but with positions from {\tt elk.in}. \\
 !   5 & Ground state Hartree-Fock run. \\
 !   10 & Total, partial and interstitial density of states (DOS). \\
 !   14 & Plots the smooth Dirac delta and Heaviside step functions used by the
@@ -1152,9 +1166,9 @@ end program
 !   \end{tabularx}
 !
 !   \block{tau0atm}{
-!   {\tt tau0atm} & the step size to be used for structural optimisation &
-!    real & $0.2$}
-!   The position of atom $\alpha$ is updated on step $m$ of a structural
+!   {\tt tau0atm} & the step size to be used for geometry optimisation & real &
+!    $0.2$}
+!   The position of atom $\alpha$ is updated on step $m$ of a geometry
 !   optimisation run using
 !   $$ {\bf r}_{\alpha}^{m+1}={\bf r}_{\alpha}^m+\tau_{\alpha}^m
 !    \left({\bf F}_{\alpha}^m+{\bf F}_{\alpha}^{m-1}\right), $$
@@ -1190,14 +1204,14 @@ end program
 !   Because calculation of the incomplete basis set (IBS) correction to the
 !   force is fairly time-consuming, it can be switched off by setting
 !   {\tt tfibs} to {\tt .false.} This correction can then be included only when
-!   necessary, i.e. when the atoms are close to equilibrium in a structural
-!   relaxation run.
+!   necessary, i.e. when the atoms are close to equilibrium in a geometry
+!   optimisation run.
 !
 !   \block{tforce}{
 !   {\tt tforce} & set to {\tt .true.} if the force should be calculated at the
 !    end of the self-consistent cycle & logical & {\tt .false.}}
-!   This variable is automatically set to {\tt .true.} when performing
-!   structural optimisation.
+!   This variable is automatically set to {\tt .true.} when performing geometry
+!   optimisation.
 !
 !   \block{tmomlu}{
 !   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the

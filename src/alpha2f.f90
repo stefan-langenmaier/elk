@@ -134,7 +134,7 @@ write(*,*)
 write(*,'("Info(alpha2f):")')
 write(*,'(" Eliashberg function written to ALPHA2F.OUT")')
 ! write the Eliashberg function to test file
-call writetest(250,'Eliashberg function',nv=nwdos,tol=1.d-2,rva=a2f)
+call writetest(250,'Eliashberg function',nv=nwdos,tol=1.d-1,rva=a2f)
 ! compute lambda, logarithmic average frequency, RMS average frequency and
 ! McMillan-Allen-Dynes superconducting critical temperature
 call mcmillan(w,a2f,lambda,wlog,wrms,tc)

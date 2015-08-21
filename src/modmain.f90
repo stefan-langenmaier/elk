@@ -285,6 +285,8 @@ real(8), allocatable :: gc(:)
 complex(8), allocatable :: ylmg(:,:)
 ! structure factors for the G-vectors
 complex(8), allocatable :: sfacg(:,:)
+! smooth step function form factors for all species and G-vectors
+real(8), allocatable :: ffacg(:,:)
 ! G-space characteristic function: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
 ! real-space characteristic function: 0 inside the muffin-tins and 1 outside
@@ -468,6 +470,8 @@ real(8), allocatable :: ecir(:)
 real(8), allocatable :: jcmt(:,:,:,:)
 ! interstitial paramagnetic current
 real(8), allocatable :: jcir(:,:)
+! if trdstate is .true. the density and potential can be read from STATE.OUT
+logical trdstate
 
 !--------------------------!
 !     mixing variables     !
@@ -735,10 +739,12 @@ real(8), allocatable :: forceibs(:,:)
 ! total force on each atom
 real(8), allocatable :: forcetot(:,:)
 ! previous total force on each atom
-real(8), allocatable :: forcetp(:,:)
+real(8), allocatable :: forcetotp(:,:)
 ! maximum force magnitude over all atoms
 real(8) forcemax
-! default step size parameter for structural optimisation
+! maximum number of geometry optimisation steps
+integer maxgeostp
+! default step size parameter for geometry optimisation
 real(8) tau0atm
 ! step size parameters for each atom
 real(8), allocatable :: tauatm(:)
@@ -981,7 +987,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,3,15 /
+data version / 1,3,20 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

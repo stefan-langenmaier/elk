@@ -10,8 +10,7 @@ implicit none
 ! local variables
 integer ik,ig,jg,iw,it,n
 integer info1,info2
-real(8) fxcp,t1
-complex(8) zt1
+complex(8) fxcp,zt1
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
 complex(8), allocatable :: expqmt(:,:,:)
@@ -59,7 +58,7 @@ vchi0(:,:,:)=0.d0
 do ik=1,nkptnr
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  call genvchi0(iq0,ik,gc,expqmt,vchi0)
+  call genvchi0(iq0,ik,optcomp(1,1),gc,expqmt,vchi0)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -120,9 +119,9 @@ if (fxctype.eq.2) then
     stop
   end if
 ! check for convergence
-  t1=fxcp-dble(fxc(1,1,1))
+  zt1=fxcp-fxc(1,1,1)
   fxcp=fxc(1,1,1)
-  if (abs(t1).gt.1.d-8) goto 10
+  if (abs(zt1).gt.1.d-8) goto 10
 end if
 ! write G = G' = 0 components to file
 open(50,file="EPSILON_TDDFT.OUT",action='WRITE',form='FORMATTED')
@@ -138,7 +137,8 @@ end do
 close(50)
 write(*,*)
 write(*,'("Info(tddftlr):")')
-write(*,'(" 1/3 trace of dielectric tensor written to EPSILON_TDDFT.OUT")')
+write(*,'(" dielectric tensor written to EPSILON_TDDFT.OUT")')
+write(*,'(" for component i, j = ",I1)') optcomp(1,1)
 deallocate(ipiv,expqmt,vchi0,fxc)
 deallocate(eps0,eps,vce,a,work)
 ! deallocate global exp(iG.r) arrays
