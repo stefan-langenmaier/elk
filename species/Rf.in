@@ -2,7 +2,7 @@
  'rutherfordium'                            : spname
   -104.000                                  : spzn
    475773.8944                              : spmass
-  0.196116E-06    3.0000   48.1175   800    : sprmin, rmt, sprmax, nrmt
+  0.196116E-06    3.0000   49.1242   800    : sprmin, rmt, sprmax, nrmt
   28                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -51,12 +51,12 @@
    3   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.0604   0  T
+ -0.5604   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -3.3179   0  T
+ -2.8179   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.5541   0  T
+ -1.0541   0  T

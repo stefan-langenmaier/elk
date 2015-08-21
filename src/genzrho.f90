@@ -62,8 +62,7 @@ do ias=1,natmtot
       call zvmul1(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zfmt)
     end if
 ! convert to spherical harmonics
-    call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt,lmmaxvr, &
-     zzero,zrhomt(:,:,ias),lmmaxvr)
+    call zfsht(nrc,nrcmtinr(is),zfmt,zrhomt(:,:,ias))
   else
     if (tspc.and.spinpol) then
       call zvmul2(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),wfmt1(:,:,ias,2), &

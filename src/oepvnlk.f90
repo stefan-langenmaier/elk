@@ -11,11 +11,10 @@ integer, intent(in) :: ikp
 complex(8), intent(out) :: vnlcv(ncrmax,natmtot,nstsv)
 complex(8), intent(out) :: vnlvv(nstsv,nstsv)
 ! local variables
-integer is,ia,ias,nrc
-integer ik,jk,iv(3)
-integer ig,iq,igq0
-integer ist1,ist2,ist3
-integer ic,jc,m1,m2,n
+integer ik,jk,ist1,ist2,ist3
+integer is,ia,ias,nrc,nrci,n
+integer iv(3),ig,iq,igq0
+integer ic,jc,m1,m2
 real(8) v(3),cfq
 complex(8) zrho01,zrho02,z1,z2
 ! automatic arrays
@@ -106,6 +105,7 @@ do ik=1,nkptnr
       jc=0
       do is=1,nspecies
         nrc=nrcmt(is)
+        nrci=nrcmtinr(is)
         n=lmmaxvr*nrc
         do ia=1,natoms(is)
           ias=idxas(ia,is)
@@ -122,8 +122,7 @@ do ik=1,nkptnr
                   call zvmul1(n,wfmt2(:,:,ias,1,ist3),wfcr1(:,:,1),zfmt)
                 end if
 ! convert to spherical harmonics
-                call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
-                 zfmt,lmmaxvr,zzero,zrhomt2(:,:,jc),lmmaxvr)
+                call zfsht(nrc,nrci,zfmt,zrhomt2(:,:,jc))
               end do
             end if
           end do
@@ -155,6 +154,7 @@ do ik=1,nkptnr
           jc=0
           do is=1,nspecies
             nrc=nrcmt(is)
+            nrci=nrcmtinr(is)
             do ia=1,natoms(is)
               ias=idxas(ia,is)
               ic=0
@@ -163,8 +163,8 @@ do ik=1,nkptnr
                   do m1=-spk(ist1,is),spk(ist1,is)-1
                     ic=ic+1
                     jc=jc+1
-                    z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-                     zrhomt2(:,:,jc),zvclmt(:,:,ias))
+                    z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt2(:,:,jc), &
+                     zvclmt(:,:,ias))
                     vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-wkptnr*z1
                   end do
 ! end loop over ist1
@@ -184,6 +184,7 @@ end do
 ! begin loops over atoms and species
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   n=lmmaxvr*nrc
   do ia=1,natoms(is)
     ias=idxas(ia,is)
@@ -200,8 +201,7 @@ do is=1,nspecies
             else
               call zvmul1(n,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist1),zfmt)
             end if
-            call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
-             zfmt,lmmaxvr,zzero,zrhomt1(:,:,ias,ist1),lmmaxvr)
+            call zfsht(nrc,nrci,zfmt,zrhomt1(:,:,ias,ist1))
           end do
 ! compute the complex overlap densities for the core-core states
           ic=0
@@ -212,8 +212,7 @@ do is=1,nspecies
                 call wavefcr(.false.,lradstp,is,ia,ist1,m2,nrcmtmax,wfcr2)
                 call zvmul2(n,wfcr1(:,:,1),wfcr2(:,:,1),wfcr1(:,:,2), &
                  wfcr2(:,:,2),zfmt)
-                call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
-                 zfmt,lmmaxvr,zzero,zrhomt2(:,:,ic),lmmaxvr)
+                call zfsht(nrc,nrci,zfmt,zrhomt2(:,:,ic))
               end do
             end if
           end do
@@ -227,8 +226,8 @@ do is=1,nspecies
 !-------------------------------------------!
               do ist1=1,nstsv
                 if (evalsv(ist1,ikp).lt.efermi) then
-                  z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-                   zrhomt1(:,:,ias,ist1),zvclmt)
+                  z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt1(:,:,ias,ist1), &
+                   zvclmt)
                   vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-z1
                 end if
               end do
@@ -240,8 +239,8 @@ do is=1,nspecies
                 if (spcore(ist1,is)) then
                   do m2=-spk(ist1,is),spk(ist1,is)-1
                     ic=ic+1
-                    z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-                     zrhomt2(:,:,ic),zvclmt)
+                    z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt2(:,:,ic), &
+                     zvclmt)
                     vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-z1
                   end do
 ! end loop over ist1

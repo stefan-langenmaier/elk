@@ -126,8 +126,6 @@ real(8), allocatable :: spvr(:,:)
 !---------------------------------------------------------------!
 !     muffin-tin radial mesh and angular momentum variables     !
 !---------------------------------------------------------------!
-! radial function integration and differentiation polynomial order
-integer nprad
 ! scale factor for number of muffin-tin points
 integer nrmtscf
 ! number of muffin-tin radial points for each species
@@ -166,7 +164,7 @@ integer lmaxinr
 integer lmmaxinr
 ! fraction of muffin-tin radius which constitutes the inner part
 real(8) fracinr
-! number of fine/coarse radial points to the inner part of the muffin-tin
+! number of fine/coarse radial points on the inner part of the muffin-tin
 integer nrmtinr(maxspecies),nrcmtinr(maxspecies)
 ! index to (l,m) pairs
 integer, allocatable :: idxlm(:,:)
@@ -180,7 +178,11 @@ integer, allocatable :: idxil(:),idxim(:)
 logical spinpol
 ! spinorb is .true. for spin-orbit coupling
 logical spinorb
-! fixspin type: 0 = none, 1 = global, 2 = local, 3 = global + local
+! fixed spin moment type
+!  0      : none
+!  1 (-1) : total moment (direction)
+!  2 (-2) : individual muffin-tin moments (direction)
+!  3 (-3) : total and muffin-tin moments (direction)
 integer fixspin
 ! dimension of magnetisation and magnetic vector fields (1 or 3)
 integer ndmag
@@ -226,6 +228,9 @@ real(8) vqcss(3)
 integer iqss
 ! number of primitive unit cells in spin-spiral supercell
 integer nscss
+! number of fixed spin direction points on the sphere for finding the magnetic
+! anisotropy energy
+integer npmae
 
 !---------------------------------------------!
 !     electric field and vector potential     !
@@ -564,6 +569,8 @@ real(8) chgmttot
 real(8) rwigner
 ! total moment
 real(8) momtot(3)
+! total moment magnitude
+real(8) momtotm
 ! interstitial region moment
 real(8) momir(3)
 ! muffin-tin moments
@@ -673,7 +680,7 @@ real(8) tauseq
 !     eigenvalue and occupancy variables     !
 !--------------------------------------------!
 ! number of empty states per atom and spin
-integer nempty0
+real(8) nempty0
 ! number of empty states
 integer nempty
 ! number of first-variational states
@@ -804,11 +811,18 @@ integer maxatpstp
 real(8) tau0atp
 ! step size parameters for each atom
 real(8), allocatable :: tauatp(:)
-! stress tensor
-real(8) stress(3,3)
+! number of strain tensors
+integer nstrain
+! strain tensors
+real(8) strain(3,3,9)
+! infinitesimal displacement parameter multiplied by the strain tensor for
+! computing the stress tensor
+real(8) deltast
+! symmetry reduced stress tensor components
+real(8) stress(9)
 ! previous stress tensor
-real(8) stressp(3,3)
-! maximum stress magnitude over all lattice vectors
+real(8) stressp(9)
+! stress tensor component magnitude maximum
 real(8) stressmax
 ! lattice vector optimisation type
 !  0 : no optimisation
@@ -819,8 +833,8 @@ integer latvopt
 integer maxlatvstp
 ! default step size parameter for lattice vector optimisation
 real(8) tau0latv
-! step size for each lattice vector
-real(8) taulatv(3)
+! step size for each stress tensor component acting on the lattice vectors
+real(8) taulatv(9)
 
 !-------------------------------!
 !     convergence variables     !
@@ -835,7 +849,7 @@ real(8) epspot
 real(8) epsengy
 ! force convergence tolerance
 real(8) epsforce
-! stress matrix convergence tolerance
+! stress tensor convergence tolerance
 real(8) epsstress
 
 !----------------------------------------------------------!
@@ -1052,7 +1066,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 2,2,1 /
+data version / 2,2,5 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

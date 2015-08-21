@@ -53,7 +53,7 @@ write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
 write(fnum,*)
 select case(task)
-case(0,1,8,200,201,350,351,440)
+case(0,1,28,200,201,350,351,440)
   if (trdstate) then
     write(fnum,'("+------------------------------------------+")')
     write(fnum,'("| Ground-state run resuming from STATE.OUT |")')

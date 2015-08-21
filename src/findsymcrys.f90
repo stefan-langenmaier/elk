@@ -9,6 +9,7 @@
 subroutine findsymcrys
 ! !USES:
 use modmain
+use modmpi
 use modtest
 ! !DESCRIPTION:
 !   Finds the complete set of symmetries which leave the crystal structure
@@ -188,7 +189,7 @@ end if
 if (natmtot.gt.0) then
   v1(:)=atposl(:,1,1)-v0(:)
   t1=abs(v1(1))+abs(v1(2))+abs(v1(3))
-  if (t1.gt.epslat) then
+  if ((t1.gt.epslat).and.mp_mpi) then
     write(*,'("Info(findsymcrys): atomic basis shift (lattice) :")')
     write(*,'(3G18.10)') v1(:)
     write(*,'("See GEOMETRY.OUT for new atomic positions")')

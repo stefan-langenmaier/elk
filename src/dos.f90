@@ -306,11 +306,13 @@ do is=1,nspecies
           end if
         end if
 ! subtract from interstitial DOS
+!$OMP CRITICAL
         if (dosssum) then
           dt(:,1)=dt(:,1)-g(:)
         else
           dt(:,ispn)=dt(:,ispn)-g(:)
         end if
+!$OMP END CRITICAL
         deallocate(f,g)
       end do
 !$OMP END DO

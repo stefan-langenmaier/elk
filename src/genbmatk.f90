@@ -13,8 +13,8 @@ complex(8), intent(in) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
 complex(8), intent(in) :: wfir(ngtot,nspinor,nstsv)
 complex(8), intent(out) :: bmat(nstsv,nstsv)
 ! local variables
-integer ispn,ist,jst
-integer is,ias,nrc,ir,irc
+integer ist,jst,ispn,is,ias
+integer nrc,nrci,ir,irc
 real(8) t1
 complex(8) z1
 ! automatic arrays
@@ -35,6 +35,7 @@ do jst=1,nstsv
   do ias=1,natmtot
     is=idxis(ias)
     nrc=nrcmt(is)
+    nrci=nrcmtinr(is)
 ! apply magnetic field to spinor wavefunction
     do irc=1,nrc
       zfmt(:,irc,1)=bmt(:,irc,ias,ndmag)*wfmt(:,irc,ias,1,jst)
@@ -48,8 +49,8 @@ do jst=1,nstsv
     do ist=1,jst
 ! compute inner product (functions are in spherical coordinates)
       do ispn=1,nspinor
-        z1=zfmtinp(.false.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-         wfmt(:,:,ias,ispn,ist),zfmt(:,:,ispn))
+        z1=zfmtinp(.false.,nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,ist), &
+         zfmt(:,:,ispn))
         bmat(ist,jst)=bmat(ist,jst)+z1
       end do
     end do

@@ -268,7 +268,8 @@ end if
 !     secular equation variables     !
 !------------------------------------!
 ! total number of empty states (M. Meinert)
-nempty=nempty0*natmtot*nspinor
+nempty=nint(nempty0*natmtot*nspinor)
+if (nempty.lt.1) nempty=1
 ! number of first-variational states
 nstfv=int(chgval/2.d0)+nempty+1
 ! overlap and Hamiltonian matrix sizes

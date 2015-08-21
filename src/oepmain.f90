@@ -50,7 +50,7 @@ tau=tauoep(1)
 !     start iteration loop     !
 !------------------------------!
 do it=1,maxitoep
-  if (mp_mpi.and.(mod(it,10).eq.0)) then
+  if ((mod(it,10).eq.0).and.mp_mpi) then
     write(*,'("Info(oepmain): done ",I4," iterations of ",I4)') it,maxitoep
   end if
 ! zero the residuals

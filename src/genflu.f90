@@ -29,8 +29,7 @@ implicit none
 ! arguments
 integer, intent(in) :: is
 integer, intent(in) :: l
-real(8), intent(inout) :: u
-real(8), intent(inout) :: j
+real(8), intent(inout) :: u,j
 real(8), intent(inout) :: f(0:2*lmaxlu)
 ! local variables
 integer k,q

@@ -19,18 +19,17 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv)
 integer, intent(in) :: ld
 complex(8), intent(out) :: dmat(ld,ld,nspinor,nspinor,nstsv)
 ! local variables
-integer lmmax,is,ia
-integer ispn,jspn,ist
+integer ist,ispn,jspn
+integer is,ia,irc
+integer lmmax,i,j,n
 integer l,m1,m2,lm1,lm2
-integer i,j,n,irc
 real(8) t1,t2
 complex(8) zq(2),z1
 ! automatic arrays
 logical done(nstfv,nspnfv)
 real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 ! allocatable arrays
-complex(8), allocatable :: wfmt1(:,:,:,:)
-complex(8), allocatable :: wfmt2(:,:,:)
+complex(8), allocatable :: wfmt1(:,:,:,:),wfmt2(:,:,:)
 if (lmin.lt.0) then
   write(*,*)
   write(*,'("Error(gendmat): lmin < 0 : ",I8)') lmin

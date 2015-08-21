@@ -22,10 +22,11 @@ implicit none
 ! local variables
 logical fnd
 integer is,ia,ja,ias,jas
-integer l,ilo,io,jo
+integer l,ilo,io,jo,nnf
 ! automatic arrays
 logical done(natmmax)
 real(8) vr(nrmtmax)
+nnf=0
 ! begin loops over atoms and species
 do is=1,nspecies
   done(:)=.false.
@@ -50,17 +51,9 @@ do is=1,nspecies
           end do
 ! find the band energy starting from default
           apwe(io,l,ias)=apwe0(io,l,is)
-          call findband(solsc,l,0,nprad,nrmt(is),spr(:,is),vr,epsband, &
-           demaxbnd,apwe(io,l,ias),fnd)
-          if (mp_mpi.and.(.not.fnd)) then
-            write(*,*)
-            write(*,'("Warning(linengy): linearisation energy not found")')
-            write(*,'(" for species ",I4)') is
-            write(*,'(" atom ",I4)') ia
-            write(*,'(" APW angular momentum ",I4)') l
-            write(*,'(" order ",I4)') io
-            write(*,'(" and s.c. loop ",I5)') iscl
-          end if
+          call findband(solsc,l,0,nrmt(is),spr(:,is),vr,epsband,demaxbnd, &
+           apwe(io,l,ias),fnd)
+          if (.not.fnd) nnf=nnf+1
         else
 ! set linearisation energy automatically
           if (autolinengy) apwe(io,l,ias)=efermi+dlefe
@@ -86,17 +79,9 @@ do is=1,nspecies
           l=lorbl(ilo,is)
 ! find the band energy starting from default
           lorbe(io,ilo,ias)=lorbe0(io,ilo,is)
-          call findband(solsc,l,0,nprad,nrmt(is),spr(:,is),vr,epsband, &
-           demaxbnd,lorbe(io,ilo,ias),fnd)
-          if (mp_mpi.and.(.not.fnd)) then
-            write(*,*)
-            write(*,'("Warning(linengy): linearisation energy not found")')
-            write(*,'(" for species ",I4)') is
-            write(*,'(" atom ",I4)') ia
-            write(*,'(" local-orbital ",I4)') ilo
-            write(*,'(" order ",I4)') io
-            write(*,'(" and s.c. loop",I5)') iscl
-          end if
+          call findband(solsc,l,0,nrmt(is),spr(:,is),vr,epsband,demaxbnd, &
+           lorbe(io,ilo,ias),fnd)
+          if (.not.fnd) nnf=nnf+1
         else
 ! set linearisation energy automatically
           if (autolinengy) lorbe(io,ilo,ias)=efermi+dlefe
@@ -125,6 +110,11 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
+if ((nnf.gt.0).and.mp_mpi) then
+  write(*,*)
+  write(*,'("Warning(linengy): could not find ",I3," linearisation energies &
+   &in s.c. loop ",I5)') nnf,iscl
+end if
 return
 end subroutine
 !EOC

@@ -58,7 +58,7 @@ do itask=1,ntasks
 ! check if task can be run with MPI
   if (lp_mpi.gt.0) then
     select case(task)
-    case(0,1,2,3,5,120,135,136,170,180,185,188,240,300,320,330,440)
+    case(0,1,2,3,5,28,120,135,136,170,180,185,188,240,300,320,330,440)
       continue
     case default
       write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi, &
@@ -85,6 +85,8 @@ do itask=1,ntasks
     call bandstr
   case(25)
     call effmass
+  case(28)
+    call mae
   case(31,32,33)
     call rhoplot
   case(41,42,43)
@@ -194,7 +196,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.2.1}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.2.5}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -241,7 +243,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, September 2013
+!   Halle and Uppsala, October 2013
 !   \newpage
 !
 !   \section{Units}
@@ -596,14 +598,23 @@ end program
 !   See {\tt ndspem} and {\tt vklem}.
 !
 !   \block{deltaph}{
-!   {\tt deltaph} & the size of the atomic displacement used for calculating
-!    dynamical matrices & real & $0.03$}
+!   {\tt deltaph} & size of the atomic displacement used for calculating
+!    dynamical matrices & real & $0.02$}
 !   Phonon calculations are performed by constructing a supercell corresponding
 !   to a particular ${\bf q}$-vector and making a small periodic displacement of
 !   the atoms. The magnitude of this displacement is given by {\tt deltaph}.
 !   This should not be made too large, as anharmonic terms could then become
 !   significant, neither should it be too small as this can introduce numerical
 !   error.
+!
+!   \block{deltast}{
+!   {\tt deltast} & size of the change in lattice vectors used for calculating
+!    the stress tensor & real & $0.01$}
+!   The stress tensor is computed by changing the lattice vector matrix $A$ by
+!   $$ A\rightarrow (1+\delta t\,e_i)A, $$
+!   where $dt$ is an infinitesimal equal in practice to {\tt deltast} and $e_i$
+!   is the $i^{\rm th}$ strain tensor. Numerical finite differences are used to
+!   compute the stress tensor as the derivative of the total energy $dE_i/dt$.
 !
 !   \block{dlefe}{
 !   {\tt dlefe} & difference between the fixed linearisation energy and the
@@ -674,9 +685,9 @@ end program
 !   {\tt epsengy} and {\tt maxscl}.
 !
 !   \block{epsstress}{
-!   {\tt epsstress} & convergence tolerance for the stress matrix during a
+!   {\tt epsstress} & convergence tolerance for the stress tensor during a
 !    geometry optimisation run with lattice vector relaxation & real &
-!    $3\times 10^{-4}$}
+!    $5\times 10^{-3}$}
 !   See also {\tt epsforce} and {\tt latvopt}.
 !
 !   \block{emaxelnes}{
@@ -977,7 +988,7 @@ end program
 !   See {\tt deltaem} and {\tt vklem}.
 !
 !   \block{nempty}{
-!   {\tt nempty} & the number of empty states per atom and spin & integer & 4}
+!   {\tt nempty} & the number of empty states per atom and spin & real & $4.0$ }
 !   Defines the number of eigenstates beyond that required for charge
 !   neutrality. When running metals it is not known {\it a priori} how many
 !   states will be below the Fermi energy for each $k$-point. Setting
@@ -1011,12 +1022,6 @@ end program
 !   This block allows users to add their own notes to the file {\tt INFO.OUT}.
 !   The block should be terminated with a blank line, and no line should exceed
 !   80 characters.
-!
-!   \block{nprad}{
-!   {\tt nprad} & radial polynomial order & integer & 4}
-!   This sets the polynomial order for the predictor-corrector method when
-!   solving the radial Dirac and Schr\"odinger equations, as well as for
-!   performing radial interpolation in the plotting routines.
 !
 !   \block{nseqit}{
 !   {\tt nseqit} & number of iterations per self-consistent loop using the
@@ -1355,7 +1360,7 @@ end program
 !
 !   \block{tau0latv}{
 !   {\tt tau0latv} & the step size to be used for lattice vector optimisation &
-!    real & $0.5$}
+!    real & $0.01$}
 !   This parameter is used for lattice vector optimisation in a procedure
 !   identical to that for atomic position optimisation. See {\tt tau0atp} and
 !   {\tt latvopt}.

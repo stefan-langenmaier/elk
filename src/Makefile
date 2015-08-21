@@ -78,7 +78,9 @@ SRC_routines = \
  gentau.f90 xc_c_tb09.f90 mtdmin.f90 writeemd.f90 compton.f90 \
  genevfsv.f90 gentauk.f90 gentaucr.f90 ssfext.f90 sstask.f90 spiralsc.f90 \
  genscss.f90 findscq.f90 init4.f90 genhvec.f90 addlorbcnd.f90 nuclei.f90 \
- gradzf.f90 rfmtsm.f90 rhomagsm.f90 genstress.f90 writestress.f90 latvstep.f90
+ gradzf.f90 rfmtsm.f90 rhomagsm.f90 genstress.f90 writestress.f90 latvstep.f90 \
+ zbsht.f90 zfsht.f90 zfmtadd.f90 rbsht.f90 rfsht.f90 mae.f90 symmat.f90 \
+ genstrain.f90
 
 SRC_phonon = \
  phononsc.f90 dyntask.f90 genscph.f90 phdisp.f90 readdyn.f90 dynqtor.f90 \

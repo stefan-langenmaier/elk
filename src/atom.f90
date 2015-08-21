@@ -6,8 +6,7 @@
 !BOP
 ! !ROUTINE: atom
 ! !INTERFACE:
-subroutine atom(sol,ptnucl,zn,nst,n,l,k,occ,xctype,xcgrad,np,nr,r,eval,rho,vr, &
- rwf)
+subroutine atom(sol,ptnucl,zn,nst,n,l,k,occ,xctype,xcgrad,nr,r,eval,rho,vr,rwf)
 ! !USES:
 use modxcifc
 ! !INPUT/OUTPUT PARAMETERS:
@@ -21,7 +20,6 @@ use modxcifc
 !   occ    : occupancy of each state (inout,real(nst))
 !   xctype : exchange-correlation type (in,integer(3))
 !   xcgrad : 1 for GGA functional, 0 otherwise (in,integer)
-!   np     : order of predictor-corrector polynomial (in,integer)
 !   nr     : number of radial mesh points (in,integer)
 !   r      : radial mesh (in,real(nr))
 !   eval   : eigenvalue without rest-mass energy for each state (out,real(nst))
@@ -32,10 +30,8 @@ use modxcifc
 ! !DESCRIPTION:
 !   Solves the Dirac-Kohn-Sham equations for an atom using the
 !   exchange-correlation functional {\tt xctype} and returns the self-consistent
-!   radial wavefunctions, eigenvalues, charge densities and potentials. The
-!   variable {\tt np} defines the order of polynomial used for performing
-!   numerical integration. Requires the exchange-correlation interface routine
-!   {\tt xcifc}.
+!   radial wavefunctions, eigenvalues, charge densities and potentials. Requires
+!   the exchange-correlation interface routine {\tt xcifc}.
 !
 ! !REVISION HISTORY:
 !   Created September 2002 (JKD)
@@ -56,7 +52,6 @@ integer, intent(in) :: k(nst)
 real(8), intent(inout) :: occ(nst)
 integer, intent(in) :: xctype(3)
 integer, intent(in) :: xcgrad
-integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(out) :: eval(nst)
@@ -77,18 +72,6 @@ real(8), allocatable :: grho(:),g2rho(:),g3rho(:)
 if (nst.le.0) then
   write(*,*)
   write(*,'("Error(atom): invalid nst : ",I8)') nst
-  write(*,*)
-  stop
-end if
-if (np.lt.2) then
-  write(*,*)
-  write(*,'("Error(atom): np < 2 : ",I8)') np
-  write(*,*)
-  stop
-end if
-if (nr.lt.np) then
-  write(*,*)
-  write(*,'("Error(atom): nr < np : ",2I8)') nr,np
   write(*,*)
   stop
 end if
@@ -127,7 +110,7 @@ do iscl=1,maxscl
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
   do ist=1,nst
-    call rdirac(sol,n(ist),l(ist),k(ist),np,nr,r,vr,eval(ist),rwf(:,1,ist), &
+    call rdirac(sol,n(ist),l(ist),k(ist),nr,r,vr,eval(ist),rwf(:,1,ist), &
      rwf(:,2,ist))
   end do
 !$OMP END DO

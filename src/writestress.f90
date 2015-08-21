@@ -8,20 +8,32 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer i,j
+integer i,j,k
 ! initialise universal variables
 call init0
 ! start from the atomic densities
 trdstate=.false.
-! generate the stress matrix
+! generate the stress tensor
 call genstress
-! write the stress matrix to file
+! write the stress tensor to file
 if (mp_mpi) then
   open(50,file='STRESS.OUT',action='WRITE',form='FORMATTED')
-  do j=1,3
+  write(50,*)
+  write(50,'("Lattice vector matrix, A, changed by")')
+  write(50,*)
+  write(50,'("     A --> (1 + dt e_i) A,")')
+  write(50,*)
+  write(50,'("where dt is an infinitesimal scalar and e_i is a strain tensor")')
+  write(50,*)
+  write(50,'("Stress is given by the derivative of the total energy dE/dt")')
+  do k=1,nstrain
+    write(50,*); write(50,*)
+    write(50,'("Strain matrix : ",I1)') k
+    do i=1,3
+      write(50,'(3G18.10)') (strain(i,j,k),j=1,3)
+    end do
     write(50,*)
-    write(50,'("Derivative of total energy w.r.t. lattice vector ",I1," :")') j
-    write(50,'(3G18.10)') (stress(i,j),i=1,3)
+    write(50,'("Stress matrix component : ",G18.10)') stress(k)
   end do
   close(50)
   write(*,*)

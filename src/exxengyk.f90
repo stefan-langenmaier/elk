@@ -9,10 +9,9 @@ implicit none
 ! arguments
 integer, intent(in) :: ikp
 ! local variables
-integer is,ia,ias
-integer jkp,ik,jk,iv(3)
-integer ig,iq,igq0,nrc
-integer ist,jst,m
+integer jkp,ik,jk,ist,jst
+integer is,ia,ias,nrc,nrci
+integer iv(3),ig,iq,igq0,m
 real(8) cfq,v(3),t1
 complex(8) zrho0,z1
 ! allocatable arrays
@@ -116,6 +115,7 @@ end do
 ! begin loops over atoms and species
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do jst=1,spnst(is)
@@ -131,13 +131,12 @@ do is=1,nspecies
                 zfmt(:,1:nrc)=zfmt(:,1:nrc) &
                  +conjg(wfcr(:,1:nrc,2))*wfmt1(:,1:nrc,ias,2,ist)
               end if
-              call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
-               zfmt,lmmaxvr,zzero,zrhomt(:,:,ias),lmmaxvr)
+              call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ias))
 ! calculate the Coulomb potential
               call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ias), &
                zvclmt(:,:,ias))
-              z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-               zrhomt(:,:,ias),zvclmt(:,:,ias))
+              z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ias), &
+               zvclmt(:,:,ias))
 !$OMP CRITICAL
               engyx=engyx-occmax*wkpt(ikp)*dble(z1)
 !$OMP END CRITICAL

@@ -2,7 +2,7 @@
  'copper'                                   : spname
   -29.0000                                  : spzn
    115837.2716                              : spmass
-  0.371391E-06    2.4000   40.3561   500    : sprmin, rmt, sprmax, nrmt
+  0.371391E-06    2.4000   39.1076   500    : sprmin, rmt, sprmax, nrmt
   10                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -30,8 +30,8 @@
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -3.1152   0  T
+ -2.6152   0  T
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.6918   0  T
+ -0.1918   0  T

@@ -19,7 +19,7 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ld,is,ias,idm
+integer ld,idm,is,ias
 integer nr,nri,iro,ir
 integer nrci,nrco,irco,irc
 ! allocatable arrays

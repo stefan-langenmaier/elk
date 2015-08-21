@@ -2,7 +2,7 @@
  'yttrium'                                  : spname
   -39.0000                                  : spzn
    162065.4501                              : spmass
-  0.320256E-06    2.6000   49.6779   600    : sprmin, rmt, sprmax, nrmt
+  0.320256E-06    2.6000   51.0150   600    : sprmin, rmt, sprmax, nrmt
   14                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -34,8 +34,8 @@
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.2619   0  T
+ -1.7619   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.5082   0  T
+ -1.0082   0  T

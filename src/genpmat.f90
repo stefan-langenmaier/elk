@@ -42,8 +42,10 @@ complex(8), intent(in) :: wfir(ngkmax,nspinor,nstsv)
 complex(8), intent(out) :: pmat(3,nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,jst
-integer is,ia,ias,nrc,ir,irc
-integer igp,ifg,itp,i
+integer is,ia,ias
+integer nrc,nrci,ir,irc
+integer itp,igp,ifg,i
+real(8) cso
 complex(8) z1,z2,z11,z12,z21,z22,z31,z32
 ! allocatable arrays
 complex(8), allocatable :: gwfmt(:,:,:,:),gwfir(:,:),x(:)
@@ -51,6 +53,8 @@ complex(8), allocatable :: gvmt(:,:,:),zfmt1(:,:,:),zfmt2(:,:,:,:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
+! coefficient of spin-orbit coupling
+cso=1.d0/(4.d0*solsc**2)
 ! zero the momentum matrix elements array
 pmat(:,:,:)=0.d0
 !---------------------------------!
@@ -64,6 +68,7 @@ if (spinorb) then
 end if
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute gradient of potential for spin-orbit correction if required
@@ -77,8 +82,7 @@ do is=1,nspecies
 ! convert to spherical coordinates
       do i=1,3
         zfmt1(:,1:nrc,1)=gvmt(:,1:nrc,i)
-        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1, &
-         lmmaxvr,zzero,gvmt(:,:,i),lmmaxvr)
+        call zbsht(nrc,nrci,zfmt1,gvmt(:,:,i))
       end do
     end if
     do jst=1,nstsv
@@ -91,8 +95,7 @@ do is=1,nspecies
       if (spinorb) then
         do ispn=1,nspinor
 ! convert wavefunction to spherical coordinates
-          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-           wfmt(:,:,ias,ispn,jst),lmmaxvr,zzero,zfmt1(:,:,ispn),lmmaxvr)
+          call zbsht(nrc,nrci,wfmt(:,:,ias,ispn,jst),zfmt1(:,:,ispn))
         end do
 ! compute sigma x (grad V(r)) psi(r)
         do irc=1,nrc
@@ -114,11 +117,10 @@ do is=1,nspecies
           end do
         end do
 ! convert to spherical harmonics and add to wavefunction gradient
-        z1=1.d0/(4.d0*solsc**2)
         do ispn=1,nspinor
           do i=1,3
-            call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,z1,zfshtvr,lmmaxvr, &
-             zfmt2(:,:,i,ispn),lmmaxvr,zone,gwfmt(:,:,i,ispn),lmmaxvr)
+            call zfsht(nrc,nrci,zfmt2(:,:,i,ispn),zfmt1)
+            gwfmt(:,1:nrc,i,ispn)=gwfmt(:,1:nrc,i,ispn)+cso*zfmt1(:,1:nrc,1)
           end do
         end do
       end if
@@ -126,8 +128,8 @@ do is=1,nspecies
       do ispn=1,nspinor
         do ist=1,jst
           do i=1,3
-            pmat(i,ist,jst)=pmat(i,ist,jst)+zfmtinp(.true.,lmmaxvr,nrc, &
-             rcmt(:,is),lmmaxvr,wfmt(:,:,ias,ispn,ist),gwfmt(:,:,i,ispn))
+            pmat(i,ist,jst)=pmat(i,ist,jst)+zfmtinp(.true.,nrc,nrci, &
+             rcmt(:,is),wfmt(:,:,ias,ispn,ist),gwfmt(:,:,i,ispn))
           end do
         end do
       end do

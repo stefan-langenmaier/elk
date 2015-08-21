@@ -215,7 +215,8 @@ bfcmt(:,:,:)=bfcmt0(:,:,:)
 ! if reducebf < 1 then reduce the external magnetic fields immediately for
 ! non-self-consistent calculations or resumptions
 if (reducebf.lt.1.d0-epslat) then
-  if ((task.ge.10).and.(task.ne.200).and.(task.ne.350).and.(task.ne.351)) then
+  if ((task.ge.10).and.(task.ne.28).and.(task.ne.200).and.(task.ne.201).and. &
+   (task.ne.350).and.(task.ne.351)) then
     bfieldc(:)=0.d0
     bfcmt(:,:,:)=0.d0
   end if

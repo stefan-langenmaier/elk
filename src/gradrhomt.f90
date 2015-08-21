@@ -16,8 +16,7 @@ allocate(rfmt(lmmaxvr,nrmtmax),grfmt(lmmaxvr,nrmtmax,3))
 nr=nrmt(isph)
 call gradrfmt(lmaxvr,nr,spr(:,isph),lmmaxvr,nrmtmax,rhomt(:,:,iasph),grfmt)
 ! convert to spherical coordinates
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,ipph), &
- lmmaxvr,0.d0,rfmt,lmmaxvr)
+call rbsht(nr,nrmtinr(isph),grfmt(:,:,ipph),rfmt)
 ! subtract from density derivative
 drhomt(:,1:nr,iasph)=drhomt(:,1:nr,iasph)-rfmt(:,1:nr)
 deallocate(rfmt,grfmt)

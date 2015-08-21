@@ -15,8 +15,8 @@ real(8), intent(inout) :: dvxir(ngtot)
 real(8), intent(inout) :: dbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
 real(8), intent(inout) :: dbxir(ngtot,ndmag)
 ! local variables
-integer is,ia,ias,ist,jst
-integer nrc,ic,m,idm
+integer ist,jst,is,ia,ias
+integer nrc,nrci,ic,m,idm
 real(8) de
 complex(8) z1
 ! allocatable arrays
@@ -55,6 +55,7 @@ call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),occsv,apwalm, &
 !-----------------------------------------------------------!
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     ic=0
@@ -73,16 +74,16 @@ do is=1,nspecies
                  +conjg(wfcr(:,1:nrc,2))*wfmt(:,1:nrc,ias,2,jst)
               end if
               z1=conjg(vnlcv(ic,ias,jst,ik))
-              z1=z1-zfmtinp(.false.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-               zrhomt(:,:,ias),zvxmt(:,:,ias))
+              z1=z1-zfmtinp(.false.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ias), &
+               zvxmt(:,:,ias))
 ! spin-polarised case
               if (spinpol) then
                 call genzmagmt(is,wfcr(:,:,1),wfcr(:,:,2),wfmt(:,:,ias,1,jst), &
                  wfmt(:,:,ias,2,jst),1,zvfmt)
 ! integral of magnetisation dot exchange field
                 do idm=1,ndmag
-                  z1=z1-zfmtinp(.false.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-                   zvfmt(:,:,idm),zbxmt(:,:,ias,idm))
+                  z1=z1-zfmtinp(.false.,nrc,nrci,rcmt(:,is),zvfmt(:,:,idm), &
+                   zbxmt(:,:,ias,idm))
                 end do
 ! end spin-polarised case
               end if

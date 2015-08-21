@@ -76,7 +76,7 @@ do i=1,2
     r(ir)=rmin*exp(dble(ir-1)*t2)
   end do
 ! solve the Kohn-Sham-Dirac equation for the atom
-  call atom(sol,.true.,zn,nst,n,l,k,occ,3,0,nprad,nr,r,eval,rho,vr,rwf)
+  call atom(sol,.true.,zn,nst,n,l,k,occ,3,0,nr,r,eval,rho,vr,rwf)
   do ir=nr,1,-1
     if (rho(ir).gt.1.d-20) then
       rmax=1.75d0*r(ir)
@@ -146,7 +146,7 @@ do ist=1,nst
     write(60,'(2I4,T45,": lorbl, lorbord")') l(ist),3
     write(60,'(F8.4,I4,"  ",L1,T45,": lorbe0, lorbdm, lorbve")') e0,0,.false.
     write(60,'(F8.4,I4,"  ",L1)') e0,1,.false.
-    write(60,'(F8.4,I4,"  ",L1)') eval(ist)-0.5d0,0,.true.
+    write(60,'(F8.4,I4,"  ",L1)') eval(ist),0,.true.
   end if
 end do
 close(60)

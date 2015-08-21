@@ -1,3 +1,16 @@
+
+elk-2.2.5
+-dramatic speed-up for most parts of the code thanks to some (fairly obvious)
+ optimisations
+-greatly improved lattice vector optimisation
+-automatic determination of the magnetic anisotropy energy (MAE) with 'task=28'
+ (experimental); see the example 'FeCo-MAE'
+-the variable 'nempty' is now a real number; see manual entry
+-magnitude of total magnetisation vector written to MOMENTM.OUT
+-improved the species files
+-made the linearisation energy search more reliable
+-reduced the annoying 'linearisation energy not found' warning
+
 elk-2.2.1
 -added full structural optimisation; setting 'latvopt=1' performs unconstrained
  optimisation of the lattice vectors; 'latvopt=2' performs iso-volumetric
