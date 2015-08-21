@@ -43,6 +43,9 @@ real(8), intent(in) :: rfmt2(ld,nr)
 integer lmmax,ir,irc
 ! automatic arrays
 real(8) rc(nr),fr(nr),gr(nr),cf(4,nr)
+! external functions
+real(8) ddot
+external ddot
 if (lrstp.le.0) then
   write(*,*)
   write(*,'("Error(rfmtinp): lrstp <= 0 : ",I8)') lrstp
@@ -66,7 +69,7 @@ irc=0
 do ir=1,nr,lrstp
   irc=irc+1
   rc(irc)=r(ir)
-  fr(irc)=dot_product(rfmt1(1:lmmax,ir),rfmt2(1:lmmax,ir))*r(ir)**2
+  fr(irc)=ddot(lmmax,rfmt1(:,ir),1,rfmt2(:,ir),1)*(r(ir)**2)
 end do
 call fderiv(-1,irc,rc,fr,gr,cf)
 rfmtinp=gr(irc)

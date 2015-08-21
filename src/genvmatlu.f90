@@ -200,7 +200,7 @@ do is=1,nspecies
 ! spin-polarised
         if (ncmag) then
 ! non-collinear case
-! correction to the energy 
+! correction to the energy
           edc=0.5d0*u*n*(n-1.d0)
           edc=edc-0.5d0*j*dble(dmt(1,1)*(dmt(1,1)-1.d0))
           edc=edc-0.5d0*j*dble(dmt(2,2)*(dmt(2,2)-1.d0))
@@ -218,7 +218,7 @@ do is=1,nspecies
           end do
         else
 ! collinear case
-! correction to the energy 
+! correction to the energy
           edc=0.5d0*u*n*(n-1.d0)
           edc=edc-0.5d0*j*dble(dmt(1,1)*(dmt(1,1)-1.d0))
           edc=edc-0.5d0*j*dble(dmt(2,2)*(dmt(2,2)-1.d0))

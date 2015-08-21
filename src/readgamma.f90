@@ -13,8 +13,8 @@ integer iq,i
 integer natmtot_,nqpt_,iq_,i_
 real(8) vql_(3),vqc_(3)
 ! external functions
-real(8) r3dist
-external r3dist
+real(8) r3taxi
+external r3taxi
 open(50,file='GAMMAQ.OUT',action='READ',form='FORMATTED',status='OLD')
 read(50,*)
 read(50,*) natmtot_
@@ -46,7 +46,7 @@ do iq=1,nqpt
     stop
   end if
   read(50,*) vql_
-  if (r3dist(vql(:,iq),vql_).gt.epslat) then
+  if (r3taxi(vql(:,iq),vql_).gt.epslat) then
     write(*,*)
     write(*,'("Error(readgamma): differing q-vectors in lattice coordinates for&
      & q-point ",I6)') iq
@@ -56,7 +56,7 @@ do iq=1,nqpt
     stop
   end if
   read(50,*) vqc_
-  if (r3dist(vqc(:,iq),vqc_).gt.epslat) then
+  if (r3taxi(vqc(:,iq),vqc_).gt.epslat) then
     write(*,*)
     write(*,'("Error(readgamma): differing q-vectors in Cartesian coordinates&
      & for q-point ",I6)') iq

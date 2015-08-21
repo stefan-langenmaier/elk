@@ -10,7 +10,7 @@
 tasks
   0
 
-! use iterative diaongalisation
+! use iterative diagonalisation
 tseqit
  .true.
 
@@ -22,12 +22,24 @@ molecule
 autormt
  .true.
 
-! use a small energy cut-off
+! use very small energy cut-off
 rgkmax
   4.0
 
+deband
+ 0.01
+
 sppath
   '../../species/'
+
+! use an fcc box to contain the molecule
+avec
+ 0.5 0.5 0.0
+ 0.5 0.0 0.5
+ 0.0 0.5 0.5
+
+scale
+ 24.0
 
 atoms
    1                                    : nspecies

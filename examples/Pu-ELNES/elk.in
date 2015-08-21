@@ -23,10 +23,6 @@ deband
 emaxelnes
  -20.0
 
-! lower the minimum allowed valence eigenvalue
-evalmin
- -40.0
-
 dos
  300 100 6    : nwdos, ngrdos, nsmdos
  28.0 32.0    : wdos

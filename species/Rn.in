@@ -1,8 +1,8 @@
  'Rn'                                       : spsymb
  'radon'                                    : spname
   -86.0000                                  : spzn
-   404681.2437                              : spmass
-  0.215666E-06    2.0000   29.7760   700    : sprmin, rmt, sprmax, nrmt
+   404681.2435                              : spmass
+  0.215666E-06    2.0000   32.6390   700    : sprmin, rmt, sprmax, nrmt
   24                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -31,7 +31,7 @@
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx
-   7                                        : nlorb
+   5                                        : nlorb
    0   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
@@ -41,18 +41,11 @@
    2   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
-   3   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.7155   0  T
+ -1.8773   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.7335   0  T
-   1   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -0.3136   0  T
+ -1.0585   0  T

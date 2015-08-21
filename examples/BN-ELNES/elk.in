@@ -18,10 +18,6 @@ tasks
 spinorb
  .true.
 
-! lower the minimum allowed valence eigenvalue
-evalmin
- -30.0
-
 ! ELNES q-vector in lattice coordinates
 vecql
  0.0 0.0 0.125

@@ -42,9 +42,9 @@ complex(8), intent(in) :: v(n)
 complex(8), intent(inout) :: a(*)
 ! local variables
 integer j,k
-real(8) a1,a2
 ! numbers less than eps are considered to be zero
 real(8), parameter :: eps=1.d-12
+real(8) a1,a2
 complex(8) zt1,zt2
 if (tapp) then
 !--------------------------!

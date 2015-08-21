@@ -68,7 +68,6 @@ do is=1,nspecies
         lspn=lspnsymc(isym)
 ! equivalent atom index (symmetry rotates atom ja into atom ia)
         ja=ieqatom(ia,is,isym)
-        jas=idxas(ja,is)
 ! apply (l,m) symmetry matrix as U*D*conjg(U')
         do ispn=1,nspinor
           do jspn=1,nspinor

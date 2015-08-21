@@ -132,13 +132,13 @@ do is=1,nspecies
           else if (k.eq.2) then
             ispn=2
             jspn=2
-          else 
+          else
             ispn=1
             jspn=2
           end if
           call zgemm('N','N',nm,nrc,nm,zone,vmatlu(lm,lm,ispn,jspn,ias), &
            lmmaxlu,wfmt1(lm,1,jst),lmmaxvr,zone,wfmt4(lm,1,k),lmmaxvr)
-        end do 
+        end do
       end if
 ! second-variational Hamiltonian matrix
       do ist=1,nstfv

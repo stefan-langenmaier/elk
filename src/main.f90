@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2008 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2009 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -16,9 +16,7 @@ do itask=1,ntasks
   task=tasks(itask)
   select case(task)
   case(-1)
-    write(*,*)
     write(*,'("Elk version ",I1.1,".",I2.2,".",I3.3)') version
-    write(*,*)
     stop
   case(0,1,2,3)
     call gndstate
@@ -97,7 +95,7 @@ stop
 end program
 
 !BOI
-! !TITLE: The Elk Code Manual\\ Version 0.9.279\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: The Elk Code Manual\\ Version 1.0.0\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: J. K. Dewhurst, S. Sharma, L. Nordstr\"{o}m, F. Cricchio, F. Bultmark
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -105,7 +103,9 @@ end program
 !   linearised augmented-plane-wave (FP-LAPW) code for determining the
 !   properties of crystalline solids. It was developed originally at the
 !   Karl-Franzens-Universit\"{a}t Graz as part of the {\sf EXCITING} EU Research
-!   and Training Network project \cite{exciting}. The guiding philosophy during
+!   and Training Network project\footnote{{\sf EXCITING} code developed under
+!   the Research and Training Network {\sf EXCITING} funded by the EU, contract
+!   No. HPRN-CT-2002-00317}. The guiding philosophy during
 !   the implementation of the code was to keep it as simple as possible for both
 !   users and developers without compromising on its capabilities. All the
 !   routines are released under either the GNU General Public License (GPL) or
@@ -122,9 +122,10 @@ end program
 !   Nektarios Lathiotakis, Tobias Burnus, Stephan Sagmeister, Christian
 !   Meisenbichler, S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann,
 !   Alexey Baranov, Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger,
-!   Antonio Sanna and Tyrel McQueen.
-!   Special mention of David Singh's very useful book {\it Planewaves,
-!   Pseudopotentials and the LAPW Method} \cite{singh} must also be made.
+!   Antonio Sanna, Tyrel McQueen, Tim Baldsiefen, Marty Blaber and Anton
+!   Filanovich. Special mention of David Singh's very useful book on the LAPW
+!   method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and the LAPW
+!   Method} (Kluwer Academic Publishers, Boston, 1994).} must also be made.
 !   Finally we would like to acknowledge the generous support of
 !   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
 !   Training Networks initiative.
@@ -137,7 +138,7 @@ end program
 !   Fredrik Bultmark
 !
 !   \vspace{12pt}
-!   Berlin and Uppsala, August 2009
+!   Halle and Uppsala, January 2010
 !   \newpage
 !
 !   \section{Units}
@@ -148,7 +149,7 @@ end program
 !   is 0.52917720859(36) \AA, and the atomic unit of energy is the Hartree which
 !   equals 27.21138386(68) eV. The unit of the external magnetic fields is
 !   defined such that one unit of magnetic field in {\tt elk.in} equals
-!   1717.2445320376 Tesla.
+!   1715.255397557 Tesla.
 !
 !   \section{Compiling and running {\sf Elk}}
 !   \subsection{Compiling the code}
@@ -164,16 +165,32 @@ end program
 !   compiler will enable {\sf Elk} to run in parallel mode on multiprocessor
 !   systems. Following this, run
 !   \begin{verbatim}
-!     make all
+!     make
 !   \end{verbatim}
 !   This will hopefully compile the entire code and all the libraries into one
-!   executable, {\tt elk}, located in the {\tt src} directory. It will also
-!   compile a few useful auxiliary programs, namely {\tt spacegroup} for
-!   producing crystal geometries from spacegroup data, {\tt species} for
-!   generating species files, and {\tt eos} for fitting equations of state to
-!   energy-volume data. If you want to compile everything all over again, then
-!   run {\tt make clean} from the {\tt elk} directory, followed by
-!   {\tt make all}.
+!   executable, {\tt elk}, located in the {\tt elk/src} directory. It will also
+!   compile two useful auxiliary programs, namely {\tt spacegroup} for producing
+!   crystal geometries from spacegroup data and {\tt eos} for fitting equations
+!   of state to energy-volume data. If you want to compile everything all over
+!   again, then run {\tt make clean} from the {\tt elk} directory, followed by
+!   {\tt make}.
+!
+!   \subsection{Linking with the {\sf Libxc} functional library}
+!   {\sf Libxc} is the ETSF library of exchange-correlation functionals. Elk can
+!   use the complete set of LDA and GGA functionals available in {\sf Libxc}.
+!   In order to do this, first download and compile {\sf Libxc}. This should
+!   have produced the file {\tt libxc.a}. Copy this file to the {\tt elk/src}
+!   directory and then uncomment the lines indicated in the file
+!   {\tt elk/src/libxc.inc}. Once this is done, run {\tt make clean} followed by
+!   {\tt make}. To select a particular functional of {\sf Libxc}, use the block
+!   \begin{verbatim}
+!     xctype
+!      100 nx nc
+!   \end{verbatim}
+!   where {\tt nx} and {\tt nc} are, respectively, the numbers of the exchange
+!   and correlation functionals in the {\sf Libxc} library. See the
+!   documentation of the library for the functionals and their associated
+!   numbers.
 !
 !   \subsection{Running the code}
 !   As a rule, all input files for the code are in lower case and end with the
@@ -379,6 +396,17 @@ end program
 !   level given by {\tt nsmdos}. This is the number of successive 3-point
 !   averages to be applied to the function $g$.
 !
+!   \subsection{{\tt dosmsum}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt dosmsum} & {\tt .true.} if the partial DOS is to be summed over $m$ &
+!    logical & {\tt .false.} \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   By default, the partial density of states is resolved over $(l,m)$ quantum
+!   numbers. If {\tt dosmsum} is set to {\tt .true.} then the partial DOS is
+!   summed over $m$, and thus depends only on $l$.
+!
 !   \subsection{{\tt epsband}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
@@ -440,15 +468,6 @@ end program
 !   being calculated, the atomic positions updated and the loop restarted. See
 !   also {\tt maxscl}.
 !
-!   \subsection{{\tt evalmin}}
-!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
-!   \hline
-!   {\tt evalmin} & valence eigenvalue minimum & real & $-4.5$ \\
-!   \hline
-!   \end{tabularx}\newline\newline
-!   Any valence states with eigenvalues below {\tt evalmin} are not occupied and
-!   a warning message is issued.
-!
 !   \subsection{{\tt emaxelnes}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
@@ -501,9 +520,10 @@ end program
 !    calculating {\tt gkmax} & integer & $-1$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   By default the smallest muffin-tin radius is used for determining
+!   By default ($-1$) the average muffin-tin radius is used for determining
 !   {\tt gkmax} from {\tt rgkmax}. This can be changed by setting {\tt isgkmax}
-!   to the desired species number.
+!   either to the desired species number, or to $-2$ in which case the smallest
+!   radius is used.
 !
 !   \subsection{{\tt kstlist}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -655,15 +675,6 @@ end program
 !   \end{tabularx}\newline\newline
 !   If {\tt molecule} is {\tt .true.}, then the atomic positions, ${\bf a}$,
 !   given in the {\tt atoms} block are assumed to be in Cartesian coordinates.
-!   The lattice vectors are also set up automatically with the $i$th lattice
-!   vector given by
-!   $$ {\bf A}^i=A_i\hat{\bf e}^i, $$
-!   where
-!   $$ A_i=\max_{\alpha,\beta}\left|{\bf a}^{\alpha}_i-{\bf a}^{\beta}_i\right|
-!    +d_{\rm vac} $$
-!   with $\alpha$ and $\beta$ labeling atoms, and $d_{\rm vac}$ determines the
-!   size of the vacuum around the molecule. The last variable is set by the
-!   input parameter {\tt vacuum}.
 !
 !   \subsection{{\tt momfix}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1025,6 +1036,14 @@ end program
 !   example {\tt /tmp/}. Note that the forward slash {\tt /} at the end of the
 !   string must be included.
 !
+!   \subsection{{\tt spincore}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt spincore} & set to {\tt .true.} if the core should be spin-polarised
+!    & logical & {\tt .false.} \\
+!   \hline
+!   \end{tabularx}
+!
 !   \subsection{{\tt spinorb}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
@@ -1243,16 +1262,16 @@ end program
 !   \subsection{{\tt tmomlu}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the 
-!   corresponding decomposition of LDA+U energy should be calculated 
+!   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the
+!   corresponding decomposition of LDA+U energy should be calculated
 !   at every iteration of the self-consistent cycle & logical & {\tt .false.} \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   This variable is useful to check the convergence of the tensor moments in 
-!   LDA+U caculations. Alternatively, with {\tt task} equal to 400, one can 
-!   calculate the tensor moments and corresponding LDA+U energy contributions 
-!   from a given density matrix and set of Slater parameters at the end of the 
-!   self-consistent cycle. 
+!   This variable is useful to check the convergence of the tensor moments in
+!   LDA+U caculations. Alternatively, with {\tt task} equal to 400, one can
+!   calculate the tensor moments and corresponding LDA+U energy contributions
+!   from a given density matrix and set of Slater parameters at the end of the
+!   self-consistent cycle.
 !
 !   \subsection{{\tt tseqit}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1271,15 +1290,6 @@ end program
 !    logical & {\tt .true.} \\
 !   \hline
 !   \end{tabularx}
-!
-!   \subsection{{\tt vacuum}}
-!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
-!   \hline
-!   {\tt vacuum} & the size of the vacuum region around a molecule & real &
-!    8.05 \\
-!   \hline
-!   \end{tabularx}\newline\newline
-!   See {\tt molecule}.
 !
 !   \subsection{{\tt vklem}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1321,11 +1331,13 @@ end program
 !   \subsection{{\tt xctype}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt xctype} & integer defining the type of exchange-correlation functional
-!    to be used & integer & 3 \\
+!   {\tt xctype} & integers defining the type of exchange-correlation functional
+!    to be used & integer(3) & $(3,0,0)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   Currently implemented are:\newline\newline
+!   Normally only the first value is used to define the functional type. The
+!   other value may be used for external libraries. Currently implemented are:
+!   \newline\newline
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   1 & No exchange-correlation funtional ($E_{\rm xc}\equiv 0$) \\
 !   2 & LDA, Perdew-Zunger/Ceperley-Alder, {\it Phys. Rev. B} {\bf 23}, 5048
@@ -1339,11 +1351,14 @@ end program
 !    (1996) \\
 !   21 & GGA, Revised PBE, Zhang-Yang, {\it Phys. Rev. Lett.} {\bf 80}, 890
 !    (1998) \\
-!   22 & GGA, PBEsol, arXiv:0707.2088v1 (2007) \\
+!   22 & GGA, PBEsol, Phys. Rev. Lett. 100, 136406 (2008) \\
 !   26 & GGA, Wu-Cohen exchange (WC06) with PBE correlation, {\it Phys. Rev. B}
 !    {\bf 73}, 235116 (2006) \\
 !   30 & GGA, Armiento-Mattsson (AM05) spin-unpolarised functional,
 !    {\it Phys. Rev. B} {\bf 72}, 085108 (2005) \\
+!   100 & {\tt libxc} functionals, the second and third values of {\tt xctype}
+!    define the exchange and correlation functionals in the {\tt libxc} library,
+!    respectively \\
 !   \end{tabularx}
 !
 !   \section{Contributing to {\sf Elk}}
@@ -1415,9 +1430,6 @@ end program
 !    Author(s) of the code retain the copyrights. Copyright and (L)GPL
 !    information must be included at the beginning of every file, and no code
 !    will be accepted without this.
-!
-!   \bibliographystyle{unsrt}
-!   \bibliography{elk}
 !
 !EOI
 

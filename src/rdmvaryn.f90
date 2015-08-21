@@ -3,9 +3,27 @@
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmvaryn
+! !INTERFACE:
 subroutine rdmvaryn
-! calculate new occupation numbers using derivatives of total energy
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!   Calculates new occupation numbers from old by using the derivatives of the
+!   total energy: $n_i^{\rm new} = n_i^{\rm old}-\tau \gamma_i$, where $\tau$
+!   is chosen such that $0 \le n_i \le n_{\rm max}$ with
+!   $$ \gamma_i=\begin{cases}
+!    g_i(n_{\rm max}-n_i) & g_i > 0 \\
+!    g_i n_i & g_i\le 0 \end{cases} $$
+!   where $g_i=\partial E/\partial n_i-\kappa$, and $\kappa$ is chosen such that
+!   $\sum_i\gamma_i=0$.
+!
+! !REVISION HISTORY:
+!   Created 2009 (JKD,Sharma)
+!EOP
+!BOC
 implicit none
 ! local variables
 integer, parameter :: maxit=10000
@@ -16,8 +34,6 @@ real(8) kapa,dkapa,t1
 ! allocatable arrays
 real(8), allocatable :: dedn(:,:)
 real(8), allocatable :: gamma(:,:)
-allocate(dedn(nstsv,nkpt))
-allocate(gamma(nstsv,nkpt))
 ! add constant to occupancies for charge conservation
 sum=0.d0
 do ik=1,nkpt
@@ -56,6 +72,8 @@ do ist=1,nstsv
     end if
   end do
 end do
+allocate(dedn(nstsv,nkpt))
+allocate(gamma(nstsv,nkpt))
 ! get the derivatives
 call rdmdedn(dedn)
 ! find suitable value of kapa such that sum of gamma is 0
@@ -94,10 +112,13 @@ do it=1,maxit
   kapa=kapa+dkapa
 end do
 write(*,*)
-write(*,'("Error(rdmdedn): could not find offset")')
+write(*,'("Error(rdmvaryn): could not find offset")')
 write(*,*)
 stop
 10 continue
+! write derivatives and occupancies to a file
+call rdmwritededn(dedn)
+deallocate(dedn)
 ! normalize gamma if sum of squares is greater than 1
 sum=0.d0
 do ik=1,nkpt
@@ -137,9 +158,7 @@ do ik=1,nkpt
     occsv(ist,ik)=occsv(ist,ik)+tau*gamma(ist,ik)
   end do
 end do
-! write derivatives and occupancies to a file
-call rdmwritededn(dedn)
-deallocate(dedn,gamma)
+deallocate(gamma)
 return
 end subroutine
-
+!EOC

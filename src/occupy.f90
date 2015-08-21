@@ -16,13 +16,14 @@ use modtest
 !
 ! !REVISION HISTORY:
 !   Created February 2004 (JKD)
+!   Added gap estimation, November 2009 (F. Cricchio)
 !EOP
 !BOC
 implicit none
 ! local variables
 integer, parameter :: maxit=1000
 integer ik,ist,it
-real(8) e0,e1,chg,x,t1
+real(8) e0,e1,e,chg,x,t1
 ! external functions
 real(8) sdelta,stheta
 external sdelta,stheta
@@ -31,14 +32,16 @@ e0=evalsv(1,1)
 e1=e0
 do ik=1,nkpt
   do ist=1,nstsv
-    e0=min(e0,evalsv(ist,ik))
-    e1=max(e1,evalsv(ist,ik))
+    e=evalsv(ist,ik)
+    if (e.lt.e0) e0=e
+    if (e.gt.e1) e1=e
   end do
 end do
-if (e0.lt.evalmin) then
+if (e0.lt.e0min-1.d0) then
   write(*,*)
-  write(*,'("Warning(occupy): valence eigenvalues below evalmin for s.c. &
-   &loop ",I5)') iscl
+  write(*,'("Warning(occupy): minimum eigenvalue less than minimum &
+   &linearisation energy : ",2G18.10)') e0,e0min
+  write(*,'(" for s.c. loop ",I5)') iscl
 end if
 t1=1.d0/swidth
 ! determine the Fermi energy using the bisection method
@@ -47,13 +50,9 @@ do it=1,maxit
   chg=0.d0
   do ik=1,nkpt
     do ist=1,nstsv
-      if (evalsv(ist,ik).gt.evalmin) then
-        x=(efermi-evalsv(ist,ik))*t1
-        occsv(ist,ik)=occmax*stheta(stype,x)
-        chg=chg+wkpt(ik)*occsv(ist,ik)
-      else
-        occsv(ist,ik)=0.d0
-      end if
+      x=(efermi-evalsv(ist,ik))*t1
+      occsv(ist,ik)=occmax*stheta(stype,x)
+      chg=chg+wkpt(ik)*occsv(ist,ik)
     end do
   end do
   if (chg.lt.chgval) then
@@ -69,14 +68,12 @@ write(*,*)
 stop
 10 continue
 ! find the density of states at the Fermi surface in units of
-! states/Hartree/spin/unit cell
+! states/Hartree/unit cell
 fermidos=0.d0
 do ik=1,nkpt
   do ist=1,nstsv
-    if (evalsv(ist,ik).gt.evalmin) then
-      x=(evalsv(ist,ik)-efermi)*t1
-      fermidos=fermidos+wkpt(ik)*sdelta(stype,x)*t1
-    end if
+    x=(evalsv(ist,ik)-efermi)*t1
+    fermidos=fermidos+wkpt(ik)*sdelta(stype,x)*t1
   end do
   if (occsv(nstsv,ik).gt.epsocc) then
     write(*,*)
@@ -87,6 +84,23 @@ end do
 fermidos=fermidos*occmax
 ! write Fermi density of states to test file
 call writetest(500,'DOS at Fermi energy',tol=1.d-3,rv=fermidos)
+! estimate the band gap (FC)
+e0=-1.d8
+e1=1.d8
+do ik=1,nkpt
+  do ist=1,nstsv
+    e=evalsv(ist,ik)
+    if (e.lt.efermi) then
+      if (e.gt.e0) e0=e
+    else
+      if (e.lt.e1) e1=e
+    end if
+  end do
+end do
+bandgap=e1-e0
+! write band gap to test file
+call writetest(510,'estimated band gap',tol=1.d-2,rv=bandgap)
 return
 end subroutine
 !EOC
+

@@ -24,6 +24,9 @@ integer, intent(in) :: n
 integer, intent(in) :: d
 ! local variables
 integer i
+! external functions
+real(8) factnm
+external factnm
 if (n.lt.0) then
   write(*,*)
   write(*,'("Error(factr): n < 0 : ",I8)') n
@@ -35,6 +38,10 @@ if (d.lt.0) then
   write(*,'("Error(factr): d < 0 : ",I8)') d
   write(*,*)
   stop
+end if
+if (d.eq.1) then
+  factr=factnm(n,1)
+  return
 end if
 if (n.lt.d) then
   factr=1.d0/dble(n+1)

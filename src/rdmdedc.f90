@@ -3,32 +3,48 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine rdmdedc(ik,dedc)
-! calculate the derivative of total energy w.r.t. evecsv
+!BOP
+! !ROUTINE: rdmdedc
+! !INTERFACE:
+subroutine rdmdedc(dedc)
+! !USES:
+use modrdm
 use modmain
+! !INPUT/OUTPUT PARAMETERS:
+!   dedc : energy derivative (out,complex(nstsv,nstsv,nkpt))
+! !DESCRIPTION:
+!   Calculates the derivative of the total energy w.r.t. the second-variational
+!   coefficients {\tt evecsv}.
+!
+! !REVISION HISTORY:
+!   Created 2008 (Sharma)
+!EOP
+!BOC
 implicit none
 ! arguments
-integer, intent(in) :: ik
-complex(8), intent(out) :: dedc(nstsv,nstsv)
+complex(8), intent(out) :: dedc(nstsv,nstsv,nkpt)
 ! local variables
-integer ist
+integer ik,ist
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: c(:,:)
 ! allocate local arrays
 allocate(evecsv(nstsv,nstsv))
 allocate(c(nstsv,nstsv))
+do ik=1,nkpt
 ! get the eigenvectors from file
-call getevecsv(vkl(:,ik),evecsv)
+  call getevecsv(vkl(:,ik),evecsv)
 ! kinetic and Coulomb potential contribution
-call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,vclmat(:,:,ik),nstsv, &
- zzero,c,nstsv)
-do ist=1,nstsv
-  dedc(:,ist)=occsv(ist,ik)*(dkdc(:,ist,ik)+c(:,ist))
+  call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,vclmat(:,:,ik),nstsv, &
+   zzero,c,nstsv)
+  do ist=1,nstsv
+    dedc(:,ist,ik)=occsv(ist,ik)*(dkdc(:,ist,ik)+c(:,ist))
+  end do
 end do
-! exchange-correlation contribution
-call rdmdexcdc(ik,evecsv,dedc)
 deallocate(evecsv,c)
+! exchange-correlation contribution
+call rdmdexcdc(dedc)
 return
 end subroutine
+!EOC
 

@@ -20,24 +20,48 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir
-real(8) sum1,sum2,t1
+integer is,ia,ias
+integer nr,ir,ispn
+real(8) sum1,sum2
+real(8) v(3),t1,t2
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
-t1=1.d0/y00
 sum1=0.d0
 sum2=0.d0
 do is=1,nspecies
+  nr=nrmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ir=1,nrmt(is)
+! loop over spin channels
+    do ispn=1,nspncr
+      do ir=1,nr
 ! add the core density to the muffin-tin density
-      rhomt(1,ir,ias)=rhomt(1,ir,ias)+rhocr(ir,ias)*t1
-      fr(ir)=rhocr(ir,ias)*spr(ir,is)**2
-    end do
+        rhomt(1,ir,ias)=rhomt(1,ir,ias)+rhocr(ir,ias,ispn)/y00
+        fr(ir)=rhocr(ir,ias,ispn)*spr(ir,is)**2
+      end do
 ! compute the core charge inside the muffin-tins
-    call fderiv(-1,nrmt(is),spr(:,is),fr,gr,cf)
-    sum1=sum1+fourpi*gr(nrmt(is))
+      call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+      sum1=sum1+fourpi*gr(nr)
+    end do
+! add to the magnetisation in the case of a spin-polarised core
+    if (spincore) then
+      if (ncmag) then
+! non-collinear
+        do ir=1,nr
+          t1=abs(rhocr(ir,ias,1)-rhocr(ir,ias,2))/y00
+          v(:)=magmt(1,ir,ias,:)
+          t2=sqrt(v(1)**2+v(2)**2+v(3)**2)
+          if (t2.gt.1.d-10) magmt(1,ir,ias,:)=magmt(1,ir,ias,:)+(t1/t2)*v(:)
+        end do
+      else
+! collinear
+        do ir=1,nr
+          t1=abs(rhocr(ir,ias,1)-rhocr(ir,ias,2))/y00
+          if (magmt(1,ir,ias,1).lt.0.d0) t1=-t1
+          magmt(1,ir,ias,1)=magmt(1,ir,ias,1)+t1
+        end do
+      end if
+    end if
   end do
   sum2=sum2+dble(natoms(is))*(4.d0*pi/3.d0)*rmt(is)**3
 end do

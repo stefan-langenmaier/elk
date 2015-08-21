@@ -88,8 +88,8 @@ call getevecsv(vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! calculate the wavefunctions for occupied states for the input k-point
-call genwfsv(.true.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv,evecsv, &
- wfmt1,wfir1)
+call genwfsv(.false.,.true.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv, &
+ evecsv,wfmt1,wfir1)
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! generate G+k vectors
@@ -124,7 +124,8 @@ do ik=1,nkptnr
   lmax=lmaxvr+npsden+1
   call genjlgpr(lmax,gqc,jlgqr)
 ! calculate the wavefunctions for occupied states
-  call genwfsv(.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv,wfmt2,wfir2)
+  call genwfsv(.false.,.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv, &
+   wfmt2,wfir2)
 !--------------------------------------------!
 !    valence-valence-valence contribution    !
 !--------------------------------------------!
@@ -137,7 +138,7 @@ do ik=1,nkptnr
            wfir2(:,:,jst),wfir1(:,:,ist),zrhomt,zrhoir)
 ! calculate the Coulomb potential
           call zpotcoul(nrcmt,nrcmtmax,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq, &
-           sfacgq,zn,zrhomt,zrhoir,zvclmt,zvclir,zrho0) 
+           sfacgq,zn,zrhomt,zrhoir,zvclmt,zvclir,zrho0)
           zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
           t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
 !$OMP CRITICAL

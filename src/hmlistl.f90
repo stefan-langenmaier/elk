@@ -41,19 +41,26 @@ real(8), intent(in) :: vgpc(3,ngkmax)
 complex(8), intent(in) :: v(nmatmax)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer i,j,k,ig,iv(3)
+integer i,j,k,iv(3),ig
 real(8) t1
 complex(8) zt1
 if (tapp) then
 ! apply the Hamiltonian operator to v
+! diagonal
+  ig=ivgig(0,0,0)
   do i=1,ngp
-    do j=i,ngp
+    t1=0.5d0*(vgpc(1,i)**2+vgpc(2,i)**2+vgpc(3,i)**2)
+    h(i)=h(i)+(veffig(ig)+t1*cfunig(ig))*v(i)
+  end do
+! off-diagonal
+  do i=1,ngp
+    do j=i+1,ngp
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
       ig=ivgig(iv(1),iv(2),iv(3))
-      t1=0.5d0*dot_product(vgpc(:,i),vgpc(:,j))
+      t1=0.5d0*(vgpc(1,i)*vgpc(1,j)+vgpc(2,i)*vgpc(2,j)+vgpc(3,i)*vgpc(3,j))
       zt1=veffig(ig)+t1*cfunig(ig)
       h(i)=h(i)+zt1*v(j)
-      if (i.ne.j) h(j)=h(j)+conjg(zt1)*v(i)
+      h(j)=h(j)+conjg(zt1)*v(i)
     end do
   end do
 else
@@ -64,7 +71,7 @@ else
       k=k+1
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
       ig=ivgig(iv(1),iv(2),iv(3))
-      t1=0.5d0*dot_product(vgpc(:,i),vgpc(:,j))
+      t1=0.5d0*(vgpc(1,i)*vgpc(1,j)+vgpc(2,i)*vgpc(2,j)+vgpc(3,i)*vgpc(3,j))
       h(k)=h(k)+veffig(ig)+t1*cfunig(ig)
     end do
   end do

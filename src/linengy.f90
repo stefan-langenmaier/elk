@@ -60,6 +60,9 @@ do is=1,nspecies
               write(*,'(" order ",I4)') io
               write(*,'(" and s.c. loop ",I5)') iscl
             end if
+          else
+! set linearisation energy automatically
+            if (autolinengy) apwe(io,l,ias)=efermi+dlefe
           end if
 10 continue
         end do
@@ -93,6 +96,9 @@ do is=1,nspecies
               write(*,'(" order ",I4)') io
               write(*,'(" and s.c. loop",I5)') iscl
             end if
+          else
+! set linearisation energy automatically
+            if (autolinengy) lorbe(io,ilo,ias)=efermi+dlefe
           end if
 20 continue
         end do

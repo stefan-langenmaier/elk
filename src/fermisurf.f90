@@ -35,7 +35,7 @@ call hmlrad
 call genbeffmt
 ! begin parallel loop over reduced k-points set
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evalfv,evecfv,evecsv) 
+!$OMP PRIVATE(evalfv,evecfv,evecsv)
 !$OMP DO
 do ik=1,nkpt
   allocate(evalfv(nstfv,nspnfv))

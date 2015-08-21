@@ -37,8 +37,8 @@ call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! calculate the wavefunctions for all second-variational states
-call genwfsv(.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik),apwalm,evecfv, &
- evecsv,wfmt,wfir)
+call genwfsv(.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik),apwalm, &
+ evecfv,evecsv,wfmt,wfir)
 do ist=1,nstsv
   delta(ist,ist)=0.d0
   do jst=ist+1,nstsv

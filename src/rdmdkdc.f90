@@ -3,9 +3,21 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmdkdc
+! !INTERFACE:
 subroutine rdmdkdc
-! calculates the derivative of kinetic energy w.r.t. evecsv
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!   Calculates the derivative of kinetic energy w.r.t. the second-variational
+!   coefficients {\tt evecsv}.
+!
+! !REVISION HISTORY:
+!   Created October 2008 (Sharma)
+!EOP
+!BOC
 implicit none
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:)
@@ -19,4 +31,4 @@ end do
 deallocate(evecsv)
 return
 end subroutine
-
+!EOC

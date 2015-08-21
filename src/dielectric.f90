@@ -1,11 +1,26 @@
 
-! Copyright (C) 2002-2008 S. Sharma, J. K. Dewhurst and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2009 S. Sharma, J. K. Dewhurst and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: dielectric
+! !INTERFACE:
 subroutine dielectric
+! !USES:
 use modmain
 use modtest
+! !DESCRIPTION:
+!   Computes the dielectric tensor, optical conductivity and plasma frequency.
+!
+! !REVISION HISTORY:
+!   Created November 2005 (SS and JKD)
+!   Added plasma frequency and intraband contribution (S. Lebegue)
+!   Complete rewrite, 2008 (JKD)
+!   Fixed problem with plasma frequency, 2009 (Marty Blaber and JKD)
+!   Parallelised, 2009 (M. Blaber)
+!EOP
+!BOC
 implicit none
 ! local variables
 integer ik,jk,isym
@@ -38,7 +53,6 @@ end do
 allocate(lspl(nkptnr))
 allocate(w(nwdos))
 if (usegdft) allocate(delta(nstsv,nstsv,nkpt))
-allocate(pmat(3,nstsv,nstsv))
 allocate(sigma(nwdos))
 ! compute generalised DFT correction
 if (usegdft) then
@@ -62,7 +76,9 @@ do ik=1,nkptnr
   lspl(ik)=lsplsymc(isym)
 end do
 ! find the record length for momentum matrix element file
+allocate(pmat(3,nstsv,nstsv))
 inquire(iolength=recl) pmat
+deallocate(pmat)
 open(50,file='PMAT.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
  recl=recl,iostat=iostat)
 if (iostat.ne.0) then
@@ -79,12 +95,19 @@ do l=1,noptcomp
   j=optcomp(2,l)
   wplas=0.d0
   sigma(:)=0.d0
-! loop over non-reduced k-points
+! parallel loop over non-reduced k-points
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(pmat,jk,ist,jst,v1,v2,v3) &
+!$OMP PRIVATE(zv,zt1,eji,t1,t2,x)
+!$OMP DO
   do ik=1,nkptnr
+    allocate(pmat(3,nstsv,nstsv))
 ! equivalent reduced k-point
     jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
 ! read momentum matrix elements from direct-access file
+!$OMP CRITICAL
     read(50,rec=jk) pmat
+!$OMP END CRITICAL
 ! valance states
     do ist=1,nstsv
 ! conduction states
@@ -107,23 +130,27 @@ do l=1,noptcomp
         t1=occsv(ist,jk)*(1.d0-occsv(jst,jk)/occmax)
         if (abs(t1).gt.epsocc) then
           t2=t1/(eji+swidth)
-          do iw=1,nwdos
-            sigma(iw)=sigma(iw)+t2*(zt1/(w(iw)-eji+eta) &
-             +conjg(zt1)/(w(iw)+eji+eta))
-          end do
+!$OMP CRITICAL
+          sigma(:)=sigma(:)+t2*(zt1/(w(:)-eji+eta)+conjg(zt1)/(w(:)+eji+eta))
+!$OMP END CRITICAL
         end if
 ! add to the plasma frequency
         if (intraband) then
           if (i.eq.j) then
             if (ist.eq.jst) then
               x=(evalsv(ist,jk)-efermi)/swidth
+!$OMP CRITICAL
               wplas=wplas+wkptnr(ik)*dble(zt1)*sdelta(stype,x)/swidth
+!$OMP END CRITICAL
             end if
           end if
         end if
       end do
     end do
+    deallocate(pmat)
   end do
+!$OMP END DO
+!$OMP END PARALLEL
   zt1=zi/(omega*dble(nkptnr))
   sigma(:)=zt1*sigma(:)
 ! intraband contribution
@@ -188,8 +215,9 @@ do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
 write(*,*)
-deallocate(lspl,w,pmat,sigma)
+deallocate(lspl,w,sigma)
 if (usegdft) deallocate(delta)
 return
 end subroutine
+!EOC
 

@@ -49,9 +49,12 @@ real(8) t1,t2
 complex(8) zt1
 ! automatic arrays
 real(8) fr1(nr),fr2(nr),gr(nr),cf(4,nr)
+! external functions
+complex(8) zdotc
+external zdotc
 lmmax=(lmax+1)**2
 do ir=1,nr
-  zt1=dot_product(zfmt1(1:lmmax,ir),zfmt2(1:lmmax,ir))*r(ir)**2
+  zt1=zdotc(lmmax,zfmt1(:,ir),1,zfmt2(:,ir),1)*(r(ir)**2)
   fr1(ir)=dble(zt1)
   fr2(ir)=aimag(zt1)
 end do
@@ -64,4 +67,5 @@ if (.not.tsh) zfmtinp=zfmtinp*fourpi/dble(lmmax)
 return
 end function
 !EOC
+
 

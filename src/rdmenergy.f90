@@ -1,40 +1,54 @@
 
 ! Copyright (C) 2005-2008 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
-! This file is distributed under the terms of the GNU Lesser General Public
-! License. See the file COPYING for license details.
+! This file is distributed under the terms of the GNU General Public License.
+! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmenergy
+! !INTERFACE:
 subroutine rdmenergy
-! calculate the total energy for RDMFT
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!   Calculates RDMFT total energy (free energy for finite temperatures).
+!
+! !REVISION HISTORY:
+!   Created 2008 (Sharma)
+!   Updated for free energy 2009 (Baldsiefen)
+!EOP
+!BOC
 implicit none
 ! local variables
 integer is,ia,ias
-integer ik,ist,ir
+integer nr,ik,ist
 real(8) vn,t1
 complex(8) zt1
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:)
 complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: c(:,:)
 ! external functions
 real(8) rfmtinp
 complex(8) zdotc
 external rfmtinp,zdotc
 allocate(rfmt(lmmaxvr,nrmtmax))
-allocate(evecsv(nstsv,nstsv))
-allocate(c(nstsv,nstsv))
 ! Coulomb energy from core states
 engyvcl=0.d0
 do is=1,nspecies
+  nr=nrmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      rfmt(1,ir)=rhocr(ir,ias)/y00
-    end do
+    if (spincore) then
+      rfmt(1,1:nr)=(rhocr(1:nr,ias,1)+rhocr(1:nr,ias,2))/y00
+    else
+      rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
+    end if
     engyvcl=engyvcl+rfmtinp(1,0,nrmt(is),spr(:,is),lmmaxvr,rfmt,vclmt(:,:,ias))
   end do
 end do
+deallocate(rfmt)
 engykn=engykncr
+allocate(evecsv(nstsv,nstsv))
 do ik=1,nkpt
   call getevecsv(vkl(:,ik),evecsv)
   do ist=1,nstsv
@@ -46,6 +60,7 @@ do ik=1,nkpt
     engykn=engykn+t1*dble(zt1)
   end do
 end do
+deallocate(evecsv)
 ! Madelung term
 engymad=0.d0
 do is=1,nspecies
@@ -76,7 +91,6 @@ if (rdmtemp.gt.0.d0) then
 end if
 write(*,'(" total",T30,": ",G18.10)') engytot
 write(*,*)
-deallocate(evecsv,rfmt,c)
 return
 end subroutine
-
+!EOC

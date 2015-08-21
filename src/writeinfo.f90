@@ -10,6 +10,7 @@ subroutine writeinfo(fnum)
 ! !USES:
 use modmain
 use modldapu
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   fnum : unit specifier for INFO.OUT file (in,integer)
 ! !DESCRIPTION:
@@ -129,6 +130,9 @@ end if
 if (spinorb) then
   write(fnum,'(" spin-orbit coupling")')
 end if
+if (spincore) then
+  write(fnum,'(" spin-polarised core")')
+end if
 if (spinpol) then
   write(fnum,'(" global magnetic field (Cartesian) : ",3G18.10)') bfieldc
   if (ncmag) then
@@ -180,11 +184,14 @@ else
 end if
 write(fnum,'("Total number of k-points : ",I8)') nkpt
 write(fnum,*)
-write(fnum,'("Smallest muffin-tin radius times maximum |G+k| : ",G18.10)') &
- rgkmax
+write(fnum,'("Muffin-tin radius times maximum |G+k| : ",G18.10)') rgkmax
 if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
-  write(fnum,'("Species with smallest (or selected) muffin-tin radius : ",&
-   &I4," (",A,")")') isgkmax,trim(spsymb(isgkmax))
+  write(fnum,'(" using radius of species ",I4," (",A,")")') isgkmax, &
+   trim(spsymb(isgkmax))
+else if (isgkmax.eq.-1) then
+  write(fnum,'(" using average radius")')
+else
+  write(fnum,'(" using smallest radius")')
 end if
 write(fnum,'("Maximum |G+k| for APW functions       : ",G18.10)') gkmax
 write(fnum,'("Maximum (1/2)|G+k|^2                  : ",G18.10)') 0.5d0*gkmax**2
@@ -216,16 +223,16 @@ write(fnum,'("Total number of local-orbitals : ",I4)') nlotot
 write(fnum,*)
 if ((task.eq.5).or.(task.eq.6)) &
  write(fnum,'("Hartree-Fock calculation using Kohn-Sham states")')
-if (xctype.lt.0) then
+if (xctype(1).lt.0) then
   write(fnum,'("Optimised effective potential (OEP) and exact exchange (EXX)")')
   write(fnum,'(" Phys. Rev. B 53, 7024 (1996)")')
-  write(fnum,'("Correlation type : ",I4)') abs(xctype)
+  write(fnum,'("Correlation functional : ",3I6)') abs(xctype(1)),xctype(2:3)
   write(fnum,'(" ",A)') trim(xcdescr)
 else
-  write(fnum,'("Exchange-correlation type : ",I4)') xctype
+  write(fnum,'("Exchange-correlation functional : ",3I6)') xctype(:)
   write(fnum,'(" ",A)') trim(xcdescr)
 end if
-if (xcgrad.eq.1) write(fnum,'(" Generalised gradient approximation (GGA)")')
+if (xcgrad.ge.1) write(fnum,'(" Generalised gradient approximation (GGA)")')
 if (ldapu.ne.0) then
   write(fnum,*)
   write(fnum,'("LDA+U calculation")')
@@ -264,19 +271,19 @@ if (ldapu.ne.0) then
         do k=0,l
           write(fnum,'(" E^(",I1,") = ",F12.8)') k,elu(k,is)
         end do
-      else if (inptypelu.eq.4) then 
-        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
-         trim(spsymb(is)),llu(is)
-        write(fnum,'(" Slater integrals are calculated by means of & 
-         &Yukawa potential")')
-        write(fnum,'(" Yukawa potential screening length (a.u^-1) : ",F12.8)') &
-         lambdalu(is)  
-      else if(inptypelu.eq.5) then 
+      else if (inptypelu.eq.4) then
         write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
          trim(spsymb(is)),llu(is)
         write(fnum,'(" Slater integrals are calculated by means of &
          &Yukawa potential")')
-        write(fnum,'(" Yukawa potential screening length corresponds to & 
+        write(fnum,'(" Yukawa potential screening length (a.u^-1) : ",F12.8)') &
+         lambdalu(is)
+      else if(inptypelu.eq.5) then
+        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+         trim(spsymb(is)),llu(is)
+        write(fnum,'(" Slater integrals are calculated by means of &
+         &Yukawa potential")')
+        write(fnum,'(" Yukawa potential screening length corresponds to &
          &U = ",F12.8)') ulufix(is)
       end if
     end if

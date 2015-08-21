@@ -3,14 +3,27 @@
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmengyxc
+! !INTERFACE:
 subroutine rdmengyxc
-! calculate the RDMFT exchange-correlation energy
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!   Calculates RDMFT exchange-correlation energy.
+!
+! !REVISION HISTORY:
+!   Created 2008 (Sharma)
+!EOP
+!BOC
 implicit none
 ! local variables
-integer ik1,ik2,ik3
-integer ist1,ist2,iv(3)
+integer ik3,ik1,ik2
+integer ist2,ist1,iv(3)
 real(8) t1,t2,t3
+! allocatable arays
+real(8), allocatable :: vnlijji(:,:,:)
 ! external functions
 real(8) r3taxi,rfmtinp
 external r3taxi,rfmtinp
@@ -18,8 +31,10 @@ external r3taxi,rfmtinp
 if (rdmxctype.eq.0) then
   engyx=0.d0
   return
+! Hartree-Fock functional
 else if (rdmxctype.eq.1) then
   t1=0.5d0/occmax
+! Power functional
 else if (rdmxctype.eq.2) then
   if (spinpol) then
     t1=0.5d0
@@ -34,35 +49,40 @@ else
 end if
 ! exchange-correlation energy
 engyx=0.d0
-do ik1=1,nkpt
-  do ist1=1,nstsv
-    do ik2=1,nkptnr
+allocate(vnlijji(nstsv,nstsv,nkpt))
+! start loop over non-reduced k-points
+do ik1=1,nkptnr
+  call rdmgetvnl_ijji(ik1,vnlijji)
 ! find the equivalent reduced k-point
-      iv(:)=ivknr(:,ik2)
-      ik3=ikmap(iv(1),iv(2),iv(3))
-      do ist2=1,nstsv
+  iv(:)=ivknr(:,ik1)
+  ik2=ikmap(iv(1),iv(2),iv(3))
+  do ist1=1,nstsv
+! start loop over reduced k-points
+   do ik3=1,nkpt
+     do ist2=1,nstsv
 ! Hartree-Fock functional
         if (rdmxctype.eq.1) then
-          t2=t1*wkpt(ik1)*occsv(ist1,ik1)*occsv(ist2,ik3)
-! SDLG functional
+          t2=t1*wkpt(ik3)*occsv(ist2,ik3)*occsv(ist1,ik2)
+! Power functional
         else if (rdmxctype.eq.2) then
-          t3=occsv(ist1,ik1)*occsv(ist2,ik3)
-          if ((ist1.eq.ist2).and. &
-           (r3taxi(vkl(:,ik1),vklnr(:,ik2)).lt.epslat)) then
-            t2=(0.5d0/occmax)*wkpt(ik1)*t3
+          t3=occsv(ist2,ik3)*occsv(ist1,ik2)
+          if ((ist2.eq.ist1).and. &
+           (r3taxi(vkl(:,ik3),vklnr(:,ik1)).lt.epslat)) then
+            t2=(0.5d0/occmax)*wkpt(ik3)*t3
           else
             if (t3.gt.0.d0) then
-              t2=t1*wkpt(ik1)*t3**rdmalpha
+              t2=t1*wkpt(ik3)*t3**rdmalpha
             else
               t2=0.d0
             end if
           end if
         end if
-        engyx=engyx-t2*vnlrdm(ist1,ik1,ist2,ik2)
+        engyx=engyx-t2*vnlijji(ist2,ist1,ik3)
       end do
     end do
   end do
 end do
+deallocate(vnlijji)
 return
 end subroutine
-
+!EOC

@@ -21,7 +21,7 @@ use modldapu
 !BOC
 implicit none
 ! local variables
-integer is,js,ia,ias
+integer is,ia,ias
 integer ist,l,m,lm,iv(3)
 real(8) ts0,ts1
 
@@ -103,13 +103,13 @@ if (spinsprl) then
   spinpol=.true.
   spinorb=.false.
   select case(task)
-  case(2,3,15,51,52,53,61,62,63,120,121)
+  case(51,52,53,61,62,63,120,121)
     write(*,*)
     write(*,'("Error(init0): spin-spirals do not work with task ",I4)') task
     write(*,*)
     stop
   end select
-  if (xctype.lt.0) then
+  if (xctype(1).lt.0) then
     write(*,*)
     write(*,'("Error(init0): spin-spirals do not work with the OEP method")')
     write(*,*)
@@ -146,6 +146,9 @@ if ((spinpol).and.(xcspin.eq.0)) then
   write(*,*)
   stop
 end if
+! set the magnetic fields to the initial values
+bfieldc(:)=bfieldc0(:)
+bfcmt(:,:,:)=bfcmt0(:,:,:)
 ! check for collinearity in the z-direction and set the dimension of the
 ! magnetisation and exchange-correlation vector fields
 if (spinpol) then
@@ -170,6 +173,8 @@ if (ndmag.eq.3) then
 else
   ncmag=.false.
 end if
+! spin-polarised cores
+if (.not.spinpol) spincore=.false.
 ! set fixed spin moment effective field to zero
 bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero
@@ -214,7 +219,6 @@ call checkfsm
 !-----------------------!
 nrmtmax=1
 nrcmtmax=1
-js=1
 do is=1,nspecies
 ! make the muffin-tin mesh commensurate with lradstp
   nrmt(is)=nrmt(is)-mod(nrmt(is)-1,lradstp)
@@ -222,10 +226,7 @@ do is=1,nspecies
 ! number of coarse radial mesh points
   nrcmt(is)=(nrmt(is)-1)/lradstp+1
   nrcmtmax=max(nrcmtmax,nrcmt(is))
-! smallest muffin-tin radius
-  if (rmt(is).lt.rmt(js)) js=is
 end do
-if ((isgkmax.lt.1).or.(isgkmax.gt.nspecies)) isgkmax=js
 ! set up atomic and muffin-tin radial meshes
 call genrmesh
 
@@ -302,9 +303,15 @@ end do
 ! allocate core state radial wavefunction array
 if (allocated(rwfcr)) deallocate(rwfcr)
 allocate(rwfcr(spnrmax,2,spnstmax,natmtot))
+! number of core spin channels
+if (spincore) then
+  nspncr=2
+else
+  nspncr=1
+end if
 ! allocate core state charge density array
 if (allocated(rhocr)) deallocate(rhocr)
-allocate(rhocr(spnrmax,natmtot))
+allocate(rhocr(spnrmax,natmtot,nspncr))
 
 !---------------------------------------!
 !     charge density and potentials     !
@@ -431,12 +438,15 @@ allocate(dpp1d(npp1d))
 ! zero self-consistent loop number
 iscl=0
 tlast=.false.
-! if reducebf < 1 then reduce the external magnetic field immediately for
-! non-self-consistent calculations
+! if reducebf < 1 then reduce the external magnetic fields immediately for
+! non-self-consistent calculations (but not so small that they are overlooked by
+! the symmetry routines)
 if ((reducebf.lt.1.d0).and.(task.gt.3)) then
   bfieldc(:)=0.d0
   bfcmt(:,:,:)=0.d0
 end if
+! set the Fermi energy to zero
+efermi=0.d0
 
 call timesec(ts1)
 timeinit=timeinit+ts1-ts0

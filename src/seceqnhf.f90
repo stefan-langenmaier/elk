@@ -102,8 +102,8 @@ call getevecfv(vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! calculate the wavefunctions for all states for the input k-point
-call genwfsv(.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv,evecsvp, &
- wfmt1,wfir1)
+call genwfsv(.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv, &
+ evecsvp,wfmt1,wfir1)
 ! compute the new kinetic matrix elements
 call zgemm('N','N',nstsv,nstsv,nstsv,zone,kinmatc(:,:,ikp),nstsv,evecsvp, &
  nstsv,zzero,vmat,nstsv)
@@ -165,7 +165,8 @@ do ik=1,nkptnr
   call genjlgpr(lmax,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 ! calculate the wavefunctions for all states
-  call genwfsv(.false.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv,wfmt2,wfir2)
+  call genwfsv(.false.,.false.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv, &
+   wfmt2,wfir2)
   do ist3=1,nstsv
     if (occsv(ist3,jk).gt.epsocc) then
       do ist2=1,nstsv

@@ -1,7 +1,7 @@
  'Fm'                                       : spsymb
  'fermium'                                  : spname
   -100.000                                  : spzn
-   468482.3406                              : spmass
+   468482.3405                              : spmass
   0.200000E-06    2.2000   34.0393   800    : sprmin, rmt, sprmax, nrmt
   27                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
@@ -34,7 +34,7 @@
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx
-   6                                        : nlorb
+   7                                        : nlorb
    0   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
@@ -47,11 +47,15 @@
    3   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
+   3   3                                    : lorbl, lorbord
+  0.1500   0  F                             : lorbe0, lorbdm, lorbve
+  0.1500   1  F
+ -0.3986   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.1271   0  T
+ -2.4521   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.2696   0  T
+ -1.0546   0  T

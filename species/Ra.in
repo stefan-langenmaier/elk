@@ -1,7 +1,7 @@
  'Ra'                                       : spsymb
  'radium'                                   : spname
   -88.0000                                  : spzn
-   411972.7976                              : spmass
+   411972.7974                              : spmass
   0.213201E-06    2.2000   42.9855   800    : sprmin, rmt, sprmax, nrmt
   25                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
@@ -32,7 +32,7 @@
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx
-   7                                        : nlorb
+   6                                        : nlorb
    0   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
@@ -42,18 +42,15 @@
    2   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
-   3   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.5769   0  T
+ -2.6969   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.2096   0  T
+ -1.5346   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.6932   0  T
+ -0.8088   0  T

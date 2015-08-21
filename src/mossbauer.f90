@@ -12,8 +12,14 @@ use modmain
 ! !DESCRIPTION:
 !   Computes the contact charge density and contact magnetic hyperfine field for
 !   each atom and outputs the data to the file {\tt MOSSBAUER.OUT}. The nuclear
-!   radius used for the contact quantities is approximated by the empirical
-!   formula $R_{\rm N}=1.25 Z^{1/3}$ fm, where $Z$ is the atomic number.
+!   radius used for the contact density is approximated by the empirical formula
+!   $R_{\rm N}=1.25 Z^{1/3}$ fm, where $Z$ is the atomic number. The Thomson
+!   radius, $R_{\rm T}=Z/c^2$, is used for determining the contact moment $m_c$,
+!   the relation of which to field strength is via Fermi's formula
+!   $$ B_c=\frac{8\pi}{3}\mu_B m_c, $$
+!   where the orbital and dipolar contributions are neglected. See
+!   S. Bl\"{u}gel, H. Akai, R. Zeller, and P. H. Dederichs, {\it Phys. Rev. B}
+!   {\bf 35}, 3271 (1987).
 !
 ! !REVISION HISTORY:
 !   Created May 2004 (JKD)
@@ -21,10 +27,22 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir,nr
+integer is,ia,ias
+integer ir,nrn,nrt
+! hartree in SI units (CODATA 2006)
+real(8), parameter :: ha_si=4.35974394d-18
+! Bohr radius in SI units
+real(8), parameter :: au_si=0.52917720859d-10
+! Planck constant in SI units
+real(8), parameter :: hbar_si=1.054571628d-34
+! electron charge in SI units
+real(8), parameter :: e_si=1.602176487d-19
+! atomic unit of magnetic flux density in SI
+real(8), parameter :: b_si=hbar_si/(e_si*au_si**2)
 ! nuclear radius constant in Bohr
-real(8), parameter :: r0=1.25d-15/0.52917720859d-10
-real(8) rn,vn,rho0,b,t1
+real(8), parameter :: r0=1.25d-15/au_si
+real(8) rn,rt,vn,vt
+real(8) rho0,mc,bc,t1
 ! allocatable arrays
 real(8), allocatable :: fr(:)
 real(8), allocatable :: gr(:)
@@ -39,58 +57,66 @@ allocate(gr(nrmtmax))
 allocate(cf(4,nrmtmax))
 open(50,file='MOSSBAUER.OUT',action='WRITE',form='FORMATTED')
 do is=1,nspecies
-!--------------------------------!
-!     contact charge density     !
-!--------------------------------!
-! approximate nuclear radius : r0*A^(1/3)
+! approximate nuclear radius and volume
   rn=r0*abs(spzn(is))**(1.d0/3.d0)
-  do ir=1,nrmt(is)
+  do ir=1,nrmt(is)-1
     if (spr(ir,is).gt.rn) goto 10
   end do
-  write(*,*)
-  write(*,'("Error(mossbauer): nuclear radius too large : ",G18.10)') rn
-  write(*,'(" for species ",I4)') is
-  write(*,*)
-  stop
 10 continue
-  nr=ir
-  rn=spr(nr,is)
-! nuclear volume
+  nrn=ir
+  rn=spr(nrn,is)
   vn=(4.d0/3.d0)*pi*rn**3
+! Thomson radius and volume
+  rt=abs(spzn(is))/sol**2
+  do ir=1,nrmt(is)-1
+    if (spr(ir,is).gt.rt) goto 20
+  end do
+20 continue
+  nrt=ir
+  rt=spr(nrt,is)
+  vt=(4.d0/3.d0)*pi*rt**3
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 !--------------------------------!
 !     contact charge density     !
 !--------------------------------!
-    fr(1:nr)=rhomt(1,1:nr,ias)*y00
-    do ir=1,nr
-      fr(ir)=(fourpi*spr(ir,is)**2)*fr(ir)
+    do ir=1,nrn
+      fr(ir)=(fourpi*spr(ir,is)**2)*y00*rhomt(1,ir,ias)
     end do
-    call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-    rho0=gr(nr)/vn
+    call fderiv(-1,nrn,spr(:,is),fr,gr,cf)
+    rho0=gr(nrn)/vn
+    write(50,*)
     write(50,*)
     write(50,'("Species : ",I4," (",A,"), atom : ",I4)') is,trim(spsymb(is)),ia
+    write(50,*)
     write(50,'(" approximate nuclear radius : ",G18.10)') rn
-    write(50,'(" number of mesh points to nuclear radius : ",I6)') nr
-    write(50,'(" contact charge density : ",G18.10)') rho0
+    write(50,'(" number of mesh points to nuclear radius : ",I6)') nrn
+    write(50,'(" average contact charge density : ",G18.10)') rho0
 !------------------------------------------!
 !     contact magnetic hyperfine field     !
 !------------------------------------------!
     if (spinpol) then
-      do ir=1,nr
+      do ir=1,nrt
         if (ncmag) then
 ! non-collinear
-          t1=sqrt(magmt(1,ir,ias,1)**2+magmt(1,ir,ias,2)**2 &
-           +magmt(1,ir,ias,3)**2)
+          t1=sqrt(magmt(1,ir,ias,1)**2 &
+                 +magmt(1,ir,ias,2)**2 &
+                 +magmt(1,ir,ias,3)**2)
         else
 ! collinear
           t1=magmt(1,ir,ias,1)
         end if
-        fr(ir)=t1*y00*fourpi*spr(ir,is)**2
+        fr(ir)=(fourpi*spr(ir,is)**2)*y00*t1
       end do
-      call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-      b=gr(nr)/vn
-      write(50,'(" contact magnetic hyperfine field (mu_B) : ",G18.10)') b
+      call fderiv(-1,nrt,spr(:,is),fr,gr,cf)
+      mc=gr(nrt)/vt
+      write(50,*)
+      write(50,'(" Thomson radius : ",G18.10)') rt
+      write(50,'(" number of mesh points to Thomson radius : ",I6)') nrt
+      write(50,'(" contact magnetic moment (mu_B) : ",G18.10)') mc
+      bc=(8.d0*pi/3.d0)*mc/(2.d0*sol)
+      write(50,'(" contact hyperfine field : ",G18.10)') bc
+      write(50,'("  tesla                  : ",G18.10)') bc*b_si/sol
     end if
   end do
 end do

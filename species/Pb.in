@@ -1,7 +1,7 @@
  'Pb'                                       : spsymb
  'lead'                                     : spname
   -82.0000                                  : spzn
-   377702.4941                              : spmass
+   377702.4939                              : spmass
   0.220863E-06    2.0000   42.8183   700    : sprmin, rmt, sprmax, nrmt
   24                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
@@ -31,7 +31,7 @@
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx
-   6                                        : nlorb
+   4                                        : nlorb
    0   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
@@ -41,14 +41,7 @@
    2   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
-   3   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.7528   0  T
-   0   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -0.3689   0  T
+ -0.9822   0  T

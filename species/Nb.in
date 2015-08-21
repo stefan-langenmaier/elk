@@ -1,8 +1,8 @@
  'Nb'                                       : spsymb
  'niobium'                                  : spname
   -41.0000                                  : spzn
-   169357.9703                              : spmass
-  0.312348E-06    2.0000   38.9662   600    : sprmin, rmt, sprmax, nrmt
+   169357.9702                              : spmass
+  0.312348E-06    2.0000   41.0595   600    : sprmin, rmt, sprmax, nrmt
   15                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -32,14 +32,15 @@
    2   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
-   3   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.0696   0  T
+ -2.3946   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.2474   0  T
+ -1.4940   0  T
+   2   3                                    : lorbl, lorbord
+  0.1500   0  F                             : lorbe0, lorbdm, lorbve
+  0.1500   1  F
+ -0.3641   0  T

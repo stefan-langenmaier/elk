@@ -38,47 +38,46 @@ real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
 ! local variables
 integer is,ia,i,m,np,info
-real(8) vl,vu
+real(8) v(1),vl,vu
 real(8) ts0,ts1
 ! allocatable arrays
 integer, allocatable :: iwork(:)
 integer, allocatable :: ifail(:)
 real(8), allocatable :: w(:)
 real(8), allocatable :: rwork(:)
-complex(8), allocatable :: v(:)
 complex(8), allocatable :: h(:)
 complex(8), allocatable :: o(:)
 complex(8), allocatable :: work(:)
 np=(nmatp*(nmatp+1))/2
-allocate(iwork(5*nmatp))
-allocate(ifail(nmatp))
-allocate(w(nmatp))
-allocate(rwork(7*nmatp))
-allocate(v(1))
-allocate(h(np))
-allocate(o(np))
-allocate(work(2*nmatp))
-!----------------------------------------!
-!     Hamiltonian and overlap set up     !
-!----------------------------------------!
+!-----------------------------------------------!
+!     Hamiltonian and overlap matrix set up     !
+!-----------------------------------------------!
 call timesec(ts0)
-! set the matrices to zero
+allocate(h(np),o(np))
+!$OMP PARALLEL SECTIONS DEFAULT(SHARED) PRIVATE(is,ia)
+!$OMP SECTION
+! Hamiltonian
 h(:)=0.d0
-o(:)=0.d0
-! muffin-tin contributions
 do is=1,nspecies
   do ia=1,natoms(is)
     call hmlaa(.false.,is,ia,ngp,apwalm,v,h)
     call hmlalo(.false.,is,ia,ngp,apwalm,v,h)
     call hmllolo(.false.,is,ia,ngp,v,h)
+  end do
+end do
+call hmlistl(.false.,ngp,igpig,vgpc,v,h)
+!$OMP SECTION
+! overlap
+o(:)=0.d0
+do is=1,nspecies
+  do ia=1,natoms(is)
     call olpaa(.false.,is,ia,ngp,apwalm,v,o)
     call olpalo(.false.,is,ia,ngp,apwalm,v,o)
     call olplolo(.false.,is,ia,ngp,v,o)
   end do
 end do
-! interstitial contributions
-call hmlistl(.false.,ngp,igpig,vgpc,v,h)
 call olpistl(.false.,ngp,igpig,v,o)
+!$OMP END PARALLEL SECTIONS
 call timesec(ts1)
 !$OMP CRITICAL
 timemat=timemat+ts1-ts0
@@ -87,8 +86,11 @@ timemat=timemat+ts1-ts0
 !     solve the secular equation     !
 !------------------------------------!
 call timesec(ts0)
-vl=0.d0
-vu=0.d0
+allocate(iwork(5*nmatp))
+allocate(ifail(nmatp))
+allocate(w(nmatp))
+allocate(rwork(7*nmatp))
+allocate(work(2*nmatp))
 ! LAPACK 3.x call
 call zhpgvx(1,'V','I','U',nmatp,h,o,vl,vu,1,nstfv,evaltol,m,w,evecfv,nmatmax, &
  work,rwork,iwork,ifail,info)
@@ -110,7 +112,7 @@ call timesec(ts1)
 !$OMP CRITICAL
 timefv=timefv+ts1-ts0
 !$OMP END CRITICAL
-deallocate(iwork,ifail,w,rwork,v,h,o,work)
+deallocate(iwork,ifail,w,rwork,h,o,work)
 return
 end subroutine
 !EOC

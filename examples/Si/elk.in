@@ -6,6 +6,10 @@ tasks
   0
   20
 
+! use Pulay mixing
+mixtype
+  2
+
 avec
   5.13 5.13 0.00
   5.13 0.00 5.13

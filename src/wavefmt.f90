@@ -139,14 +139,10 @@ if (abs(b).lt.eps) then
 ! zero constant
   if (abs(a).lt.eps) return
 ! pure real constant
-  do ir=1,nr
-    wfmt(1,ir)=wfmt(1,ir)+a*fr(1,ir)
-  end do
+  wfmt(1,:)=wfmt(1,:)+a*fr(1,:)
 else if (abs(a).lt.eps) then
 ! pure imaginary constant
-  do ir=1,nr
-    wfmt(2,ir)=wfmt(2,ir)+b*fr(1,ir)
-  end do
+  wfmt(2,:)=wfmt(2,:)+b*fr(1,:)
 else
 ! general complex constant
   do ir=1,nr

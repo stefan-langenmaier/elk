@@ -22,9 +22,7 @@ if (zn.eq.0.d0) then
 end if
 if (ptnucl) then
 ! nucleus is taken to be a point particle
-  do ir=1,nr
-    vn(ir)=zn/r(ir)
-  end do
+  vn(:)=zn/r(:)
 else
 ! nucleus has a finite radius approximated by r0*A^(1/3)
   rn=r0*abs(zn)**(1.d0/3.d0)

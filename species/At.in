@@ -1,8 +1,8 @@
  'At'                                       : spsymb
  'astatine'                                 : spname
   -85.0000                                  : spzn
-   382806.5818                              : spmass
-  0.216930E-06    2.0000   31.1480   700    : sprmin, rmt, sprmax, nrmt
+   382806.5817                              : spmass
+  0.216930E-06    2.0000   32.6106   700    : sprmin, rmt, sprmax, nrmt
   24                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -31,7 +31,7 @@
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx
-   6                                        : nlorb
+   5                                        : nlorb
    0   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
@@ -41,14 +41,11 @@
    2   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
-   3   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.4527   0  T
+ -1.6331   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.6356   0  T
+ -0.9606   0  T

@@ -36,7 +36,7 @@ real(8), intent(out) :: d
 ! local variables
 integer jc,jn,i,j,k,m,info
 ! initial mixing parameter
-real(8), parameter :: beta=0.1d0
+real(8), parameter :: beta=0.5d0
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
 real(8), allocatable :: alpha(:),a(:,:),work(:)
@@ -58,14 +58,13 @@ if (iscl.le.1) then
   d=1.d0
   return
 end if
-if (iscl.le.2) then
-  nu(:)=beta*nu(:)+(1.d0-beta)*mu(:,1)
-  f(:,2)=nu(:)-mu(:,1)
-  mu(:,2)=nu(:)
-  if (maxsd.ge.3) mu(:,3)=0.d0
+if (iscl.le.maxsd) then
+  nu(:)=beta*nu(:)+(1.d0-beta)*mu(:,iscl-1)
+  f(:,iscl)=nu(:)-mu(:,iscl-1)
+  mu(:,iscl)=nu(:)
   d=0.d0
   do k=1,n
-    d=d+f(k,2)**2
+    d=d+f(k,iscl)**2
   end do
   d=sqrt(d/dble(n))
   return

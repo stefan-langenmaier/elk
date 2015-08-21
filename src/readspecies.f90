@@ -9,6 +9,7 @@ implicit none
 ! local variables
 integer is,ist,iostat
 integer io,nlx,ilx,lx,ilo
+e0min=0.d0
 do is=1,nspecies
   open(50,file=trim(sppath)//trim(spfname(is)),action='READ',status='OLD', &
    form='FORMATTED',iostat=iostat)
@@ -54,16 +55,10 @@ do is=1,nspecies
     stop
   end if
   read(50,*) spnst(is)
-  if (spnst(is).le.0) then
+  if ((spnst(is).le.0).or.(spnst(is).gt.maxspst)) then
     write(*,*)
-    write(*,'("Error(readspecies): invalid spnst : ",I8)') spnst(is)
+    write(*,'("Error(readspecies): spnst out of range : ",I8)') spnst(is)
     write(*,'(" for species ",I4)') is
-    write(*,*)
-    stop
-  end if
-  if (spnst(is).gt.maxspst) then
-    write(*,*)
-    write(*,'("Error(readspecies): too many states for species ",I8)') is
     write(*,*)
     stop
   end if
@@ -134,6 +129,7 @@ do is=1,nspecies
     apwe0(io,1:lmaxapw,is)=apwe0(io,0,is)
     apwdm(io,1:lmaxapw,is)=apwdm(io,0,is)
     apwve(io,1:lmaxapw,is)=apwve(io,0,is)
+    e0min=min(e0min,apwe0(io,0,is))
   end do
   read(50,*) nlx
   if (nlx.lt.0) then
@@ -190,6 +186,7 @@ do is=1,nspecies
         write(*,*)
         stop
       end if
+      e0min=min(e0min,apwe0(io,lx,is))
     end do
   end do
   read(50,*) nlorb(is)
@@ -255,6 +252,7 @@ do is=1,nspecies
         write(*,*)
         stop
       end if
+      e0min=min(e0min,lorbe0(io,ilo,is))
     end do
   end do
   close(50)

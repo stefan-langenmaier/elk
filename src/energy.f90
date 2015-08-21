@@ -142,7 +142,7 @@ engycl=engynn+engyen+engyhar
 ! exchange energy from the density
 engyx=rfinp(1,rhomt,exmt,rhoir,exir)
 ! exact exchange for OEP-EXX or Hartree-Fock on last iteration
-if ((xctype.lt.0).or.(task.eq.5).or.(task.eq.6)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6)) then
   if (tlast) call exxengy
 end if
 !----------------------------!

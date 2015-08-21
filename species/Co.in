@@ -1,8 +1,8 @@
  'Co'                                       : spsymb
  'cobalt'                                   : spname
   -27.0000                                  : spzn
-   107428.6517                              : spmass
-  0.384900E-06    2.0000   32.6144   500    : sprmin, rmt, sprmax, nrmt
+   107428.6516                              : spmass
+  0.384900E-06    2.0000   33.6409   500    : sprmin, rmt, sprmax, nrmt
   10                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -27,10 +27,11 @@
    2   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
-   3   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.3769   0  T
+ -2.6334   0  T
+   2   3                                    : lorbl, lorbord
+  0.1500   0  F                             : lorbe0, lorbdm, lorbve
+  0.1500   1  F
+ -0.5572   0  T

@@ -49,8 +49,8 @@ do ik=1,nkpt
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! calculate the wavefunctions for all states
-  call genwfsv(.false.,ngk(1,ik),igkig(:,1,ik),evalsv,apwalm,evecfv,evecsv, &
-   wfmt,wfir)
+  call genwfsv(.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv,apwalm,evecfv, &
+   evecsv,wfmt,wfir)
   call genvmatk(rfmt,vir,wfmt,wfir,vmat(:,:,ik))
 end do
 deallocate(apwalm,evecfv,evecsv,wfmt,wfir)

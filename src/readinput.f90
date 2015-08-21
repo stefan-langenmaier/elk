@@ -10,6 +10,7 @@ subroutine readinput
 ! !USES:
 use modmain
 use modldapu
+use modrdm
 use modtest
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
@@ -21,12 +22,11 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,js,ia,ja,ias
+integer is,js,ia,ias
 integer i,l,k,iv,iostat
 real(8) sc,sc1,sc2,sc3
-real(8) solscf,vacuum
-real(8) v(3),t1
-character(256) str,bname
+real(8) solscf,v(3)
+character(256) block,str
 
 !------------------------!
 !     default values     !
@@ -59,7 +59,9 @@ lmaxmat=5
 lmaxinr=2
 fracinr=0.25d0
 npsden=9
-xctype=3
+xctype(1)=3
+xctype(2)=0
+xctype(3)=0
 stype=0
 swidth=0.01d0
 epsocc=1.d-8
@@ -74,12 +76,11 @@ epsengy=1.d-4
 epsforce=5.d-4
 cfdamp=0.d0
 molecule=.false.
-vacuum=10.d0
 nspecies=0
 natoms(:)=0
 atposl(:,:,:)=0.d0
 atposc(:,:,:)=0.d0
-bfcmt(:,:,:)=0.d0
+bfcmt0(:,:,:)=0.d0
 sppath='./'
 scrpath='./'
 nvp1d=2
@@ -103,6 +104,7 @@ nsmdos=0
 wdos(1)=-0.5d0
 wdos(2)=0.5d0
 dosocc=.false.
+dosmsum=.false.
 lmirep=.true.
 spinpol=.false.
 spinorb=.false.
@@ -117,10 +119,11 @@ optcomp(:,1)=1
 usegdft=.false.
 intraband=.false.
 evaltol=-1.d0
-evalmin=-8.d0
 deband=0.0025d0
 epsband=1.d-6
-bfieldc(:)=0.d0
+autolinengy=.false.
+dlefe=-0.1d0
+bfieldc0(:)=0.d0
 fixspin=0
 momfix(:)=0.d0
 mommtfix(:,:,:)=0.d0
@@ -153,6 +156,8 @@ ssdph=.true.
 vqlss(:)=0.d0
 nwrite=0
 tevecsv=.false.
+
+! LDA+U defaults
 ldapu=0
 inptypelu=1
 llu(:)=-1
@@ -164,6 +169,8 @@ ulufix(:)=0.d0
 lambdalu0(:)=0.d0
 tmomlu=.false.
 readalu=.false.
+
+! reduced density matrix functional theory (RMDFT) defaults
 rdmxctype=2
 rdmmaxscl=1
 maxitn=250
@@ -171,7 +178,10 @@ maxitc=10
 taurdmn=1.d0
 taurdmc=0.5d0
 rdmalpha=0.7d0
+rdmbeta=0.25d0
 rdmtemp=0.d0
+wrtvnlijji=.true.
+
 reducebf=1.d0
 ptnucl=.true.
 tseqit=.false.
@@ -183,6 +193,7 @@ sqados(1:2)=0.d0
 sqados(3)=1.d0
 test=.false.
 frozencr=.false.
+spincore=.false.
 solscf=1.d0
 emaxelnes=-1.2d0
 
@@ -197,13 +208,13 @@ if (iostat.ne.0) then
   stop
 end if
 10 continue
-read(50,*,end=30) bname
+read(50,*,end=30) block
 ! check for a comment
-if ((scan(trim(bname),'!').eq.1).or.(scan(trim(bname),'#').eq.1)) goto 10
-select case(trim(bname))
+if ((scan(trim(block),'!').eq.1).or.(scan(trim(block),'#').eq.1)) goto 10
+select case(trim(block))
 case('tasks')
   do i=1,maxtasks
-    read(50,'(A80)') str
+    read(50,'(A256)',err=20) str
     if (trim(str).eq.'') then
       if (i.eq.1) then
         write(*,*)
@@ -227,6 +238,8 @@ case('tasks')
   write(*,'("Error(readinput): too many tasks")')
   write(*,*)
   stop
+case('species')
+  call genspecies(50)
 case('avec')
   read(50,*,err=20) avec(:,1)
   read(50,*,err=20) avec(:,2)
@@ -347,7 +360,9 @@ case('spinpol')
 case('spinorb')
   read(50,*,err=20) spinorb
 case('xctype')
-  read(50,*,err=20) xctype
+  read(50,'(A256)',err=20) str
+  str=trim(str)//' 0 0'
+  read(str,*,err=20) xctype
 case('stype')
   read(50,*,err=20) stype
 case('swidth')
@@ -430,14 +445,6 @@ case('scrpath')
   read(50,*,err=20) scrpath
 case('molecule')
   read(50,*,err=20) molecule
-case('vacuum')
-  read(50,*,err=20) vacuum
-  if (vacuum.lt.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): vacuum < 0 : ",G18.10)') vacuum
-    write(*,*)
-    stop
-  end if
 case('atoms')
   read(50,*,err=20) nspecies
   if (nspecies.le.0) then
@@ -473,7 +480,9 @@ case('atoms')
       stop
     end if
     do ia=1,natoms(is)
-      read(50,*,err=20) atposl(:,ia,is),bfcmt(:,ia,is)
+      read(50,'(A256)',err=20) str
+      str=trim(str)//' 0.0 0.0 0.0'
+      read(str,*,err=20) atposl(:,ia,is),bfcmt0(:,ia,is)
     end do
   end do
 case('plot1d')
@@ -547,6 +556,8 @@ case('dos')
   end if
 case('dosocc')
   read(50,*,err=20) dosocc
+case('dosmsum')
+  read(50,*,err=20) dosmsum
 case('lmirep')
   read(50,*,err=20) lmirep
 case('tau0atm')
@@ -581,7 +592,7 @@ case('scissor')
   read(50,*,err=20) scissor
 case('optcomp')
   do i=1,27
-    read(50,'(A80)') str
+    read(50,'(A256)',err=20) str
     if (trim(str).eq.'') then
       if (i.eq.1) then
         write(*,*)
@@ -620,8 +631,6 @@ case('intraband')
   read(50,*,err=20) intraband
 case('evaltol')
   read(50,*,err=20) evaltol
-case('evalmin')
-  read(50,*,err=20) evalmin
 case('deband')
   read(50,*,err=20) deband
   if (deband.lt.0.d0) then
@@ -638,15 +647,19 @@ case('epsband')
     write(*,*)
     stop
   end if
+case('autolinengy')
+  read(50,*,err=20) autolinengy
+case('dlefe')
+  read(50,*,err=20) dlefe
 case('bfieldc')
-  read(50,*,err=20) bfieldc
+  read(50,*,err=20) bfieldc0
 case('fixspin')
   read(50,*,err=20) fixspin
 case('momfix')
   read(50,*,err=20) momfix
 case('mommtfix')
   do ias=1,maxspecies*maxatoms
-    read(50,'(A80)') str
+    read(50,'(A256)',err=20) str
     if (trim(str).eq.'') goto 10
     read(str,*,iostat=iostat) is,ia,mommtfix(:,ia,is)
     if (iostat.ne.0) then
@@ -735,7 +748,7 @@ case('tauoep')
   end if
 case('kstlist')
   do i=1,maxkst
-    read(50,'(A80)') str
+    read(50,'(A256)',err=20) str
     if (trim(str).eq.'') then
       if (i.eq.1) then
         write(*,*)
@@ -787,7 +800,7 @@ case('tevecsv')
 case('lda+u')
   read(50,*) ldapu,inptypelu
   do is=1,maxspecies
-    read(50,'(A80)') str
+    read(50,'(A256)',err=20) str
     if (trim(str).eq.'') goto 10
     if (inptypelu.eq.1) then
       read(str,*,iostat=iostat) js,l,ujlu(1:2,js)
@@ -863,6 +876,14 @@ case('rdmalpha')
     write(*,*)
     stop
   end if
+case('rdmbeta')
+  read(50,*,err=20) rdmbeta
+  if ((rdmbeta.le.0.d0).or.(rdmbeta.ge.1.d0)) then
+    write(*,*)
+    write(*,'("Error(readinput): rdmbeta not in (0,1) : ",G18.10)') rdmbeta
+    write(*,*)
+    stop
+  end if
 case('rdmtemp')
   read(50,*,err=20) rdmtemp
   if (rdmtemp.lt.0.d0) then
@@ -871,6 +892,8 @@ case('rdmtemp')
     write(*,*)
     stop
   end if
+case('wrtvnlijji')
+  read(50,*,err=20) wrtvnlijji
 case('reducebf')
   read(50,*,err=20) reducebf
   if ((reducebf.lt.0.d0).or.(reducebf.gt.1.d0)) then
@@ -909,6 +932,8 @@ case('test')
   read(50,*,err=20) test
 case('frozencr')
   read(50,*,err=20) frozencr
+case('spincore')
+  read(50,*,err=20) spincore
 case('solscf')
   read(50,*,err=20) solscf
   if (solscf.lt.0.d0) then
@@ -923,7 +948,7 @@ case('')
   goto 10
 case default
   write(*,*)
-  write(*,'("Error(readinput): invalid block name : ",A)') trim(bname)
+  write(*,'("Error(readinput): invalid block name : ",A)') trim(block)
   write(*,*)
   stop
 end select
@@ -931,7 +956,7 @@ goto 10
 20 continue
 write(*,*)
 write(*,'("Error(readinput): error reading from elk.in")')
-write(*,'("Problem occurred in ''",A,"'' block")') trim(bname)
+write(*,'("Problem occurred in ''",A,"'' block")') trim(block)
 write(*,*)
 stop
 30 continue
@@ -945,23 +970,6 @@ avec(:,3)=sc3*avec(:,3)
 avec(:,:)=sc*avec(:,:)
 ! case of isolated molecule
 if (molecule) then
-! set up cubic unit cell with vacuum region around molecule
-  avec(:,:)=0.d0
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      do js=1,nspecies
-        do ja=1,natoms(is)
-          do i=1,3
-            t1=abs(atposl(i,ia,is)-atposl(i,ja,js))
-            if (t1.gt.avec(i,i)) avec(i,i)=t1
-          end do
-        end do
-      end do
-    end do
-  end do
-  do i=1,3
-    avec(i,i)=avec(i,i)+vacuum
-  end do
 ! convert atomic positions from Cartesian to lattice coordinates
   call r3minv(avec,ainv)
   do is=1,nspecies

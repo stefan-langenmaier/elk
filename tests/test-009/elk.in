@@ -18,9 +18,6 @@ rgkmax
 spinorb
  .true.
 
-evalmin
- -30.0
-
 vecql
  0.0 0.0 0.5
 

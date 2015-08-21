@@ -39,7 +39,7 @@ integer, parameter :: maxit=100
 integer it,nit
 ! if ufix<umin, assume lambda=lambdamax
 real(8), parameter :: umin=1.d-4
-! if lambda<lambdamin, perform unscreened calculation  
+! if lambda<lambdamin, perform unscreened calculation
 real(8), parameter :: lambdamin=1.d-2
 ! max value of lambda
 ! lambdamax=50 is enough to get F^(k)~1.d-3 corresponding to U~0
@@ -58,7 +58,7 @@ if (ufix.lt.umin) then
   return
 end if
 ! first perform a search of lambda with half-interval method and low accuracy
-! initialize values and search upward from lambda0 
+! initialize values and search upward from lambda0
 lambda=lambda0
 dl=dl0
 fold=1.d0
@@ -124,6 +124,6 @@ else
   write(*,'("Info(findlambdalu): lambdalu obtained in ",I4," iterations")') nit
 end if
 return
-end subroutine 
+end subroutine
 !EOC
 

@@ -3,9 +3,23 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmdedn
+! !INTERFACE:
 subroutine rdmdedn(dedn)
-! calculates derivative of total energy w.r.t. occupation numbers
+! !USES:
+use modrdm
 use modmain
+! !INPUT/OUTPUT PARAMETERS:
+!   dedn : free energy derivative (out,real(nstsv,nkpt))
+! !DESCRIPTION:
+!   Calculates the negative of the derivative of total free energy w.r.t.
+!   occupation numbers.
+!
+! !REVISION HISTORY:
+!   Created 2008 (Sharma)
+!EOP
+!BOC
 implicit none
 ! arguments
 real(8), intent(out) :: dedn(nstsv,nkpt)
@@ -26,13 +40,13 @@ do ik=1,nkpt
     dedn(ist,ik)=dedn(ist,ik)-(dble(c(ist,ist))+dble(vclmat(ist,ist,ik)))
   end do
 end do
+deallocate(evecsv,c)
 ! add exchange correlation contribution
 call rdmdexcdn(dedn)
 ! add entropic contribution if needed
 if (rdmtemp.gt.0.d0) then
-  call rdmdsdn(dedn)
+  call rdmdtsdn(dedn)
 end if
-deallocate(evecsv,c)
 return
 end subroutine
-
+!EOC

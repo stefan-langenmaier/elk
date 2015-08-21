@@ -6,10 +6,11 @@
 !BOP
 ! !ROUTINE: genwfsv
 ! !INTERFACE:
-subroutine genwfsv(tocc,ngp,igpig,evalsvp,apwalm,evecfv,evecsv,wfmt,wfir)
+subroutine genwfsv(tsh,tocc,ngp,igpig,evalsvp,apwalm,evecfv,evecsv,wfmt,wfir)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
+!   tsh     : .true. if wfmt should be in spherical harmonics (in,logical)
 !   tocc    : .true. if only occupied wavefunctions are required (in,logical)
 !   ngp     : number of G+p-vectors (in,integer)
 !   igpig   : index from G+p-vectors to G-vectors (in,integer(ngkmax))
@@ -36,6 +37,7 @@ use modmain
 !BOC
 implicit none
 ! arguments
+logical, intent(in) :: tsh
 logical, intent(in) :: tocc
 integer, intent(in) :: ngp
 integer, intent(in) :: igpig(ngkmax)
@@ -52,11 +54,11 @@ real(8) t1
 complex(8) zt1
 ! allocatable arrays
 logical, allocatable :: done(:)
-complex(8), allocatable :: wfmt1(:,:)
-complex(8), allocatable :: wfmt2(:,:,:)
+complex(8), allocatable :: wfmt1(:,:,:)
+complex(8), allocatable :: wfmt2(:,:)
 allocate(done(nstfv))
-allocate(wfmt1(lmmaxvr,nrcmtmax))
-allocate(wfmt2(lmmaxvr,nrcmtmax,nstfv))
+allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
+if (.not.tsh) allocate(wfmt2(lmmaxvr,nrcmtmax))
 !--------------------------------!
 !     muffin-tin wavefunction    !
 !--------------------------------!
@@ -77,15 +79,21 @@ do is=1,nspecies
               zt1=evecsv(i,j)
               if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
                 if (.not.done(ist)) then
-                  call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,ist), &
-                   lmmaxvr,wfmt1)
+                  if (tsh) then
+! wavefunction returned in spherical harmonics
+                    call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm, &
+                     evecfv(:,ist),lmmaxvr,wfmt1(:,:,ist))
+                  else
+                    call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm, &
+                     evecfv(:,ist),lmmaxvr,wfmt2)
 ! convert from spherical harmonics to spherical coordinates
-                  call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr, &
-                   lmmaxvr,wfmt1,lmmaxvr,zzero,wfmt2(:,:,ist),lmmaxvr)
+                    call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr, &
+                     lmmaxvr,wfmt2,lmmaxvr,zzero,wfmt1(:,:,ist),lmmaxvr)
+                  end if
                   done(ist)=.true.
                 end if
 ! add to spinor wavefunction
-                call zaxpy(n,zt1,wfmt2(:,:,ist),1,wfmt(:,:,ias,ispn,j),1)
+                call zaxpy(n,zt1,wfmt1(:,:,ist),1,wfmt(:,:,ias,ispn,j),1)
               end if
 ! end loop over first-variational states
             end do
@@ -93,11 +101,17 @@ do is=1,nspecies
           end do
         else
 ! spin-unpolarised wavefunction
-          call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j),lmmaxvr, &
-           wfmt1)
+          if (tsh) then
+! wavefunction returned in spherical harmonics
+            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j),lmmaxvr, &
+             wfmt(:,:,ias,1,j))
+          else
+            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j),lmmaxvr, &
+             wfmt2)
 ! convert from spherical harmonics to spherical coordinates
-          call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr,lmmaxvr, &
-           wfmt1,lmmaxvr,zzero,wfmt(:,:,ias,1,j),lmmaxvr)
+            call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr,lmmaxvr, &
+             wfmt2,lmmaxvr,zzero,wfmt(:,:,ias,1,j),lmmaxvr)
+          end if
         end if
       end if
 ! end loop over second-variational states
@@ -141,7 +155,8 @@ do j=1,nstsv
     end do
   end if
 end do
-deallocate(done,wfmt1,wfmt2)
+deallocate(done,wfmt1)
+if (.not.tsh) deallocate(wfmt2)
 return
 end subroutine
 !EOC

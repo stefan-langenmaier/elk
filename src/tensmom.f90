@@ -124,20 +124,20 @@ do is=1,nspecies
 ! for k,p,r = 0 save reference polarization
             dmpol0=dmpol
 ! for k,p,r = 0 do not write out the polarization
-            write(fnum,'("   W.W =",F12.8,", Edir =",F12.8,", Ex =",F12.8)') &
+            write(fnum,'("   W.W =",F14.8,", Edir =",F14.8,", Ex =",F14.8)') &
              t1,edir*t1,exch*t1
           else
 ! relative polarization
             t2=dmpol/dmpol0
-            write(fnum,'("   W.W =",F12.8,", Edir =",F12.8,", Ex =",F12.8, &
-             &", Pol =",F12.8)') t1,edir*t1,exch*t1,t2
+            write(fnum,'("   W.W =",F14.8,", Edir =",F14.8,", Ex =",F14.8, &
+             &", Pol =",F14.8)') t1,edir*t1,exch*t1,t2
 ! total relative polarization (skipping 000 component)
             dmpoltot=dmpoltot+t2
           end if
           hfe=hfe+(edir+exch)*t1
           do t=-r,r
 ! write out single components of tensor moments
-            write(fnum,'("    t = ",I2," : ",2F12.8)') t,tmom(t)
+            write(fnum,'("    t = ",I2," : ",2F14.8)') t,tmom(t)
           end do
           write(fnum,*)
         end do
@@ -145,8 +145,8 @@ do is=1,nspecies
     end do
     write(fnum,*)
     write(fnum,'("  Total Hartree-Fock energy (without DC correction) : ", &
-     &F12.8)') hfe
-    write(fnum,'("  Total polarization of density matrix : ",F12.8)') dmpoltot
+     &F14.8)') hfe
+    write(fnum,'("  Total polarization of density matrix : ",F14.8)') dmpoltot
     write(fnum,*)
 ! end loop over atoms and species
   end do

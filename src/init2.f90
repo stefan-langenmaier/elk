@@ -5,6 +5,7 @@
 
 subroutine init2
 use modmain
+use modrdm
 implicit none
 ! local variables
 integer is,ia,ist,ic,m
@@ -19,7 +20,7 @@ call timesec(ts0)
 ! check if the system is an isolated molecule
 if (molecule) ngridq(:)=1
 ! OEP, Hartree-Fock or RDMFT
-if ((xctype.lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
   ngridq(:)=ngridk(:)
   reduceq=.false.
 end if
@@ -44,13 +45,13 @@ call genppts(reduceq,.true.,ngridq,boxl,nqpt,iqmap,ivq,vql,vqc,wqpt)
 !-----------------------------------------------!
 !     OEP, Hartree-Fock and RDMFT variables     !
 !-----------------------------------------------!
-if ((xctype.lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
 ! determine the 1/q^2 integral weights if required
   call genwiq2
 ! output the 1/q^2 integrals to WIQ2.OUT
   call writewiq2
 end if
-if (xctype.lt.0) then
+if (xctype(1).lt.0) then
 ! initialise OEP residual magnitude
   resoep=1.d0
 ! find maximum core states over all species
@@ -94,8 +95,6 @@ if (task.eq.300) then
   allocate(vclmat(nstsv,nstsv,nkpt))
   if (allocated(dkdc)) deallocate(dkdc)
   allocate(dkdc(nstsv,nstsv,nkpt))
-  if (allocated(vnlrdm)) deallocate(vnlrdm)
-  allocate(vnlrdm(nstsv,nkpt,nstsv,nkptnr))
 end if
 
 call timesec(ts1)

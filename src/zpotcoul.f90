@@ -231,7 +231,7 @@ end do
 ifg=igfft(igp0)
 zrho0=zvclir(ifg)
 zvclir(ifg)=0.d0
-! solve Poissons's equation in G-space for the pseudocharge
+! solve Poisson's equation in G-space for the pseudocharge
 do ig=1,ngvec
   ifg=igfft(ig)
   if (gpc(ig).gt.epslat) then

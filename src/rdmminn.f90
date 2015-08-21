@@ -3,9 +3,21 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmminn
+! !INTERFACE:
 subroutine rdmminn
-! minimise the total energy w.r.t. occupation numbers
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!   Minimizes the total energy w.r.t. occupation numbers. The steepest-descent
+!   algorithm is used.
+!
+! !REVISION HISTORY:
+!   Created 2008 (Sharma)
+!EOP
+!BOC
 implicit none
 ! allocatable arrays
 complex(8), allocatable :: evecfv(:,:)
@@ -14,31 +26,17 @@ integer ik,it,idm
 real(8) ep,de
 ! parameter to check energy convergence
 real(8), parameter :: eps=1.d-8
-! allocate arrays
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
+ep=0.d0
+! generate and write non-local matrix elements
+if (wrtvnlijji) call rdmputvnl_ijji
 open(61,file='RDMN_ENERGY.OUT',action='WRITE',form='FORMATTED')
 if (spinpol) then
   open(62,file='RDMN_MOMENT.OUT',action='WRITE',form='FORMATTED')
 end if
-! calculate the non-local matrix elements (i-jj-i)
-if ((rdmxctype.ne.0).and.(maxitc.lt.1)) then
-!$OMP PARALLEL DEFAULT(SHARED)
-!$OMP DO
-  do ik=1,nkpt
-!$OMP CRITICAL
-    write(*,'("Info(rdmminn): ",I6," of ",I6," k-points")') ik,nkpt
-!$OMP END CRITICAL
-    call rdmvnln(ik)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-end if
-ep=0.d0
 ! begin iteration loop
 do it=1,maxitn
   write(*,'("Info(rdmminn): iteration ",I4," of ",I4)') it,maxitn
-! vary the occupation numbers
+! get the new occupation numbers
   call rdmvaryn
 ! zero the density
   rhomt(:,:,:)=0.d0
@@ -49,6 +47,8 @@ do it=1,maxitn
     magir(:,:)=0.d0
   end if
 ! compute the charge density and magnetisation with the new occupancies
+  allocate(evecfv(nmatmax,nstfv))
+  allocate(evecsv(nstsv,nstsv))
   do ik=1,nkpt
 ! get the eigenvectors from file
     call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
@@ -56,9 +56,10 @@ do it=1,maxitn
 ! add to the density and magnetisation
     call rhomagk(ik,evecfv,evecsv)
   end do
+  deallocate(evecfv,evecsv)
 ! convert muffin-tin density/magnetisation to spherical harmonics
   call rhomagsh
-! symmetrise the density 
+! symmetrise the density
   call symrf(lradstp,rhomt,rhoir)
 ! convert the muffin-tin density from coarse to a fine grid
   call rfmtctof(rhomt)
@@ -102,7 +103,6 @@ end do
 10 continue
 close(61)
 if (spinpol) close(62)
-deallocate(evecfv,evecsv)
 return
 end subroutine
-
+!EOC

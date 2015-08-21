@@ -13,61 +13,119 @@ use modmain
 !   Computes the core radial wavefunctions, eigenvalues and densities. The
 !   radial Dirac equation is solved in the spherical part of the effective
 !   potential to which the atomic potential has been appended for
-!   $r>R^{\rm MT}$. In the case of spin-polarised calculations, the effective
-!   magnetic field is ignored.
+!   $r>R^{\rm MT}$. In the case of spin-polarised calculations, and when
+!   {\tt spincore} is set to {\tt .true.}, the Dirac equation is solved in the
+!   spin-up and -down potentials created from the scalar potential and the
+!   magnitude of the effective magnetic field, with the occupancy divided
+!   equally between up and down. The up and down densities determined in this
+!   way are added to both the scalar density and the magnetisation in the
+!   routine {\tt addrhocr}. Note that this procedure is a simple, but inexact,
+!   approach to solving the radial Dirac equation in a magnetic field.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)
+!   Added polarised cores, November 2009 (JKD)
 !EOP
 !BOC
 implicit none
 ! local variables
-integer is,ia,ja,ias,jas,ist,ir
+integer is,ia,ja,ias,jas
+integer ispn,ist,ir
 real(8) t1
 ! automatic arrays
 logical done(natmmax)
-real(8) vr(spnrmax)
+real(8) vr(spnrmax),eval(spnstmax)
+! allocatable arrays
+real(8), allocatable :: br(:)
+if (spincore) allocate(br(nrmtmax))
+! loop over species and atoms
 do is=1,nspecies
   done(:)=.false.
   do ia=1,natoms(is)
     if (.not.done(ia)) then
       ias=idxas(ia,is)
-      if (frozencr) then
-! use atomic potential for the frozen core approximation
-        vr(1:nrmt(is))=spvr(1:nrmt(is),is)
-      else
-! else use the spherical part of the crystal effective potential
-        vr(1:nrmt(is))=veffmt(1,1:nrmt(is),ias)*y00
+! effective magnetic field for spin-polarised core
+      if (spincore) then
+        if (ncmag) then
+          do ir=1,nrmt(is)
+            br(ir)=sqrt(bxcmt(1,ir,ias,1)**2 &
+                       +bxcmt(1,ir,ias,2)**2 &
+                       +bxcmt(1,ir,ias,3)**2)*y00
+          end do
+        else
+          do ir=1,nrmt(is)
+            br(ir)=abs(bxcmt(1,ir,ias,1))*y00
+          end do
+        end if
       end if
+! loop over spin channels
+      do ispn=1,nspncr
+        if (frozencr) then
+! use atomic potential for the frozen core approximation
+          do ir=1,nrmt(is)
+            vr(ir)=spvr(ir,is)
+          end do
+        else
+! else use the spherical part of the crystal effective potential
+          do ir=1,nrmt(is)
+            vr(ir)=veffmt(1,ir,ias)*y00
+          end do
+        end if
+! spin-up and down potentials for polarised core
+        if (spincore) then
+          if (ispn.eq.1) then
+            do ir=1,nrmt(is)
+              vr(ir)=vr(ir)+br(ir)
+            end do
+          else
+            do ir=1,nrmt(is)
+              vr(ir)=vr(ir)-br(ir)
+            end do
+          end if
+        end if
 ! append the effective potential from the atomic calculation for r > R^MT
-      t1=vr(nrmt(is))-spvr(nrmt(is),is)
-      do ir=nrmt(is)+1,spnr(is)
-        vr(ir)=spvr(ir,is)+t1
-      end do
-      rhocr(:,ias)=0.d0
+        t1=vr(nrmt(is))-spvr(nrmt(is),is)
+        do ir=nrmt(is)+1,spnr(is)
+          vr(ir)=spvr(ir,is)+t1
+        end do
+        rhocr(:,ias,ispn)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(ir,t1)
 !$OMP DO
-      do ist=1,spnst(is)
-        if (spcore(ist,is)) then
+        do ist=1,spnst(is)
+          if (spcore(ist,is)) then
 ! solve the Dirac equation
-          call rdirac(solsc,spn(ist,is),spl(ist,is),spk(ist,is),nprad, &
-           spnr(is),spr(:,is),vr,evalcr(ist,ias),rwfcr(:,1,ist,ias), &
-           rwfcr(:,2,ist,ias))
-          t1=spocc(ist,is)
-!$OMP CRITICAL
-          do ir=1,spnr(is)
+            eval(ist)=evalcr(ist,ias)
+            call rdirac(solsc,spn(ist,is),spl(ist,is),spk(ist,is),nprad, &
+             spnr(is),spr(:,is),vr,eval(ist),rwfcr(:,1,ist,ias), &
+             rwfcr(:,2,ist,ias))
+            if (spincore) then
+! use the spin-averaged eigenvalue for the polarised core
+              if (ispn.eq.1) then
+                evalcr(ist,ias)=eval(ist)
+              else
+                evalcr(ist,ias)=0.5d0*(evalcr(ist,ias)+eval(ist))
+              end if
+              t1=0.5d0*spocc(ist,is)
+            else
+              evalcr(ist,ias)=eval(ist)
+              t1=spocc(ist,is)
+            end if
 ! add to the core density
-            rhocr(ir,ias)=rhocr(ir,ias) &
-             +t1*(rwfcr(ir,1,ist,ias)**2+rwfcr(ir,2,ist,ias)**2)
-          end do
+!$OMP CRITICAL
+            do ir=1,spnr(is)
+              rhocr(ir,ias,ispn)=rhocr(ir,ias,ispn) &
+               +t1*(rwfcr(ir,1,ist,ias)**2+rwfcr(ir,2,ist,ias)**2)
+            end do
 !$OMP END CRITICAL
-        end if
-      end do
+          end if
+        end do
 !$OMP END DO
 !$OMP END PARALLEL
-      do ir=1,spnr(is)
-        rhocr(ir,ias)=rhocr(ir,ias)/(fourpi*spr(ir,is)**2)
+        do ir=1,spnr(is)
+          rhocr(ir,ias,ispn)=rhocr(ir,ias,ispn)/(fourpi*spr(ir,is)**2)
+        end do
+! end loop over spin channels
       end do
       done(ia)=.true.
 ! copy to equivalent atoms
@@ -80,13 +138,15 @@ do is=1,nspecies
               rwfcr(1:spnr(is),:,ist,jas)=rwfcr(1:spnr(is),:,ist,ias)
             end if
           end do
-          rhocr(1:spnr(is),jas)=rhocr(1:spnr(is),ias)
+          rhocr(1:spnr(is),jas,:)=rhocr(1:spnr(is),ias,:)
           done(ja)=.true.
         end if
       end do
     end if
+! end loop over species and atoms
   end do
 end do
+if (spincore) deallocate(br)
 return
 end subroutine
 !EOC

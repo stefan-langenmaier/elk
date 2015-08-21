@@ -111,7 +111,7 @@ if (inptypelu.lt.4) then
       f(0)=e(0)+(9.d0/7.d0)*e(1)
 ! copy Racah parameters
       v1(1:3)=e(1:3)
-! transformation matrix from Racah to Slater parameters 
+! transformation matrix from Racah to Slater parameters
 ! obtained from inversion of Eq. 120-122, LN Notes 29-12-08
       a(1,1)=2.3809523809523808d-2
       a(1,2)=3.404761904761904d0

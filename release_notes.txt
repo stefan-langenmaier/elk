@@ -1,0 +1,27 @@
+elk-1.0.0
+-Tyrel McQueen and JKD incorporated the ETSF exchange-correlation functional library Libxc into Elk - see the manual for installation instructions. This is still an experimental feature
+-Fixed problem with non-collinear GGA: this feature should still be considered as experimental
+-GGA now faster and more accurate
+-FC and LN included an estimation of the band gap at each iteration
+-FC and LN parallelised the DOS routine
+-SS updated the RDMFT code and added spectral output
+-SS made the RDMFT code more memory efficient
+-fixed problem with the Mössbauer hyperfine fields and in doing so also allowed the core states to be spin-polarised (use spincore=.true.)
+-added a Mössbauer hyperfine field example (Fe-Mossbauer)
+-removed evalmin and replaced it with a check if the lowest eigenvalue is less than the lowest linearisation energy
+-Marty Blaber parallelised part of the dielectric routine and JKD also parallelised the generation of momentum matrix elements
+-FC and LN fixed a symmetry problem when using reducebf
+-FC and LN included the possibility of summing the partial DOS over m: just set dossum=.true. and the PDOS files will only contain the l-resolved DOS
+-fixed linearisation energies can now be determined automatically thanks to FC: just set autolinengy=.true.
+-Important: gkmax is now determined from rgkmax using the average muffin-tin radius, rather than the smallest
+-completely removed the species program and incorporated the code directly into Elk. See the species directory and the ununhexium example
+-improved and regenerated all the species files (thanks to discussions with S. Massidda) and set all atomic masses to best known values
+-improved the spherical covering used for the spherical harmonic transforms (SHT): replaced the "Saff and Kuilaars" spiral with the "golden section" spiral. This results in faster convergence with respect to lmax
+-removed the input variable vacuum: the box containing the molecule now has to be set up by the user when molecule=.true.. See the NaCl-monomer example
+-bfcmt read in after the atomic positions in the atoms block is now optional
+-alphabetised the list of subroutines in the Elk manual and added hyperlinks
+-various optimisations and simplifications
+-enabled the Elk Wiki pages: Anton Kozhevnikov is the Wiki administrator
+-upgraded license to GPL version 3
+-Elk now officially out of beta
+

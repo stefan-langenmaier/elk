@@ -25,7 +25,7 @@ use modldapu
 !   Modified and tested July 2008 (LN and FC)
 !EOP
 !BOC
-implicit none 
+implicit none
 ! arguments
 integer, intent(in) :: is
 integer, intent(in) :: l

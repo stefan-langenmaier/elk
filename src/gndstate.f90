@@ -39,7 +39,7 @@ if ((task.eq.2).or.(task.eq.3)) tforce=.true.
 call init0
 call init1
 ! initialise OEP variables if required
-if (xctype.lt.0) call init2
+if (xctype(1).lt.0) call init2
 ! write the real and reciprocal lattice vectors to file
 call writelat
 ! write interatomic distances to file
@@ -217,7 +217,7 @@ do iscl=1,maxscl
 ! write the LDA+U matrices to file
     call writeldapu
 ! calculate and write tensor moments to file
-    if (tmomlu) then 
+    if (tmomlu) then
       call tensmom(67)
       call flushifc(67)
     end if
@@ -225,11 +225,11 @@ do iscl=1,maxscl
 ! compute the effective potential
   call poteff
 ! pack interstitial and muffin-tin effective potential and field into one array
-  call packeff(.true.,n,v)
+  call mixpack(.true.,n,v)
 ! mix in the old potential and field with the new
   call mixerifc(mixtype,n,v,dv,nwork,work)
 ! unpack potential and field
-  call packeff(.false.,n,v)
+  call mixpack(.false.,n,v)
 ! add the fixed spin moment effect field
   if (fixspin.ne.0) call fsmfield
 ! Fourier transform effective potential to G-space
@@ -246,6 +246,7 @@ do iscl=1,maxscl
   write(60,*)
   write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
   write(60,'(" (states/Hartree/unit cell)")')
+  write(60,'("Estimated band gap : ",G18.10)') bandgap
 ! write total energy to TOTENERGY.OUT and flush
   write(61,'(G22.12)') engytot
   call flushifc(61)
@@ -299,7 +300,7 @@ do iscl=1,maxscl
     end if
   end if
   etp=engytot
-  if (xctype.lt.0) then
+  if (xctype(1).lt.0) then
     write(60,*)
     write(60,'("Magnitude of OEP residual : ",G18.10)') resoep
   end if

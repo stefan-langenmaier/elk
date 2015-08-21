@@ -17,7 +17,7 @@ dos
  0.0 0.5
 
 rgkmax
- 6.5
+ 6.0
 
 xctype
  20
@@ -43,7 +43,4 @@ atoms
   0.25 0.25 0.25  0.0 0.0 0.0         : atposl, bfcmt
 
 ngridk
-  2  2  2
-
-vkloff
-  0.5  0.5  0.5
+  4  4  4

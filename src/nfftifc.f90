@@ -8,7 +8,7 @@
 ! !INTERFACE:
 subroutine nfftifc(n)
 ! !INPUT/OUTPUT PARAMETERS:
-!   n : required/avalable grid size (in,integer)
+!   n : required/avalable grid size (inout,integer)
 ! !DESCRIPTION:
 !   Interface to the grid requirements of the fast Fourier transform routine.
 !   Most routines restrict $n$ to specific prime factorisations. This routine

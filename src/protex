@@ -939,6 +939,7 @@ sub print_preamble {
     print "\\usepackage{epsfig}";
     print "\\usepackage{hangcaption}";
     print "\\usepackage{tabularx}";
+    print "\\usepackage{hyperref}";
     print "\\textheight     9in";
     print "\\topmargin      0pt";
     print "\\headsep        1cm";

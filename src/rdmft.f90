@@ -1,11 +1,22 @@
 
 ! Copyright (C) 2007-2008 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
-! This file is distributed under the terms of the GNU Lesser General Public
-! License. See the file COPYING for license details.
+! This file is distributed under the terms of the GNU General Public License.
+! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: rdmft
+! !INTERFACE:
 subroutine rdmft
-! 1-reduced density matrix functional theory
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!  Main routine for one-body reduced density matrix functional theory (RDMFT).
+!
+! !REVISION HISTORY:
+!   Created 2008 (Sharma)
+!EOP
+!BOC
 implicit none
 ! local variables
 integer ik
@@ -43,6 +54,8 @@ call rdmdkdc
 open(60,file='RDM_INFO.OUT',action='WRITE',form='FORMATTED')
 ! write out general information to RDM_INFO.OUT
 call writeinfo(60)
+! check if non-local matrix should be written
+if ((rdmxctype.eq.0).or.(maxitc.ge.1)) wrtvnlijji=.false.
 ! begin main self-consistent loop
 do iscl=1,rdmmaxscl
   write(60,*)
@@ -56,6 +69,7 @@ do iscl=1,rdmmaxscl
     write(60,*)
     write(60,'("Natural orbital minimisation done")')
     call rdmwriteengy(60)
+    call writechg(60)
   end if
 ! minimisation over occupation number
   if (maxitn.ge.1) then
@@ -63,6 +77,8 @@ do iscl=1,rdmmaxscl
     write(60,*)
     write(60,'("Occupation number minimisation done")')
     call rdmwriteengy(60)
+    call writechg(60)
+    call rdmeval
   end if
 ! end loop over iscl
 end do
@@ -76,4 +92,4 @@ end do
 close(60)
 return
 end subroutine
-
+!EOC

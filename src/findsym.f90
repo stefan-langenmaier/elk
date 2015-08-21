@@ -104,8 +104,8 @@ do isym=1,nsymlat
       md=symlatd(jsym)
       sc(:,:)=dble(md)*symlatc(:,:,jsym)
 ! rotate global field and check invariance using proper part of symmetry matrix
-      v(:)=sc(:,1)*bfieldc(1)+sc(:,2)*bfieldc(2)+sc(:,3)*bfieldc(3)
-      t1=r3taxi(bfieldc,v)
+      v(:)=sc(:,1)*bfieldc0(1)+sc(:,2)*bfieldc0(2)+sc(:,3)*bfieldc0(3)
+      t1=r3taxi(bfieldc0,v)
 ! if not invariant try a different global spin rotation
       if (t1.gt.epslat) goto 20
 ! rotate muffin-tin magnetic fields and check invariance
@@ -113,9 +113,10 @@ do isym=1,nsymlat
         do ia=1,natoms(is)
 ! equivalent atom
           ja=jea(ia,is)
-          v(:)=sc(:,1)*bfcmt(1,ja,is)+sc(:,2)*bfcmt(2,ja,is) &
-           +sc(:,3)*bfcmt(3,ja,is)
-          t1=r3taxi(bfcmt(:,ia,is),v)
+          v(:)=sc(:,1)*bfcmt0(1,ja,is) &
+              +sc(:,2)*bfcmt0(2,ja,is) &
+              +sc(:,3)*bfcmt0(3,ja,is)
+          t1=r3taxi(bfcmt0(:,ia,is),v)
 ! if not invariant try a different global spin rotation
           if (t1.gt.epslat) goto 20
         end do

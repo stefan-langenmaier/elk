@@ -20,8 +20,10 @@ tauseq
 molecule
  .true.
 
-vacuum
-  4.0
+avec
+ 5.0 0.0 0.0
+ 0.0 5.0 0.0
+ 0.0 0.0 5.0
 
 autormt
  .true.

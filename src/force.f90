@@ -108,13 +108,17 @@ call symvect(.false.,forcehf)
 !--------------------------------------!
 !     core correction to the force     !
 !--------------------------------------!
+if (spincore) then
+  write(*,*)
+  write(*,'("Warning(force): forces are inaccurate with polarised cores")')
+end if
 rfmt(:,:)=0.d0
 do is=1,nspecies
   nr=nrmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the gradient of the core density
-    rfmt(1,1:nr)=rhocr(1:nr,ias)/y00
+    rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
     call gradrfmt(1,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
     do i=1,3
       forcecr(i,ias)=rfmtinp(1,1,nr,spr(:,is),lmmaxvr,veffmt(:,:,ias), &
@@ -137,7 +141,7 @@ if (tfibs) then
     do ia=1,natoms(is)
       ias=idxas(ia,is)
       rfmt(:,1:nr)=rhomt(:,1:nr,ias)
-      rfmt(1,1:nr)=rfmt(1,1:nr)-rhocr(1:nr,ias)/y00
+      rfmt(1,1:nr)=rfmt(1,1:nr)-rhocr(1:nr,ias,1)/y00
       call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
       do i=1,3
         t1=rfmtinp(1,lmaxvr,nr,spr(:,is),lmmaxvr,veffmt(:,:,ias),grfmt(:,:,i))

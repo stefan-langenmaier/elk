@@ -29,10 +29,6 @@ deband
 emaxelnes
  -30.0
 
-! lower the minimum allowed valence eigenvalue
-evalmin
- -60.0
-
 ! energy range for ELNES plot
 dos
  500 200 1    : nwdos, ngrdos, nsmdos

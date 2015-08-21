@@ -17,7 +17,7 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
 ! local variables
-integer is,ia,it,i
+integer is,ia,it
 integer ist,jst
 real(8) ts1,ts0
 real(8) t1
@@ -45,42 +45,43 @@ end if
 do it=1,nseqit
 ! begin parallel loop over states
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(h,is,ia,t1,i)
+!$OMP PRIVATE(h,is,ia,t1)
 !$OMP DO
   do ist=1,nstfv
     allocate(h(nmatp))
 ! operate with H and O on the current vector
     h(:)=0.d0
-    o(:,ist)=0.d0
     do is=1,nspecies
       do ia=1,natoms(is)
         call hmlaa(.true.,is,ia,ngp,apwalm,evecfv(:,ist),h)
         call hmlalo(.true.,is,ia,ngp,apwalm,evecfv(:,ist),h)
         call hmllolo(.true.,is,ia,ngp,evecfv(:,ist),h)
+      end do
+    end do
+    call hmlistl(.true.,ngp,igpig,vgpc,evecfv(:,ist),h)
+    o(:,ist)=0.d0
+    do is=1,nspecies
+      do ia=1,natoms(is)
         call olpaa(.true.,is,ia,ngp,apwalm,evecfv(:,ist),o(:,ist))
         call olpalo(.true.,is,ia,ngp,apwalm,evecfv(:,ist),o(:,ist))
         call olplolo(.true.,is,ia,ngp,evecfv(:,ist),o(:,ist))
       end do
     end do
-    call hmlistl(.true.,ngp,igpig,vgpc,evecfv(:,ist),h)
     call olpistl(.true.,ngp,igpig,evecfv(:,ist),o(:,ist))
 ! normalise
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      do i=1,nmatp
-        evecfv(i,ist)=t1*evecfv(i,ist)
-        h(i)=t1*h(i)
-        o(i,ist)=t1*o(i,ist)
-      end do
+      evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
+      h(:)=t1*h(:)
+      o(:,ist)=t1*o(:,ist)
     end if
 ! estimate the eigenvalue
     evalfv(ist)=dble(zdotc(nmatp,evecfv(:,ist),1,h,1))
 ! subtract the gradient of the Rayleigh quotient from the eigenvector
     t1=evalfv(ist)
-    do i=1,nmatp
-      evecfv(i,ist)=evecfv(i,ist)-tauseq*(h(i)-t1*o(i,ist))
-    end do
+    evecfv(1:nmatp,ist)=evecfv(1:nmatp,ist)-tauseq*(h(1:nmatp) &
+     -t1*o(1:nmatp,ist))
 ! normalise
     o(:,ist)=0.d0
     do is=1,nspecies
@@ -94,10 +95,8 @@ do it=1,nseqit
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      do i=1,nmatp
-        evecfv(i,ist)=t1*evecfv(i,ist)
-        o(i,ist)=t1*o(i,ist)
-      end do
+      evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
+      o(:,ist)=t1*o(:,ist)
     end if
     deallocate(h)
 ! end parallel loop over states
@@ -106,7 +105,7 @@ do it=1,nseqit
 !$OMP END PARALLEL
 ! perform Gram-Schmidt orthonormalisation
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(jst,zt1,t1,i)
+!$OMP PRIVATE(jst,zt1,t1)
 !$OMP DO ORDERED
   do ist=1,nstfv
 !$OMP ORDERED
@@ -120,10 +119,8 @@ do it=1,nseqit
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      do i=1,nmatp
-        evecfv(i,ist)=t1*evecfv(i,ist)
-        o(i,ist)=t1*o(i,ist)
-      end do
+      evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
+      o(:,ist)=t1*o(:,ist)
     end if
   end do
 !$OMP END DO

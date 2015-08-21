@@ -18,12 +18,15 @@ tseqit
 tauseq
  0.05
 
-! molecule calculation
+! molecule calculation (atomic positions are in Cartesian coordinates)
 molecule
  .true.
 
-vacuum
-  6.0
+! put molecule in a large box
+avec
+ 6.0 0.0 0.0
+ 0.0 6.0 0.0
+ 0.0 0.0 6.0
 
 ! automatic determination of muffin-tin radii
 autormt
@@ -38,6 +41,7 @@ gmaxvr
 sppath
   '../../species/'
 
+! atomic positions in Cartesian coordinates
 atoms
   2                                     : nspecies
  'O.in'                                 : spfname
@@ -47,5 +51,3 @@ atoms
   2
   1.811        0.0          0.0    0.0  0.0  0.0
  -0.451907959  1.753710409  0.0    0.0  0.0  0.0
-
-

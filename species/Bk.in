@@ -1,7 +1,7 @@
  'Bk'                                       : spsymb
  'berkelium'                                : spname
   -97.0000                                  : spzn
-   450253.4558                              : spmass
+   450253.4556                              : spmass
   0.203069E-06    2.2000   36.0946   800    : sprmin, rmt, sprmax, nrmt
   27                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
@@ -34,7 +34,7 @@
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx
-   6                                        : nlorb
+   7                                        : nlorb
    0   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
@@ -47,11 +47,15 @@
    3   2                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
+   3   3                                    : lorbl, lorbord
+  0.1500   0  F                             : lorbe0, lorbdm, lorbve
+  0.1500   1  F
+ -0.3557   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.9215   0  T
+ -2.2465   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.1480   0  T
+ -1.0258   0  T

@@ -106,7 +106,7 @@ do is=1,nspecies
           else if (k.eq.2) then
             ispn=2
             jspn=2
-          else 
+          else
             ispn=1
             jspn=2
           end if

@@ -35,7 +35,7 @@ do i=1,3
   zfft2(:)=0.d0
   do ig=1,ngvec
     ifg=igfft(ig)
-    zfft2(ifg)=zi*vgc(i,ig)*zfft1(ifg)
+    zfft2(ifg)=vgc(i,ig)*cmplx(-aimag(zfft1(ifg)),dble(zfft1(ifg)),8)
   end do
   call zfftifc(3,ngrid,1,zfft2)
   grfir(:,i)=dble(zfft2(:))

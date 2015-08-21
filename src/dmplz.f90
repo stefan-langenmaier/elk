@@ -45,7 +45,7 @@ else
   else
     fact=sqrt(factnm(g-2*p,1)*factnm(g-2*r,1)/ &
      factnm(g+1,g-2*k1))*factnm(g,2)/(factnm(g-2*k1,2)* &
-     factnm(g-2*p,2)*factnm(g-2*r,2)) 
+     factnm(g-2*p,2)*factnm(g-2*r,2))
   end if
   nk1l=factnm(2*l,1)/sqrt(factnm(2*l-k1,1)*factnm(2*l+k1+1,1))
   dmpol=fact**2*(2*k1+1)*(2*r+1)*(2*l+1)*nk1l**2*w2

@@ -26,11 +26,6 @@ case(1)
   call mixadapt(iscl,beta0,betamax,n,v,work,work(n+1),work(2*n+1),dv)
 case(2)
 ! Pulay mixing
-  if (spinpol) then
-    write(*,*)
-    write(*,'("Warning(mixerifc): Pulay mixing problematic with spin-polarised&
-     & calculations")')
-  end if
   if (nwork.le.0) then
     nwork=2*maxsd*n
     return

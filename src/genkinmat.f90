@@ -54,8 +54,8 @@ do ik=1,nkpt
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! calculate the wavefunctions for all states of the input k-point
-  call genwfsv(.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik),apwalm,evecfv, &
-   evecsv,wfmt,wfir)
+  call genwfsv(.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik),apwalm, &
+   evecfv,evecsv,wfmt,wfir)
 ! compute effective potential matrix elements
   call genvmatk(rfmt,veffir,wfmt,wfir,kinmatc(:,:,ik))
   kinmatc(:,:,ik)=-kinmatc(:,:,ik)

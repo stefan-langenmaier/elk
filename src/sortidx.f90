@@ -9,8 +9,8 @@
 subroutine sortidx(n,a,idx)
 ! !INPUT/OUTPUT PARAMETERS:
 !   n   : number of elements in array (in,integer)
-!   idx : permutation index (out,integer(n))
 !   a   : real array (in,real(n))
+!   idx : permutation index (out,integer(n))
 ! !DESCRIPTION:
 !   Finds the permutation index {\tt idx} which sorts the real array {\tt a}
 !   into ascending order. No sorting of the array {\tt a} itself is performed.

@@ -97,8 +97,8 @@ call getevecsv(vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! calculate the wavefunctions for all states for the input k-point
-call genwfsv(.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv,evecsv, &
- wfmt1,wfir1)
+call genwfsv(.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv, &
+ evecsv,wfmt1,wfir1)
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! generate G+k-vectors
@@ -135,7 +135,8 @@ do ik=1,nkptnr
   call genjlgpr(lmax,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 ! calculate the wavefunctions for occupied states
-  call genwfsv(.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv,wfmt2,wfir2)
+  call genwfsv(.false.,.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv, &
+   wfmt2,wfir2)
   do ist3=1,nstsv
     if (evalsvnr(ist3).lt.efermi) then
       do ist2=1,nstsv

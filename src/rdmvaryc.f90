@@ -3,12 +3,22 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine rdmvaryc(sum)
-! calculates new evecsv using the gradient of energy w.r.t. evecsv
+!BOP
+! !ROUTINE: rdmvaryc
+! !INTERFACE:
+subroutine rdmvaryc
+! !USES:
+use modrdm
 use modmain
+! !DESCRIPTION:
+!   Calculates new {\tt evecsv} from old by using the derivatives of the total
+!   energy w.r.t. {\tt evecsv}. A single step of steepest-descent is made.
+!
+! !REVISION HISTORY:
+!   Created 2009 (Sharma)
+!EOP
+!BOC
 implicit none
-! arguments
-real(8), intent(out) :: sum
 ! local variables
 integer ik,ist1,ist2
 real(8) t1
@@ -21,21 +31,13 @@ complex(8), allocatable :: evecsvt(:)
 real(8) dznrm2
 complex(8) zdotc
 external dznrm2,zdotc
-allocate(dedc(nstsv,nstsv,nkpt))
-!$OMP PARALLEL DEFAULT(SHARED)
-!$OMP DO
-do ik=1,nkpt
-!$OMP CRITICAL
-  write(*,'("Info(rdmvaryc): ",I6," of ",I6," k-points")') ik,nkpt
-!$OMP END CRITICAL
+! compute and write non-local matrix elements of the type (i-jj-k)
+call rdmputvnl_ijjk
 ! compute the derivative w.r.t. evecsv
-  call rdmdedc(ik,dedc(:,:,ik))
-end do
-!$OMP END DO
-!$OMP END PARALLEL
+allocate(dedc(nstsv,nstsv,nkpt))
+call rdmdedc(dedc)
 allocate(evecsv(nstsv,nstsv))
 allocate(evecsvt(nstsv))
-sum=0.d0
 do ik=1,nkpt
 ! get the eigenvectors from file
   call getevecsv(vkl(:,ik),evecsv)
@@ -54,16 +56,9 @@ do ik=1,nkpt
   end do
 ! write new evecsv to file
   call putevecsv(ik,evecsv)
-! convergence check
-  do ist1=1,nstsv
-    do ist2=1,nstsv
-      zt1=dedc(ist1,ist2,ik)
-      sum=sum+wkpt(ik)*(dble(zt1)**2+aimag(zt1)**2)
-    end do
-  end do
 ! end loop over k-points
 end do
 deallocate(dedc,evecsv,evecsvt)
 return
 end subroutine
-
+!EOC

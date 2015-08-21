@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2008 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2009 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -175,10 +175,14 @@ real(8) bfsmcmt(3,maxatoms,maxspecies)
 real(8) taufsm
 ! second-variational spinor dimension (1 or 2)
 integer nspinor
-! external magnetic field in each muffin-tin in Cartesian coordinates
-real(8) bfcmt(3,maxatoms,maxspecies)
 ! global external magnetic field in Cartesian coordinates
 real(8) bfieldc(3)
+! initial field
+real(8) bfieldc0(3)
+! external magnetic field in each muffin-tin in Cartesian coordinates
+real(8) bfcmt(3,maxatoms,maxspecies)
+! initial field
+real(8) bfcmt0(3,maxatoms,maxspecies)
 ! external magnetic fields are multiplied by reducebf after each iteration
 real(8) reducebf
 ! spinsprl is .true. if a spin-spiral is to be calculated
@@ -378,9 +382,9 @@ complex(8), allocatable :: zfshtvr(:,:)
 !     potential and density variables     !
 !-----------------------------------------!
 ! exchange-correlation functional type
-integer xctype
+integer xctype(3)
 ! exchange-correlation functional description
-character(256) xcdescr
+character(512) xcdescr
 ! exchange-correlation functional spin treatment
 integer xcspin
 ! exchange-correlation functional density gradient treatment
@@ -524,6 +528,13 @@ real(8), allocatable :: lofr(:,:,:,:)
 real(8) deband
 ! band energy search tolerance
 real(8) epsband
+! minimum default linearisation energy over all APWs and local-orbitals
+real(8) e0min
+! if autolinengy is .true. then the fixed linearisation energies are set to the
+! Fermi energy minus dlefe
+logical autolinengy
+! difference between linearisation and Fermi energies when autolinengy is .true.
+real(8) dlefe
 
 !-------------------------------------------!
 !     overlap and Hamiltonian variables     !
@@ -581,10 +592,10 @@ real(8), allocatable :: occsv(:,:)
 real(8) efermi
 ! density of states at the Fermi energy
 real(8) fermidos
+! estimated band gap
+real(8) bandgap
 ! error tolerance for the first-variational eigenvalues
 real(8) evaltol
-! minimum allowed eigenvalue
-real(8) evalmin
 ! second-variational eigenvalues
 real(8), allocatable :: evalsv(:,:)
 ! tevecsv is .true. if second-variational eigenvectors are calculated
@@ -604,9 +615,13 @@ real(8), allocatable :: evalcr(:,:)
 ! radial wavefunctions for core states
 real(8), allocatable :: rwfcr(:,:,:,:)
 ! radial charge density for core states
-real(8), allocatable :: rhocr(:,:)
+real(8), allocatable :: rhocr(:,:,:)
 ! frozencr is .true. if the core states are fixed to the atomic states
 logical frozencr
+! spincore is .true. if the core is to be treated as spin-polarised
+logical spincore
+! number of core spin-channels
+integer nspncr
 
 !--------------------------!
 !     energy variables     !
@@ -701,6 +716,8 @@ integer nsmdos
 real(8) wdos(2)
 ! dosocc is .true. if the DOS is to be weighted by the occupancy
 logical dosocc
+! dosmsum is .true. if the partial DOS is to be summed over m
+logical dosmsum
 ! scissors correction
 real(8) scissor
 ! number of optical matrix components required
@@ -799,38 +816,6 @@ real(8), allocatable :: vqlwrt(:,:)
 ! Coulomb pseudopotential
 real(8) mustar
 
-!-----------------------------------!
-!     pseudopotential variables     !
-!-----------------------------------!
-
-!-------------------------------------------------------------!
-!     reduced density matrix functional (RDMFT) variables     !
-!-------------------------------------------------------------!
-! non-local matrix elements for varying occupation numbers
-real(8), allocatable :: vnlrdm(:,:,:,:)
-! Coulomb potential matrix elements
-complex(8), allocatable :: vclmat(:,:,:)
-! derivative of kinetic energy w.r.t. natural orbital coefficients
-complex(8), allocatable :: dkdc(:,:,:)
-! step size for occupation numbers
-real(8) taurdmn
-! step size for natural orbital coefficients
-real(8) taurdmc
-! xc functional
-integer rdmxctype
-! maximum number of self-consistent loops
-integer rdmmaxscl
-! maximum number of iterations for occupation number optimisation
-integer maxitn
-! maximum number of iteration for natural orbital optimisation
-integer maxitc
-! exponent for the functional
-real(8) rdmalpha
-! temperature
-real(8) rdmtemp
-! entropy
-real(8) rdmentrpy
-
 !--------------------------!
 !     timing variables     !
 !--------------------------!
@@ -887,7 +872,7 @@ real(8), parameter :: gfacte=2.0023193043622d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 0,9,279 /
+data version / 1,0,0 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

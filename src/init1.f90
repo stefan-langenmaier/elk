@@ -24,7 +24,7 @@ implicit none
 integer ik,is,ia,ias,io,ilo
 integer i1,i2,i3,ispn,iv(3)
 integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
-real(8) vl(3),vc(3),boxl(3,4)
+real(8) vl(3),vc(3),boxl(3,4),sum
 real(8) ts0,ts1
 ! external functions
 complex(8) gauntyry
@@ -129,9 +129,23 @@ call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
 !---------------------!
 !     G+k vectors     !
 !---------------------!
-! determine gkmax
-if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
-  gkmax=rgkmax/rmt(isgkmax)
+! determine gkmax from rgkmax and the muffin-tin radius
+if (nspecies.gt.0) then
+  if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
+! use user-specified muffin-tin radius
+    gkmax=rgkmax/rmt(isgkmax)
+  else if (isgkmax.eq.-1) then
+! use average muffin-tin radius
+    sum=0.d0
+    do is=1,nspecies
+      sum=sum+dble(natoms(is))*rmt(is)
+    end do
+    sum=sum/dble(natmtot)
+    gkmax=rgkmax/sum
+  else
+! use minimum muffin-tin radius
+    gkmax=rgkmax/minval(rmt(1:nspecies))
+  end if
 else
   gkmax=rgkmax/2.d0
 end if

@@ -20,18 +20,13 @@ use modmain
 implicit none
 ! local variables
 integer ik,recl
-complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:)
 complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
 ! initialise universal variables
 call init0
 call init1
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
-! allocate the momentum matrix elements array
-allocate(pmat(3,nstsv,nstsv))
 ! read in the density and potentials from file
 call readstate
 ! find the new linearisation energies
@@ -41,10 +36,19 @@ call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
 ! find the record length
+allocate(pmat(3,nstsv,nstsv))
 inquire(iolength=recl) pmat
+deallocate(pmat)
 open(50,file='PMAT.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  status='REPLACE',recl=recl)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(evecfv,evecsv,apwalm,pmat)
+!$OMP DO
 do ik=1,nkpt
+  allocate(evecfv(nmatmax,nstfv))
+  allocate(evecsv(nstsv,nstsv))
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+  allocate(pmat(3,nstsv,nstsv))
 ! get the eigenvectors from file
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
@@ -53,14 +57,18 @@ do ik=1,nkpt
 ! calculate the momentum matrix elements
   call genpmat(ngk(1,ik),igkig(:,1,ik),vgkc(:,:,1,ik),apwalm,evecfv,evecsv,pmat)
 ! write the matrix elements to direct-access file
+!$OMP CRITICAL
   write(50,rec=ik) pmat
+!$OMP END CRITICAL
+  deallocate(evecfv,evecsv,apwalm,pmat)
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 close(50)
 write(*,*)
 write(*,'("Info(writepmat):")')
 write(*,'(" momentum matrix elements written to file PMAT.OUT")')
 write(*,*)
-deallocate(apwalm,evecfv,evecsv,pmat)
 end subroutine
 !EOC
 

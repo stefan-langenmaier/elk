@@ -70,7 +70,7 @@ do i=1,n
     epsp_c=-cp*fp
     epsf_c=-cf*ff
     vc=gamma*(epsf_c-epsp_c)
-! correlation energy 
+! correlation energy
     ec(i)=epsp_c+(1.d0/gamma)*vc*fx
     mup_c=-cp*log(1.d0+rp/rs)
     muf_c=-cf*log(1.d0+rf/rs)

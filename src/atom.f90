@@ -19,7 +19,7 @@ use modxcifc
 !   l      : quantum number l of each state (in,integer(nst))
 !   k      : quantum number k (l or l+1) of each state (in,integer(nst))
 !   occ    : occupancy of each state (inout,real(nst))
-!   xctype : exchange-correlation type (in,integer)
+!   xctype : exchange-correlation type (in,integer(3))
 !   xcgrad : 1 for GGA functional, 0 otherwise (in,integer)
 !   np     : order of predictor-corrector polynomial (in,integer)
 !   nr     : number of radial mesh points (in,integer)
@@ -54,7 +54,7 @@ integer, intent(in) :: n(nst)
 integer, intent(in) :: l(nst)
 integer, intent(in) :: k(nst)
 real(8), intent(inout) :: occ(nst)
-integer, intent(in) :: xctype
+integer, intent(in) :: xctype(3)
 integer, intent(in) :: xcgrad
 integer, intent(in) :: np
 integer, intent(in) :: nr

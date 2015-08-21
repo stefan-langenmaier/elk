@@ -39,13 +39,17 @@ integer i,j,k,iv(3),ig
 complex(8) zt1
 if (tapp) then
 ! apply the overlap operator to v
+! diagonal
+  zt1=cfunig(ivgig(0,0,0))
+  o(1:ngp)=o(1:ngp)+zt1*v(1:ngp)
+! off-diagonal
   do i=1,ngp
-    do j=i,ngp
+    do j=i+1,ngp
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
       ig=ivgig(iv(1),iv(2),iv(3))
       zt1=cfunig(ig)
       o(i)=o(i)+zt1*v(j)
-      if (i.ne.j) o(j)=o(j)+conjg(zt1)*v(i)
+      o(j)=o(j)+conjg(zt1)*v(i)
     end do
   end do
 else
