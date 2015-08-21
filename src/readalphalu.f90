@@ -5,6 +5,7 @@
 
 subroutine readalphalu
 use modmain
+use modldapu
 implicit none
 ! local variables
 integer is,ia,ias,l
@@ -26,6 +27,7 @@ do is=1,nspecies
         write(*,*)
         stop
       end if
+      read(50,*) alphalu(ias)
     end do
   end if
 end do

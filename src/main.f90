@@ -82,6 +82,8 @@ do itask=1,ntasks
     call alpha2f
   case(300)
     call rdmft
+  case(400)
+    call writetensmom
   case(500)
     call testcheck
   case default
@@ -95,7 +97,7 @@ stop
 end program
 
 !BOI
-! !TITLE: The Elk Code Manual\\ Version 0.9.262\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: The Elk Code Manual\\ Version 0.9.278\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: J. K. Dewhurst, S. Sharma, L. Nordstr\"{o}m, F. Cricchio, F. Bultmark
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -119,11 +121,13 @@ end program
 !   Frank Wagner, Fateh Kalarasse, J\"{u}rgen Spitaler, Stefano Pittalis,
 !   Nektarios Lathiotakis, Tobias Burnus, Stephan Sagmeister, Christian
 !   Meisenbichler, S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann,
-!   Alexey Baranov, Anton Kozhevnikov and Shigeru Suehara. Special mention of
-!   David Singh's very useful book {\it Planewaves, Pseudopotentials and the
-!   LAPW Method} \cite{singh} must also be made. Finally we would like to
-!   acknowledge the generous support of Karl-Franzens-Universit\"{a}t Graz, as
-!   well as the EU Marie-Curie Research Training Networks initiative.
+!   Alexey Baranov, Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger,
+!   Antonio Sanna and Tyrel McQueen.
+!   Special mention of David Singh's very useful book {\it Planewaves,
+!   Pseudopotentials and the LAPW Method} \cite{singh} must also be made.
+!   Finally we would like to acknowledge the generous support of
+!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
+!   Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -133,7 +137,7 @@ end program
 !   Fredrik Bultmark
 !
 !   \vspace{12pt}
-!   Berlin and Uppsala, April 2009
+!   Berlin and Uppsala, August 2009
 !   \newpage
 !
 !   \section{Units}
@@ -517,6 +521,7 @@ end program
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
 !   {\tt ldapu} & type of LDA+$U$ calculation & integer & 0 \\
+!   {\tt inptypelu} & type of input for LDA+U calculation & integer & 1 \\
 !   \hline
 !   {\tt is} & species number & integer & - \\
 !   {\tt l} & angular momentum value & integer & -1 \\
@@ -526,7 +531,7 @@ end program
 !   \end{tabularx}\newline\newline
 !   This block contains the parameters required for an LDA+$U$ calculation, with
 !   the list of parameters for each species terminated with a blank line. The
-!   type of calculation required is set with the parameter {\tt ldapu}.
+!   type of double counting required is set with the parameter {\tt ldapu}.
 !   Currently implemented are:\newline\newline
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   0 & No LDA+$U$ calculation \\
@@ -534,8 +539,18 @@ end program
 !   2 & Around mean field (AFM) \\
 !   3 & An interpolation between FLL and AFM \\
 !   \end{tabularx}\newline\newline
-!   See (amongst others) Phys. Rev. B {\bf 67}, 153106 (2003), Phys. Rev. B
-!   {\bf 52}, R5467 (1995), and Phys. Rev. B {\bf 60}, 10673 (1999).
+!   The type of input parameters is set with the parameter {\tt inptypelu}.
+!   The current possibilities are:\newline\newline
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!   1 & U and J \\
+!   2 & Slater parameters \\
+!   3 & Racah parameters \\
+!   4 & Yukawa screening length \\
+!   5 & U and determination of corresponding Yukawa screening length
+!   \end{tabularx}\newline\newline
+!   See (amongst others) {\it Phys. Rev. B} {\bf 67}, 153106 (2003),
+!   {\it Phys. Rev. B} {\bf 52}, R5467 (1995), {\it Phys. Rev. B} {\bf 60},
+!   10673 (1999), and {\it Phys. Rev. B} {\bf 80}, 035121 (2009).
 !
 !   \subsection{{\tt lmaxapw}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1152,7 +1167,9 @@ end program
 !   250 & Eliashberg function $\alpha^2F(\omega)$, electron-phonon coupling
 !    constant $\lambda$, and the McMillan-Allen-Dynes critical temperature
 !    $T_c$. \\
-!   300 & Reduced density matrix functional theory (RDMFT) calculation.
+!   300 & Reduced density matrix functional theory (RDMFT) calculation. \\
+!   400 & Calculation of tensor moments and corresponding LDA+U Hartree-Fock
+!    energy contributions.
 !   \end{tabularx}
 !
 !   \subsection{{\tt tau0atm}}
@@ -1222,6 +1239,20 @@ end program
 !   \end{tabularx}\newline\newline
 !   This variable is automatically set to {\tt .true.} when performing
 !   structural optimisation.
+!
+!   \subsection{{\tt tmomlu}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the 
+!   corresponding decomposition of LDA+U energy should be calculated 
+!   at every iteration of the self-consistent cycle & logical & {\tt .false.} \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   This variable is useful to check the convergence of the tensor moments in 
+!   LDA+U caculations. Alternatively, with {\tt task} equal to 400, one can 
+!   calculate the tensor moments and corresponding LDA+U energy contributions 
+!   from a given density matrix and set of Slater parameters at the end of the 
+!   self-consistent cycle. 
 !
 !   \subsection{{\tt tseqit}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}

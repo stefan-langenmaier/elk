@@ -28,7 +28,7 @@ real(8) t1,t2
 complex(8) zq(2),zt1
 ! automatic arrays
 real(8) fr1(nrcmtmax),fr2(nrcmtmax)
-real(8) gr(nrcmtmax),cf(3,nrcmtmax)
+real(8) gr(nrcmtmax),cf(4,nrcmtmax)
 ! allocatable arrays
 logical, allocatable :: done(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:)
@@ -75,7 +75,7 @@ do j=1,nstsv
       do ist=1,nstfv
         i=i+1
         zt1=evecsv(i,j)
-        if (spinsprl) zt1=zt1*zq(ispn)
+        if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
         if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
           if (.not.done(ist,jspn)) then
             call wavefmt(lradstp,lmax,is,ia,ngp(jspn),apwalm(:,:,:,:,jspn), &

@@ -9,6 +9,7 @@
 subroutine readstate
 ! !USES:
 use modmain
+use modldapu
 ! !DESCRIPTION:
 !   Reads in the charge density and other relevant variables from the file
 !   {\tt STATE.OUT}. Checks for version and parameter compatibility.

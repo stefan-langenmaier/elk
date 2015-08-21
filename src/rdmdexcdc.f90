@@ -60,7 +60,7 @@ do ik=1,nkptnr
           else if (rdmxctype.eq.2) then
 ! SDLG functional
             if ((ist3.eq.ist4).and. &
-              (r3taxi(vkl(1,ikp),vklnr(1,jk)).lt.epslat)) then
+              (r3taxi(vkl(:,ikp),vklnr(:,jk)).lt.epslat)) then
               t2=(1.d0/occmax)*occsv(ist4,jk)**2
             else
               t2=t1*(occsv(ist3,ikp)*occsv(ist4,jk))**rdmalpha

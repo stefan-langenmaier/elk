@@ -98,7 +98,7 @@ if (spinsprl) then
 end if
 ! the inverse of the spatial symmetry rotates k into p
 ilspl=isymlat(lspl)
-si(:,:)=symlat(:,:,ilspl)
+si(:,:)=dble(symlat(:,:,ilspl))
 !-----------------------------------------------!
 !     translate and rotate APW coefficients     !
 !-----------------------------------------------!

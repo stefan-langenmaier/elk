@@ -54,13 +54,16 @@ do isym=1,nsymcrys
     iv(1)=sym(1,1)*ivg(1,ig)+sym(2,1)*ivg(2,ig)+sym(3,1)*ivg(3,ig)
     iv(2)=sym(1,2)*ivg(1,ig)+sym(2,2)*ivg(2,ig)+sym(3,2)*ivg(3,ig)
     iv(3)=sym(1,3)*ivg(1,ig)+sym(2,3)*ivg(2,ig)+sym(3,3)*ivg(3,ig)
-    iv(:)=modulo(iv(:)-intgv(:,1),ngrid(:))+intgv(:,1)
-    jg=ivgig(iv(1),iv(2),iv(3))
-    jfg=igfft(jg)
+    if ((iv(1).ge.intgv(1,1)).and.(iv(1).le.intgv(1,2)).and. &
+        (iv(2).ge.intgv(2,1)).and.(iv(2).le.intgv(2,2)).and. &
+        (iv(3).ge.intgv(3,1)).and.(iv(3).le.intgv(3,2))) then
+      jg=ivgig(iv(1),iv(2),iv(3))
+      jfg=igfft(jg)
 ! complex phase factor for translation
-    t1=-dot_product(vgc(:,ig),vtc(:))
-    zt1=cmplx(cos(t1),sin(t1),8)
-    zfft2(jfg)=zfft2(jfg)+zt1*zfft1(ifg)
+      t1=-dot_product(vgc(:,ig),vtc(:))
+      zt1=cmplx(cos(t1),sin(t1),8)
+      zfft2(jfg)=zfft2(jfg)+zt1*zfft1(ifg)
+    end if
   end do
 end do
 ! Fourier transform to real-space and normalise

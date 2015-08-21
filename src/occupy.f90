@@ -86,7 +86,7 @@ do ik=1,nkpt
 end do
 fermidos=fermidos*occmax
 ! write Fermi density of states to test file
-call writetest(500,'DOS at Fermi energy',tol=1.d-4,rv=fermidos)
+call writetest(500,'DOS at Fermi energy',tol=1.d-3,rv=fermidos)
 return
 end subroutine
 !EOC

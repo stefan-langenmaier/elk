@@ -181,8 +181,10 @@ real(8) bfcmt(3,maxatoms,maxspecies)
 real(8) bfieldc(3)
 ! external magnetic fields are multiplied by reducebf after each iteration
 real(8) reducebf
-! spinsprl if .true. if a spin-spiral is to be calculated
+! spinsprl is .true. if a spin-spiral is to be calculated
 logical spinsprl
+! ssdph is .true. if the muffin-tin spin-spiral magnetisation is de-phased
+logical ssdph
 ! number of spin-dependent first-variational functions per state
 integer nspnfv
 ! spin-spiral q-vector in lattice coordinates
@@ -697,6 +699,8 @@ integer ngrdos
 integer nsmdos
 ! energy interval for DOS/optics function
 real(8) wdos(2)
+! dosocc is .true. if the DOS is to be weighted by the occupancy
+logical dosocc
 ! scissors correction
 real(8) scissor
 ! number of optical matrix components required
@@ -763,31 +767,6 @@ complex(8), allocatable :: zvxmt(:,:,:)
 complex(8), allocatable :: zvxir(:)
 complex(8), allocatable :: zbxmt(:,:,:,:)
 complex(8), allocatable :: zbxir(:,:)
-
-!-------------------------!
-!     LDA+U variables     !
-!-------------------------!
-! type of LDA+U to use (0: none)
-integer ldapu
-! maximum angular momentum
-integer, parameter :: lmaxlu=3
-integer, parameter :: lmmaxlu=(lmaxlu+1)**2
-! angular momentum for each species
-integer llu(maxspecies)
-! U and J values for each species
-real(8) ujlu(2,maxspecies)
-! interpolation constant alpha for each atom [PRB 67, 153106 (2003)]
-real(8), allocatable :: alphalu(:)
-! readalu is .true. if alphalu is to be read from file
-logical readalu
-! LDA+U density matrix
-complex(8), allocatable :: dmatlu(:,:,:,:,:)
-! LDA+U potential matrix in (l,m) basis
-complex(8), allocatable :: vmatlu(:,:,:,:,:)
-! LDA+U energy for each atom
-real(8), allocatable :: engyalu(:)
-! energy from the LDA+U correction
-real(8) engylu
 
 !--------------------------!
 !     phonon variables     !
@@ -904,7 +883,7 @@ real(8), parameter :: gfacte=2.0023193043622d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 0,9,262 /
+data version / 0,9,278 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

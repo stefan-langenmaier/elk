@@ -23,7 +23,7 @@ implicit none
 integer is,ia,ias,ir
 real(8) sum,t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 ! find the muffin-tin charges
 chgmttot=0.d0
 do is=1,nspecies

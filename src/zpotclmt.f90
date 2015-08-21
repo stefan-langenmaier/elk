@@ -48,7 +48,7 @@ real(8), parameter :: fourpi=12.566370614359172954d0
 real(8), parameter :: y00=0.28209479177387814347d0
 real(8) t1,t2,t3,t4
 ! automatic arrays
-real(8) ri(nr),rl(4,nr),cf(3,nr)
+real(8) ri(nr),rl(4,nr),cf(4,nr)
 real(8) fr1(nr),fr2(nr),fr3(nr),fr4(nr),fr5(nr)
 ! initialise r^l, r^(-l-1), r^(l+2) and r^(-l+1)
 do ir=1,nr

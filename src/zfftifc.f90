@@ -28,6 +28,11 @@ integer, intent(in) :: sgn
 integer, intent(in) :: n(nd)
 complex(8), intent(inout) :: z(*)
 
+!----------------------------------------!
+!     interface to modified FFTPACK5     !
+!----------------------------------------!
+call cfftnd(nd,n,sgn,z)
+
 !-------------------------------------!
 !     interface to HP MLIB Z3DFFT     !
 !-------------------------------------!
@@ -81,11 +86,6 @@ complex(8), intent(inout) :: z(*)
 !  dftistatus=DftiComputeBackward(handle,z)
 !end if
 !dftistatus=DftiFreeDescriptor(handle)
-
-!----------------------------------------!
-!     interface to modified FFTPACK5     !
-!----------------------------------------!
-call cfftnd(nd,n,sgn,z)
 
 return
 end subroutine

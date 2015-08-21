@@ -8,7 +8,7 @@ use modmain
 implicit none
 ! local variables
 integer is,ia,ja
-integer isym,lspn,md
+integer isym,lspn
 real(8) sc(3,3),v(3),t1
 ! external functions
 real(8) r3taxi
@@ -16,8 +16,7 @@ external r3taxi
 if (fixspin.eq.0) return
 do isym=1,nsymcrys
   lspn=lspnsymc(isym)
-  md=symlatd(lspn)
-  sc(:,:)=dble(md)*symlatc(:,:,lspn)
+  sc(:,:)=dble(symlatd(lspn))*symlatc(:,:,lspn)
 ! check invariance of global moment
   if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
     v(:)=sc(:,1)*momfix(1)+sc(:,2)*momfix(2)+sc(:,3)*momfix(3)

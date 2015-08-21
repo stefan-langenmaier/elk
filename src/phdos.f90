@@ -31,7 +31,7 @@ n=3*natmtot
 allocate(wp(n))
 allocate(w(nwdos))
 allocate(gw(nwdos))
-allocate(f(nwdos),g(nwdos),cf(3,nwdos))
+allocate(f(nwdos),g(nwdos),cf(4,nwdos))
 allocate(dynq(n,n,nqpt))
 allocate(dynr(n,n,ngridq(1)*ngridq(2)*ngridq(3)))
 allocate(dynp(n,n))

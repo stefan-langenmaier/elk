@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2005 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2009 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -9,6 +9,7 @@
 subroutine writeinfo(fnum)
 ! !USES:
 use modmain
+use modldapu
 ! !INPUT/OUTPUT PARAMETERS:
 !   fnum : unit specifier for INFO.OUT file (in,integer)
 ! !DESCRIPTION:
@@ -17,13 +18,14 @@ use modmain
 !
 ! !REVISION HISTORY:
 !   Created January 2003 (JKD)
+!   Updated with LDA+U quantities July 2009 (FC)
 !EOP
 !BOC
 implicit none
 ! arguments
 integer fnum
 ! local variables
-integer i,is,ia
+integer i,is,ia,k,l
 character(10) dat,tim
 write(fnum,'("+-----------------------------+")')
 write(fnum,'("| Elk version ",I1.1,".",I1.1,".",I3.3," started |")') &
@@ -228,21 +230,54 @@ if (ldapu.ne.0) then
   write(fnum,'("LDA+U calculation")')
   if (ldapu.eq.1) then
     write(fnum,'(" fully localised limit (FLL)")')
+    write(fnum,'(" see Phys. Rev. B 52, R5467 (1995)")')
   else if (ldapu.eq.2) then
-    write(fnum,'(" around mean field (AFM)")')
+    write(fnum,'(" around mean field (AMF)")')
+    write(fnum,'(" see Phys. Rev. B 49, 14211 (1994)")')
   else if (ldapu.eq.3) then
-    write(fnum,'(" interpolation between FLL and AFM")')
+    write(fnum,'(" interpolation between FLL and AMF")')
+    write(fnum,'(" see Phys. Rev. B 67, 153106 (2003)")')
   else
     write(*,*)
     write(*,'("Error(writeinfo): ldapu not defined : ",I8)') ldapu
     write(*,*)
     stop
   end if
-  write(fnum,'(" see PRB 67, 153106 (2003) and PRB 52, R5467 (1995)")')
   do is=1,nspecies
-    if (llu(is).ge.0) then
-      write(fnum,'(" species : ",I4," (",A,")",", l = ",I2,", U = ",F12.8,&
-       &", J = ",F12.8)') is,trim(spsymb(is)),llu(is),ujlu(1,is),ujlu(2,is)
+    l=llu(is)
+    if (l.ge.0) then
+      if (inptypelu.eq.1) then
+        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2,", U = ",F12.8, &
+         &", J = ",F12.8)') is,trim(spsymb(is)),llu(is),ujlu(1,is),ujlu(2,is)
+      else if (inptypelu.eq.2) then
+        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+         trim(spsymb(is)),llu(is)
+        write(fnum,'(" Slater integrals are provided as input")')
+        do k=0,2*l,2
+          write(fnum,'(" F^(",I1,") = ",F12.8)') k,flu(k,is)
+        end do
+      else if (inptypelu.eq.3) then
+        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+         trim(spsymb(is)),llu(is)
+        write(fnum,'(" Racah parameters are provided as input")')
+        do k=0,l
+          write(fnum,'(" E^(",I1,") = ",F12.8)') k,elu(k,is)
+        end do
+      else if (inptypelu.eq.4) then 
+        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+         trim(spsymb(is)),llu(is)
+        write(fnum,'(" Slater integrals are calculated by means of & 
+         &Yukawa potential")')
+        write(fnum,'(" Yukawa potential screening length (a.u^-1) : ",F12.8)') &
+         lambdalu(is)  
+      else if(inptypelu.eq.5) then 
+        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+         trim(spsymb(is)),llu(is)
+        write(fnum,'(" Slater integrals are calculated by means of &
+         &Yukawa potential")')
+        write(fnum,'(" Yukawa potential screening length corresponds to & 
+         &U = ",F12.8)') ulufix(is)
+      end if
     end if
   end do
 end if
@@ -255,7 +290,7 @@ if (task.eq.300) then
     write(fnum,'("  Hartree-Fock functional")')
   else if (rdmxctype.eq.2) then
     write(fnum,'("  Power functional, exponent : ",G18.10)') rdmalpha
-  endif
+  end if
 end if
 write(fnum,*)
 write(fnum,'("Smearing type : ",I4)') stype

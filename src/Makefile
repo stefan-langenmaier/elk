@@ -14,7 +14,7 @@ include ../make.inc
 #-------------------------------------------------------------------------------
 # Source files
 #-------------------------------------------------------------------------------
-SRC_modules = modmain.f90 modxcifc.f90 modtest.f90
+SRC_modules = modmain.f90 modxcifc.f90 modldapu.f90 modtest.f90
 
 SRC_main = main.f90
 
@@ -68,7 +68,11 @@ SRC_advanced = \
  oepvnlk.f90 oepmagmt.f90 oepmag.f90 zrhogp.f90
 
 SRC_LDAU = \
- gendmatlu.f90 genveelu.f90 genvmatlu.f90 writeldapu.f90 readalphalu.f90
+ gendmatlu.f90 genveelu.f90 genvmatlu.f90 writeldapu.f90 readalphalu.f90 \
+ tensmom.f90  dm2tensmom.f90  tensmomengy.f90 dmplz.f90 fluykwa.f90 \
+ fluykwa0.f90 genflufr.f90 engyflu.f90 writeengyflu.f90 zbessela.f90 \
+ zbesselb.f90 readdmatlu.f90 genflu.f90 findlambdalu.f90 readflu.f90 \
+ writetensmom.f90
 
 SRC_rdmft = \
  rdmft.f90 rdmdkdc.f90 rdmminc.f90 rdmvaryc.f90 rdmdedc.f90 rdmdexcdc.f90 \
@@ -80,7 +84,7 @@ SRC_lib = \
  euler.f90 wigner3j.f90 gaunt.f90 gauntyry.f90 r3mm.f90 r3mtm.f90 r3mmt.f90 \
  r3mv.f90 r3mtv.f90 r3cross.f90 r3dist.f90 r3taxi.f90 r3dot.f90 r3minv.f90 \
  r3mdet.f90 r3frac.f90 i3mdet.f90 i3mtv.f90 factnm.f90 factr.f90 hermite.f90 \
- brzint.f90 sphcrd.f90 sphcover.f90 erf.f90 clebgor.f90 \
+ brzint.f90 sphcrd.f90 sphcover.f90 erf.f90 clebgor.f90 wigner6j.f90 \
  sbessel.f90 sbesseldm.f90 genylm.f90 genrlm.f90 zmatinp.f90 \
  lopzflm.f90 sortidx.f90 gcd.f90 zfmtinp.f90 rfmtinp.f90 findband.f90 \
  gradzfmt.f90 gradrfmt.f90 ztorflm.f90 rtozflm.f90 zflmconj.f90 rotzflm.f90 \
@@ -90,7 +94,8 @@ SRC_lib = \
  connect.f90 flushifc.f90 spline.f90 writewiq2.f90 rfinterp.f90 rfmtctof.f90 \
  fderiv.f90 fsmooth.f90 rotaxang.f90 i3minv.f90 axangsu2.f90 z2mm.f90 \
  z2mctm.f90 z2mmct.f90 potnucl.f90 timesec.f90 rfirvec.f90 vecfbz.f90 \
- mixadapt.f90 mixpulay.f90 ylmrot.f90 ylmroty.f90 rlmrot.f90 rotrflm.f90
+ mixadapt.f90 mixpulay.f90 ylmrot.f90 ylmroty.f90 rlmrot.f90 rotrflm.f90 \
+ sdelta_lr.f90 stheta_lr.f90
 
 SRC_lib_flux =
 

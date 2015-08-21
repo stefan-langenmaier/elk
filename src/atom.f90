@@ -93,7 +93,7 @@ if (nr.lt.np) then
 end if
 ! allocate local arrays
 allocate(vn(nr),vh(nr),ex(nr),ec(nr),vx(nr),vc(nr),vrp(nr))
-allocate(ri(nr),fr1(nr),fr2(nr),gr1(nr),gr2(nr),cf(3,nr))
+allocate(ri(nr),fr1(nr),fr2(nr),gr1(nr),gr2(nr),cf(4,nr))
 if (xcgrad.eq.1) then
   allocate(grho(nr),g2rho(nr),g3rho(nr))
 end if

@@ -13,7 +13,7 @@ subroutine fderiv(m,n,x,f,g,cf)
 !   x  : abscissa array (in,real(n))
 !   f  : function array (in,real(n))
 !   g  : (anti-)derivative of f (out,real(n))
-!   cf : spline coefficients, not referenced if m=-2 or m=-3 (out,real(3,n))
+!   cf : spline coefficients, not referenced if m=-2 or m=-3 (out,real(4,n))
 ! !DESCRIPTION:
 !   Given function $f$ defined on a set of points $x_i$ then if $m\ge 0$ this
 !   routine computes the $m$th derivative of $f$ at each point. If $m<0$ the
@@ -36,7 +36,7 @@ integer, intent(in) :: n
 real(8), intent(in) :: x(n)
 real(8), intent(in) :: f(n)
 real(8), intent(out) :: g(n)
-real(8), intent(out) :: cf(3,n)
+real(8), intent(out) :: cf(4,n)
 ! local variables
 integer i
 real(8) dx

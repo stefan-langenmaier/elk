@@ -43,21 +43,17 @@ integer, intent(in) :: ld
 complex(8), intent(in) :: zfmt1(ld,nr)
 complex(8), intent(in) :: zfmt2(ld,nr)
 ! local variables
-integer lmmax,lm,ir
+integer lmmax,ir
 real(8), parameter :: fourpi=12.566370614359172954d0
 real(8) t1,t2
-complex(8) zsum
+complex(8) zt1
 ! automatic arrays
-real(8) fr1(nr),fr2(nr),gr(nr),cf(3,nr)
+real(8) fr1(nr),fr2(nr),gr(nr),cf(4,nr)
 lmmax=(lmax+1)**2
 do ir=1,nr
-  zsum=conjg(zfmt1(1,ir))*zfmt2(1,ir)
-  do lm=2,lmmax
-    zsum=zsum+conjg(zfmt1(lm,ir))*zfmt2(lm,ir)
-  end do
-  zsum=zsum*r(ir)**2
-  fr1(ir)=dble(zsum)
-  fr2(ir)=aimag(zsum)
+  zt1=dot_product(zfmt1(1:lmmax,ir),zfmt2(1:lmmax,ir))*r(ir)**2
+  fr1(ir)=dble(zt1)
+  fr2(ir)=aimag(zt1)
 end do
 call fderiv(-1,nr,r,fr1,gr,cf)
 t1=gr(nr)

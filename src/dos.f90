@@ -123,6 +123,8 @@ do ik=1,nkpt
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
+! get the occupancies if required
+  if (dosocc) call getoccsv(vkl(:,ik),occsv(:,ik))
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -204,6 +206,7 @@ do ispn=1,nspinor
       if (e(ist,ik,ispn).gt.0.d0) e(ist,ik,ispn)=e(ist,ik,ispn)+scissor
 ! use diagonal of spin density matrix for weight
       f(ist,ik)=dble(sdmat(ispn,ispn,ist,ik))
+      if (dosocc) f(ist,ik)=f(ist,ik)*occsv(ist,ik)/occmax
     end do
   end do
   call brzint(nsmdos,ngridk,nsk,ikmap,nwdos,wdos,nstsv,nstsv,e(:,:,ispn),f, &
@@ -238,6 +241,7 @@ do is=1,nspecies
           do ik=1,nkpt
             do ist=1,nstsv
               f(ist,ik)=bc(lm,ispn,ias,ist,ik)
+              if (dosocc) f(ist,ik)=f(ist,ik)*occsv(ist,ik)/occmax
             end do
           end do
           call brzint(nsmdos,ngridk,nsk,ikmap,nwdos,wdos,nstsv,nstsv, &

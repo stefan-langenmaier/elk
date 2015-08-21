@@ -28,7 +28,7 @@ integer is,ia,ias,ig,ifg
 real(8) x,t1,t2
 complex(8) zt1,zt2,zt3
 ! automatic arrays
-real(8) fr(spnrmax),gr(spnrmax),cf(3,spnrmax)
+real(8) fr(spnrmax),gr(spnrmax),cf(4,spnrmax)
 ! allocatable arrays
 real(8), allocatable :: jlgr(:,:)
 real(8), allocatable :: th(:,:)

@@ -90,7 +90,7 @@ do i=1,2
   allocate(rwf(spnr,2,spnst))
   allocate(fr(spnr))
   allocate(gr(spnr))
-  allocate(cf(3,spnr))
+  allocate(cf(4,spnr))
 ! generate the radial mesh
   call radmesh(spnr,nrmt,rmt,sprmin,r)
 ! solve the Kohn-Sham-Dirac equations for the atom

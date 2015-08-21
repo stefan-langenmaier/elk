@@ -51,7 +51,7 @@ integer kpa,it,nn,ir,irm,nnd,nndp
 real(8), parameter :: eps=1.d-11
 real(8) t1,de
 ! automatic arrays
-real(8) g1(nr),f1(nr),fr(nr),gr(nr),cf(3,nr)
+real(8) g1(nr),f1(nr),fr(nr),gr(nr),cf(4,nr)
 if (k.le.0) then
   write(*,*)
   write(*,'("Error(rdirac): k <= 0 : ",I8)') k

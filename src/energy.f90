@@ -9,6 +9,7 @@
 subroutine energy
 ! !USES:
 use modmain
+use modldapu
 use modtest
 ! !DESCRIPTION:
 !   Computes the total energy and its individual contributions. The kinetic

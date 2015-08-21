@@ -14,7 +14,7 @@ integer ist,jst,is,ia,ias
 integer ir,irc,itp
 real(8) sum,t1,t2
 ! automatic arrays
-real(8) fr(nrcmtmax),gr(nrcmtmax),cf(3,nrcmtmax)
+real(8) fr(nrcmtmax),gr(nrcmtmax),cf(4,nrcmtmax)
 real(8) rflm(lmmaxvr),rftp(lmmaxvr)
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:)

@@ -36,7 +36,7 @@ call readstate
 ! allocate local arrays
 allocate(fr(nrmtmax))
 allocate(gr(nrmtmax))
-allocate(cf(3,nrmtmax))
+allocate(cf(4,nrmtmax))
 open(50,file='MOSSBAUER.OUT',action='WRITE',form='FORMATTED')
 do is=1,nspecies
 !--------------------------------!

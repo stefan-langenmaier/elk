@@ -9,6 +9,7 @@
 subroutine gndstate
 ! !USES:
 use modmain
+use modldapu
 ! !DESCRIPTION:
 !   Computes the self-consistent Kohn-Sham ground-state. General information is
 !   written to the file {\tt INFO.OUT}. First- and second-variational
@@ -65,6 +66,9 @@ if (tforce) open(64,file='FORCEMAX'//trim(filext),action='WRITE', &
 open(65,file='RMSDVEFF'//trim(filext),action='WRITE',form='FORMATTED')
 ! open DTOTENERGY.OUT
 open(66,file='DTOTENERGY'//trim(filext),action='WRITE',form='FORMATTED')
+! open TENSMOM.OUT
+if (tmomlu) open(67,file='TENSMOM'//trim(filext),action='WRITE', &
+ form='FORMATTED')
 ! write out general information to INFO.OUT
 call writeinfo(60)
 ! initialise or read the charge density and potentials from file
@@ -212,6 +216,11 @@ do iscl=1,maxscl
     call genvmatlu
 ! write the LDA+U matrices to file
     call writeldapu
+! calculate and write tensor moments to file
+    if (tmomlu) then 
+      call tensmom(67)
+      call flushifc(67)
+    end if
   end if
 ! compute the effective potential
   call poteff
@@ -359,7 +368,7 @@ if ((.not.tstop).and.((task.eq.2).or.(task.eq.3))) then
     do ia=1,natoms(is)
       write(60,'(I4," : ",3F14.8)') ia,atposl(:,ia,is)
     end do
-  end do
+ end do
 ! add blank line to TOTENERGY.OUT, FERMIDOS.OUT, MOMENT.OUT and RMSDVEFF.OUT
   write(61,*)
   write(62,*)
@@ -403,6 +412,8 @@ if (tforce) close(64)
 close(65)
 ! close the DTOTENERGY.OUT file
 close(66)
+! close TENSMOM.OUT file
+if (tmomlu) close(67)
 deallocate(v,work)
 return
 end subroutine

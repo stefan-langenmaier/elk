@@ -34,7 +34,7 @@ integer l1,l2,l3,m2,lm2
 integer ilo,ilo1,ilo2,io,io1,io2
 real(8) t1
 ! automatic arrays
-real(8) r2(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) r2(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 ! begin loops over atoms and species
 do is=1,nspecies
   nr=nrmt(is)

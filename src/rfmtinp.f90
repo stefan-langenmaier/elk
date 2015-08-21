@@ -42,7 +42,7 @@ real(8), intent(in) :: rfmt2(ld,nr)
 ! local variables
 integer lmmax,ir,irc
 ! automatic arrays
-real(8) rc(nr),fr(nr),gr(nr),cf(3,nr)
+real(8) rc(nr),fr(nr),gr(nr),cf(4,nr)
 if (lrstp.le.0) then
   write(*,*)
   write(*,'("Error(rfmtinp): lrstp <= 0 : ",I8)') lrstp

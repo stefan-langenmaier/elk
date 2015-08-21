@@ -6,6 +6,7 @@
 
 subroutine seceqnsv(ik,apwalm,evalfv,evecfv,evecsv)
 use modmain
+use modldapu
 implicit none
 ! arguments
 integer, intent(in) :: ik

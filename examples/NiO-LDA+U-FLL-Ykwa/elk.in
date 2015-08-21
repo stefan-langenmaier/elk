@@ -1,0 +1,72 @@
+
+! NiO in AFMII structure with LDA+U and fully-localised-limit (FLL) double
+! counting (ldapu=1). With inptype=4 the values of Slater parameters are 
+! conveniently calculated through a screened Yukawa potential with screening 
+! length lambdalu provided as input (see PRB 80, 035121 (2009)). 
+! Here lambdalu=1.5 gives realistic values of Slater integrals which are 
+! printed in FLU.OUT.
+! Try to plot the magnetic moments of Ni as function of lambdalu. 
+! If inptypelu=5 the code will automatically determine the screening length 
+! corresponding to the fixed value of U (ulufix) provided as input.
+! Example by Francesco Cricchio.
+
+tasks
+  0
+
+! lda+u block
+! here FLL double counting is used (ldapu=1)
+! inptypelu=4 corresponds to calculate the Slater parameters self-consistently
+! through a Yukawa potential with screening length lambdalu(is)
+! llu(is) represents the l-shell we would like to apply LDA+U
+lda+u                             
+  1 4         : ldapu,inptypelu
+  1 2 1.5     : is, llu(is), lambdalu(is)
+
+! alternatively try inptypelu=5; this will determine the screening length
+! correspoding to ulufix=0.29399 htr (8 eV) through a secant algorithm
+!lda+u
+! 1 5         : ldapu,inptypelu
+! 1 2 0.29399 : is,llu(is), ulufix(is)
+
+spinpol
+  .true.
+
+scale
+  7.893389
+
+avec
+   1.0  0.5  0.5
+   0.5  1.0  0.5
+   0.5  0.5  1.0
+
+atoms
+  2                                    : nspecies
+  'Ni.in'                              : spfname
+  2                                    : natoms; atpos, bfcmt below
+  0.0  0.0  0.0   0.0 0.0 -2.0
+  0.5  0.5  0.5   0.0 0.0  2.0
+  'O.in'                               : spfname
+  2                                    : natoms; atpos, bfcmt below
+  0.25 0.25 0.25  0.0 0.0  0.0
+  0.75 0.75 0.75  0.0 0.0  0.0
+
+! the large magnetic local field on Ni is halved at every iteration
+! this speeds up the convergence of magnetic calculations
+reducebf
+   0.5
+
+! automatic muffin-tin radius
+autormt
+  .true.
+
+sppath
+  '../../species/'
+
+! fairly high number of empty states
+nempty
+  10
+
+! this grid is too small for accurate magnetic moment
+ngridk
+  4  4  4
+

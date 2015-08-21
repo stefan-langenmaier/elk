@@ -23,7 +23,7 @@ implicit none
 integer is,ia,ias,ir,idm
 real(8) sum
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 if (.not.spinpol) then
   mommt(:,:)=0.d0
   mommttot(:)=0.d0
@@ -56,7 +56,7 @@ do idm=1,ndmag
 end do
 momtot(:)=mommttot(:)+momir(:)
 ! write total moment to test file
-call writetest(450,'total moment',nv=ndmag,tol=1.d-3,rva=momtot)
+call writetest(450,'total moment',nv=ndmag,tol=1.d-2,rva=momtot)
 return
 end subroutine
 !EOC

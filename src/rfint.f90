@@ -13,7 +13,7 @@ real(8), intent(in) :: rfir(ngrtot)
 integer is,ia,ias,ir
 real(8) sum
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 sum=0.d0
 ! interstitial contribution
 do ir=1,ngrtot

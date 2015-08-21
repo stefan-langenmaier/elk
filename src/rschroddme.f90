@@ -81,7 +81,7 @@ else
 ! use the Dirac equation
   allocate(g0(nr),g1(nr))
   allocate(f0(nr),f1(nr))
-  allocate(cf(3,nr))
+  allocate(cf(4,nr))
   if (k.eq.l) then
     kpa=k
   else if (k.eq.l+1) then

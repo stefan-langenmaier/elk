@@ -48,7 +48,7 @@ do ik1=1,nkpt
         else if (rdmxctype.eq.2) then
           t3=occsv(ist1,ik1)*occsv(ist2,ik3)
           if ((ist1.eq.ist2).and. &
-           (r3taxi(vkl(1,ik1),vklnr(1,ik2)).lt.epslat)) then
+           (r3taxi(vkl(:,ik1),vklnr(:,ik2)).lt.epslat)) then
             t2=(0.5d0/occmax)*wkpt(ik1)*t3
           else
             if (t3.gt.0.d0) then

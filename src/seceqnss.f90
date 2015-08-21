@@ -5,6 +5,7 @@
 
 subroutine seceqnss(ik,apwalm,evalfv,evecfv,evecsv)
 use modmain
+use modldapu
 implicit none
 ! arguments
 integer, intent(in) :: ik
@@ -32,8 +33,7 @@ complex(8), allocatable :: zfft2(:)
 complex(8), allocatable :: zv(:,:)
 complex(8), allocatable :: work(:)
 ! external functions
-complex(8) zdotc
-complex(8) zfmtinp
+complex(8) zdotc,zfmtinp
 external zdotc,zfmtinp
 if (.not.spinpol) then
   write(*,*)
@@ -64,16 +64,19 @@ do is=1,nspecies
   nrc=nrcmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
+! de-phasing factor (FC, FB & LN)
+    t1=-0.5d0*dot_product(vqcss(:),atposc(:,ia,is))
+    zq=cmplx(cos(t1),sin(t1),8)
 ! compute the first-variational wavefunctions
     do ispn=1,nspnfv
+      if (ispn.eq.2) zq=conjg(zq)
       do ist=1,nstfv
         call wavefmt(lradstp,lmaxvr,is,ia,ngk(ispn,ik),apwalm(:,:,:,:,ispn), &
          evecfv(:,ist,ispn),lmmaxvr,wfmt1(:,:,ist,ispn))
+! de-phase if required
+        if (ssdph) wfmt1(:,1:nrc,ist,ispn)=zq*wfmt1(:,1:nrc,ist,ispn)
       end do
     end do
-! de-phasing factor (FC, FB & LN)
-    t1=dot_product(vqcss(:),atposc(:,ia,is))
-    zq=cmplx(cos(t1),sin(t1),8)
     do jst=1,nstfv
       do ispn=1,nspnfv
 ! convert wavefunctions to spherical coordinates
@@ -87,7 +90,7 @@ do is=1,nspecies
       wfmt3(:,1:nrc)=-wfmt2(:,1:nrc,2)*beffmt(:,1:nrc,ias,3)
       call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
        lmmaxvr,zzero,wfmt4(:,:,2),lmmaxvr)
-      wfmt3(:,1:nrc)=zq*wfmt2(:,1:nrc,2) &
+      wfmt3(:,1:nrc)=wfmt2(:,1:nrc,2) &
        *cmplx(beffmt(:,1:nrc,ias,1),-beffmt(:,1:nrc,ias,2),8)
       call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
        lmmaxvr,zzero,wfmt4(:,:,3),lmmaxvr)

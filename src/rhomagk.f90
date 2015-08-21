@@ -104,7 +104,7 @@ do is=1,nspecies
             do ist=1,nstfv
               i=i+1
               zt1=evecsv(i,j)
-              if (spinsprl) zt1=zt1*zq(ispn)
+              if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
               if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
                 if (.not.done(ist,jspn)) then
                   call wavefmt(lradstp,lmaxvr,is,ia,ngk(jspn,ik), &

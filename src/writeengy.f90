@@ -5,6 +5,7 @@
 
 subroutine writeengy(fnum)
 use modmain
+use modldapu
 implicit none
 ! arguments
 integer, intent(in) :: fnum

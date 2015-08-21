@@ -23,7 +23,7 @@ implicit none
 integer is,ia,ias,ir
 real(8) sum1,sum2,t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 t1=1.d0/y00
 sum1=0.d0
 sum2=0.d0

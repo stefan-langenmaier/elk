@@ -20,7 +20,7 @@ real(8) t1,t2
 complex(8) zsum1,zsum2
 ! automatic arrays
 real(8) fr1(nrcmtmax),fr2(nrcmtmax)
-real(8) gr(nrcmtmax),cf(3,nrcmtmax)
+real(8) gr(nrcmtmax),cf(4,nrcmtmax)
 !-----------------------------------!
 !     interstitial contribution     !
 !-----------------------------------!

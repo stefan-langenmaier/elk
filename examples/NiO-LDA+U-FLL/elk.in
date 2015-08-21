@@ -1,57 +1,66 @@
 
 ! NiO in AFMII structure with LDA+U and fully-localised-limit (FLL) double
-! counting (ldapu=1). Values of  U and J for Ni are taken from literature.
+! counting (ldapu=1). Values of Slater parameters for Ni are taken from 
+! literature.
 ! Analyze total and partial DOS (t2g and eg states) and compare with bare LDA.
 ! Notice the increasing of the gap (~4eV) and of magnetic moment to ~1.69 u_b.
 ! The increasing of magnetic moment is typical of FLL double counting.
-! Example by Fredrik Bultmark, Francesco Cricchio and Lars Nordstrom.
+! Example by Francesco Cricchio.
 
 tasks
   0
   10
 
 ! lda+u block
-! here FLL double counting is used. 
+! here FLL double counting is used (ldapu=1)
+! inptype=1 corresponds to provide U and J in htr as input 
+! inptypelu=2 or 3 corresponds to provide, respectively, Slater or Racah 
+! parameters
+! inptypelu=4 or 5 corresponds to calculate the Slater parameters through a 
+! Yukawa potential (see example NiO-LDA+U-FLL-Ykwa and PRB 80, 035121 (2009))
 ! llu(is) represents the l-shell we would like to apply LDA+U
-! ujlu(1,is) is U in htr
-! ujlu(2,is) is J in htr 
-lda+u                             
-  1                                 : ldapu
-  1 2 0.2939944288 0.0349118384     : is, llu(is), ujlu(1,is),ujlu(2,is)
+! flu(0,is),flu(2,is),flu(4,is) are the Slater parameters in htr
+lda+u
+  1 2                              : ldapu,inptypelu
+  1 2 0.29399 0.30078 0.18799      : is, llu(is), flu(0,is),flu(2,is),flu(4,is)
 
 spinpol
-.true.
+ .true.
 
 scale
-  3.946694500
+  7.893389
 
 avec
-  -1.0  1.0  0.0
-  -1.0  0.0  1.0
-   1.0  1.0  2.0
+  1.0  0.5  0.5
+  0.5  1.0  0.5
+  0.5  0.5  1.0
 
 atoms
-   2                                    : nspecies
-   'Ni.in'                              : spfname
-   2                                    : natoms; atpos, bfcmt below
-    0.0    0.0    0.0   0.0  0.0  0.1
-    0.5    0.0    0.5   0.0  0.0 -0.1
-   'O.in'                               : spfname
-   2                                    : natoms; atpos, bfcmt below
-    0.75   0.5    0.25  0.0  0.0  0.0
-    0.25   0.5    0.75  0.0  0.0  0.0
+  2                                    : nspecies
+  'Ni.in'                              : spfname
+  2                                    : natoms; atpos, bfcmt below
+  0.0  0.0  0.0   0.0 0.0 -2.0
+  0.5  0.5  0.5   0.0 0.0  2.0
+  'O.in'                               : spfname
+  2                                    : natoms; atpos, bfcmt below
+  0.25 0.25 0.25  0.0 0.0  0.0
+  0.75 0.75 0.75  0.0 0.0  0.0
 
+! the large magnetic local field on Ni is halved at every iteration
+! this speeds up the convergence of magnetic calculations
+reducebf
+  0.5
 
 ! automatic muffin-tin radius
 autormt
   .true.
 
-sppath
-  '../../species/'
-
 ! fairly high number of empty states
 nempty
   10
+
+sppath
+  '../../species/'
 
 ! this grid is too small for accurate magnetic moment
 ngridk

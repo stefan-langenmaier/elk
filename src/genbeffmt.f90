@@ -42,7 +42,7 @@ do is=1,nspecies
     end if
 ! spin-orbit coupling radial function
     if (spinorb) then
-      allocate(vr(nrmtmax),drv(nrmtmax),cf(3,nrmtmax))
+      allocate(vr(nrmtmax),drv(nrmtmax),cf(4,nrmtmax))
 ! radial derivative of the spherical part of the potential
       vr(1:nrmt(is))=veffmt(1,1:nrmt(is),ias)*y00
       call fderiv(1,nrmt(is),spr(:,is),vr,drv,cf)

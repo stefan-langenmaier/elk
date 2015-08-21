@@ -9,6 +9,7 @@
 subroutine readinput
 ! !USES:
 use modmain
+use modldapu
 use modtest
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
@@ -21,10 +22,10 @@ use modtest
 implicit none
 ! local variables
 integer is,js,ia,ja,ias
-integer i,l,iv,iostat
+integer i,l,k,iv,iostat
 real(8) sc,sc1,sc2,sc3
 real(8) solscf,vacuum
-real(8) v(3),t1,t2
+real(8) v(3),t1
 character(256) str,bname
 
 !------------------------!
@@ -67,7 +68,7 @@ nempty=5
 maxscl=200
 mixtype=1
 beta0=0.05d0
-betamax=0.5d0
+betamax=1.d0
 epspot=1.d-6
 epsengy=1.d-4
 epsforce=5.d-4
@@ -101,7 +102,8 @@ ngrdos=100
 nsmdos=0
 wdos(1)=-0.5d0
 wdos(2)=0.5d0
-lmirep=.false.
+dosocc=.false.
+lmirep=.true.
 spinpol=.false.
 spinorb=.false.
 tau0atm=0.2d0
@@ -114,8 +116,8 @@ noptcomp=1
 optcomp(:,1)=1
 usegdft=.false.
 intraband=.false.
-evaltol=1.d-8
-evalmin=-4.5d0
+evaltol=-1.d0
+evalmin=-8.d0
 deband=0.0025d0
 epsband=1.d-6
 bfieldc(:)=0.d0
@@ -138,8 +140,8 @@ tforce=.false.
 tfibs=.true.
 maxitoep=120
 tauoep(1)=1.d0
-tauoep(2)=0.2d0
-tauoep(3)=1.5d0
+tauoep(2)=0.75d0
+tauoep(3)=1.25d0
 nkstlist=1
 kstlist(:,1)=1
 vklem(:)=0.d0
@@ -147,12 +149,20 @@ deltaem=0.025d0
 ndspem=1
 nosource=.false.
 spinsprl=.false.
+ssdph=.true.
 vqlss(:)=0.d0
 nwrite=0
 tevecsv=.false.
 ldapu=0
+inptypelu=1
 llu(:)=-1
 ujlu(:,:)=0.d0
+flu(:,:)=0.d0
+elu(:,:)=0.d0
+lambdalu(:)=0.d0
+ulufix(:)=0.d0
+lambdalu0(:)=0.d0
+tmomlu=.false.
 readalu=.false.
 rdmxctype=2
 rdmmaxscl=1
@@ -535,6 +545,8 @@ case('dos')
     write(*,*)
     stop
   end if
+case('dosocc')
+  read(50,*,err=20) dosocc
 case('lmirep')
   read(50,*,err=20) lmirep
 case('tau0atm')
@@ -608,12 +620,6 @@ case('intraband')
   read(50,*,err=20) intraband
 case('evaltol')
   read(50,*,err=20) evaltol
-  if (evaltol.le.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): evaltol <= 0 : ",G18.10)') evaltol
-    write(*,*)
-    stop
-  end if
 case('evalmin')
   read(50,*,err=20) evalmin
 case('deband')
@@ -770,6 +776,8 @@ case('nosource')
   read(50,*,err=20) nosource
 case('spinsprl')
   read(50,*,err=20) spinsprl
+case('ssdph')
+  read(50,*,err=20) ssdph
 case('vqlss')
   read(50,*,err=20) vqlss
 case('nwrite')
@@ -777,11 +785,21 @@ case('nwrite')
 case('tevecsv')
   read(50,*,err=20) tevecsv
 case('lda+u')
-  read(50,*) ldapu
+  read(50,*) ldapu,inptypelu
   do is=1,maxspecies
     read(50,'(A80)') str
     if (trim(str).eq.'') goto 10
-    read(str,*,iostat=iostat) js,l,t1,t2
+    if (inptypelu.eq.1) then
+      read(str,*,iostat=iostat) js,l,ujlu(1:2,js)
+    else if (inptypelu.eq.2) then
+      read(str,*,iostat=iostat) js,l,(flu(k,js),k=0,2*l,2)
+    else if (inptypelu.eq.3) then
+      read(str,*,iostat=iostat) js,l,(elu(k,js),k=0,l)
+    else if (inptypelu.eq.4) then
+      read(str,*,iostat=iostat) js,l,lambdalu(js)
+    else if (inptypelu.eq.5) then
+      read(str,*,iostat=iostat) js,l,ulufix(js)
+    end if
     if (iostat.ne.0) then
       write(*,*)
       write(*,'("Error(readinput): error reading LDA+U parameters")')
@@ -791,7 +809,7 @@ case('lda+u')
     end if
     if ((js.le.0).or.(js.ge.maxspecies)) then
       write(*,*)
-      write(*,'("Error(readinput): invalid species number in lda+u block : ",&
+      write(*,'("Error(readinput): invalid species number in lda+u block : ", &
        &I8)') js
       write(*,*)
       stop
@@ -803,9 +821,9 @@ case('lda+u')
       stop
     end if
     llu(js)=l
-    ujlu(1,js)=t1
-    ujlu(2,js)=t2
   end do
+case('tmomlu')
+  read(50,*,err=20) tmomlu
 case('readalu')
   read(50,*,err=20) readalu
 case('rdmxctype')

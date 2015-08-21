@@ -12,11 +12,11 @@ include ../../make.inc
 #-------------------------------------------------------------------------------
 SRC_modules = modxcifc.f90
 
-SRC_routines = species.f90
+SRC_routines = species.f90 radmesh.f90
 
 SRC_lib = \
  atom.f90 rdirac.f90 rdiracdme.f90 rdiracint.f90 fderiv.f90 spline.f90 \
- polynom.f90 radmesh.f90 potnucl.f90
+ polynom.f90 potnucl.f90
 
 SRC_xc = \
   xc_pzca.f90 xc_pwca.f90 xc_pbe.f90 xc_am05.f90 xc_xalpha.f90 xc_wc06.f90 \

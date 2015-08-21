@@ -20,7 +20,7 @@ gmaxvr
  10.0
 
 lda+u
-  3                        : ldapu
+  3 1                      : ldapu
   1 2  0.183 0.034911967   : is,llu(is),ujlu(1,is),ujlu(2,is)
 
 spinpol

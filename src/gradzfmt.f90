@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2005 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2009 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
@@ -20,26 +20,25 @@ subroutine gradzfmt(lmax,nr,r,ld1,ld2,zfmt,gzfmt)
 !   given the spherical harmonic expansion coefficients, $f_{lm}(r)$, of a
 !   function $f({\bf r})$, the routine returns ${\bf F}_{lm}$ where
 !   $$ \sum_{lm}{\bf F}_{lm}(r)Y_{lm}(\hat{\bf r})=\nabla f({\bf r}). $$
-!   This is done using the identity
+!   This is done using the formula (see, for example, V. Devanathan,
+!   {\em Angular Momentum Techniques In Quantum Mechanics})
 !   \begin{align*}
-!    \nabla\left[f_{lm}(r)Y_{lm}(\hat{\bf r})\right]=&-\left[\frac{l+1}{2l+1}
-!    \right]^{1/2}\left[\frac{d}{dr}-\frac{l}{r}\right]f_{lm}(r)
-!    {\bf Y}_{ll+1m}(\hat{\bf r})\\
-!    &+\left[\frac{l}{2l+1}\right]^{1/2}\left[\frac{d}{dr}+\frac{l+1}{r}\right]
-!    f_{lm}(r){\bf Y}_{ll-1m}(\hat{\bf r}),
+!    \nabla_{\mu}^s f_{lm}(r)Y_{lm}(\hat{\bf r})&=\sqrt{\frac{l+1}{2l+3}}
+!    C(l,1,l+1|m,\mu,m+\mu)Y_{l+1m+\mu}(\hat{\bf r})\left(\frac{d}{dr}
+!    -\frac{l}{r}\right)f_{lm}(r)\\
+!    &-\sqrt{\frac{l}{2l-1}}C(l,1,l-1|m,\mu,m+\mu)Y_{l-1,m+\mu}(\hat{\bf r})
+!    \left(\frac{d}{dr}+\frac{l+1}{r}\right)f_{lm}(r),
 !   \end{align*}
-!   where the vector spherical harmonics are given by
-!   $$ {\bf Y}_{ll'm}(\hat{\bf r})=\sum_{m'=-l'}^{l'}\sum_{m''=-1}^1
-!    C(l'1l|m'm''m)\,Y_{lm}(\hat{\bf r})\,\hat{\bf e}_{m''}, $$
-!   $C$ is a Clebsch-Gordan coefficient and
-!   $$ \hat{\bf e}_{+1}=-\frac{\hat{\bf x}+i\hat{\bf y}}{\sqrt{2}},\quad\quad
-!    \hat{\bf e}_0=\hat{\bf z},\quad\quad \hat{\bf e}_{-1}=\frac{\hat{\bf x}-
-!    i\hat{\bf y}}{\sqrt{2}} $$
-!   are unit vectors. Note that the gradient returned is in terms of the global
+!   where $C$ are Clebsch-Gordan coefficients and the gradient $\nabla_{\mu}^s$
+!   is in terms of the spherical unit vectors $\hat{\bf e}_{\mu}$:
+!   $$ \hat{\bf e}_{+1}=-\frac{\hat{\bf x}+i\hat{\bf y}}{\sqrt{2}},
+!    \qquad\hat{\bf e}_0=\hat{\bf z},\qquad
+!    \hat{\bf e}_{-1}=\frac{\hat{\bf x}-i\hat{\bf y}}{\sqrt{2}}. $$
+!   Note that the gradient returned is in terms of the global
 !   $(\hat{\bf x},\hat{\bf y},\hat{\bf z})$ coordinate system.
 !
 ! !REVISION HISTORY:
-!   Created August 2003 (JKD)
+!   Rewritten May 2009 (JKD)
 !EOP
 !BOC
 implicit none
@@ -52,77 +51,71 @@ integer, intent(in) :: ld2
 complex(8), intent(in) :: zfmt(ld1,nr)
 complex(8), intent(out) :: gzfmt(ld1,ld2,3)
 ! local variables
-integer ir,l1,l2,m1,m2,lm1,lm2
-! square root of two
-real(8), parameter :: sqtwo=1.4142135623730950488d0
-real(8) t1,t2,t3,t4,t5,t6,t7
-complex(8) zt1,zt2
+integer ir,l,m,lm,lm1,i,j
+! real constant 1/sqrt(2)
+real(8), parameter :: c1=0.7071067811865475244d0
+real(8) t1,t2,t3
+complex(8) zt1
 ! automatic arrays
-real(8) ri(nr),f(nr),g1(nr),g2(nr),cf(3,nr)
+real(8) ri(nr),f(nr),g1(nr),g2(nr),cf(4,nr)
 ! external functions
 real(8) clebgor
 external clebgor
-if (lmax.lt.0) then
-  write(*,*)
-  write(*,'("Error(gradzfmt): lmax < 0 : ",I8)') lmax
-  write(*,*)
-  stop
-end if
 do ir=1,nr
   ri(ir)=1.d0/r(ir)
   gzfmt(:,ir,:)=0.d0
 end do
-lm1=0
-do l1=0,lmax
-  t1=sqrt(dble(l1+1)/dble(2*l1+1))
-  t2=sqrt(dble(l1)/dble(2*l1+1))
-  do m1=-l1,l1
-    lm1=lm1+1
+lm=0
+do l=0,lmax
+  t1=sqrt(dble(l+1)/dble(2*l+3))
+  if (l.gt.0) then
+    t2=sqrt(dble(l)/dble(2*l-1))
+  else
+    t2=0.d0
+  end if
+  do m=-l,l
+    lm=lm+1
 ! compute the radial derivatives
-    f(1:nr)=dble(zfmt(lm1,1:nr))
+    f(1:nr)=dble(zfmt(lm,1:nr))
     call fderiv(1,nr,r,f,g1,cf)
-    f(1:nr)=aimag(zfmt(lm1,1:nr))
+    f(1:nr)=aimag(zfmt(lm,1:nr))
     call fderiv(1,nr,r,f,g2,cf)
-    l2=l1+1
-    if (l2.le.lmax) then
-      lm2=l2**2
-      do m2=-l2,l2
-        lm2=lm2+1
-        t3=clebgor(l2,1,l1,m2,-1,m1)
-        t4=clebgor(l2,1,l1,m2,0,m1)
-        t5=clebgor(l2,1,l1,m2,1,m1)
-        t6=(t3-t5)/sqtwo
-        t7=(t3+t5)/sqtwo
+    j=1
+    do i=-1,1
+      if (i.eq.0) j=3
+      if (i.eq.1) j=2
+      if ((l+1.le.lmax).and.(abs(m+i).le.l+1)) then
+! index to (l,m) is l*(l+1)+m+1, therefore index to (l+1,m+i) is
+        lm1=(l+1)*(l+2)+(m+i)+1
+        t3=t1*clebgor(l,1,l+1,m,i,m+i)
         do ir=1,nr
-          zt1=cmplx(g1(ir),g2(ir),8)
-          zt2=t1*(zfmt(lm1,ir)*dble(l1)*ri(ir)-zt1)
-          gzfmt(lm2,ir,1)=gzfmt(lm2,ir,1)+t6*zt2
-          gzfmt(lm2,ir,2)=gzfmt(lm2,ir,2)+t7*cmplx(aimag(zt2),-dble(zt2))
-          gzfmt(lm2,ir,3)=gzfmt(lm2,ir,3)+t4*zt2
+          gzfmt(lm1,ir,j)=gzfmt(lm1,ir,j) &
+           +t3*(cmplx(g1(ir),g2(ir),8)-dble(l)*ri(ir)*zfmt(lm,ir))
         end do
-      end do
-    end if
-    l2=l1-1
-    if (l2.ge.0) then
-      lm2=l2**2
-      do m2=-l2,l2
-        lm2=lm2+1
-        t3=clebgor(l2,1,l1,m2,-1,m1)
-        t4=clebgor(l2,1,l1,m2,0,m1)
-        t5=clebgor(l2,1,l1,m2,1,m1)
-        t6=(t3-t5)/sqtwo
-        t7=(t3+t5)/sqtwo
+      end if
+      if (abs(m+i).le.l-1) then
+! index to (l-1,m+i)
+        lm1=(l-1)*l+(m+i)+1
+        t3=t2*clebgor(l,1,l-1,m,i,m+i)
         do ir=1,nr
-          zt1=cmplx(g1(ir),g2(ir),8)
-          zt2=t2*(zfmt(lm1,ir)*dble(l1+1)*ri(ir)+zt1)
-          gzfmt(lm2,ir,1)=gzfmt(lm2,ir,1)+t6*zt2
-          gzfmt(lm2,ir,2)=gzfmt(lm2,ir,2)+t7*cmplx(aimag(zt2),-dble(zt2))
-          gzfmt(lm2,ir,3)=gzfmt(lm2,ir,3)+t4*zt2
+          gzfmt(lm1,ir,j)=gzfmt(lm1,ir,j) &
+           -t3*(cmplx(g1(ir),g2(ir),8)+dble(l+1)*ri(ir)*zfmt(lm,ir))
         end do
-      end do
-    end if
+      end if
+    end do
+  end do
+end do
+! convert from spherical components to Cartesian
+lm1=(lmax+1)**2
+do ir=1,nr
+  do lm=1,lm1
+    zt1=gzfmt(lm,ir,1)
+    gzfmt(lm,ir,1)=c1*(zt1-gzfmt(lm,ir,2))
+    zt1=c1*(zt1+gzfmt(lm,ir,2))
+    gzfmt(lm,ir,2)=cmplx(-aimag(zt1),dble(zt1),8)
   end do
 end do
 return
 end subroutine
 !EOC
+

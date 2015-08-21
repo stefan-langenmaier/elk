@@ -9,6 +9,7 @@
 subroutine packeff(tpack,n,nu)
 ! !USES:
 use modmain
+use modldapu
 ! !INPUT/OUTPUT PARAMETERS:
 !   tpack : .true. for packing, .false. for unpacking (in,logical)
 !   n     : total number of real values stored (out,integer)

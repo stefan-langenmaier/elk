@@ -31,7 +31,7 @@ implicit none
 integer is,ia,ias,ir,nr
 integer l,ilo,ilo1,ilo2,io
 ! automatic arrays
-real(8) r2(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) r2(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 do is=1,nspecies
   nr=nrmt(is)
   do ir=1,nr

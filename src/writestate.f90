@@ -9,6 +9,7 @@
 subroutine writestate
 ! !USES:
 use modmain
+use modldapu
 ! !DESCRIPTION:
 !   Writes the charge density, potentials and other relevant variables to the
 !   file {\tt STATE.OUT}. Note to developers: changes to the way the variables

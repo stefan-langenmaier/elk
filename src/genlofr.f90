@@ -30,7 +30,7 @@ integer ilo,io,jo
 integer j,l,nn,info
 real(8) t1
 ! automatic arrays
-real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(3,nrmtmax)
+real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 real(8) p0(nrmtmax,maxlorbord),p1(nrmtmax)
 real(8) q0(nrmtmax,maxlorbord),q1(nrmtmax,maxlorbord)
 real(8) p0s(nrmtmax),q0s(nrmtmax),q1s(nrmtmax)

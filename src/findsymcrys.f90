@@ -102,7 +102,7 @@ do i=1,n
     nsymcrys=nsymcrys+1
     if (nsymcrys.gt.maxsymcrys) then
       write(*,*)
-      write(*,'("Error(findsymcrys): too many symmetries")')
+      write(*,'("Error(findsymcrys): too many crystal symmetries")')
       write(*,'(" Adjust maxsymcrys in modmain and recompile code")')
       write(*,*)
       stop

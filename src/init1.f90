@@ -9,6 +9,7 @@
 subroutine init1
 ! !USES:
 use modmain
+use modldapu
 use modtest
 ! !DESCRIPTION:
 !   Generates the $k$-point set and then allocates and initialises global
@@ -228,6 +229,18 @@ if (allocated(apwdfr)) deallocate(apwdfr)
 allocate(apwdfr(apwordmax,0:lmaxapw,natmtot))
 if (allocated(lofr)) deallocate(lofr)
 allocate(lofr(nrmtmax,2,nlomax,natmtot))
+
+!-------------------------!
+!     LDA+U variables     !
+!-------------------------!
+if (ldapu.ne.0) then
+! allocate energy arrays to calculate Slater integrals with Yukawa potential
+  if (allocated(flue)) deallocate(flue)
+  allocate(flue(maxapword,0:lmaxapw,natmtot))
+! allocate radial functions to calculate Slater integrals with Yukawa potential
+  if (allocated(flufr)) deallocate(flufr)
+  allocate(flufr(nrmtmax,2,apwordmax,0:lmaxapw,natmtot))
+end if
 
 !------------------------------------!
 !     secular equation variables     !
