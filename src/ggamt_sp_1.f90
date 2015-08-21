@@ -53,9 +53,10 @@ real(8), intent(out) :: g3dn(lmmaxvr,nrmtmax)
 ! local variables
 integer nr,i
 ! allocatable arrays
-real(8), allocatable :: rfmt(:,:),grfmt(:,:,:)
+real(8), allocatable :: rfmt1(:,:),rfmt2(:,:),grfmt(:,:,:)
 real(8), allocatable :: gvup(:,:,:),gvdn(:,:,:)
-allocate(rfmt(lmmaxvr,nrmtmax),grfmt(lmmaxvr,nrmtmax,3))
+allocate(rfmt1(lmmaxvr,nrmtmax),rfmt2(lmmaxvr,nrmtmax))
+allocate(grfmt(lmmaxvr,nrmtmax,3))
 allocate(gvup(lmmaxvr,nrmtmax,3),gvdn(lmmaxvr,nrmtmax,3))
 nr=nrmt(is)
 !----------------!
@@ -63,51 +64,55 @@ nr=nrmt(is)
 !----------------!
 ! convert rhoup to spherical harmonics
 call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rhoup,lmmaxvr,0.d0, &
- rfmt,lmmaxvr)
+ rfmt1,lmmaxvr)
 ! grad rhoup in spherical coordinates
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 do i=1,3
   call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
    lmmaxvr,0.d0,gvup(:,:,i),lmmaxvr)
 end do
 ! |grad rhoup|
 gup(:,1:nr)=sqrt(gvup(:,1:nr,1)**2+gvup(:,1:nr,2)**2+gvup(:,1:nr,3)**2)
-! grad^2 rhoup
-call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rfmt,g2up)
+! grad^2 rhoup in spherical coordinates
+call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rfmt1,rfmt2)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt2,lmmaxvr,0.d0, &
+ g2up,lmmaxvr)
 ! (grad rhoup).(grad |grad rhoup|)
 call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,gup,lmmaxvr,0.d0, &
- rfmt,lmmaxvr)
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
+ rfmt1,lmmaxvr)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 g3up(:,1:nr)=0.d0
 do i=1,3
   call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt,lmmaxvr)
-  g3up(:,1:nr)=g3up(:,1:nr)+gvup(:,1:nr,i)*rfmt(:,1:nr)
+   lmmaxvr,0.d0,rfmt1,lmmaxvr)
+  g3up(:,1:nr)=g3up(:,1:nr)+gvup(:,1:nr,i)*rfmt1(:,1:nr)
 end do
 !------------------!
 !     rho down     !
 !------------------!
 ! convert rhodn to spherical harmonics
 call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rhodn,lmmaxvr,0.d0, &
- rfmt,lmmaxvr)
+ rfmt1,lmmaxvr)
 ! grad rhodn in spherical coordinates
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 do i=1,3
   call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
    lmmaxvr,0.d0,gvdn(:,:,i),lmmaxvr)
 end do
 gdn(:,1:nr)=sqrt(gvdn(:,1:nr,1)**2+gvdn(:,1:nr,2)**2+gvdn(:,1:nr,3)**2)
-! grad^2 rhodn
-call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rfmt,g2dn)
+! grad^2 rhodn in spherical coordinates
+call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rfmt1,rfmt2)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt2,lmmaxvr,0.d0, &
+ g2dn,lmmaxvr)
 ! (grad rhodn).(grad |grad rhodn|)
 call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,gdn,lmmaxvr,0.d0, &
- rfmt,lmmaxvr)
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
+ rfmt1,lmmaxvr)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 g3dn(:,1:nr)=0.d0
 do i=1,3
   call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt,lmmaxvr)
-  g3dn(:,1:nr)=g3dn(:,1:nr)+gvdn(:,1:nr,i)*rfmt(:,1:nr)
+   lmmaxvr,0.d0,rfmt1,lmmaxvr)
+  g3dn(:,1:nr)=g3dn(:,1:nr)+gvdn(:,1:nr,i)*rfmt1(:,1:nr)
 end do
 !-------------!
 !     rho     !
@@ -115,18 +120,18 @@ end do
 ! |grad rho|
 grho(:,1:nr)=sqrt((gvup(:,1:nr,1)+gvdn(:,1:nr,1))**2 &
                  +(gvup(:,1:nr,2)+gvdn(:,1:nr,2))**2 &
-                 +(gvdn(:,1:nr,3)+gvdn(:,1:nr,3))**2)
+                 +(gvup(:,1:nr,3)+gvdn(:,1:nr,3))**2)
 ! (grad rho).(grad |grad rho|)
 call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,grho,lmmaxvr,0.d0, &
- rfmt,lmmaxvr)
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
+ rfmt1,lmmaxvr)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 g3rho(:,1:nr)=0.d0
 do i=1,3
   call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt,lmmaxvr)
-  g3rho(:,1:nr)=g3rho(:,1:nr)+(gvup(:,1:nr,i)+gvdn(:,1:nr,i))*rfmt(:,1:nr)
+   lmmaxvr,0.d0,rfmt1,lmmaxvr)
+  g3rho(:,1:nr)=g3rho(:,1:nr)+(gvup(:,1:nr,i)+gvdn(:,1:nr,i))*rfmt1(:,1:nr)
 end do
-deallocate(rfmt,grfmt,gvup,gvdn)
+deallocate(rfmt1,rfmt2,grfmt,gvup,gvdn)
 return
 end subroutine
 !EOC

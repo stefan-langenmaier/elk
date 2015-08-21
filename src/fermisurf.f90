@@ -80,14 +80,8 @@ if (ndmag.eq.1) then
     write(51,'(4I6," : grid size, number of states")') np3d(:),nst
     do ik=1,nkptnr
       jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
-      write(50,'(G18.10)',advance='NO') vkcnr(:,ik)
-      write(51,'(G18.10)',advance='NO') vkcnr(:,ik)
-      do ist=ist0,ist1
-        write(50,'(F14.8)',advance='NO') evalsv(ist,jk)-efermi
-        write(51,'(F14.8)',advance='NO') evalsv(nstfv+ist,jk)-efermi
-      end do
-      write(50,*)
-      write(51,*)
+      write(50,'(G18.10,40F14.8)') vkcnr(:,ik),evalsv(ist0:ist1,jk)-efermi
+      write(51,'(G18.10,40F14.8)') vkcnr(:,ik),evalsv(nstfv+ist0:ist1,jk)-efermi
     end do
   end if
   close(50)
@@ -115,11 +109,7 @@ else
     write(50,'(4I6," : grid size, number of states")') np3d(:),nst
     do ik=1,nkptnr
       jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
-      write(50,'(3G18.10)',advance='NO') vkcnr(:,ik)
-      do ist=ist0,ist1
-        write(50,'(F14.8)',advance='NO') evalsv(ist,jk)-efermi
-      end do
-      write(50,*)
+      write(50,'(3G18.10,40F14.8)') vkcnr(:,ik),evalsv(ist0:ist1,jk)-efermi
     end do
   end if
   close(50)

@@ -196,6 +196,20 @@ real(8) vqlss(3)
 ! spin-spiral q-vector in Cartesian coordinates
 real(8) vqcss(3)
 
+!---------------------------------------------!
+!     electric field and vector potential     !
+!---------------------------------------------!
+! efieldpol is .true. if a polarising constant electric field is applied
+logical efieldpol
+! electric field vector in Cartesian coordinates
+real(8) efieldc(3)
+! electric field vector in lattice coordinates
+real(8) efieldl(3)
+! afieldpol is .true. if a polarising constant vector potential is applied
+logical afieldpol
+! vector potential which couples to paramagnetic current
+real(8) afieldc(3)
+
 !----------------------------!
 !     symmetry variables     !
 !----------------------------!
@@ -265,8 +279,6 @@ complex(8), allocatable :: sfacg(:,:)
 complex(8), allocatable :: cfunig(:)
 ! real-space characteristic function: 0 inside the muffin-tins and 1 outside
 real(8), allocatable :: cfunir(:)
-! damping coefficient for characteristic function
-real(8) cfdamp
 
 !-------------------------------!
 !     k-point set variables     !
@@ -281,8 +293,15 @@ integer ngridk(3)
 integer nkpt
 ! k-point offset
 real(8) vkloff(3)
-! reducek is .true. if k-points are to be reduced (with crystal symmetries)
-logical reducek
+! type of reduction to perform on k-point set
+!  0 : no reduction
+!  1 : reduce with full crystal symmetry group
+!  2 : reduce with symmorphic symmetries only
+integer reducek
+! number of point group symmetries used for k-point reduction
+integer nsymkpt
+! point group symmetry matrices used for k-point reduction
+integer symkpt(3,3,48)
 ! locations of k-points on integer grid
 integer, allocatable :: ivk(:,:)
 ! k-points in lattice coordinates
@@ -343,8 +362,12 @@ complex(8), allocatable :: sfacgk(:,:,:,:)
 integer ngridq(3)
 ! total number of q-points
 integer nqpt
-! reduceq is .true. if q-points are to be reduced (with crystal symmetries)
-logical reduceq
+! type of reduction to perform on q-point set (see reducek)
+integer reduceq
+! number of point group symmetries used for q-point reduction
+integer nsymqpt
+! point group symmetry matrices used for q-point reduction
+integer symqpt(3,3,48)
 ! locations of q-points on integer grid
 integer, allocatable :: ivq(:,:)
 ! map from non-reduced grid to reduced set
@@ -361,18 +384,10 @@ real(8), allocatable :: wiq2(:)
 !-----------------------------------------------------!
 !     spherical harmonic transform (SHT) matrices     !
 !-----------------------------------------------------!
-! real backward SHT matrix for lmaxapw
-real(8), allocatable :: rbshtapw(:,:)
-! real forward SHT matrix for lmmaxapw
-real(8), allocatable :: rfshtapw(:,:)
 ! real backward SHT matrix for lmaxvr
 real(8), allocatable :: rbshtvr(:,:)
 ! real forward SHT matrix for lmaxvr
 real(8), allocatable :: rfshtvr(:,:)
-! complex backward SHT matrix for lmaxapw
-complex(8), allocatable :: zbshtapw(:,:)
-! complex forward SHT matrix for lmaxapw
-complex(8), allocatable :: zfshtapw(:,:)
 ! complex backward SHT matrix for lmaxvr
 complex(8), allocatable :: zbshtvr(:,:)
 ! complex forward SHT matrix for lmaxvr
@@ -438,6 +453,10 @@ character(256) mixdescr
 ! adaptive mixing parameter
 real(8) beta0
 real(8) betamax
+! muffin-tin paramagnetic current
+real(8), allocatable :: jcmt(:,:,:,:)
+! interstitial paramagnetic current
+real(8), allocatable :: jcir(:,:)
 
 !-------------------------------------!
 !     charge and moment variables     !
@@ -582,6 +601,10 @@ integer stype
 character(256) sdescr
 ! smearing width
 real(8) swidth
+! autoswidth is .true. if the smearing width is to be determined automatically
+logical autoswidth
+! effective mass used in smearing width formula
+real(8) mstar
 ! maximum allowed occupancy (1 or 2)
 real(8) occmax
 ! convergence tolerance for occupancies
@@ -590,6 +613,8 @@ real(8) epsocc
 real(8), allocatable :: occsv(:,:)
 ! Fermi energy for second-variational states
 real(8) efermi
+! scissor correction applied to the eigenvalues
+real(8) scissor
 ! density of states at the Fermi energy
 real(8) fermidos
 ! estimated band gap
@@ -656,8 +681,6 @@ real(8) engybmt
 real(8) engyx
 ! correlation energy
 real(8) engyc
-! compensating background charge energy
-real(8) engycbc
 ! electronic entropy
 real(8) entrpy
 ! entropic contribution to free energy
@@ -718,8 +741,6 @@ real(8) wdos(2)
 logical dosocc
 ! dosmsum is .true. if the partial DOS is to be summed over m
 logical dosmsum
-! scissors correction
-real(8) scissor
 ! number of optical matrix components required
 integer noptcomp
 ! required optical matrix components
@@ -872,7 +893,7 @@ real(8), parameter :: gfacte=2.0023193043622d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,0,0 /
+data version / 1,0,16 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks
@@ -885,7 +906,7 @@ integer task
 logical tstop
 ! tlast is .true. if self-consistent loop is on the last iteration
 logical tlast
-! number of iterations after which STATE.OUT is written
+! number of self-consistent loops after which STATE.OUT is written
 integer nwrite
 ! filename extension for files generated by gndstate
 character(256) filext

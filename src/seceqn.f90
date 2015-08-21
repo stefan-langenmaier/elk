@@ -28,7 +28,7 @@ real(8), intent(out) :: evalfv(nstfv,nspnfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(out) :: evecsv(nstsv,nstsv)
 ! local variables
-integer ispn
+integer ispn,ist
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
@@ -59,6 +59,12 @@ if (spinsprl) then
 else
 ! solve the second-variational secular equation
   call seceqnsv(ik,apwalm,evalfv,evecfv,evecsv)
+end if
+! apply scissor correction if required
+if (scissor.ne.0.d0) then
+  do ist=1,nstsv
+    if (evalsv(ist,ik).gt.efermi) evalsv(ist,ik)=evalsv(ist,ik)+scissor
+  end do
 end if
 deallocate(apwalm)
 return

@@ -85,9 +85,7 @@ call genapwfr
 call genlofr
 ! generate unitary matrices which convert the (l,m) basis into the irreducible
 ! representation basis of the symmetry group at each atomic site
-if (lmirep) then
-  call genlmirep(lmax,lmmax,elm,ulm)
-end if
+if (lmirep) call genlmirep(lmax,lmmax,elm,ulm)
 ! compute the SU(2) operator used for rotating the density matrix to the
 ! desired spin-quantisation axis
 v1(:)=sqados(:)
@@ -113,14 +111,14 @@ else
 end if
 ! begin parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv,apwalm) &
+!$OMP PRIVATE(apwalm,evecfv,evecsv) &
 !$OMP PRIVATE(dmat,a,dm1,dm2,t1) &
 !$OMP PRIVATE(ispn,jspn,is,ia,ias,ist,lm)
 !$OMP DO
 do ik=1,nkpt
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
-  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(dmat(lmmax,lmmax,nspinor,nspinor,nstsv))
   allocate(a(lmmax,lmmax))
 ! get the eigenvalues/vectors from file
@@ -184,7 +182,7 @@ do ik=1,nkpt
       call z2mmct(dm1,su2,sdmat(:,:,ist,ik))
     end do
   end if
-  deallocate(evecfv,evecsv,apwalm,dmat,a)
+  deallocate(apwalm,evecfv,evecsv,dmat,a)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -209,8 +207,6 @@ do ispn=1,nspinor
     do ist=1,nstsv
 ! subtract the Fermi energy
       e(ist,ik,ispn)=evalsv(ist,ik)-efermi
-! correction for scissors operator
-      if (e(ist,ik,ispn).gt.0.d0) e(ist,ik,ispn)=e(ist,ik,ispn)+scissor
 ! use diagonal of spin density matrix for weight
       f(ist,ik)=dble(sdmat(ispn,ispn,ist,ik))
       if (dosocc) f(ist,ik)=f(ist,ik)*occsv(ist,ik)/occmax

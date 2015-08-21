@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2009 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2010 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -16,7 +16,7 @@ do itask=1,ntasks
   task=tasks(itask)
   select case(task)
   case(-1)
-    write(*,'("Elk version ",I1.1,".",I2.2,".",I3.3)') version
+    write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
     stop
   case(0,1,2,3)
     call gndstate
@@ -62,6 +62,12 @@ do itask=1,ntasks
     call writeexpiqr
   case(140)
     call elnes
+  case(170)
+    call writewfpw
+  case(172)
+    call dielectricq
+  case(175)
+    call yambo
   case(190)
     call geomplot
   case(200,201)
@@ -95,7 +101,7 @@ stop
 end program
 
 !BOI
-! !TITLE: The Elk Code Manual\\ Version 1.0.0\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: The Elk Code Manual\\ Version 1.0.16\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: J. K. Dewhurst, S. Sharma, L. Nordstr\"{o}m, F. Cricchio, F. Bultmark
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -122,13 +128,13 @@ end program
 !   Nektarios Lathiotakis, Tobias Burnus, Stephan Sagmeister, Christian
 !   Meisenbichler, S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann,
 !   Alexey Baranov, Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger,
-!   Antonio Sanna, Tyrel McQueen, Tim Baldsiefen, Marty Blaber and Anton
-!   Filanovich. Special mention of David Singh's very useful book on the LAPW
-!   method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and the LAPW
-!   Method} (Kluwer Academic Publishers, Boston, 1994).} must also be made.
-!   Finally we would like to acknowledge the generous support of
-!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
-!   Training Networks initiative.
+!   Antonio Sanna, Tyrel McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich
+!   and Torbj\"{o}rn Bj\"{o}rkman. Special mention of David Singh's very useful
+!   book on the LAPW method\footnote{D. J. Singh, {\it Planewaves,
+!   Pseudopotentials and the LAPW Method} (Kluwer Academic Publishers, Boston,
+!   1994).} must also be made. Finally we would like to acknowledge the generous
+!   support of Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie
+!   Research Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -138,7 +144,7 @@ end program
 !   Fredrik Bultmark
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, January 2010
+!   Halle and Uppsala, April 2010
 !   \newpage
 !
 !   \section{Units}
@@ -159,7 +165,7 @@ end program
 !   \end{verbatim}
 !   in the {\tt elk} directory and select the appropriate system and compiler.
 !   We highly recommend that you edit the file {\tt make.inc} and tune the
-!   compiler options for your particular system. You can also make use of
+!   compiler options for your particular system. In particular, make use of
 !   machine-optimised {\tt BLAS/LAPACK} libraries if they are available, but
 !   make sure they are version $3.x$. Setting the {\sf OpenMP} options of your
 !   compiler will enable {\sf Elk} to run in parallel mode on multiprocessor
@@ -267,6 +273,28 @@ end program
 !   \hline
 !   \end{tabularx}\newline\newline
 !   See {\tt rmtapm} for details.
+!
+!   \subsection{{\tt autoswidth}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt autoswidth} & {\tt .true.} if the smearing parameter {\tt swidth} 
+!    should be determined automatically & logical & {\tt .false.} \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   Calculates the smearing width from the $k$-point density,
+!   $V_{\rm BZ}/n_k$; the valence band width, $W$; and an effective mass
+!   parameter, $m^{*}$; according to
+!   $$ \sigma=\frac{\sqrt{2W}}{m^{*}}\left(\frac{3}{4\pi}
+!    \frac{V_{\rm BZ}}{n_k}\right)^{1/3}. $$
+!   The variable {\tt mstar} then replaces {\tt swidth} as the control parameter
+!   of the smearing width. A large value of $m^{*}$ gives a narrower smearing
+!   function. Since {\tt swidth} is adjusted according to the fineness of the
+!   $\mathbf{k}$-mesh, the smearing parameter can then be eliminated. It is not
+!   recommended that {\tt autoswidth} be used in conjunction with the
+!   Fermi-Dirac smearing function, since the electronic temperature will then be
+!   a function of the $\mathbf{k}$-point mesh. See T. Bj\"orkman and
+!   O. Gr\aa n\"as, {\it Int. J. Quant. Chem.} DOI: 10.1002/qua.22476 (2010) for
+!   details. See also {\tt stype} and {\tt swidth}.
 !
 !   \subsection{{\tt avec}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -503,7 +531,10 @@ end program
 !    density and potential & real & $12.0$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   See also {\tt rgkmax}.
+!   This variable has a lower bound which is enforced by the code as follows:
+!   $$ {\rm gmaxvr}\rightarrow\max\,({\rm gmaxvr},2\times{\rm gkmax}
+!    +{\rm epslat}) $$
+!   See {\tt rgkmax}.
 !
 !   \subsection{{\tt intraband}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -699,6 +730,15 @@ end program
 !   list terminated with a blank line. Note that all three components must be
 !   specified (even for collinear calculations). See {\tt fixspin}, {\tt taufsm}
 !   and {\tt spinpol}.
+!
+!   \subsection{{\tt mstar}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt mstar} & Value of the effective mass parameter used for adaptive
+!    determination of {\tt swidth} & real & $10.0$ \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   See {\tt autoswidth}.
 !
 !   \subsection{{\tt mustar}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -958,26 +998,33 @@ end program
 !   \subsection{{\tt reducek}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt reducek} & set to {\tt .true.} if the ${\bf k}$-point set is to be
-!    reduced with the crystal symmetries & logical & {\tt .true.} \\
+!   {\tt reducek} & type of reduction of the $k$-point set & integer & 1 \\
 !   \hline
 !   \end{tabularx}\newline\newline
+!   Types of reduction are defined by the symmetry group used:
+!   \newline\newline
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!   0 & no reduction \\
+!   1 & reduce with full crystal symmetry group (including non-symmorphic
+!    symmetries) \\
+!   2 & reduce with symmorphic symmetries only, and any spin rotation has to
+!    be the same as the spatial rotation
+!   \end{tabularx}
 !   See also {\tt ngridk} and {\tt vkloff}.
 !
 !   \subsection{{\tt reduceq}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt reduceq} & set to {\tt .true.} if the ${\bf q}$-point set is to be
-!    reduced with the crystal symmetries & logical & {\tt .true.} \\
+!   {\tt reduceq} & type of reduction of the $q$-point set & integer & 1 \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   See also {\tt ngridq}.
+!   See {\tt reducek} and {\tt ngridq}.
 !
 !   \subsection{{\tt rgkmax}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt rgkmax} & $R^{\rm MT}_{\rm min}\times\max(|{\bf G}+{\bf k}|)$ & real &
-!    $7.0$ \\
+!   {\tt rgkmax} & $R^{\rm MT}_{\rm min}\times\max\{|{\bf G}+{\bf k}|\}$ &
+!    real & $7.0$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   This sets the maximum length for the ${\bf G}+{\bf k}$ vectors, defined as
@@ -1103,6 +1150,7 @@ end program
 !   2 & Methfessel-Paxton order 2 \\
 !   3 & Fermi-Dirac
 !   \end{tabularx}
+!   See also {\tt autoswidth} and {\tt swidth}. 
 !
 !   \subsection{{\tt swidth}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}

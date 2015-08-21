@@ -45,12 +45,12 @@ real(8) sc(3,3),v(3),t1
 logical done(natmmax)
 ! allocatable arrays
 real(8), allocatable :: rvfmt1(:,:,:,:),rvfmt2(:,:,:)
-allocate(rvfmt1(lmmaxvr,nrmtmax,natmmax,ndmag))
-allocate(rvfmt2(lmmaxvr,nrmtmax,ndmag))
-t1=1.d0/dble(nsymcrys)
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+allocate(rvfmt1(lmmaxvr,nrmtmax,natmmax,ndmag))
+allocate(rvfmt2(lmmaxvr,nrmtmax,ndmag))
+t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
 ! make copy of vector field for all atoms of current species
   do i=1,ndmag
@@ -150,11 +150,11 @@ do is=1,nspecies
     end if
   end do
 end do
+deallocate(rvfmt1,rvfmt2)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
 call symrvfir(ngvec,rvfir)
-deallocate(rvfmt1,rvfmt2)
 return
 end subroutine
 !EOC

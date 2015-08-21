@@ -77,6 +77,7 @@ write(60,*)
 if ((task.eq.1).or.(task.eq.3)) then
   call readstate
   write(60,'("Potential read in from STATE.OUT")')
+  if (autolinengy) call readfermi
 else if (task.eq.200) then
   call phveff
   write(60,'("Supercell potential constructed from STATE.OUT")')
@@ -160,6 +161,10 @@ do iscl=1,maxscl
 !$OMP END PARALLEL
 ! find the occupation numbers and Fermi energy
   call occupy
+  if (autoswidth) then
+    write(60,*)
+    write(60,'("New smearing width : ",G18.10)') swidth
+  end if
 ! write out the eigenvalues and occupation numbers
   call writeeval
 ! write the Fermi energy to file
@@ -396,9 +401,9 @@ end if
 timetot=timeinit+timemat+timefv+timesv+timerho+timepot+timefor
 write(60,'(" total",T40,": ",F12.2)') timetot
 write(60,*)
-write(60,'("+-----------------------------+")')
-write(60,'("| Elk version ",I1.1,".",I1.1,".",I3.3," stopped |")') version
-write(60,'("+-----------------------------+")')
+write(60,'("+----------------------------+")')
+write(60,'("| Elk version ",I1.1,".",I1.1,".",I2.2," stopped |")') version
+write(60,'("+----------------------------+")')
 ! close the INFO.OUT file
 close(60)
 ! close the TOTENERGY.OUT file

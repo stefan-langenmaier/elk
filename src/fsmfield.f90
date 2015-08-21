@@ -71,6 +71,9 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
+! if any component is >= 1000 then do not fix the moment
+      t2=sum(abs(mommtfix(:,ia,is)))
+      if (t2.ge.1000.d0) goto 10
       if (ncmag) then
         v(:)=mommtfix(:,ia,is)
       else
@@ -94,6 +97,7 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
           bxcmt(1,ir,ias,idm)=bxcmt(1,ir,ias,idm)+t1*bfsmcmt(idm,ia,is)
         end do
       end do
+10 continue
     end do
   end do
 end if

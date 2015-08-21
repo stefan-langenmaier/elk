@@ -20,9 +20,9 @@ use modmain
 implicit none
 ! local variables
 integer ik,recl
+complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:)
 complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
 ! initialise universal variables
 call init0
@@ -42,13 +42,16 @@ deallocate(pmat)
 open(50,file='PMAT.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  status='REPLACE',recl=recl)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv,apwalm,pmat)
+!$OMP PRIVATE(apwalm,evecfv,evecsv,pmat)
 !$OMP DO
 do ik=1,nkpt
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
   allocate(evecfv(nmatmax,nstfv))
   allocate(evecsv(nstsv,nstsv))
-  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
   allocate(pmat(3,nstsv,nstsv))
+!$OMP CRITICAL
+  write(*,'("Info(writepmat): ",I6," of ",I6," k-points")') ik,nkpt
+!$OMP END CRITICAL
 ! get the eigenvectors from file
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
@@ -60,7 +63,7 @@ do ik=1,nkpt
 !$OMP CRITICAL
   write(50,rec=ik) pmat
 !$OMP END CRITICAL
-  deallocate(evecfv,evecsv,apwalm,pmat)
+  deallocate(apwalm,evecfv,evecsv,pmat)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

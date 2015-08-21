@@ -21,10 +21,14 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer ik,is,ia,ias,io,ilo
-integer i1,i2,i3,ispn,iv(3)
-integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
-real(8) vl(3),vc(3),boxl(3,4),sum
+logical lsym(48)
+integer isym,is,ia,ias
+integer ik,io,ilo,iv(3)
+integer i1,i2,i3,ispn
+integer l1,l2,l3,m1,m2,m3
+integer lm1,lm2,lm3
+real(8) vl(3),vc(3)
+real(8) boxl(3,4),t1
 real(8) ts0,ts1
 ! external functions
 complex(8) gauntyry
@@ -41,6 +45,33 @@ if (molecule) then
   vkloff(:)=0.d0
   autokpt=.false.
 end if
+! store the point group symmetries for reducing the k-point set
+if (reducek.eq.0) then
+  nsymkpt=1
+  symkpt(:,:,1)=symlat(:,:,1)
+else
+  lsym(:)=.false.
+  do isym=1,nsymcrys
+    if (reducek.eq.2) then
+! check symmetry is symmorphic if required
+      t1=abs(vtlsymc(1,isym))+abs(vtlsymc(2,isym))+abs(vtlsymc(3,isym))
+      if (t1.gt.epslat) goto 10
+! check also that the spin rotation is the same as the spatial rotation
+      if (spinpol) then
+        if (lspnsymc(isym).ne.lsplsymc(isym)) goto 10
+      end if
+    end if
+    lsym(lsplsymc(isym))=.true.
+10 continue
+  end do
+  nsymkpt=0
+  do isym=1,nsymlat
+    if (lsym(isym)) then
+      nsymkpt=nsymkpt+1
+      symkpt(:,:,nsymkpt)=symlat(:,:,isym)
+    end if
+  end do
+end if
 ! setup the default k-point box
 boxl(:,1)=vkloff(:)/dble(ngridk(:))
 boxl(:,2)=boxl(:,1); boxl(:,3)=boxl(:,1); boxl(:,4)=boxl(:,1)
@@ -48,7 +79,8 @@ boxl(1,2)=boxl(1,2)+1.d0
 boxl(2,3)=boxl(2,3)+1.d0
 boxl(3,4)=boxl(3,4)+1.d0
 ! k-point set and box for Fermi surface plots
-if ((task.eq.100).or.(task.eq.101).or.(task.eq.102)) then
+if ((task.eq.100).or.(task.eq.101)) then
+  nsymkpt=0
   ngridk(:)=np3d(:)
   boxl(:,:)=vclp3d(:,:)
 end if
@@ -106,7 +138,8 @@ else
   if (allocated(ikmap)) deallocate(ikmap)
   allocate(ikmap(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
 ! generate the reduced k-point set
-  call genppts(reducek,.false.,ngridk,boxl,nkpt,ikmap,ivk,vkl,vkc,wkpt)
+  call genppts(.false.,nsymkpt,symkpt,ngridk,epslat,bvec,boxl,nkpt,ikmap,ivk, &
+   vkl,vkc,wkpt)
 ! allocate the non-reduced k-point set arrays
   nkptnr=ngridk(1)*ngridk(2)*ngridk(3)
   if (allocated(ivknr)) deallocate(ivknr)
@@ -120,8 +153,8 @@ else
   if (allocated(ikmapnr)) deallocate(ikmapnr)
   allocate(ikmapnr(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
 ! generate the non-reduced k-point set
-  call genppts(.false.,.false.,ngridk,boxl,nkptnr,ikmapnr,ivknr,vklnr,vkcnr, &
-   wkptnr)
+  call genppts(.false.,1,symkpt,ngridk,epslat,bvec,boxl,nkptnr,ikmapnr,ivknr, &
+   vklnr,vkcnr,wkptnr)
 end if
 ! write the k-points to test file
 call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
@@ -129,32 +162,6 @@ call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
 !---------------------!
 !     G+k vectors     !
 !---------------------!
-! determine gkmax from rgkmax and the muffin-tin radius
-if (nspecies.gt.0) then
-  if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
-! use user-specified muffin-tin radius
-    gkmax=rgkmax/rmt(isgkmax)
-  else if (isgkmax.eq.-1) then
-! use average muffin-tin radius
-    sum=0.d0
-    do is=1,nspecies
-      sum=sum+dble(natoms(is))*rmt(is)
-    end do
-    sum=sum/dble(natmtot)
-    gkmax=rgkmax/sum
-  else
-! use minimum muffin-tin radius
-    gkmax=rgkmax/minval(rmt(1:nspecies))
-  end if
-else
-  gkmax=rgkmax/2.d0
-end if
-if (2.d0*gkmax.gt.gmaxvr+epslat) then
-  write(*,*)
-  write(*,'("Error(init1): 2*gkmax > gmaxvr  ",2G18.10)') 2.d0*gkmax,gmaxvr
-  write(*,*)
-  stop
-end if
 ! find the maximum number of G+k-vectors
 call getngkmax
 ! allocate the G+k-vector arrays

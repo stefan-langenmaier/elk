@@ -1,27 +1,37 @@
-elk-1.0.0
--Tyrel McQueen and JKD incorporated the ETSF exchange-correlation functional library Libxc into Elk - see the manual for installation instructions. This is still an experimental feature
--Fixed problem with non-collinear GGA: this feature should still be considered as experimental
--GGA now faster and more accurate
--FC and LN included an estimation of the band gap at each iteration
--FC and LN parallelised the DOS routine
--SS updated the RDMFT code and added spectral output
--SS made the RDMFT code more memory efficient
--fixed problem with the Mössbauer hyperfine fields and in doing so also allowed the core states to be spin-polarised (use spincore=.true.)
--added a Mössbauer hyperfine field example (Fe-Mossbauer)
--removed evalmin and replaced it with a check if the lowest eigenvalue is less than the lowest linearisation energy
--Marty Blaber parallelised part of the dielectric routine and JKD also parallelised the generation of momentum matrix elements
--FC and LN fixed a symmetry problem when using reducebf
--FC and LN included the possibility of summing the partial DOS over m: just set dossum=.true. and the PDOS files will only contain the l-resolved DOS
--fixed linearisation energies can now be determined automatically thanks to FC: just set autolinengy=.true.
--Important: gkmax is now determined from rgkmax using the average muffin-tin radius, rather than the smallest
--completely removed the species program and incorporated the code directly into Elk. See the species directory and the ununhexium example
--improved and regenerated all the species files (thanks to discussions with S. Massidda) and set all atomic masses to best known values
--improved the spherical covering used for the spherical harmonic transforms (SHT): replaced the "Saff and Kuilaars" spiral with the "golden section" spiral. This results in faster convergence with respect to lmax
--removed the input variable vacuum: the box containing the molecule now has to be set up by the user when molecule=.true.. See the NaCl-monomer example
--bfcmt read in after the atomic positions in the atoms block is now optional
--alphabetised the list of subroutines in the Elk manual and added hyperlinks
--various optimisations and simplifications
--enabled the Elk Wiki pages: Anton Kozhevnikov is the Wiki administrator
--upgraded license to GPL version 3
--Elk now officially out of beta
+elk-1.0.16
+-fixed problem in linear optics calculations for metals - thanks to Antonio
+ Sanna, Fabio Bernardini and Sandro Massida for pointing this out
+-FC and LN added option for automatic determination of APW linearisation
+ energies (use 'autolinengy=.true.')
+-Marty Blaber made a script which allows for semi-automatic labeling of the
+ vertex locations with gnuplot (found in the 'elk/utilities' directory)
+-FC and LN fixed problem with some compilers when writing FERMISURF.OUT
+-FC and LN fixed problem with writing XCrysDen Fermi surface plots
+-Anton Kozhevnikov found and fixed a problem with the generation of the
+ irreducible representation file 'ELMIREP.OUT'
+-Torbjörn Björkman added a new routine which automatically determines the
+ smearing width from the k-point density. See 'autoswidth' in the manual and
+ the example 'Nb-autoswidth' for details
+-added a constant electric field E in the form of a saw-tooth potential: set the
+ vector 'efieldc' (experimental)
+-added a constant vector potential A to the Hamiltonian to generate constant
+ currents: set the variable 'afieldc' (experimental)
+-FC and LN fixed problem with a spin-polarised GGA routine
+-FC and LN pointed out that the energy term associated with the excess charge
+ compensating background should be zero. This term has now been removed
+-code now more memory efficient thanks to smarter array allocation
+-the variable 'rgkmax' can now be made arbitrarily large without risk of
+ instability
+-removed variable 'cfdamp'
+-Anton Kozhevnikov pointed out that the radial functions were being redundantly
+ calculated for equivalent atoms -- now fixed
+-Anton Filanovich added several questions to the FAQ
+-scissors correction (given by the variable 'scissor') now applied consistently
+ immediately after the generation of the eigenvalues
+-FC and LN removed the spherical harmonic transform matrices with rank lmmaxapw
+-added dielectric function calculation for arbitrary q-vector, see 'LiF-Yambo'
+ example (experimental)
+-by setting 'gmaxvr=0', the G-vector cut-off for the potential and density is
+ automatically determined from 'gmaxvr=2*gkmax+epslat'
+-various bug fixes, simplifications and optimisations
 

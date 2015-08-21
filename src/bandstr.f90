@@ -86,8 +86,6 @@ do ik=1,nkpt
   do ist=1,nstsv
 ! subtract the Fermi energy
     e(ist,ik)=evalsv(ist,ik)-efermi
-! add scissors correction
-    if (e(ist,ik).gt.0.d0) e(ist,ik)=e(ist,ik)+scissor
 !$OMP CRITICAL
     emin=min(emin,e(ist,ik))
     emax=max(emax,e(ist,ik))

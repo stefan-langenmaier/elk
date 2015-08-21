@@ -31,7 +31,7 @@ use modmain
 implicit none
 ! local variables
 integer is,ia,ig,ifg
-real(8) t1,t2
+real(8) t1
 complex(8) zt1
 ! allocatable arrays
 real(8), allocatable :: ffacg(:)
@@ -45,24 +45,16 @@ if (allocated(cfunir)) deallocate(cfunir)
 allocate(cfunir(ngrtot))
 cfunig(:)=0.d0
 cfunig(1)=1.d0
-t1=fourpi/omega
 ! begin loop over species
 do is=1,nspecies
-! smooth step function form factors for each species
-  do ig=1,ngrtot
-    if (gc(ig).gt.epslat) then
-      t2=gc(ig)*rmt(is)
-      ffacg(ig)=t1*(sin(t2)-t2*cos(t2))/(gc(ig)**3)
-    else
-      ffacg(ig)=(t1/3.d0)*rmt(is)**3
-    end if
-  end do
+! generate the smooth step function form factors
+  call genffacg(is,ngrtot,ffacg)
 ! loop over atoms
   do ia=1,natoms(is)
     do ig=1,ngrtot
 ! structure factor
-      t2=-dot_product(vgc(:,ig),atposc(:,ia,is))
-      zt1=cmplx(cos(t2),sin(t2),8)
+      t1=-dot_product(vgc(:,ig),atposc(:,ia,is))
+      zt1=cmplx(cos(t1),sin(t1),8)
 ! add to characteristic function in G-space
       cfunig(ig)=cfunig(ig)-zt1*ffacg(ig)
     end do
@@ -75,14 +67,6 @@ end do
 ! Fourier transform to real-space
 call zfftifc(3,ngrid,1,zfft)
 cfunir(:)=dble(zfft(:))
-! damp the characteristic function in G-space if required
-if (cfdamp.gt.0.d0) then
-  t1=cfdamp/gmaxvr
-  do ig=1,ngrtot
-    t2=exp(-(t1*gc(ig))**2)
-    cfunig(ig)=cfunig(ig)*t2
-  end do
-end if
 deallocate(ffacg,zfft)
 return
 end subroutine

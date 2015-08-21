@@ -39,12 +39,12 @@ real(8) t1
 logical done(natmmax)
 ! allocatable arrays
 real(8), allocatable :: rfmt1(:,:,:),rfmt2(:,:)
-allocate(rfmt1(lmmaxvr,nrmtmax,natmmax))
-allocate(rfmt2(lmmaxvr,nrmtmax))
-t1=1.d0/dble(nsymcrys)
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+allocate(rfmt1(lmmaxvr,nrmtmax,natmmax))
+allocate(rfmt2(lmmaxvr,nrmtmax))
+t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
 ! make a copy of the input function
   do ia=1,natoms(is)
@@ -95,11 +95,11 @@ do is=1,nspecies
     end if
   end do
 end do
+deallocate(rfmt1,rfmt2)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
 call symrfir(ngvec,rfir)
-deallocate(rfmt1,rfmt2)
 return
 end subroutine
 !EOC

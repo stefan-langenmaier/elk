@@ -149,9 +149,9 @@ if (tfibs) then
       end do
     end do
   end do
-! generate the step function form factors
+! generate the smooth step function form factors
   do is=1,nspecies
-    call genffacg(is,ffacg(:,is))
+    call genffacg(is,ngvec,ffacg(:,is))
   end do
 ! compute k-point dependent contribution to the IBS force
 !$OMP PARALLEL DEFAULT(SHARED)

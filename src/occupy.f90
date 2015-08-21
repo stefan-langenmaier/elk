@@ -17,6 +17,7 @@ use modtest
 ! !REVISION HISTORY:
 !   Created February 2004 (JKD)
 !   Added gap estimation, November 2009 (F. Cricchio)
+!   Added adaptive smearing width, April 2010 (T. Bjorkman)
 !EOP
 !BOC
 implicit none
@@ -27,6 +28,8 @@ real(8) e0,e1,e,chg,x,t1
 ! external functions
 real(8) sdelta,stheta
 external sdelta,stheta
+! determine the smearing width automatically if required
+if ((autoswidth).and.(iscl.gt.1)) call findswidth
 ! find minimum and maximum eigenvalues
 e0=evalsv(1,1)
 e1=e0

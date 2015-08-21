@@ -1,0 +1,63 @@
+
+! Optical spectrum of lithium fluoride.
+
+! This produces both the Elk dielectric response for all q as well as the files
+! required by Yambo.
+
+tasks
+ 0
+ 170
+ 172
+ 175
+
+! q-point grid (note that the q-point are all in the first Brillouin zone)
+ngridq
+ 4  4  4
+
+reducek
+ 2
+
+mixtype
+ 2
+
+dos
+ 300 100 0
+ 0.0 2.0
+
+lmaxapw
+ 10
+
+lmaxvr
+ 8
+
+rgkmax
+ 12.0
+
+gmaxvr
+ 20.0
+
+nempty
+ 30
+
+lradstp
+  2
+
+avec
+  3.80402   3.80402   0.00000
+  3.80402   0.00000   3.80402
+  0.00000   3.80402   3.80402
+
+sppath
+  '../../species/'
+
+atoms
+  2                                       : nspecies
+  'Li.in'                                 : spfname
+  1                                       : natoms
+  0.0000  0.0000  0.0000    0.0 0.0 0.0   : atposl, bfcmt
+  'F.in'                                  : spfname
+  1                                       : natoms
+  0.5000  0.5000  0.5000    0.0 0.0 0.0   : atposl, bfcmt
+
+ngridk
+ 4  4  4

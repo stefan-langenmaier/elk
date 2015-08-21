@@ -34,7 +34,7 @@ real(8), intent(out) :: c(np)
 real(8), intent(in) :: x
 ! local variables
 integer i,j,k
-real(8) x0,x1,x2,x3,y1,y2,y3
+real(8) x1,x2,x3,y1,y2,y3
 real(8) t1,t2,t3,t4,t5,t6,t7,sum
 ! fast evaluations for small np
 select case(np)
@@ -149,12 +149,12 @@ if (m.eq.0) then
   polynom=sum
   return
 end if
-x0=xa(1)
+x1=xa(1)
 ! convert to standard form
 do j=1,np-1
   do i=1,np-j
     k=np-i
-    c(k)=c(k)+(x0-xa(k-j+1))*c(k+1)
+    c(k)=c(k)+(x1-xa(k-j+1))*c(k+1)
   end do
 end do
 if (m.gt.0) then
@@ -165,7 +165,7 @@ if (m.gt.0) then
     end do
   end do
   t1=c(np)
-  t2=x-x0
+  t2=x-x1
   do i=np-1,m+1,-1
     t1=t1*t2+c(i)
   end do
@@ -173,7 +173,7 @@ if (m.gt.0) then
 else
 ! find the integral
   t1=c(np)/dble(np)
-  t2=x-x0
+  t2=x-x1
   do i=np-1,1,-1
     t1=t1*t2+c(i)/dble(i)
   end do

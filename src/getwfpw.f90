@@ -1,0 +1,115 @@
+
+! Copyright (C) 2010 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
+! This file is distributed under the terms of the GNU General Public License.
+! See the file COPYING for license details.
+
+subroutine getwfpw(vpl,vgpl,wfpw)
+use modmain
+implicit none
+! arguments
+real(8), intent(in) :: vpl(3)
+real(8), intent(in) :: vgpl(3,ngkmax)
+complex(8), intent(out) :: wfpw(ngkmax,nspinor,nstsv)
+! local variables
+integer isym,lspl,ilspl,lspn
+integer ik,igp,igk,ig,ist
+integer recl,ngkmax_,nspinor_,nstsv_
+real(8) vkl_(3),det,v(3),th
+real(8) si(3,3),t1
+complex(8) su2(2,2),zt1,zt2
+! allocatable arrays
+complex(8), allocatable :: wfpwt(:,:,:)
+! find the equivalent k-point number and crystal symmetry element
+call findkpt(vpl,isym,ik)
+! index to spatial rotation in lattice point group
+lspl=lsplsymc(isym)
+! find the record length
+inquire(iolength=recl) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
+!$OMP CRITICAL
+open(80,file='WFPW'//trim(filext),action='READ',form='UNFORMATTED', &
+ access='DIRECT',recl=recl)
+read(80,rec=ik) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
+close(80)
+!$OMP END CRITICAL
+t1=abs(vkl(1,ik)-vkl_(1))+abs(vkl(2,ik)-vkl_(2))+abs(vkl(3,ik)-vkl_(3))
+if (t1.gt.epslat) then
+  write(*,*)
+  write(*,'("Error(getwfpw): differing vectors for k-point ",I8)') ik
+  write(*,'(" current  : ",3G18.10)') vkl(:,ik)
+  write(*,'(" WFPW.OUT : ",3G18.10)') vkl_
+  write(*,*)
+  stop
+end if
+if (ngkmax.ne.ngkmax_) then
+  write(*,*)
+  write(*,'("Error(getwfpw): differing nmatmax for k-point ",I8)') ik
+  write(*,'(" current  : ",I8)') ngkmax
+  write(*,'(" WFPW.OUT : ",I8)') ngkmax_
+  write(*,*)
+  stop
+end if
+if (nspinor.ne.nspinor_) then
+  write(*,*)
+  write(*,'("Error(getwfpw): differing nspinor for k-point ",I8)') ik
+  write(*,'(" current  : ",I8)') nspinor
+  write(*,'(" WFPW.OUT : ",I8)') nspinor_
+  write(*,*)
+  stop
+end if
+if (nstsv.ne.nstsv_) then
+  write(*,*)
+  write(*,'("Error(getwfpw): differing nstsv for k-point ",I8)') ik
+  write(*,'(" current  : ",I8)') nstsv
+  write(*,'(" WFPW.OUT : ",I8)') nstsv_
+  write(*,*)
+  stop
+end if
+! if p = k then return
+t1=abs(vpl(1)-vkl(1,ik))+abs(vpl(2)-vkl(2,ik))+abs(vpl(3)-vkl(3,ik))
+if (t1.lt.epslat) return
+! allocate temparory wavefunction array
+allocate(wfpwt(ngkmax,nspinor,nstsv))
+! apply translation operation
+do igk=1,ngk(1,ik)
+  ig=igkig(igk,1,ik)
+  v(:)=dble(ivg(:,ig))
+  t1=-twopi*dot_product(v(:),vtlsymc(:,isym))
+  zt1=cmplx(cos(t1),sin(t1),8)
+  wfpwt(igk,:,:)=zt1*wfpw(igk,:,:)
+end do
+! the inverse of the spatial symmetry rotates k into p
+ilspl=isymlat(lspl)
+si(:,:)=dble(symlat(:,:,ilspl))
+! apply spatial rotation operation (passive transformation)
+do igk=1,ngk(1,ik)
+  call r3mtv(si,vgkl(:,igk,1,ik),v)
+  do igp=1,ngk(1,ik)
+    t1=abs(v(1)-vgpl(1,igp))+abs(v(2)-vgpl(2,igp))+abs(v(3)-vgpl(3,igp))
+    if (t1.lt.epslat) then
+      wfpw(igp,:,:)=wfpwt(igk,:,:)
+      goto 10
+    end if
+  end do
+10 continue
+end do
+! apply spin rotation if required
+if (spinpol) then
+! index to global spin rotation in lattice point group
+  lspn=lspnsymc(isym)
+! find the SU(2) representation of the spin rotation matrix
+  call rotaxang(epslat,symlatc(:,:,lspn),det,v,th)
+  call axangsu2(v,th,su2)
+! apply SU(2) matrix to spinor wavefunctions (active transformation)
+  do ist=1,nstsv
+    do igp=1,ngk(1,ik)
+      zt1=wfpw(igp,1,ist)
+      zt2=wfpw(igp,2,ist)
+      wfpw(igp,1,ist)=su2(1,1)*zt1+su2(1,2)*zt2
+      wfpw(igp,2,ist)=su2(2,1)*zt1+su2(2,2)*zt2
+    end do
+  end do
+end if
+deallocate(wfpwt)
+return
+end subroutine
+

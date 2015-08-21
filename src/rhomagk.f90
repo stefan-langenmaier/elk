@@ -43,8 +43,9 @@ integer ir,irc,itp,igk,ifg,i,j,n
 real(8) wo,t1,t2,t3
 real(8) ts0,ts1
 complex(8) zq(2),zt1,zt2,zt3
+! automatic arrays
+logical done(nstfv,nspnfv)
 ! allocatable arrays
-logical, allocatable :: done(:,:)
 real(8), allocatable :: rfmt(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: wfmt1(:,:)
@@ -61,21 +62,19 @@ if (spinpol) then
 else
   nsd=1
 end if
-allocate(done(nstfv,nspnfv))
+!----------------------------!
+!     muffin-tin density     !
+!----------------------------!
 allocate(rfmt(lmmaxvr,nrcmtmax,nsd))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
 allocate(wfmt1(lmmaxvr,nrcmtmax))
 if (tevecsv) allocate(wfmt2(lmmaxvr,nrcmtmax,nstfv,nspnfv))
 allocate(wfmt3(lmmaxvr,nrcmtmax,nspinor))
-allocate(zfft(ngrtot,nspinor))
 ! find the matching coefficients
 do ispn=1,nspnfv
   call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
    sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
 end do
-!----------------------------!
-!     muffin-tin density     !
-!----------------------------!
 do is=1,nspecies
   n=lmmaxvr*nrcmt(is)
   do ia=1,natoms(is)
@@ -177,9 +176,12 @@ do is=1,nspecies
     end do
   end do
 end do
+deallocate(rfmt,apwalm,wfmt1,wfmt3)
+if (tevecsv) deallocate(wfmt2)
 !------------------------------!
 !     interstitial density     !
 !------------------------------!
+allocate(zfft(ngrtot,nspinor))
 do j=1,nstsv
   wo=wkpt(ik)*occsv(j,ik)
   if (abs(wo).gt.epsocc) then
@@ -244,8 +246,7 @@ do j=1,nstsv
 !$OMP END CRITICAL
   end if
 end do
-deallocate(done,rfmt,apwalm,wfmt1,wfmt3,zfft)
-if (tevecsv) deallocate(wfmt2)
+deallocate(zfft)
 call timesec(ts1)
 !$OMP CRITICAL
 timerho=timerho+ts1-ts0

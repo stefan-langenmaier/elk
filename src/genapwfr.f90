@@ -22,83 +22,99 @@ use modmain
 !
 ! !REVISION HISTORY:
 !   Created March 2003 (JKD)
+!   Copied to equivalent atoms, February 2010 (A. Kozhevnikov and JKD)
 !EOP
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,nr,ir
-integer nn,l,io,jo
+integer is,ia,ja,ias,jas
+integer nr,ir,nn,l,io,jo
 real(8) t1
 ! automatic arrays
+logical done(natmmax)
 real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
 real(8) p0(nrmtmax,apwordmax),p1(nrmtmax),p1s(apwordmax)
 real(8) q0(nrmtmax,apwordmax),q1(nrmtmax,apwordmax)
 real(8) hp0(nrmtmax)
 do is=1,nspecies
   nr=nrmt(is)
+  done(:)=.false.
   do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    vr(1:nr)=veffmt(1,1:nr,ias)*y00
-    do l=0,lmaxapw
-      do io=1,apword(l,is)
+    if (.not.done(ia)) then
+      ias=idxas(ia,is)
+! use spherical part of potential
+      vr(1:nr)=veffmt(1,1:nr,ias)*y00
+      do l=0,lmaxapw
+        do io=1,apword(l,is)
 ! integrate the radial Schrodinger equation
-        call rschroddme(solsc,apwdm(io,l,is),l,0,apwe(io,l,ias),nprad,nr, &
-         spr(:,is),vr,nn,p0(:,io),p1,q0(:,io),q1(:,io))
+          call rschroddme(solsc,apwdm(io,l,is),l,0,apwe(io,l,ias),nprad,nr, &
+           spr(:,is),vr,nn,p0(:,io),p1,q0(:,io),q1(:,io))
 ! normalise radial functions
-        do ir=1,nr
-          fr(ir)=p0(ir,io)**2
-        end do
-        call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-        t1=1.d0/sqrt(abs(gr(nr)))
-        p0(1:nr,io)=t1*p0(1:nr,io)
-        p1s(io)=t1*p1(nr)
-        q0(1:nr,io)=t1*q0(1:nr,io)
-        q1(1:nr,io)=t1*q1(1:nr,io)
-! subtract linear combination of previous vectors
-        do jo=1,io-1
-          do ir=1,nr
-            fr(ir)=p0(ir,io)*p0(ir,jo)
-          end do
+          fr(1:nr)=p0(1:nr,io)**2
           call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-          t1=gr(nr)
-          p0(1:nr,io)=p0(1:nr,io)-t1*p0(1:nr,jo)
-          p1s(io)=p1s(io)-t1*p1s(jo)
-          q0(1:nr,io)=q0(1:nr,io)-t1*q0(1:nr,jo)
-          q1(1:nr,io)=q1(1:nr,io)-t1*q1(1:nr,jo)
-        end do
+          t1=1.d0/sqrt(abs(gr(nr)))
+          p0(1:nr,io)=t1*p0(1:nr,io)
+          p1s(io)=t1*p1(nr)
+          q0(1:nr,io)=t1*q0(1:nr,io)
+          q1(1:nr,io)=t1*q1(1:nr,io)
+! subtract linear combination of previous vectors
+          do jo=1,io-1
+            fr(1:nr)=p0(1:nr,io)*p0(1:nr,jo)
+            call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+            t1=gr(nr)
+            p0(1:nr,io)=p0(1:nr,io)-t1*p0(1:nr,jo)
+            p1s(io)=p1s(io)-t1*p1s(jo)
+            q0(1:nr,io)=q0(1:nr,io)-t1*q0(1:nr,jo)
+            q1(1:nr,io)=q1(1:nr,io)-t1*q1(1:nr,jo)
+          end do
 ! normalise radial functions
-        do ir=1,nr
-          fr(ir)=p0(ir,io)**2
-        end do
-        call fderiv(-1,nr,spr(:,is),fr,gr,cf)
-        t1=abs(gr(nr))
-        if (t1.lt.1.d-20) then
-          write(*,*)
-          write(*,'("Error(genapwfr): degenerate APW radial functions")')
-          write(*,'(" for species ",I4)') is
-          write(*,'(" atom ",I4)') ia
-          write(*,'(" angular momentum ",I4)') l
-          write(*,'(" and order ",I4)') io
-          write(*,*)
-          stop
-        end if
-        t1=1.d0/sqrt(t1)
-        p0(1:nr,io)=t1*p0(1:nr,io)
-        p1s(io)=t1*p1s(io)
-        q0(1:nr,io)=t1*q0(1:nr,io)
-        q1(1:nr,io)=t1*q1(1:nr,io)
+          fr(1:nr)=p0(1:nr,io)**2
+          call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+          t1=abs(gr(nr))
+          if (t1.lt.1.d-20) then
+            write(*,*)
+            write(*,'("Error(genapwfr): degenerate APW radial functions")')
+            write(*,'(" for species ",I4)') is
+            write(*,'(" atom ",I4)') ia
+            write(*,'(" angular momentum ",I4)') l
+            write(*,'(" and order ",I4)') io
+            write(*,*)
+            stop
+          end if
+          t1=1.d0/sqrt(t1)
+          p0(1:nr,io)=t1*p0(1:nr,io)
+          p1s(io)=t1*p1s(io)
+          q0(1:nr,io)=t1*q0(1:nr,io)
+          q1(1:nr,io)=t1*q1(1:nr,io)
 ! apply the Hamiltonian
-        call rschrodapp(solsc,l,nr,spr(:,is),vr,p0(:,io),q0(:,io),q1(:,io),hp0)
+          call rschrodapp(solsc,l,nr,spr(:,is),vr,p0(:,io),q0(:,io),q1(:,io), &
+           hp0)
 ! divide by r and store in global array
-        do ir=1,nr
-          t1=1.d0/spr(ir,is)
-          apwfr(ir,1,io,l,ias)=t1*p0(ir,io)
-          apwfr(ir,2,io,l,ias)=t1*hp0(ir)
-        end do
+          do ir=1,nr
+            t1=1.d0/spr(ir,is)
+            apwfr(ir,1,io,l,ias)=t1*p0(ir,io)
+            apwfr(ir,2,io,l,ias)=t1*hp0(ir)
+          end do
 ! derivative at the muffin-tin surface
-        apwdfr(io,l,ias)=(p1s(io)-p0(nr,io)*t1)*t1
+          apwdfr(io,l,ias)=(p1s(io)-p0(nr,io)*t1)*t1
+        end do
       end do
-    end do
+      done(ia)=.true.
+! copy to equivalent atoms
+      do ja=1,natoms(is)
+        if ((.not.done(ja)).and.(eqatoms(ia,ja,is))) then
+          jas=idxas(ja,is)
+          do l=0,lmaxapw
+            do io=1,apword(l,is)
+              apwfr(1:nr,1,io,l,jas)=apwfr(1:nr,1,io,l,ias)
+              apwfr(1:nr,2,io,l,jas)=apwfr(1:nr,2,io,l,ias)
+              apwdfr(io,l,jas)=apwdfr(io,l,ias)
+            end do
+          end do
+          done(ja)=.true.
+        end if
+      end do
+    end if
   end do
 end do
 return

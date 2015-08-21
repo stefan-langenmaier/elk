@@ -13,7 +13,7 @@ real(8), intent(out) :: elm(ld,natmtot)
 complex(8), intent(out) :: ulm(ld,ld,natmtot)
 ! local variables
 integer is,ia,ias
-integer lmmax,i,j,l,lm,n
+integer lmmax,i,j,l,lm,n,p
 integer isym,lspl,info,lwork
 ! allocatable arrays
 real(8), allocatable :: rwork(:)
@@ -36,14 +36,17 @@ end do
 do isym=1,nsymlat
   call rotzflm(symlatc(:,:,isym),lmax,lmmax,lmmax,a,ulat(:,:,isym))
 end do
-! set up quasi-random symmetric matrix H
+! set up pseudorandom symmetric matrix H
 h(:,:)=0.d0
+p=1
 do l=0,lmax
   n=2*l+1
   lm=idxlm(l,-l)
   do i=lm,lm+n-1
     do j=i,lm+n-1
-      h(i,j)=dble(i*j)
+! Park and Miller linear congruential generator
+      p=mod(p*171,30269)
+      h(i,j)=mod(p,lmmax)
       h(j,i)=h(i,j)
     end do
   end do

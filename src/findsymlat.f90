@@ -31,8 +31,7 @@ real(8) s(3,3),g(3,3),sgs(3,3)
 real(8) c(3,3),v(3),t1
 ! external functions
 integer i3mdet
-real(8) r3taxi
-external i3mdet,r3taxi
+external i3mdet
 ! determine metric tensor
 call r3mtm(avec,avec,g)
 ! loop over all possible symmetry matrices
@@ -59,7 +58,13 @@ do i31=-1,1; do i32=-1,1; do i33=-1,1
 ! check invariance of spin-spiral q-vector if required
   if (spinsprl) then
     call r3mtv(s,vqlss,v)
-    t1=r3taxi(vqlss,v)
+    t1=abs(vqlss(1)-v(1))+abs(vqlss(2)-v(2))+abs(vqlss(3)-v(3))
+    if (t1.gt.epslat) goto 10
+  end if
+! check invariance of electric field if required
+  if (efieldpol) then
+    call r3mv(s,efieldl,v)
+    t1=abs(efieldl(1)-v(1))+abs(efieldl(2)-v(2))+abs(efieldl(3)-v(3))
     if (t1.gt.epslat) goto 10
   end if
   nsymlat=nsymlat+1

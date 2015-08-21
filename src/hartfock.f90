@@ -247,9 +247,9 @@ if ((.not.tstop).and.(task.eq.6)) then
 end if
 30 continue
 write(60,*)
-write(60,'("+-----------------------------+")')
-write(60,'("| Elk version ",I1.1,".",I1.1,".",I3.3," stopped |")') version
-write(60,'("+-----------------------------+")')
+write(60,'("+----------------------------+")')
+write(60,'("| Elk version ",I1.1,".",I1.1,".",I2.2," stopped |")') version
+write(60,'("+----------------------------+")')
 ! close the INFO.OUT file
 close(60)
 ! close the TOTENERGY.OUT file

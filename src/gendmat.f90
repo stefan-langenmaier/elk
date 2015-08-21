@@ -27,10 +27,10 @@ integer i,j,n,ist,irc
 real(8) t1,t2
 complex(8) zq(2),zt1
 ! automatic arrays
+logical done(nstfv,nspnfv)
 real(8) fr1(nrcmtmax),fr2(nrcmtmax)
 real(8) gr(nrcmtmax),cf(4,nrcmtmax)
 ! allocatable arrays
-logical, allocatable :: done(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:)
 complex(8), allocatable :: wfmt2(:,:,:)
 if (lmin.lt.0) then
@@ -47,7 +47,6 @@ if (lmax.gt.lmaxapw) then
 end if
 lmmax=(lmax+1)**2
 ! allocate local arrays
-allocate(done(nstfv,nspnfv))
 allocate(wfmt1(lmmax,nrcmtmax,nstfv,nspnfv))
 allocate(wfmt2(lmmax,nrcmtmax,nspinor))
 ! de-phasing factor for spin-spirals
@@ -120,7 +119,7 @@ do j=1,nstsv
   end do
 ! end loop over second-variational states
 end do
-deallocate(done,wfmt1,wfmt2)
+deallocate(wfmt1,wfmt2)
 return
 end subroutine
 

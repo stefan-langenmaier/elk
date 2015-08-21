@@ -40,9 +40,9 @@ end do
 rhoir(:)=rhoir(:)+t1
 ! add the difference to the charges
 do is=1,nspecies
+  t2=t1*(4.d0*pi/3.d0)*rmt(is)**3
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    t2=t1*(4.d0*pi/3.d0)*rmt(is)**3
     chgmt(ias)=chgmt(ias)+t2
     chgmttot=chgmttot+t2
   end do

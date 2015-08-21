@@ -23,6 +23,7 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer ist,l,m,lm,iv(3)
+real(8) sum
 real(8) ts0,ts1
 
 !-------------------------------!
@@ -180,15 +181,17 @@ bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero
 bfsmcmt(:,:,:)=0.d0
 
-!-------------------------------------!
-!     lattice and symmetry set up     !
-!-------------------------------------!
+!----------------------------------!
+!     crystal structure set up     !
+!----------------------------------!
 ! generate the reciprocal lattice vectors and unit cell volume
 call reciplat
 ! compute the inverse of the lattice vector matrix
 call r3minv(avec,ainv)
 ! compute the inverse of the reciprocal vector matrix
 call r3minv(bvec,binv)
+! Cartesian coordinates of the spin-spiral vector
+call r3mv(bvec,vqlss,vqcss)
 do is=1,nspecies
   do ia=1,natoms(is)
 ! map atomic lattice coordinates to [0,1) if not in molecule mode
@@ -197,8 +200,33 @@ do is=1,nspecies
     call r3mv(avec,atposl(:,ia,is),atposc(:,ia,is))
   end do
 end do
-! Cartesian coordinates of the spin-spiral vector
-call r3mv(bvec,vqlss,vqcss)
+! automatically determine the muffin-tin radii if required
+if (autormt) call autoradmt
+! check for overlapping muffin-tins
+call checkmt
+
+!-------------------------------!
+!     vector fields E and A     !
+!-------------------------------!
+efieldpol=.false.
+if ((abs(efieldc(1)).gt.epslat).or.(abs(efieldc(2)).gt.epslat).or. &
+ (abs(efieldc(3)).gt.epslat)) then
+  efieldpol=.true.
+  tshift=.false.
+! electric field vector in lattice coordinates
+  call r3mv(ainv,efieldc,efieldl)
+end if
+afieldpol=.false.
+if ((abs(afieldc(1)).gt.epslat).or.(abs(afieldc(2)).gt.epslat).or. &
+ (abs(afieldc(3)).gt.epslat)) then
+  afieldpol=.true.
+! vector potential added in second-variational step
+  tevecsv=.true.
+end if
+
+!---------------------------------!
+!     crystal symmetry set up     !
+!---------------------------------!
 ! find Bravais lattice symmetries
 call findsymlat
 ! use only the identity if required
@@ -207,10 +235,6 @@ if (nosym) nsymlat=1
 call findsymcrys
 ! find the site symmetries
 call findsymsite
-! automatically determine the muffin-tin radii if required
-if (autormt) call autoradmt
-! check for overlapping muffin-tins
-call checkmt
 ! check if fixed spin moments are invariant under the symmetry group
 call checkfsm
 
@@ -270,6 +294,27 @@ rwigner=(3.d0/(fourpi*(chgtot/omega)))**(1.d0/3.d0)
 !-------------------------!
 !     G-vector arrays     !
 !-------------------------!
+! determine gkmax from rgkmax and the muffin-tin radius
+if (nspecies.gt.0) then
+  if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
+! use user-specified muffin-tin radius
+    gkmax=rgkmax/rmt(isgkmax)
+  else if (isgkmax.eq.-1) then
+! use average muffin-tin radius
+    sum=0.d0
+    do is=1,nspecies
+      sum=sum+dble(natoms(is))*rmt(is)
+    end do
+    sum=sum/dble(natmtot)
+    gkmax=rgkmax/sum
+  else
+! use minimum muffin-tin radius
+    gkmax=rgkmax/minval(rmt(1:nspecies))
+  end if
+else
+  gkmax=rgkmax/2.d0
+end if
+gmaxvr=max(gmaxvr,2.d0*gkmax+epslat)
 ! find the G-vector grid sizes
 call gridsize
 ! generate the G-vectors
@@ -439,8 +484,7 @@ allocate(dpp1d(npp1d))
 iscl=0
 tlast=.false.
 ! if reducebf < 1 then reduce the external magnetic fields immediately for
-! non-self-consistent calculations (but not so small that they are overlooked by
-! the symmetry routines)
+! non-self-consistent calculations
 if ((reducebf.lt.1.d0).and.(task.gt.3)) then
   bfieldc(:)=0.d0
   bfcmt(:,:,:)=0.d0

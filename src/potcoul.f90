@@ -62,6 +62,8 @@ do is=1,nspecies
 end do
 ! store complex interstitial potential in real array
 vclir(:)=dble(zvclir(:))
+! apply constant electric field if required
+if (efieldpol) call potefield
 deallocate(jlgr,zrhomt,zrhoir,zvclmt,zvclir)
 return
 end subroutine

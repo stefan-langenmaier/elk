@@ -19,7 +19,8 @@ use modmain
 !            (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot))
 !   evecfv : first-variational eigenvector (in,complex(nmatmax))
 !   ld     : leading dimension (in,integer)
-!   wfmt   : muffin-tin wavefunction (out,complex(ld,*))
+!   wfmt   : complex muffin-tin wavefunction passed in as real array
+!            (out,real(2,ld,*))
 ! !DESCRIPTION:
 !   Calculates the first-variational wavefunction in the muffin-tin in terms of
 !   a spherical harmonic expansion. For atom $\alpha$ and a particular $k$-point
@@ -53,10 +54,12 @@ integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: evecfv(nmatmax)
 integer, intent(in) :: ld
-complex(8), intent(out) :: wfmt(ld,*)
+real(8), intent(out) :: wfmt(2,ld,*)
 ! local variables
-integer ias,l,m,lm,i
+integer ias,l,m,lm,ld2
 integer ir,nr,io,ilo
+! values smaller than eps are taken to be zero
+real(8), parameter :: eps=1.d-14
 complex(8) zt1
 ! external functions
 complex(8) zdotu
@@ -72,16 +75,21 @@ ias=idxas(ia,is)
 nr=0
 do ir=1,nrmt(is),lrstp
   nr=nr+1
-  wfmt(:,nr)=0.d0
+  wfmt(:,:,nr)=0.d0
 end do
+ld2=ld*2
 ! APW functions
 do l=0,lmax
   do m=-l,l
     lm=idxlm(l,m)
     do io=1,apword(l,is)
       zt1=zdotu(ngp,evecfv,1,apwalm(:,io,lm,ias),1)
-      call wavefmt_add(nr,ld,wfmt(lm,1),dble(zt1),aimag(zt1),lrstp, &
-       apwfr(:,:,io,l,ias))
+      if (abs(dble(zt1)).gt.1.d-14) then
+        call daxpy(nr,dble(zt1),apwfr(:,1,io,l,ias),lrstp,wfmt(1,lm,1),ld2)
+      end if
+      if (abs(aimag(zt1)).gt.1.d-14) then
+        call daxpy(nr,aimag(zt1),apwfr(:,1,io,l,ias),lrstp,wfmt(2,lm,1),ld2)
+      end if
     end do
   end do
 end do
@@ -91,65 +99,16 @@ do ilo=1,nlorb(is)
   if (l.le.lmax) then
     do m=-l,l
       lm=idxlm(l,m)
-      i=ngp+idxlo(lm,ilo,ias)
-      call wavefmt_add(nr,ld,wfmt(lm,1),dble(evecfv(i)),aimag(evecfv(i)), &
-       lrstp,lofr(:,:,ilo,ias))
+      zt1=evecfv(ngp+idxlo(lm,ilo,ias))
+      if (abs(dble(zt1)).gt.1.d-14) then
+        call daxpy(nr,dble(zt1),lofr(:,1,ilo,ias),lrstp,wfmt(1,lm,1),ld2)
+      end if
+      if (abs(aimag(zt1)).gt.1.d-14) then
+        call daxpy(nr,aimag(zt1),lofr(:,1,ilo,ias),lrstp,wfmt(2,lm,1),ld2)
+      end if
     end do
   end if
 end do
-return
-end subroutine
-!EOC
-
-!BOP
-! !ROUTINE: wavefmt_add
-! !INTERFACE:
-subroutine wavefmt_add(nr,ld,wfmt,a,b,lrstp,fr)
-! !INPUT/OUTPUT PARAMETERS:
-!   nr     : number of radial mesh points (in,integer)
-!   ld     : leading dimension (in,integer)
-!   wfmt   : complex muffin-tin wavefunction passed in as a real array
-!            (inout,real(2*ld,*))
-!   a      : real part of complex constant (in,real)
-!   b      : imaginary part of complex constant (in,real)
-!   lrstp  : radial step length (in,integer)
-!   fr     : real radial function (in,real(lrstp,*))
-! !DESCRIPTION:
-!   Adds a real function times a complex constant to a complex muffin-tin
-!   wavefunction as efficiently as possible. See routine {\tt wavefmt}.
-!
-! !REVISION HISTORY:
-!   Created December 2006 (JKD)
-!EOP
-!BOC
-implicit none
-! arguments
-integer, intent(in) :: nr
-integer, intent(in) :: ld
-real(8), intent(inout) :: wfmt(2*ld,nr)
-real(8), intent(in) :: a
-real(8), intent(in) :: b
-integer, intent(in) :: lrstp
-real(8), intent(in) :: fr(lrstp,nr)
-! local variables
-integer ir
-! values smaller than eps are taken to be zero
-real(8), parameter :: eps=1.d-14
-if (abs(b).lt.eps) then
-! zero constant
-  if (abs(a).lt.eps) return
-! pure real constant
-  wfmt(1,:)=wfmt(1,:)+a*fr(1,:)
-else if (abs(a).lt.eps) then
-! pure imaginary constant
-  wfmt(2,:)=wfmt(2,:)+b*fr(1,:)
-else
-! general complex constant
-  do ir=1,nr
-    wfmt(1,ir)=wfmt(1,ir)+a*fr(1,ir)
-    wfmt(2,ir)=wfmt(2,ir)+b*fr(1,ir)
-  end do
-end if
 return
 end subroutine
 !EOC

@@ -38,11 +38,9 @@ do ilo=1,nlorb(is)
       k=((j-1)*j)/2
       do i=1,ngp
         k=k+1
-        zsum=0.d0
         do io=1,apword(l,is)
-          zsum=zsum+conjg(apwalm(i,io,lm,ias))*oalo(io,ilo,ias)
+          o(k)=o(k)+conjg(apwalm(i,io,lm,ias))*oalo(io,ilo,ias)
         end do
-        o(k)=o(k)+zsum
       end do
     end if
   end do

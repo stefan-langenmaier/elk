@@ -28,10 +28,9 @@ integer fnum
 ! local variables
 integer i,is,ia,k,l
 character(10) dat,tim
-write(fnum,'("+-----------------------------+")')
-write(fnum,'("| Elk version ",I1.1,".",I1.1,".",I3.3," started |")') &
- version
-write(fnum,'("+-----------------------------+")')
+write(fnum,'("+----------------------------+")')
+write(fnum,'("| Elk version ",I1.1,".",I1.1,".",I2.2," started |")') version
+write(fnum,'("+----------------------------+")')
 if (notelns.gt.0) then
   write(fnum,*)
   write(fnum,'("Notes :")')
@@ -167,6 +166,11 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
     end do
   end do
 end if
+if (efieldpol) then
+  write(fnum,*)
+  write(fnum,'("Constant electric field applied across unit cell")')
+  write(fnum,'(" field strength : ",3G18.10)') efieldc
+end if
 write(fnum,*)
 write(fnum,'("Number of Bravais lattice symmetries : ",I4)') nsymlat
 write(fnum,'("Number of crystal symmetries         : ",I4)') nsymcrys
@@ -177,10 +181,18 @@ if (autokpt) then
 end if
 write(fnum,'("k-point grid : ",3I6)') ngridk
 write(fnum,'("k-point offset : ",3G18.10)') vkloff
-if (reducek) then
-  write(fnum,'("k-point set is reduced with crystal symmetries")')
-else
+if (reducek.eq.0) then
   write(fnum,'("k-point set is not reduced")')
+else if (reducek.eq.1) then
+  write(fnum,'("k-point set is reduced with full crystal symmetry group")')
+else if (reducek.eq.2) then
+  write(fnum,'("k-point set is reduced with symmorphic symmetries only")')
+else
+  write(*,*)
+  write(*,'("Error(writeinfo): undefined k-point reduction type : ",I8)') &
+   reducek
+  write(*,*)
+  stop
 end if
 write(fnum,'("Total number of k-points : ",I8)') nkpt
 write(fnum,*)
@@ -303,8 +315,12 @@ end if
 write(fnum,*)
 write(fnum,'("Smearing type : ",I4)') stype
 write(fnum,'(" ",A)') trim(sdescr)
-write(fnum,'("Smearing width : ",G18.10)') swidth
-write(fnum,'("Effective electronic temperature (K) : ",G18.10)') swidth/kboltz
+if (autoswidth) then
+  write(fnum,'("Automatic determination of smearing width")')
+else
+  write(fnum,'("Smearing width : ",G18.10)') swidth
+  write(fnum,'("Effective electronic temperature (K) : ",G18.10)') swidth/kboltz
+end if
 write(fnum,*)
 write(fnum,'("Mixing type : ",I4)') mixtype
 write(fnum,'(" ",A)') trim(mixdescr)

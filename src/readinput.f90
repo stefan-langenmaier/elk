@@ -48,9 +48,9 @@ ngridk(:)=1
 vkloff(:)=0.d0
 autokpt=.false.
 radkpt=40.0
-reducek=.true.
+reducek=1
 ngridq(:)=1
-reduceq=.true.
+reduceq=1
 rgkmax=7.d0
 gmaxvr=12.d0
 lmaxapw=8
@@ -64,6 +64,8 @@ xctype(2)=0
 xctype(3)=0
 stype=0
 swidth=0.01d0
+autoswidth=.false.
+mstar=10.d0
 epsocc=1.d-8
 epschg=1.d-3
 nempty=5
@@ -74,7 +76,6 @@ betamax=1.d0
 epspot=1.d-6
 epsengy=1.d-4
 epsforce=5.d-4
-cfdamp=0.d0
 molecule=.false.
 nspecies=0
 natoms(:)=0
@@ -124,6 +125,8 @@ epsband=1.d-6
 autolinengy=.false.
 dlefe=-0.1d0
 bfieldc0(:)=0.d0
+efieldc(:)=0.d0
+afieldc(:)=0.d0
 fixspin=0
 momfix(:)=0.d0
 mommtfix(:,:,:)=0.d0
@@ -374,6 +377,16 @@ case('swidth')
     write(*,*)
     stop
   end if
+case('autoswidth')
+  read(50,*,err=20) autoswidth
+case('mstar')
+  read(50,*,err=20) mstar
+  if (mstar.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): mstar <= 0 : ",G18.10)') mstar
+    write(*,*)
+    stop
+  end if
 case('epsocc')
   read(50,*,err=20) epsocc
   if (epsocc.le.0.d0) then
@@ -430,14 +443,6 @@ case('epsengy')
   read(50,*,err=20) epsengy
 case('epsforce')
   read(50,*,err=20) epsforce
-case('cfdamp')
-  read(50,*,err=20) cfdamp
-  if (cfdamp.lt.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): cfdamp < 0 : ",G18.10)') cfdamp
-    write(*,*)
-    stop
-  end if
 case('sppath')
   read(50,*,err=20) sppath
   sppath=adjustl(sppath)
@@ -643,7 +648,7 @@ case('epsband')
   read(50,*,err=20) epsband
   if (epsband.le.0.d0) then
     write(*,*)
-    write(*,'("Error(readinput): epsband <= 0 ",G18.10)') epsband
+    write(*,'("Error(readinput): epsband <= 0 : ",G18.10)') epsband
     write(*,*)
     stop
   end if
@@ -653,6 +658,10 @@ case('dlefe')
   read(50,*,err=20) dlefe
 case('bfieldc')
   read(50,*,err=20) bfieldc0
+case('efieldc')
+  read(50,*,err=20) efieldc
+case('afieldc')
+  read(50,*,err=20) afieldc
 case('fixspin')
   read(50,*,err=20) fixspin
 case('momfix')
@@ -798,7 +807,7 @@ case('nwrite')
 case('tevecsv')
   read(50,*,err=20) tevecsv
 case('lda+u')
-  read(50,*) ldapu,inptypelu
+  read(50,*,err=20) ldapu,inptypelu
   do is=1,maxspecies
     read(50,'(A256)',err=20) str
     if (trim(str).eq.'') goto 10
@@ -957,6 +966,7 @@ goto 10
 write(*,*)
 write(*,'("Error(readinput): error reading from elk.in")')
 write(*,'("Problem occurred in ''",A,"'' block")') trim(block)
+write(*,'("Check input convention in manual")')
 write(*,*)
 stop
 30 continue

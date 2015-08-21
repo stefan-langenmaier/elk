@@ -21,9 +21,6 @@ write(fnum,'(" nuclear-nuclear",T30,": ",G22.12)') engynn
 write(fnum,'(" electron-nuclear",T30,": ",G22.12)') engyen
 write(fnum,'(" Hartree",T30,": ",G22.12)') engyhar
 write(fnum,'(" Madelung",T30,": ",G22.12)') engymad
-if (chgexs.ne.0.d0) then
-  write(fnum,'(" comp. background charge",T30,": ",G22.12)') engycbc
-end if
 write(fnum,'(" xc potential",T30,": ",G22.12)') engyvxc
 if (spinpol) then
   write(fnum,'(" xc effective B-field",T30,": ",G22.12)') engybxc

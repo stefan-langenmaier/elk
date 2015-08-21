@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2007 J. K. Dewhurst, S. Sharma, C. Ambrosch-Draxl
+! Copyright (C) 2002-2010 J. K. Dewhurst, S. Sharma, C. Ambrosch-Draxl
 ! F. Bultmark, F. Cricchio and L. Nordstrom.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
@@ -19,7 +19,7 @@ integer ispn,jspn,ia,is,ias
 integer ist,jst,i,j,k,l,lm,nm
 integer nrc,irc,ir,igk,ifg
 integer lmax,nsc,lwork,info
-real(8) cb,t1
+real(8) cb,ca,t1
 real(8) ts0,ts1
 ! automatic arrays
 complex(8) zlflm(lmmaxvr,3)
@@ -30,6 +30,7 @@ complex(8), allocatable :: wfmt1(:,:,:)
 complex(8), allocatable :: wfmt2(:,:)
 complex(8), allocatable :: wfmt3(:,:)
 complex(8), allocatable :: wfmt4(:,:,:)
+complex(8), allocatable :: gzfmt(:,:,:)
 complex(8), allocatable :: zfft1(:)
 complex(8), allocatable :: zfft2(:)
 complex(8), allocatable :: zv(:,:)
@@ -37,8 +38,8 @@ complex(8), allocatable :: work(:)
 ! external functions
 complex(8) zdotc,zfmtinp
 external zdotc,zfmtinp
-! spin-unpolarised case
-if ((.not.spinpol).and.(ldapu.eq.0)) then
+! no calculation of second-variational eigenvectors
+if (.not.tevecsv) then
   do i=1,nstsv
     evalsv(i,ik)=evalfv(i)
   end do
@@ -49,8 +50,10 @@ if ((.not.spinpol).and.(ldapu.eq.0)) then
   return
 end if
 call timesec(ts0)
-! coupling constant of the external field (g_e/4c)
+! coupling constant of the external B-field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
+! coupling constant of the external A-field (1/2c)
+ca=1.d0/(2.d0*sol)
 ! number of spin combinations after application of Hamiltonian
 if (spinpol) then
   if (ncmag) then
@@ -61,23 +64,17 @@ if (spinpol) then
 else
   nsc=1
 end if
-allocate(bir(ngrtot,3))
-allocate(rwork(3*nstsv))
-allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
-allocate(wfmt2(lmmaxvr,nrcmtmax))
-allocate(wfmt3(lmmaxvr,nrcmtmax))
-allocate(wfmt4(lmmaxvr,nrcmtmax,nsc))
-allocate(zfft1(ngrtot))
-allocate(zfft2(ngrtot))
-allocate(zv(ngkmax,nsc))
-lwork=2*nstsv
-allocate(work(lwork))
-lmax=min(lmaxmat,lmaxvr)
 ! zero the second-variational Hamiltonian (stored in the eigenvector array)
 evecsv(:,:)=0.d0
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+lmax=min(lmaxmat,lmaxvr)
+allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
+allocate(wfmt2(lmmaxvr,nrcmtmax))
+allocate(wfmt3(lmmaxvr,nrcmtmax))
+allocate(wfmt4(lmmaxvr,nrcmtmax,nsc))
+if (afieldpol) allocate(gzfmt(lmmaxvr,nrcmtmax,3))
 do is=1,nspecies
   nrc=nrcmt(is)
   do ia=1,natoms(is)
@@ -140,6 +137,21 @@ do is=1,nspecies
            lmmaxlu,wfmt1(lm,1,jst),lmmaxvr,zone,wfmt4(lm,1,k),lmmaxvr)
         end do
       end if
+! apply vector potential if required
+      if (afieldpol) then
+        call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax,wfmt1(:,:,jst), &
+         gzfmt)
+        t1=1.d0/(2.d0*sol)
+        do irc=1,nrc
+          wfmt3(:,irc)=afieldc(1)*gzfmt(:,irc,1) &
+                      +afieldc(2)*gzfmt(:,irc,2) &
+                      +afieldc(3)*gzfmt(:,irc,3)
+          wfmt3(:,irc)=ca*cmplx(aimag(wfmt3(:,irc)),-dble(wfmt3(:,irc)),8)
+        end do
+        do k=1,nsc
+          wfmt4(:,1:nrc,k)=wfmt4(:,1:nrc,k)+wfmt3(:,1:nrc)
+        end do
+      end if
 ! second-variational Hamiltonian matrix
       do ist=1,nstfv
         do k=1,nsc
@@ -163,9 +175,15 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
+deallocate(wfmt1,wfmt2,wfmt3,wfmt4)
+if (afieldpol) deallocate(gzfmt)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
+allocate(bir(ngrtot,3))
+allocate(zfft1(ngrtot))
+allocate(zfft2(ngrtot))
+allocate(zv(ngkmax,nsc))
 if (spinpol) then
   if (ncmag) then
 ! non-collinear
@@ -203,6 +221,13 @@ if (spinpol) then
         zv(igk,3)=zfft2(ifg)
       end do
     end if
+! apply vector potential if required
+    if (afieldpol) then
+      do igk=1,ngk(1,ik)
+        t1=ca*dot_product(afieldc(:),vgkc(:,igk,1,ik))
+        zv(igk,:)=zv(igk,:)+t1*evecfv(igk,jst)
+      end do
+    end if
 ! add to Hamiltonian matrix
     do ist=1,nstfv
       do k=1,nsc
@@ -223,6 +248,7 @@ if (spinpol) then
     end do
   end do
 end if
+deallocate(bir,zfft1,zfft2,zv)
 ! add the diagonal first-variational part
 i=0
 do ispn=1,nspinor
@@ -232,6 +258,9 @@ do ispn=1,nspinor
   end do
 end do
 ! diagonalise second-variational Hamiltonian
+allocate(rwork(3*nstsv))
+lwork=2*nstsv
+allocate(work(lwork))
 if (ndmag.eq.1) then
 ! collinear: block diagonalise H
   call zheev('V','U',nstfv,evecsv,nstsv,evalsv(:,ik),work,lwork,rwork,info)
@@ -250,8 +279,7 @@ else
   call zheev('V','U',nstsv,evecsv,nstsv,evalsv(:,ik),work,lwork,rwork,info)
   if (info.ne.0) goto 20
 end if
-deallocate(bir,rwork,wfmt1,wfmt2,wfmt3,wfmt4)
-deallocate(zfft1,zfft2,zv,work)
+deallocate(rwork,work)
 call timesec(ts1)
 !$OMP CRITICAL
 timesv=timesv+ts1-ts0

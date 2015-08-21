@@ -44,22 +44,15 @@ end if
 call timesec(ts0)
 ! coupling constant of the external field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
-allocate(bir(ngrtot,3))
-allocate(rwork(3*nstsv))
-allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv,nspnfv))
-allocate(wfmt2(lmmaxvr,nrcmtmax,nspnfv))
-allocate(wfmt3(lmmaxvr,nrcmtmax))
-allocate(wfmt4(lmmaxvr,nrcmtmax,3))
-allocate(zfft1(ngrtot,nspnfv))
-allocate(zfft2(ngrtot))
-allocate(zv(ngkmax,3))
-lwork=2*nstsv
-allocate(work(lwork))
 ! zero the second-variational Hamiltonian (stored in the eigenvector array)
 evecsv(:,:)=0.d0
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv,nspnfv))
+allocate(wfmt2(lmmaxvr,nrcmtmax,nspnfv))
+allocate(wfmt3(lmmaxvr,nrcmtmax))
+allocate(wfmt4(lmmaxvr,nrcmtmax,3))
 do is=1,nspecies
   nrc=nrcmt(is)
   do ia=1,natoms(is)
@@ -140,9 +133,14 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
+deallocate(wfmt1,wfmt2,wfmt3,wfmt4)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
+allocate(bir(ngrtot,3))
+allocate(zfft1(ngrtot,nspnfv))
+allocate(zfft2(ngrtot))
+allocate(zv(ngkmax,3))
 do ir=1,ngrtot
   bir(ir,:)=(bxcir(ir,:)+cb*bfieldc(:))*cfunir(ir)
 end do
@@ -196,6 +194,7 @@ do jst=1,nstfv
     end do
   end do
 end do
+deallocate(bir,zfft1,zfft2,zv)
 ! add the diagonal first-variational part
 i=0
 do ispn=1,nspinor
@@ -204,7 +203,10 @@ do ispn=1,nspinor
     evecsv(i,i)=evecsv(i,i)+evalfv(ist,ispn)
   end do
 end do
-! diagonalise the Hamiltonian
+! diagonalise the second-variational Hamiltonian
+allocate(rwork(3*nstsv))
+lwork=2*nstsv
+allocate(work(lwork))
 call zheev('V','U',nstsv,evecsv,nstsv,evalsv(:,ik),work,lwork,rwork,info)
 if (info.ne.0) then
   write(*,*)
@@ -215,8 +217,7 @@ if (info.ne.0) then
   write(*,*)
   stop
 end if
-deallocate(bir,rwork,wfmt1,wfmt2,wfmt3,wfmt4)
-deallocate(zfft1,zfft2,zv,work)
+deallocate(rwork,work)
 call timesec(ts1)
 !$OMP CRITICAL
 timesv=timesv+ts1-ts0

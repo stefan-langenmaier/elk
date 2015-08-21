@@ -160,14 +160,6 @@ if (ldapu.ne.0) then
     engylu=engylu+engyalu(ias)
   end do
 end if
-!-----------------------------------------------!
-!     compensating background charge energy     !
-!-----------------------------------------------!
-if (chgexs.ne.0.d0) then
-  engycbc=chgexs*rfint(vclmt,vclir)
-else
-  engycbc=0.d0
-end if
 !----------------------------!
 !     sum of eigenvalues     !
 !----------------------------!
@@ -237,7 +229,7 @@ end if
 !----------------------!
 !     total energy     !
 !----------------------!
-engytot=engykn+0.5d0*engyvcl+engymad+engyx+engyc+engycbc+engyts
+engytot=engykn+0.5d0*engyvcl+engymad+engyx+engyc+engyts
 ! add the LDA+U correction if required
 if (ldapu.ne.0) engytot=engytot+engylu
 ! write total energy to test file

@@ -52,16 +52,16 @@ integer ispn,is,ia,ias
 integer i,j,n,ist,igp,ifg
 real(8) t1
 complex(8) zt1
+! automatic arrays
+logical done(nstfv)
 ! allocatable arrays
-logical, allocatable :: done(:)
 complex(8), allocatable :: wfmt1(:,:,:)
 complex(8), allocatable :: wfmt2(:,:)
-allocate(done(nstfv))
-allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
-if (.not.tsh) allocate(wfmt2(lmmaxvr,nrcmtmax))
 !--------------------------------!
 !     muffin-tin wavefunction    !
 !--------------------------------!
+if (tevecsv) allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
+if (.not.tsh) allocate(wfmt2(lmmaxvr,nrcmtmax))
 do is=1,nspecies
   n=lmmaxvr*nrcmt(is)
   do ia=1,natoms(is)
@@ -119,6 +119,8 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
+if (tevecsv) deallocate(wfmt1)
+if (.not.tsh) deallocate(wfmt2)
 !-----------------------------------!
 !     interstitial wavefunction     !
 !-----------------------------------!
@@ -155,8 +157,6 @@ do j=1,nstsv
     end do
   end if
 end do
-deallocate(done,wfmt1)
-if (.not.tsh) deallocate(wfmt2)
 return
 end subroutine
 !EOC
