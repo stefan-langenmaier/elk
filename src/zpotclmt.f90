@@ -6,15 +6,14 @@
 !BOP
 ! !ROUTINE: zpotclmt
 ! !INTERFACE:
-subroutine zpotclmt(nr,nri,r,zrhomt,zvclmt)
-! !USES:
-use modmain
+subroutine zpotclmt(lmax,nr,r,ld,zrhomt,zvclmt)
 ! !INPUT/OUTPUT PARAMETERS:
-!   nr      : number of radial mesh points (in,integer)
-!   nri     : number of points on inner part of muffin-tin (in,integer)
-!   r       : radial mesh (in,real(nr))
-!   zrhomt  : muffin-tin charge density (in,complex(lmmaxvr,nr))
-!   zvclmt  : muffin-tin Coulomb potential (out,complex(lmmaxvr,nr))
+!   lmax   : maximum angular momentum (in,integer)
+!   nr     : number of radial mesh points (in,integer)
+!   r      : radial mesh (in,real(nr))
+!   ld     : leading dimension (in,integer)
+!   zrhomt : muffin-tin charge density (in,complex(ld,nr))
+!   zvclmt : muffin-tin Coulomb potential (out,complex(ld,nr))
 ! !DESCRIPTION:
 !   Solves the Poisson equation for the charge density contained in an isolated
 !   muffin-tin using the Green's function approach. In other words, the
@@ -30,13 +29,15 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: nr,nri
+integer, intent(in) :: lmax
+integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
-complex(8), intent(in) :: zrhomt(lmmaxvr,nr)
-complex(8), intent(out) :: zvclmt(lmmaxvr,nr)
+integer, intent(in) :: ld
+complex(8), intent(in) :: zrhomt(ld,nr)
+complex(8), intent(out) :: zvclmt(ld,nr)
 ! local variables
-integer nr0,ir0,ir
-integer l,m,lm
+integer l,m,lm,ir
+real(8), parameter :: fourpi=12.566370614359172954d0
 real(8) t1,t2,t3,t4
 ! automatic arrays
 real(8) ri(nr),rl1(nr),rl2(nr),rl3(nr),rl4(nr)
@@ -51,17 +52,10 @@ do ir=1,nr
   rl4(ir)=t1
 end do
 lm=0
-do l=0,lmaxvr
-  if (l.le.lmaxinr) then
-    nr0=nr
-    ir0=1
-  else
-    nr0=nr-nri
-    ir0=nri+1
-  end if
+do l=0,lmax
   do m=-l,l
     lm=lm+1
-    do ir=ir0,nr
+    do ir=1,nr
       t1=dble(zrhomt(lm,ir))
       t2=aimag(zrhomt(lm,ir))
       fr1(ir)=t1*rl3(ir)
@@ -69,21 +63,21 @@ do l=0,lmaxvr
       fr3(ir)=t1*rl4(ir)
       fr4(ir)=t2*rl4(ir)
     end do
-    call fderiv(-1,nr0,r(ir0),fr1(ir0),fr5(ir0))
-    call fderiv(-1,nr0,r(ir0),fr2(ir0),fr1(ir0))
-    call fderiv(-1,nr0,r(ir0),fr3(ir0),fr2(ir0))
-    call fderiv(-1,nr0,r(ir0),fr4(ir0),fr3(ir0))
+    call fderiv(-1,nr,r,fr1,fr5)
+    call fderiv(-1,nr,r,fr2,fr1)
+    call fderiv(-1,nr,r,fr3,fr2)
+    call fderiv(-1,nr,r,fr4,fr3)
     t1=fr2(nr)
     t2=fr3(nr)
-    do ir=ir0,nr
+    do ir=1,nr
       t3=rl2(ir)*fr5(ir)+rl1(ir)*(t1-fr2(ir))
       t4=rl2(ir)*fr1(ir)+rl1(ir)*(t2-fr3(ir))
       zvclmt(lm,ir)=cmplx(t3,t4,8)
     end do
   end do
-  if (l.lt.lmaxvr) then
+  if (l.lt.lmax) then
     t1=fourpi/dble(2*(l+1)+1)
-    do ir=ir0,nr
+    do ir=1,nr
       rl1(ir)=rl1(ir)*r(ir)
       rl2(ir)=rl2(ir)*ri(ir)
       t2=t1*r(ir)**2

@@ -12,8 +12,8 @@ complex(8), intent(in) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
 complex(8), intent(in) :: wfir(ngtot,nspinor,nstsv)
 complex(8), intent(out) :: vmat(nstsv,nstsv)
 ! local variables
-integer ist,jst,ispn,is,ias
-integer nrc,nrci,irc
+integer ist,jst,ispn
+integer is,ias,nrc,irc
 real(8) t1
 complex(8) z1
 ! allocatable arrays
@@ -32,7 +32,6 @@ do jst=1,nstsv
   do ias=1,natmtot
     is=idxis(ias)
     nrc=nrcmt(is)
-    nrci=nrcmtinr(is)
     do ispn=1,nspinor
 ! apply potential to wavefunction
       do irc=1,nrc
@@ -40,7 +39,8 @@ do jst=1,nstsv
       end do
       do ist=1,jst
 ! compute inner product (functions are in spherical coordinates)
-        z1=zfmtinp(.false.,nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,ist),zfmt)
+        z1=zfmtinp(.false.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+         wfmt(:,:,ias,ispn,ist),zfmt)
         vmat(ist,jst)=vmat(ist,jst)+z1
       end do
     end do

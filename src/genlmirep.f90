@@ -12,9 +12,9 @@ integer, intent(in) :: ld
 real(8), intent(out) :: elm(ld,natmtot)
 complex(8), intent(out) :: ulm(ld,ld,natmtot)
 ! local variables
-integer isym,lspl,is,ia,ias
+integer is,ia,ias
 integer lmmax,i,j,l,lm,n,p
-integer info,lwork
+integer isym,lspl,info,lwork
 ! allocatable arrays
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: ulat(:,:,:)

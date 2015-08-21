@@ -29,14 +29,17 @@ spincore
 
 ! start with a large field and reduce it at every iteration
 bfieldc
-  0.0  0.0  0.01
+  0.0  0.0  2.0
 
-beta0
-  0.01
+reducebf
+ 0.75
+
+mixtype
+  2
 
 ! large number of empty states required for hyperfine field
 nempty
-  10
+  30
 
 rgkmax
   7.5

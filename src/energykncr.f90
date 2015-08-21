@@ -6,7 +6,8 @@
 subroutine energykncr
 use modmain
 implicit none
-integer ist,is,ias,nr
+integer is,ia,ias
+integer nr,ist
 ! allocatable local arrays
 real(8), allocatable :: rfmt(:,:)
 ! external functions
@@ -16,21 +17,22 @@ external rfmtinp
 allocate(rfmt(lmmaxvr,nrmtmax))
 ! calculate the kinetic energy for core states
 engykncr=0.d0
-do ias=1,natmtot
-  is=idxis(ias)
+do is=1,nspecies
   nr=nrmt(is)
+  do ia=1,natoms(is)
+    ias=idxas(ia,is)
 ! sum of core eigenvalues
-  do ist=1,spnst(is)
-    if (spcore(ist,is)) engykncr=engykncr+occcr(ist,ias)*evalcr(ist,ias)
-  end do
+    do ist=1,spnst(is)
+      if (spcore(ist,is)) engykncr=engykncr+occcr(ist,ias)*evalcr(ist,ias)
+    end do
 ! core density
-  rfmt(:,:)=0.d0
-  if (spincore) then
-    rfmt(1,1:nr)=(rhocr(1:nr,ias,1)+rhocr(1:nr,ias,2))/y00
-  else
-    rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
-  end if
-  engykncr=engykncr-rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vsmt(:,:,ias))
+    if (spincore) then
+      rfmt(1,1:nr)=(rhocr(1:nr,ias,1)+rhocr(1:nr,ias,2))/y00
+    else
+      rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
+    end if
+    engykncr=engykncr-rfmtinp(1,0,nr,spr(:,is),lmmaxvr,rfmt,vsmt(:,:,ias))
+  end do
 end do
 deallocate(rfmt)
 return

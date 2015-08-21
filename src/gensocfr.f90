@@ -14,7 +14,7 @@ real(8) cso,rm
 real(8), allocatable :: vr(:),dvr(:)
 if (.not.spinorb) return
 ! coefficient of spin-orbit coupling
-cso=socscf/(4.d0*solsc**2)
+cso=1.d0/(4.d0*solsc**2)
 allocate(vr(nrmtmax),dvr(nrmtmax))
 do ias=1,natmtot
   is=idxis(ias)

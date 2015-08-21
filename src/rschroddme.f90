@@ -6,13 +6,14 @@
 !BOP
 ! !ROUTINE: rschroddme
 ! !INTERFACE:
-subroutine rschroddme(sol,m,l,k,e,nr,r,vr,nn,p0,p1,q0,q1)
+subroutine rschroddme(sol,m,l,k,e,np,nr,r,vr,nn,p0,p1,q0,q1)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol : speed of light in atomic units (in,real)
 !   m   : order of energy derivative (in,integer)
 !   l   : angular momentum quantum number (in,integer)
 !   k   : quantum number k, zero if Dirac eqn. is not to be used (in,integer)
 !   e   : energy (in,real)
+!   np  : order of predictor-corrector polynomial (in,integer)
 !   nr  : number of radial mesh points (in,integer)
 !   r   : radial mesh (in,real(nr))
 !   vr  : potential on radial mesh (in,real(nr))
@@ -35,12 +36,15 @@ integer, intent(in) :: m
 integer, intent(in) :: l
 integer, intent(in) :: k
 real(8), intent(in) :: e
+integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
 integer, intent(out) :: nn
-real(8), intent(out) :: p0(nr),p1(nr)
-real(8), intent(out) :: q0(nr),q1(nr)
+real(8), intent(out) :: p0(nr)
+real(8), intent(out) :: p1(nr)
+real(8), intent(out) :: q0(nr)
+real(8), intent(out) :: q1(nr)
 ! local variables
 integer im,kpa,ir
 real(8) t1,t2
@@ -64,10 +68,10 @@ if (k.eq.0) then
 ! use the scalar relativistic Schrodinger equation
   allocate(p0p(nr))
   if (m.eq.0) then
-    call rschrodint(sol,m,l,e,nr,r,vr,nn,p0p,p0,p1,q0,q1)
+    call rschrodint(sol,m,l,e,np,nr,r,vr,nn,p0p,p0,p1,q0,q1)
   else
     do im=0,m
-      call rschrodint(sol,im,l,e,nr,r,vr,nn,p0p,p0,p1,q0,q1)
+      call rschrodint(sol,im,l,e,np,nr,r,vr,nn,p0p,p0,p1,q0,q1)
       p0p(:)=p0(:)
     end do
   end if
@@ -86,7 +90,7 @@ else
     write(*,*)
     stop
   end if
-  call rdiracdme(sol,m,kpa,e,nr,r,vr,nn,g0,g1,f0,f1)
+  call rdiracdme(sol,m,kpa,e,np,nr,r,vr,nn,g0,g1,f0,f1)
 ! determine equivalent scalar relativistic functions
   t1=1.d0/sol**2
   do ir=1,nr

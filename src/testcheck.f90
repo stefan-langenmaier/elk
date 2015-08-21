@@ -91,7 +91,7 @@ do i=0,999
           write(*,'(" ",A," (correct value)",T40," : ",G22.12)') trim(fname_), &
            rv_
           write(*,'(" ",A,T40," : ",G22.12)') trim(fname),rv
-          write(*,'(" absolute difference",T40," : ",G22.12)') t1
+          write(*,'(" difference",T40," : ",G22.12)') t1
           write(*,'(" required relative tolerance",T40," : ",G22.12)') tol
           write(*,'(" required absolute tolerance",T40," : ",G22.12)') t2
           write(*,*)

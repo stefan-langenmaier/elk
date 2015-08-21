@@ -16,17 +16,13 @@ tasks
 xctype
   100 208 12
 
-! double the number of points in the muffin-tin
-nrmtscf
-  2
+lradstp
+  1
 
 avec
   5.13 5.13 0.00
   5.13 0.00 5.13
   0.00 5.13 5.13
-
-sppath
-  '../../species/'
 
 atoms
   1                                 : nspecies

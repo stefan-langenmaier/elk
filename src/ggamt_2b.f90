@@ -26,24 +26,26 @@ real(8), intent(inout) :: vc(lmmaxvr,nrmtmax)
 real(8), intent(in) :: dxdg2(lmmaxvr,nrmtmax)
 real(8), intent(in) :: dcdg2(lmmaxvr,nrmtmax)
 ! local variables
-integer nr,nri,i
+integer nr,i
 ! allocatable arrays
-real(8), allocatable :: rfmt1(:,:),rfmt2(:,:),grfmt(:,:,:)
+real(8), allocatable :: rfmt1(:,:),rfmt2(:,:)
+real(8), allocatable :: grfmt(:,:,:)
 allocate(rfmt1(lmmaxvr,nrmtmax),rfmt2(lmmaxvr,nrmtmax))
 allocate(grfmt(lmmaxvr,nrmtmax,3))
 nr=nrmt(is)
-nri=nrmtinr(is)
 !------------------!
 !     exchange     !
 !------------------!
 ! convert dxdg2 to spherical harmonics
-call rfsht(nr,nri,1,dxdg2,1,rfmt1)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dxdg2,lmmaxvr,0.d0, &
+ rfmt1,lmmaxvr)
 ! compute grad dxdg2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 ! (grad dxdg2).(grad rho) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
-  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt2)
+  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
+   lmmaxvr,0.d0,rfmt2,lmmaxvr)
   rfmt1(:,1:nr)=rfmt1(:,1:nr)+rfmt2(:,1:nr)*gvrho(:,1:nr,i)
 end do
 vx(:,1:nr)=vx(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdg2(:,1:nr)*g2rho(:,1:nr))
@@ -51,13 +53,15 @@ vx(:,1:nr)=vx(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdg2(:,1:nr)*g2rho(:,1:nr))
 !     correlation     !
 !---------------------!
 ! convert dcdg2 to spherical harmonics
-call rfsht(nr,nri,1,dcdg2,1,rfmt1)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dcdg2,lmmaxvr,0.d0, &
+ rfmt1,lmmaxvr)
 ! compute grad dcdg2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 ! (grad dcdg2).(grad rho) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
-  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt2)
+  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
+   lmmaxvr,0.d0,rfmt2,lmmaxvr)
   rfmt1(:,1:nr)=rfmt1(:,1:nr)+rfmt2(:,1:nr)*gvrho(:,1:nr,i)
 end do
 vc(:,1:nr)=vc(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dcdg2(:,1:nr)*g2rho(:,1:nr))

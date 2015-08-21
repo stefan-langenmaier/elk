@@ -27,7 +27,8 @@ integer i1,i2,i3,i,j,n
 real(8) v1(3),v2(3),v3(3)
 real(8) t1,t2
 ! allocatable arrays
-real(8), allocatable :: dp(:),vp(:,:)
+real(8), allocatable :: dp(:)
+real(8), allocatable :: vp(:,:)
 do is=1,nspecies
   do ia=1,natoms(is)
 ! make sure all atomic coordinates are in [0,1)

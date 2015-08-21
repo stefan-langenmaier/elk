@@ -58,18 +58,22 @@ rfir(:)=t1*rfir(:)
 ! convert real muffin-tin divergence to complex spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
-  call rtozfmt(nrmt(is),nrmtinr(is),1,rfmt(:,:,ias),1,zrhomt(:,:,ias))
+  do ir=1,nrmt(is)
+    call rtozflm(lmaxvr,rfmt(:,ir,ias),zrhomt(:,ir,ias))
+  end do
 end do
 ! store real interstitial divergence in a complex array
 zrhoir(:)=rfir(:)
 ! solve the complex Poisson's equation
-call genzvclmt(nrmt,nrmtinr,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
-call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
- zvclmt,zvclir,zrho0)
+call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
+call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
+ zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
-  call ztorfmt(nrmt(is),nrmtinr(is),1,zvclmt(:,:,ias),1,rfmt(:,:,ias))
+  do ir=1,nrmt(is)
+    call ztorflm(lmaxvr,zvclmt(:,ir,ias),rfmt(:,ir,ias))
+  end do
 end do
 ! store complex interstitial potential in real array
 rfir(:)=dble(zvclir(:))

@@ -12,7 +12,8 @@ implicit none
 real(8), intent(in) :: vmt(lmmaxvr,nrmtmax,natmtot),vir(ngtot)
 complex(8), intent(out) :: vmat(nstsv,nstsv,nkpt)
 ! local variables
-integer ik,ispn,is,ias,n,lp
+integer ld,is,ias
+integer ik,ispn,n,lp
 ! local arrays
 real(8), allocatable :: vmtc(:,:,:),virc(:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
@@ -21,11 +22,13 @@ complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 ! allocate local arrays
 allocate(vmtc(lmmaxvr,nrcmtmax,natmtot),virc(ngtot))
 ! convert muffin-tin potential to spherical coordinates
+ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  call rbsht(nrcmt(is),nrcmtinr(is),lradstp,vmt(:,:,ias),1,vmtc(:,:,ias))
+  call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+   vmt(:,:,ias),ld,0.d0,vmtc(:,:,ias),lmmaxvr)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

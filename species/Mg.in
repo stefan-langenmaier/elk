@@ -2,7 +2,7 @@
  'magnesium'                                : spname
   -12.0000                                  : spzn
    44305.30461                              : spmass
-  0.577350E-06    2.2000   43.7580   400    : sprmin, rmt, sprmax, nrmt
+  0.577350E-06    2.2000   42.1273   400    : sprmin, rmt, sprmax, nrmt
    5                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    F
@@ -22,8 +22,8 @@
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.9139   0  T
+ -3.4139   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.7134   0  T
+ -2.2134   0  T

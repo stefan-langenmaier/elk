@@ -6,12 +6,13 @@
 !BOP
 ! !ROUTINE: rdirac
 ! !INTERFACE:
-subroutine rdirac(sol,n,l,k,nr,r,vr,eval,g0,f0)
+subroutine rdirac(sol,n,l,k,np,nr,r,vr,eval,g0,f0)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol  : speed of light in atomic units (in,real)
 !   n    : principal quantum number (in,integer)
 !   l    : quantum number l (in,integer)
 !   k    : quantum number k (l or l+1) (in,integer)
+!   np   : order of predictor-corrector polynomial (in,integer)
 !   nr   : number of radial mesh points (in,integer)
 !   r    : radial mesh (in,real(nr))
 !   vr   : potential on radial mesh (in,real(nr))
@@ -36,6 +37,7 @@ real(8), intent(in) :: sol
 integer, intent(in) :: n
 integer, intent(in) :: l
 integer, intent(in) :: k
+integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
@@ -82,7 +84,7 @@ de=1.d0
 nndp=0
 do it=1,maxit
 ! integrate the Dirac equation
-  call rdiracdme(sol,0,kpa,eval,nr,r,vr,nn,g0,g1,f0,f1)
+  call rdiracdme(sol,0,kpa,eval,np,nr,r,vr,nn,g0,g1,f0,f1)
 ! check the number of nodes
   nnd=nn-(n-l-1)
   if (nnd.gt.0) then

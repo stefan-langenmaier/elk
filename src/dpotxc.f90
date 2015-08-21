@@ -8,8 +8,8 @@ use modmain
 use modphonon
 implicit none
 ! local variables
-integer idm,is,ias,ir
-integer nr,nri,nrc,nrci
+integer is,ias,idm
+integer nr,nrc,ir,ld
 ! allocatable arrays
 real(8), allocatable :: fxcmt(:,:,:,:,:),fxcir(:,:,:)
 complex(8), allocatable :: dvmt(:,:),dbmt(:,:,:)
@@ -29,12 +29,11 @@ if (spinpol) allocate(dbmt(lmmaxvr,nrmtmax,3))
 !     muffin-tin potential and field    !
 !---------------------------------------!
 ! note: muffin-tin functions are in spherical coordinates
+ld=lmmaxvr*lradstp
 do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
-  nri=nrmtinr(is)
   nrc=nrcmt(is)
-  nrci=nrcmtinr(is)
 ! charge-charge contribution to potential derivative
   do ir=1,nr
     dvmt(:,ir)=fxcmt(:,ir,ias,1,1)*drhomt(:,ir,ias)
@@ -81,10 +80,12 @@ do ias=1,natmtot
     end if
   end if
 ! convert potential derivative to spherical harmonics
-  call zfsht(nr,nri,dvmt,dvsmt(:,:,ias))
+  call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zfshtvr,lmmaxvr,dvmt,lmmaxvr, &
+   zzero,dvsmt(:,:,ias),lmmaxvr)
 ! convert magnetic field derivative to spherical harmonics
   do idm=1,ndmag
-    call zfsht(nrc,nrci,dbmt(:,:,idm),dbsmt(:,:,ias,idm))
+    call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,dbmt(:,:,idm), &
+     ld,zzero,dbsmt(:,:,ias,idm),lmmaxvr)
   end do
 end do
 !------------------------------------------!

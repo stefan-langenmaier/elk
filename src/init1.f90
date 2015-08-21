@@ -11,7 +11,6 @@ subroutine init1
 use modmain
 use modldapu
 use modtest
-use modvars
 ! !DESCRIPTION:
 !   Generates the $k$-point set and then allocates and initialises global
 !   variables which depend on the $k$-point set.
@@ -25,7 +24,7 @@ implicit none
 logical lsym(48)
 integer is,ia,ias,nppt
 integer io,ilo,i1,i2,i3
-integer ik,igk,isym,jspn
+integer ik,igk,isym,ispn
 integer l1,l2,l3,m1,m2,m3
 integer lm1,lm2,lm3
 real(8) vl(3),vc(3),t1
@@ -148,16 +147,6 @@ else
 ! generate the k-point set
   call genppts(.false.,nsymkpt,symkpt,ngridk,nkptnr,epslat,bvec,kptboxl,nkpt, &
    ikmap,ikmapnr,ivk,vkl,vkc,wkpt,wkptnr)
-! write to VARIABLES.OUT
-  call writevars('nsymkpt',iv=nsymkpt)
-  call writevars('symkpt',nv=9*nsymkpt,iva=symkpt)
-  call writevars('ngridk',nv=3,iva=ngridk)
-  call writevars('vkloff',nv=3,rva=vkloff)
-  call writevars('nkpt',iv=nkpt)
-  call writevars('ikmap',nv=nkptnr,iva=ikmap)
-  call writevars('ivk',nv=3*nkptnr,iva=ivk)
-  call writevars('vkl',nv=3*nkptnr,rva=vkl)
-  call writevars('wkpt',nv=nkpt,rva=wkpt)
 end if
 ! write the k-points to test file
 call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
@@ -189,12 +178,12 @@ allocate(tpgkc(2,ngkmax,nspnfv,nppt))
 if (allocated(sfacgk)) deallocate(sfacgk)
 allocate(sfacgk(ngkmax,natmtot,nspnfv,nppt))
 do ik=1,nppt
-  do jspn=1,nspnfv
+  do ispn=1,nspnfv
     vl(:)=vkl(:,ik)
     vc(:)=vkc(:,ik)
 ! spin-spiral case
     if (spinsprl) then
-      if (jspn.eq.1) then
+      if (ispn.eq.1) then
         vl(:)=vl(:)+0.5d0*vqlss(:)
         vc(:)=vc(:)+0.5d0*vqcss(:)
       else
@@ -203,22 +192,14 @@ do ik=1,nppt
       end if
     end if
 ! generate the G+k-vectors
-    call gengkvec(ngvec,ivg,vgc,vl,vc,gkmax,ngkmax,ngk(jspn,ik), &
-     igkig(:,jspn,ik),vgkl(:,:,jspn,ik),vgkc(:,:,jspn,ik))
+    call gengkvec(ngvec,ivg,vgc,vl,vc,gkmax,ngkmax,ngk(ispn,ik), &
+     igkig(:,ispn,ik),vgkl(:,:,ispn,ik),vgkc(:,:,ispn,ik))
 ! generate the spherical coordinates of the G+k-vectors
-    do igk=1,ngk(jspn,ik)
-      call sphcrd(vgkc(:,igk,jspn,ik),gkc(igk,jspn,ik),tpgkc(:,igk,jspn,ik))
+    do igk=1,ngk(ispn,ik)
+      call sphcrd(vgkc(:,igk,ispn,ik),gkc(igk,ispn,ik),tpgkc(:,igk,ispn,ik))
     end do
 ! generate structure factors for G+k-vectors
-    call gensfacgp(ngk(jspn,ik),vgkc(:,:,jspn,ik),ngkmax,sfacgk(:,:,jspn,ik))
-  end do
-end do
-! write to VARIABLES.OUT
-call writevars('nspnfv',iv=nspnfv)
-call writevars('ngk',nv=nspnfv*nkpt,iva=ngk)
-do ik=1,nkpt
-  do jspn=1,nspnfv
-    call writevars('igkig',l=jspn,m=ik,nv=ngk(jspn,ik),iva=igkig(:,jspn,ik))
+    call gensfacgp(ngk(ispn,ik),vgkc(:,:,ispn,ik),ngkmax,sfacgk(:,:,ispn,ik))
   end do
 end do
 
@@ -287,8 +268,7 @@ end if
 !     secular equation variables     !
 !------------------------------------!
 ! total number of empty states (M. Meinert)
-nempty=nint(nempty0*natmtot*nspinor)
-if (nempty.lt.1) nempty=1
+nempty=nempty0*natmtot*nspinor
 ! number of first-variational states
 nstfv=int(chgval/2.d0)+nempty+1
 ! overlap and Hamiltonian matrix sizes
@@ -296,9 +276,9 @@ if (allocated(nmat)) deallocate(nmat)
 allocate(nmat(nspnfv,nkpt))
 nmatmax=0
 do ik=1,nkpt
-  do jspn=1,nspnfv
-    nmat(jspn,ik)=ngk(jspn,ik)+nlotot
-    if (nstfv.gt.nmat(jspn,ik)) then
+  do ispn=1,nspnfv
+    nmat(ispn,ik)=ngk(ispn,ik)+nlotot
+    if (nstfv.gt.nmat(ispn,ik)) then
       write(*,*)
       write(*,'("Error(init1): number of first-variational states larger than &
        &matrix size")')
@@ -306,7 +286,7 @@ do ik=1,nkpt
       write(*,*)
       stop
     end if
-    nmatmax=max(nmatmax,nmat(jspn,ik))
+    nmatmax=max(nmatmax,nmat(ispn,ik))
   end do
 end do
 ! number of second-variational states
@@ -347,11 +327,6 @@ do l1=0,lmaxmat
     end do
   end do
 end do
-! write to VARIABLES.OUT
-call writevars('nempty',iv=nempty)
-call writevars('nstfv',iv=nstfv)
-call writevars('nlotot',iv=nlotot)
-call writevars('nstsv',iv=nstsv)
 
 call timesec(ts1)
 timeinit=timeinit+ts1-ts0

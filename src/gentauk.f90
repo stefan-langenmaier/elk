@@ -11,9 +11,9 @@ integer, intent(in) :: ik
 real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
 real(8), intent(inout) :: tauir(ngtot,nspinor)
 ! local variables
-integer ispn,jspn,ist,is,ias
-integer nr,nri,nrc,nrci
-integer ir,irc,igk,ifg,i
+integer ispn,jspn,ist
+integer is,ias,igk,ifg
+integer nr,nrc,ir,irc,i
 real(8) t0
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:,:)
@@ -47,25 +47,18 @@ do ist=1,nstsv
     do ias=1,natmtot
       is=idxis(ias)
       nr=nrmt(is)
-      nri=nrmtinr(is)
       nrc=nrcmt(is)
-      nrci=nrcmtinr(is)
 ! compute the gradient of the wavefunction
-      call gradzfmt(nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,ist),nrcmtmax,gzfmt)
+      call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax, &
+       wfmt(:,:,ias,ispn,ist),gzfmt)
       do i=1,3
 ! convert gradient to spherical coordinates
-        call zbsht(nrc,nrci,gzfmt(:,:,i),zfmt)
+        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
+         gzfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
 ! add to total taumt
 !$OMP CRITICAL
         irc=0
-! inner part of muffin-tin
-        do ir=1,nri,lradstp
-          irc=irc+1
-          taumt(1:lmmaxinr,ir,ias,ispn)=taumt(1:lmmaxinr,ir,ias,ispn) &
-           +t0*(dble(zfmt(1:lmmaxinr,irc))**2+aimag(zfmt(1:lmmaxinr,irc))**2)
-        end do
-! outer part of muffin-tin
-        do ir=nri+lradstp,nr,lradstp
+        do ir=1,nr,lradstp
           irc=irc+1
           taumt(:,ir,ias,ispn)=taumt(:,ir,ias,ispn) &
            +t0*(dble(zfmt(:,irc))**2+aimag(zfmt(:,irc))**2)

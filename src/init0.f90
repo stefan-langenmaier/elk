@@ -12,7 +12,6 @@ use modmain
 use modxcifc
 use modldapu
 use modtest
-use modvars
 ! !DESCRIPTION:
 !   Performs basic consistency checks as well as allocating and initialising
 !   global variables not dependent on the $k$-point set.
@@ -60,7 +59,7 @@ if (lmaxmat.gt.lmaxapw) then
   stop
 end if
 ! check DOS lmax is within range
-lmaxdos=min(lmaxdos,lmaxvr)
+lmaxdos=min(lmaxdos,lmaxapw)
 ! index to (l,m) pairs
 if (allocated(idxlm)) deallocate(idxlm)
 allocate(idxlm(0:lmaxapw,-lmaxapw:lmaxapw))
@@ -85,10 +84,6 @@ do l=0,lmaxapw
   zil(l)=zi**l
   zilc(l)=conjg(zil(l))
 end do
-! write to VARIABLES.OUT
-call writevars('lmaxvr',iv=lmaxvr)
-call writevars('lmaxapw',iv=lmaxapw)
-call writevars('lmaxinr',iv=lmaxinr)
 
 !------------------------------------!
 !     index to atoms and species     !
@@ -107,12 +102,6 @@ do is=1,nspecies
 end do
 ! total number of atoms
 natmtot=ias
-! write to VARIABLES.OUT
-call writevars('nspecies',iv=nspecies)
-call writevars('natoms',nv=nspecies,iva=natoms)
-call writevars('spsymb',nv=nspecies,sva=spsymb)
-call writevars('spname',nv=nspecies,sva=spname)
-call writevars('spzn',nv=nspecies,rva=spzn)
 
 !------------------------!
 !     spin variables     !
@@ -226,15 +215,11 @@ bfcmt(:,:,:)=bfcmt0(:,:,:)
 ! if reducebf < 1 then reduce the external magnetic fields immediately for
 ! non-self-consistent calculations or resumptions
 if (reducebf.lt.1.d0-epslat) then
-  if ((task.ge.10).and.(task.ne.28).and.(task.ne.200).and.(task.ne.201).and. &
-   (task.ne.350).and.(task.ne.351)) then
+  if ((task.ge.10).and.(task.ne.200).and.(task.ne.350).and.(task.ne.351)) then
     bfieldc(:)=0.d0
     bfcmt(:,:,:)=0.d0
   end if
 end if
-! write to VARIABLES.OUT
-call writevars('nspinor',iv=nspinor)
-call writevars('ndmag',iv=ndmag)
 
 !----------------------------------!
 !     crystal structure set up     !
@@ -257,13 +242,6 @@ do is=1,nspecies
 end do
 ! check muffin-tins are not too close together
 call checkmt
-! write to VARIABLES.OUT
-call writevars('avec',nv=9,rva=avec)
-call writevars('bvec',nv=9,rva=bvec)
-call writevars('omega',rv=omega)
-do is=1,nspecies
-  call writevars('atposl',l=is,nv=3*natoms(is),rva=atposl(:,:,is))
-end do
 
 !-------------------------------!
 !     vector fields E and A     !
@@ -343,11 +321,6 @@ if (chgtot.lt.1.d-8) then
 end if
 ! effective Wigner radius
 rwigner=(3.d0/(fourpi*(chgtot/omega)))**(1.d0/3.d0)
-! write to VARIABLES.OUT
-call writevars('spze',nv=nspecies,rva=spze)
-call writevars('chgcr',nv=nspecies,rva=chgcr)
-call writevars('chgexs',rv=chgexs)
-call writevars('chgval',rv=chgtot)
 
 !-------------------------!
 !     G-vector arrays     !
@@ -420,13 +393,6 @@ do is=1,nspecies
 end do
 ! generate the characteristic function
 call gencfun
-! write to VARIABLES.OUT
-call writevars('gmaxvr',rv=gmaxvr)
-call writevars('ngridg',nv=3,iva=ngridg)
-call writevars('intgv',nv=6,iva=intgv)
-call writevars('ngvec',iv=ngvec)
-call writevars('ivg',nv=3*ngtot,iva=ivg)
-call writevars('igfft',nv=ngtot,iva=igfft)
 
 !-------------------------!
 !     atoms and cores     !

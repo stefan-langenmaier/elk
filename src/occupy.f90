@@ -109,7 +109,7 @@ do ik=1,nkpt
 end do
 bandgap(1)=e1-e0
 ! write band gap to test file
-call writetest(510,'estimated indirect band gap',tol=2.d-2,rv=bandgap(1))
+call writetest(510,'estimated indirect band gap',tol=1.d-2,rv=bandgap(1))
 ! estimate the direct band gap
 e=1.d8
 ikgap(3)=1

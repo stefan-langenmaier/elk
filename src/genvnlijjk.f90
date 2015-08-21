@@ -107,9 +107,8 @@ do ik=1,nkpt
     end do
     do ist1=1,nstsv
 ! compute the potential and G=0 coefficient of the density
-      call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist1), &
-       zvclmt)
-      call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
+      call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist1),zvclmt)
+      call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
        zrhoir(:,ist1),nrcmtmax,zvclmt,zvclir,zrho02)
       z1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho02)**2+aimag(zrho02)**2)

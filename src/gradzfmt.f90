@@ -6,16 +6,15 @@
 !BOP
 ! !ROUTINE: gradzfmt
 ! !INTERFACE:
-subroutine gradzfmt(nr,nri,r,zfmt,ld,gzfmt)
-! !USES:
-use modmain
+subroutine gradzfmt(lmax,nr,r,ld1,ld2,zfmt,gzfmt)
 ! !INPUT/OUTPUT PARAMETERS:
+!   lmax  : maximum angular momentum (in,integer)
 !   nr    : number of radial mesh points (in,integer)
-!   nri   : number of points on inner part of muffin-tin (in,integer)
 !   r     : radial mesh (in,real(nr))
-!   zfmt  : complex muffin-tin function (in,complex(lmmaxvr,nr))
-!   ld    : leading dimension (in,integer)
-!   gzfmt : gradient of zfmt (out,complex(lmmaxvr,ld,3))
+!   ld1   : leading dimension 1 (in,integer)
+!   ld2   : leading dimension 2 (in,integer)
+!   zfmt  : complex muffin-tin function (in,complex(ld1,nr))
+!   gzfmt : gradient of zfmt (out,complex(ld1,ld2,3))
 ! !DESCRIPTION:
 !   Calculates the gradient of a complex muffin-tin function. In other words,
 !   given the spherical harmonic expansion coefficients, $f_{lm}(r)$, of a
@@ -44,14 +43,14 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: nr,nri
+integer, intent(in) :: lmax
+integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
-complex(8), intent(in) :: zfmt(lmmaxvr,nr)
-integer, intent(in) :: ld
-complex(8), intent(out) :: gzfmt(lmmaxvr,ld,3)
+integer, intent(in) :: ld1,ld2
+complex(8), intent(in) :: zfmt(ld1,nr)
+complex(8), intent(out) :: gzfmt(ld1,ld2,3)
 ! local variables
-integer nr0,ir0,ir
-integer l,m,lm,lm1,i,j
+integer ir,l,m,lm,lm1,i,j
 ! real constant 1/sqrt(2)
 real(8), parameter :: c1=0.7071067811865475244d0
 real(8) t1,t2,t3
@@ -66,14 +65,7 @@ do ir=1,nr
   gzfmt(:,ir,:)=0.d0
 end do
 lm=0
-do l=0,lmaxvr
-  if (l.le.lmaxinr) then
-    nr0=nr
-    ir0=1
-  else
-    nr0=nr-nri
-    ir0=nri+1
-  end if
+do l=0,lmax
   t1=sqrt(dble(l+1)/dble(2*l+3))
   if (l.gt.0) then
     t2=sqrt(dble(l)/dble(2*l-1))
@@ -83,19 +75,19 @@ do l=0,lmaxvr
   do m=-l,l
     lm=lm+1
 ! compute the radial derivatives
-    f(ir0:nr)=dble(zfmt(lm,ir0:nr))
-    call fderiv(1,nr0,r(ir0),f(ir0),g1(ir0))
-    f(ir0:nr)=aimag(zfmt(lm,ir0:nr))
-    call fderiv(1,nr0,r(ir0),f(ir0),g2(ir0))
+    f(1:nr)=dble(zfmt(lm,1:nr))
+    call fderiv(1,nr,r,f,g1)
+    f(1:nr)=aimag(zfmt(lm,1:nr))
+    call fderiv(1,nr,r,f,g2)
     j=1
     do i=-1,1
       if (i.eq.0) j=3
       if (i.eq.1) j=2
-      if ((l+1.le.lmaxvr).and.(abs(m+i).le.l+1)) then
+      if ((l+1.le.lmax).and.(abs(m+i).le.l+1)) then
 ! index to (l,m) is l*(l+1)+m+1, therefore index to (l+1,m+i) is
         lm1=(l+1)*(l+2)+(m+i)+1
         t3=t1*clebgor(l,1,l+1,m,i,m+i)
-        do ir=ir0,nr
+        do ir=1,nr
           gzfmt(lm1,ir,j)=gzfmt(lm1,ir,j) &
            +t3*(cmplx(g1(ir),g2(ir),8)-dble(l)*ri(ir)*zfmt(lm,ir))
         end do
@@ -104,7 +96,7 @@ do l=0,lmaxvr
 ! index to (l-1,m+i)
         lm1=(l-1)*l+(m+i)+1
         t3=t2*clebgor(l,1,l-1,m,i,m+i)
-        do ir=ir0,nr
+        do ir=1,nr
           gzfmt(lm1,ir,j)=gzfmt(lm1,ir,j) &
            -t3*(cmplx(g1(ir),g2(ir),8)+dble(l+1)*ri(ir)*zfmt(lm,ir))
         end do
@@ -113,12 +105,8 @@ do l=0,lmaxvr
   end do
 end do
 ! convert from spherical components to Cartesian
+lm1=(lmax+1)**2
 do ir=1,nr
-  if (ir.le.nri) then
-    lm1=lmmaxinr
-  else
-    lm1=lmmaxvr
-  end if
   do lm=1,lm1
     z1=gzfmt(lm,ir,1)
     gzfmt(lm,ir,1)=c1*(z1-gzfmt(lm,ir,2))

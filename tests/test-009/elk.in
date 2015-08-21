@@ -10,13 +10,10 @@ test
  .true.
 
 maxscl
- 6
+ 2
 
 rgkmax
  6.0
-
-lradstp
- 2
 
 spinorb
  .true.

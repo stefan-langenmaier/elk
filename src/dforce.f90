@@ -11,8 +11,7 @@ implicit none
 complex(8), intent(out) :: dyn(3,natmtot)
 ! local variables
 integer ik,is,ias
-integer nr,nri,ir
-integer igq0,i
+integer nr,ir,igq0,i
 complex(8) zrho0,zsum,z1
 ! automatic arrays
 real(8) vn(nrmtmax)
@@ -33,11 +32,13 @@ allocate(zfmt(lmmaxvr,nrmtmax),gzfmt(lmmaxvr,nrmtmax,3))
 ! make complex copy of the density
 do ias=1,natmtot
   is=idxis(ias)
-  call rtozfmt(nrmt(is),nrmtinr(is),1,rhomt(:,:,ias),1,zrhomt(:,:,ias))
+  do ir=1,nrmt(is)
+    call rtozflm(lmaxvr,rhomt(:,ir,ias),zrhomt(:,ir,ias))
+  end do
 end do
 zrhoir(:)=rhoir(:)
 ! compute the gradient of the density
-call gradzf(zrhomt,zrhoir,grhomt,grhoir)
+call gradzf(nrmt,spnrmax,spr,vgc,nrmtmax,zrhomt,zrhoir,grhomt,grhoir)
 !--------------------------------------------------------------!
 !     Hellmann-Feynman force derivative for displaced atom     !
 !--------------------------------------------------------------!
@@ -52,18 +53,18 @@ zrhoir(:)=0.d0
 ! compute the gradient of the nuclear potential
 call potnucl(ptnucl,nr,spr(:,isph),spzn(isph),vn)
 do ir=1,nr
-  zfmt(:,ir)=0.d0
   zfmt(1,ir)=vn(ir)/y00
+  zfmt(2:4,ir)=0.d0
 end do
-call gradzfmt(nr,nrmtinr(isph),spr(:,isph),zfmt,nrmtmax,gzfmt)
+call gradzfmt(1,nr,spr(:,isph),lmmaxvr,nrmtmax,zfmt,gzfmt)
 ! compute the q-dependent nuclear Coulomb potential derivative
 zvclmt(:,:,:)=0.d0
 do ir=1,nr
   zvclmt(2:4,ir,iasph)=gzfmt(2:4,ir,ipph)
 end do
 tphdyn=.true.
-call zpotcoul(nrmt,nrmtinr,spnrmax,spr,igq0,gqc,jlgqr,ylmgq,sfacgq,zrhoir, &
- nrmtmax,zvclmt,zvclir,zrho0)
+call zpotcoul(nrmt,spnrmax,spr,igq0,gqc,jlgqr,ylmgq,sfacgq,zrhoir,nrmtmax, &
+ zvclmt,zvclir,zrho0)
 zfmt(:,:)=zvnmt(:,:)
 ! multiply with density derivative and integrate
 zsum=0.d0
@@ -73,7 +74,7 @@ end do
 zsum=zsum*omega/dble(ngtot)
 do ias=1,natmtot
   is=idxis(ias)
-  zsum=zsum+zfmtinp(.true.,nrmt(is),nrmtinr(is),spr(:,is),zvclmt(:,:,ias), &
+  zsum=zsum+zfmtinp(.true.,lmmaxvr,nrmt(is),spr(:,is),lmmaxvr,zvclmt(:,:,ias), &
    drhomt(:,:,ias))
 end do
 dyn(ipph,iasph)=-zsum
@@ -82,8 +83,8 @@ zvclmt(:,:,:)=0.d0
 do ir=1,nr
   zvclmt(2:4,ir,iasph)=gzfmt(2:4,ir,ipph)
 end do
-call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
- zvclmt,zvclir,zrho0)
+call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
+ zvclir,zrho0)
 tphdyn=.false.
 ! multiply with density gradient and integrate
 zsum=0.d0
@@ -93,13 +94,13 @@ end do
 zsum=zsum*omega/dble(ngtot)
 do ias=1,natmtot
   is=idxis(ias)
-  zsum=zsum+zfmtinp(.true.,nrmt(is),nrmtinr(is),spr(:,is),zvclmt(:,:,ias), &
+  zsum=zsum+zfmtinp(.true.,lmmaxvr,nrmt(is),spr(:,is),lmmaxvr,zvclmt(:,:,ias), &
    grhomt(:,:,ias,ipph))
 end do
 dyn(ipph,iasph)=dyn(ipph,iasph)-zsum
 ! nuclear-nuclear term
 zvclmt(:,:,iasph)=zvnmt(:,:)-zfmt(:,:)
-call gradzf(zvclmt,zvclir,gvclmt,gvclir)
+call gradzf(nrmt,spnrmax,spr,vgc,nrmtmax,zvclmt,zvclir,gvclmt,gvclir)
 do ias=1,natmtot
   is=idxis(ias)
   z1=spzn(is)*gvclmt(1,irfhf(is),ias,ipph)*y00
@@ -111,15 +112,16 @@ end do
 do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
-  nri=nrmtinr(is)
 ! remove the gradient part of the Coulomb potential for displaced muffin-tin
   if (ias.eq.iasph) then
-    call rtozfmt(nr,nri,1,vclmt(:,:,iasph),1,zfmt)
-    call gradzfmt(nr,nri,spr(:,isph),zfmt,nrmtmax,gzfmt)
+    do ir=1,nr
+      call rtozflm(lmaxvr,vclmt(:,ir,iasph),zfmt(:,ir))
+    end do
+    call gradzfmt(lmaxvr,nr,spr(:,isph),lmmaxvr,nrmtmax,zfmt,gzfmt)
     dvclmt(:,1:nr,ias)=dvclmt(:,1:nr,ias)+gzfmt(:,1:nr,ipph)
   end if
 ! compute the gradient of the Coulomb potential derivative at the nucleus
-  call gradzfmt(nr,nri,spr(:,is),dvclmt(:,:,ias),nrmtmax,gzfmt)
+  call gradzfmt(1,nr,spr(:,is),lmmaxvr,nrmtmax,dvclmt(:,:,ias),gzfmt)
   do i=1,3
     if ((ias.eq.iasph).and.(i.eq.ipph)) cycle
     dyn(i,ias)=spzn(is)*gzfmt(1,irfhf(is),i)*y00
@@ -141,21 +143,23 @@ if (tfibs) then
   do ias=1,natmtot
     is=idxis(ias)
     nr=nrmt(is)
-    nri=nrmtinr(is)
     do i=1,3
-      z1=zfmtinp(.true.,nr,nri,spr(:,is),grhomt(:,:,ias,i),dvsmt(:,:,ias))
+      z1=zfmtinp(.true.,lmmaxvr,nr,spr(:,is),lmmaxvr,grhomt(:,:,ias,i), &
+       dvsmt(:,:,ias))
       dyn(i,ias)=dyn(i,ias)-z1
     end do
 ! convert Kohn-Sham potential to complex spherical harmonics
-    call rtozfmt(nr,nri,1,vsmt(:,:,ias),1,zfmt)
+    do ir=1,nr
+      call rtozflm(lmaxvr,vsmt(:,ir,ias),zfmt(:,ir))
+    end do
 ! remove the gradient part from the density derivative for displaced muffin-tin
     if (ias.eq.iasph) then
       drhomt(:,1:nr,ias)=drhomt(:,1:nr,ias)+grhomt(:,1:nr,ias,ipph)
     end if
 ! compute the gradient of the density derivative
-    call gradzfmt(nr,nri,spr(:,is),drhomt(:,:,ias),nrmtmax,gzfmt)
+    call gradzfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,drhomt(:,:,ias),gzfmt)
     do i=1,3
-      z1=zfmtinp(.true.,nr,nri,spr(:,is),zfmt,gzfmt(:,:,i))
+      z1=zfmtinp(.true.,lmmaxvr,nr,spr(:,is),lmmaxvr,zfmt,gzfmt(:,:,i))
       dyn(i,ias)=dyn(i,ias)-z1
     end do
   end do

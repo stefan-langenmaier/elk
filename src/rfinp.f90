@@ -34,7 +34,8 @@ implicit none
 integer, intent(in) :: lrstp
 real(8), intent(in) :: rfmt1(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: rfmt2(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(in) :: rfir1(ngtot),rfir2(ngtot)
+real(8), intent(in) :: rfir1(ngtot)
+real(8), intent(in) :: rfir2(ngtot)
 ! local variables
 integer is,ias,ir
 real(8) sum
@@ -52,7 +53,7 @@ sum=sum*omega/dble(ngtot)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  sum=sum+rfmtinp(lrstp,nrmt(is),nrmtinr(is),spr(:,is),rfmt1(:,:,ias), &
+  sum=sum+rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
    rfmt2(:,:,ias))
 end do
 !$OMP END DO

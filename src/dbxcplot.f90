@@ -7,7 +7,7 @@ subroutine dbxcplot
 use modmain
 implicit none
 ! local variables
-integer idm,is,ias,ir
+integer idm,is,ia,ias,ir
 ! allocatable arrays
 real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 real(8), allocatable :: rfmt(:,:,:),rfir(:)
@@ -40,10 +40,12 @@ rfmt(:,:,:)=0.d0
 rfir(:)=0.d0
 do idm=1,3
   call gradrf(rvfmt(:,:,:,idm),rvfir(:,idm),grfmt,grfir)
-  do ias=1,natmtot
-    is=idxis(ias)
-    do ir=1,nrmt(is)
-      rfmt(:,ir,ias)=rfmt(:,ir,ias)+grfmt(:,ir,ias,idm)
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      ias=idxas(ia,is)
+      do ir=1,nrmt(is)
+        rfmt(:,ir,ias)=rfmt(:,ir,ias)+grfmt(:,ir,ias,idm)
+      end do
     end do
   end do
   rfir(:)=rfir(:)+grfir(:,idm)
@@ -52,7 +54,7 @@ select case(task)
 case(91)
   open(50,file='DBXC1D.OUT',action='WRITE',form='FORMATTED')
   open(51,file='DBXCLINES.OUT',action='WRITE',form='FORMATTED')
-  call plot1d(50,51,1,rfmt,rfir)
+  call plot1d(50,51,1,lmaxvr,lmmaxvr,rfmt,rfir)
   close(50)
   close(51)
   write(*,*)
@@ -62,14 +64,14 @@ case(91)
   write(*,'(" vertex location lines written to DBXCLINES.OUT")')
 case(92)
   open(50,file='DBXC2D.OUT',action='WRITE',form='FORMATTED')
-  call plot2d(50,1,rfmt,rfir)
+  call plot2d(50,1,lmaxvr,lmmaxvr,rfmt,rfir)
   close(50)
   write(*,'("Info(dbxcplot):")')
   write(*,'(" 2D divergence of exchange-correlation field written to &
    &DBXC2D.OUT")')
 case(93)
   open(50,file='DBXC3D.OUT',action='WRITE',form='FORMATTED')
-  call plot3d(50,1,rfmt,rfir)
+  call plot3d(50,1,lmaxvr,lmmaxvr,rfmt,rfir)
   close(50)
   write(*,'("Info(dbxcplot):")')
   write(*,'(" 3D divergence of exchange-correlation field written to &

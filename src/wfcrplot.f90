@@ -7,7 +7,7 @@ subroutine wfcrplot
 use modmain
 implicit none
 ! local variables
-integer ist,is,ia,ias,ir
+integer is,ia,ias,ir,ist
 character(256) fname
 ! initialise universal variables
 call init0

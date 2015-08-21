@@ -9,8 +9,8 @@ use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   l     : angular momentum (in,integer)
 !   k1    : k-index of tensor moment (in,integer)
-!   p     : p-index of tensor moment (in,integer)
-!   r     : r-index of tensor moment (in,integer)
+!   p     : p-index of tensor moment  (in,integer)
+!   r     : r-index of tensor moment  (in,integer)
 !   w2    : modulus square of k1-p-r tensmom (in,real)
 !   dmpol : polarization (out,real)
 ! !DESCRIPTION:

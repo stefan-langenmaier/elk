@@ -46,9 +46,9 @@ do i2=1,nvbse
     call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
      wfir2(:,:,ist2),wfir2(:,:,jst2),zrhomt,zrhoir)
 ! compute the Coulomb potential
-    call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt(:,:,:,l))
-    call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,1,gc,jlgr,ylmg,sfacg,zrhoir, &
-     nrcmtmax,zvclmt(:,:,:,l),zvclir(:,l),zrho0)
+    call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt(:,:,:,l))
+    call zpotcoul(nrcmt,nrcmtmax,rcmt,1,gc,jlgr,ylmg,sfacg,zrhoir,nrcmtmax, &
+     zvclmt(:,:,:,l),zvclir(:,l),zrho0)
   end do
 end do
 t0=occmax*wkptnr

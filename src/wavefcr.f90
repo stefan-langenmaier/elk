@@ -9,16 +9,17 @@ implicit none
 ! arguments
 logical, intent(in) :: tsh
 integer, intent(in) :: lrstp
-integer, intent(in) :: is,ia
+integer, intent(in) :: is
+integer, intent(in) :: ia
 integer, intent(in) :: ist
 ! pass in m-1/2
 integer, intent(in) :: m
 integer, intent(in) :: ld
 complex(8), intent(out) :: wfcr(lmmaxvr,ld,2)
 ! local variables
-integer ias,nri,ir,irc
+integer ias,ir,irc
 integer k,l,lm,lm1
-real(8) c1,c2,t1,t2,t3
+real(8) c1,c2,t1,t2
 l=spl(ist,is)
 k=spk(ist,is)
 if (((k.ne.l+1).and.(k.ne.l)).or.(m.lt.-k).or.(m.gt.k-1)) then
@@ -30,9 +31,9 @@ if (((k.ne.l+1).and.(k.ne.l)).or.(m.lt.-k).or.(m.gt.k-1)) then
   write(*,*)
   stop
 end if
-if (l.gt.lmaxinr) then
+if (l.gt.lmaxvr) then
   write(*,*)
-  write(*,'("Error(wavefcr): l > lmaxinr : ",2I8)') l,lmaxinr
+  write(*,'("Error(wavefcr): l > lmaxvr : ",2I8)') l,lmaxvr
   write(*,*)
   stop
 end if
@@ -59,7 +60,6 @@ else
 end if
 if ((tsh).or.(lm.eq.0)) wfcr(:,:,1)=0.d0
 if ((tsh).or.(lm1.eq.0)) wfcr(:,:,2)=0.d0
-nri=nrmtinr(is)
 irc=0
 do ir=1,nrmt(is),lrstp
   irc=irc+1
@@ -69,17 +69,8 @@ do ir=1,nrmt(is),lrstp
     if (lm.gt.0) wfcr(lm,irc,1)=t1*c1
     if (lm1.gt.0) wfcr(lm1,irc,2)=t1*c2
   else
-    t2=t1*c1
-    t3=t1*c2
-    if (ir.le.nri) then
-! inner part of muffin-tin
-      if (lm.gt.0) wfcr(1:lmmaxinr,irc,1)=t2*zbshtinr(1:lmmaxinr,lm)
-      if (lm1.gt.0) wfcr(1:lmmaxinr,irc,2)=t3*zbshtinr(1:lmmaxinr,lm1)
-    else
-! outer part of muffin-tin
-      if (lm.gt.0) wfcr(:,irc,1)=t2*zbshtvr(:,lm)
-      if (lm1.gt.0) wfcr(:,irc,2)=t3*zbshtvr(:,lm1)
-    end if
+    if (lm.gt.0) wfcr(:,irc,1)=t1*c1*zbshtvr(:,lm)
+    if (lm1.gt.0) wfcr(:,irc,2)=t1*c2*zbshtvr(:,lm1)
   end if
 end do
 return

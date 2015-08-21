@@ -9,7 +9,7 @@ tasks
 test
  .true.
 
-msmooth
+maxscl
   2
 
 wplot
@@ -18,9 +18,6 @@ wplot
 
 gmaxvr
  10.0
-
-xctype
-  20
 
 lda+u
   3 1                      : ldapu

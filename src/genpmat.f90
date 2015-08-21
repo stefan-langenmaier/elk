@@ -42,10 +42,8 @@ complex(8), intent(in) :: wfir(ngkmax,nspinor,nstsv)
 complex(8), intent(out) :: pmat(3,nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,jst
-integer is,ia,ias,i
-integer nrc,nrci,irc
-integer lmmax,itp,igp,ifg
-real(8) cso
+integer is,ia,ias,nrc,ir,irc
+integer igp,ifg,itp,i
 complex(8) z1,z2,z11,z12,z21,z22,z31,z32
 ! allocatable arrays
 complex(8), allocatable :: gwfmt(:,:,:,:),gwfir(:,:),x(:)
@@ -53,8 +51,6 @@ complex(8), allocatable :: gvmt(:,:,:),zfmt1(:,:,:),zfmt2(:,:,:,:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
-! coefficient of spin-orbit coupling
-cso=1.d0/(4.d0*solsc**2)
 ! zero the momentum matrix elements array
 pmat(:,:,:)=0.d0
 !---------------------------------!
@@ -68,39 +64,39 @@ if (spinorb) then
 end if
 do is=1,nspecies
   nrc=nrcmt(is)
-  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute gradient of potential for spin-orbit correction if required
     if (spinorb) then
-      call rtozfmt(nrc,nrci,lradstp,vsmt(:,:,ias),1,zfmt1)
-      call gradzfmt(nrc,nrci,rcmt(:,is),zfmt1,nrcmtmax,gvmt)
+      irc=0
+      do ir=1,nrmt(is),lradstp
+        irc=irc+1
+        call rtozflm(lmaxvr,vsmt(:,ir,ias),zfmt1(:,irc,1))
+      end do
+      call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax,zfmt1,gvmt)
 ! convert to spherical coordinates
       do i=1,3
         zfmt1(:,1:nrc,1)=gvmt(:,1:nrc,i)
-        call zbsht(nrc,nrci,zfmt1,gvmt(:,:,i))
+        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1, &
+         lmmaxvr,zzero,gvmt(:,:,i),lmmaxvr)
       end do
     end if
     do jst=1,nstsv
       do ispn=1,nspinor
 ! compute the gradient of the wavefunction
-        call gradzfmt(nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,jst),nrcmtmax, &
-         gwfmt(:,:,:,ispn))
+        call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax, &
+         wfmt(:,:,ias,ispn,jst),gwfmt(:,:,:,ispn))
       end do
 ! add spin-orbit correction if required
       if (spinorb) then
         do ispn=1,nspinor
 ! convert wavefunction to spherical coordinates
-          call zbsht(nrc,nrci,wfmt(:,:,ias,ispn,jst),zfmt1(:,:,ispn))
+          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
+           wfmt(:,:,ias,ispn,jst),lmmaxvr,zzero,zfmt1(:,:,ispn),lmmaxvr)
         end do
 ! compute sigma x (grad V(r)) psi(r)
         do irc=1,nrc
-          if (irc.le.nrci) then
-            lmmax=lmmaxinr
-          else
-            lmmax=lmmaxvr
-          end if
-          do itp=1,lmmax
+          do itp=1,lmmaxvr
             z1=zfmt1(itp,irc,1)
             z2=zfmt1(itp,irc,2)
             z11=gvmt(itp,irc,1)*z1
@@ -118,10 +114,11 @@ do is=1,nspecies
           end do
         end do
 ! convert to spherical harmonics and add to wavefunction gradient
+        z1=1.d0/(4.d0*solsc**2)
         do ispn=1,nspinor
           do i=1,3
-            call zfsht(nrc,nrci,zfmt2(:,:,i,ispn),zfmt1)
-            gwfmt(:,1:nrc,i,ispn)=gwfmt(:,1:nrc,i,ispn)+cso*zfmt1(:,1:nrc,1)
+            call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,z1,zfshtvr,lmmaxvr, &
+             zfmt2(:,:,i,ispn),lmmaxvr,zone,gwfmt(:,:,i,ispn),lmmaxvr)
           end do
         end do
       end if
@@ -129,8 +126,8 @@ do is=1,nspecies
       do ispn=1,nspinor
         do ist=1,jst
           do i=1,3
-            pmat(i,ist,jst)=pmat(i,ist,jst)+zfmtinp(.true.,nrc,nrci, &
-             rcmt(:,is),wfmt(:,:,ias,ispn,ist),gwfmt(:,:,i,ispn))
+            pmat(i,ist,jst)=pmat(i,ist,jst)+zfmtinp(.true.,lmmaxvr,nrc, &
+             rcmt(:,is),lmmaxvr,wfmt(:,:,ias,ispn,ist),gwfmt(:,:,i,ispn))
           end do
         end do
       end do

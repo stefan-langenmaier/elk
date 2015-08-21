@@ -41,8 +41,8 @@ do is=1,nspecies
 ! in my experience this value is low enough in order to not miss it
 ! and jump by mistake, for a given l, at higher n quantum number
     flue(io,l,ias)=-0.5d0
-    call findband(solsc,l,0,nrmt(is),spr(1,is),vr,0.d0,epsband,demaxbnd, &
-     flue(io,l,ias),fnd)
+    call findband(solsc,l,0,nprad,nrmt(is),spr(1,is),vr,0.d0,epsband, &
+     demaxbnd,flue(io,l,ias),fnd)
     if (.not.fnd) then
       write(*,*)
       write(*,'("Warning(engyflu): energy not found")')

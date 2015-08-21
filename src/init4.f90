@@ -7,7 +7,6 @@ subroutine init4
 use modmain
 use modphonon
 use modpw
-use modvars
 implicit none
 ! local variables
 integer ik,ihk,jspn
@@ -63,14 +62,6 @@ if (task.eq.135) then
       end do
 ! generate structure factors for H+k-vectors
       call gensfacgp(nhk(jspn,ik),vhkc(:,:,jspn,ik),nhkmax,sfachk(:,:,jspn,ik))
-    end do
-  end do
-! write to VARIABLES.OUT
-  call writevars('hkmax',rv=hkmax)
-  call writevars('nhk',nv=nspnfv*nkpt,iva=nhk)
-  do ik=1,nkpt
-    do jspn=1,nspnfv
-      call writevars('ihkig',l=jspn,m=ik,nv=nhk(jspn,ik),iva=ihkig(:,jspn,ik))
     end do
   end do
 end if

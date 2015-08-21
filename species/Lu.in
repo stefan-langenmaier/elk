@@ -2,7 +2,7 @@
  'lutetium'                                 : spname
   -71.0000                                  : spzn
    318945.3294                              : spmass
-  0.237356E-06    2.8000   55.2536   700    : sprmin, rmt, sprmax, nrmt
+  0.237356E-06    2.8000   56.5558   700    : sprmin, rmt, sprmax, nrmt
   21                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -44,12 +44,12 @@
    3   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.3291   0  T
+ -0.8291   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.2383   0  T
+ -2.7383   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.0908   0  T
+ -1.5908   0  T

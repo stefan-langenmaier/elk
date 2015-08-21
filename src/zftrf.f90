@@ -43,10 +43,8 @@ real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: rfir(ngtot)
 complex(8), intent(out) :: zfp(npv)
 ! local variables
-integer is,ia,ias
-integer nrc,nrci,irc0,irc
-integer lmax,l,m,lm
-integer ip,ig,ifg
+integer is,ia,ias,ip,ig,ifg
+integer nrc,ir,irc,l,m,lm
 real(8) p,tp(2),t0,t1,t2
 complex(8) zsum1,zsum2
 complex(8) z1,z2,z3
@@ -81,7 +79,11 @@ end do
 ! convert function from real to complex spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
-  call rtozfmt(nrcmt(is),nrcmtinr(is),lradstp,rfmt(:,:,ias),1,zfmt(:,:,ias))
+  irc=0
+  do ir=1,nrmt(is),lradstp
+    irc=irc+1
+    call rtozflm(lmaxvr,rfmt(:,ir,ias),zfmt(:,irc,ias))
+  end do
 end do
 ! remove continuation of interstitial function into muffin-tin
 do ig=1,ngtot
@@ -93,7 +95,6 @@ do ig=1,ngtot
   ylm(:)=conjg(ylm(:))
   do is=1,nspecies
     nrc=nrcmt(is)
-    nrci=nrcmtinr(is)
 ! generate spherical Bessel functions
     do irc=1,nrc
       t1=gc(ig)*rcmt(irc,is)
@@ -106,18 +107,11 @@ do ig=1,ngtot
       z1=fourpi*zfft(ifg)*cmplx(cos(t1),sin(t1),8)
       lm=0
       do l=0,lmaxvr
-        if (l.le.lmaxinr) then
-          irc0=1
-        else
-          irc0=nrci+1
-        end if
         z2=z1*zil(l)
         do m=-l,l
           lm=lm+1
           z3=z2*ylm(lm)
-          do irc=irc0,nrc
-            zfmt(lm,irc,ias)=zfmt(lm,irc,ias)-z3*jl(l,irc)
-          end do
+          zfmt(lm,1:nrc,ias)=zfmt(lm,1:nrc,ias)-z3*jl(l,1:nrc)
         end do
       end do
     end do
@@ -132,7 +126,6 @@ do ip=1,npv
   call genylm(lmaxvr,tp,ylm)
   do is=1,nspecies
     nrc=nrcmt(is)
-    nrci=nrcmtinr(is)
 ! generate spherical Bessel functions
     do irc=1,nrc
       t1=p*rcmt(irc,is)
@@ -144,14 +137,9 @@ do ip=1,npv
       t1=-dot_product(vpc(:,ip),atposc(:,ia,is))
       z1=t0*cmplx(cos(t1),sin(t1),8)
       do irc=1,nrc
-        if (irc.le.nrci) then
-          lmax=lmaxinr
-        else
-          lmax=lmaxvr
-        end if
         zsum1=jl(0,irc)*zfmt(1,irc,ias)*ylm(1)
         lm=1
-        do l=1,lmax
+        do l=1,lmaxvr
           lm=lm+1
           zsum2=zfmt(lm,irc,ias)*ylm(lm)
           do m=1-l,l

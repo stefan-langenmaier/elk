@@ -19,27 +19,42 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer idm,is,ias
-integer nr,nrc,nrci,ir,irc
+integer ld,is,ias,idm
+integer nr,nri,iro,ir
+integer nrci,nrco,irco,irc
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:)
+ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(rfmt,is,nr,nrc) &
-!$OMP PRIVATE(nrci,irc,ir,idm)
+!$OMP PRIVATE(rfmt,is,nr,nri,iro) &
+!$OMP PRIVATE(nrci,nrco,irco,irc,ir,idm)
 !$OMP DO
 do ias=1,natmtot
   allocate(rfmt(lmmaxvr,nrcmtmax))
   is=idxis(ias)
+! number of inner/outer and fine/coarse radial mesh points
   nr=nrmt(is)
-  nrc=nrcmt(is)
+  nri=nrmtinr(is)
+  iro=nri+1
   nrci=nrcmtinr(is)
+  nrco=nrcmt(is)-nrci
+  irco=nrci+1
 ! convert the density to spherical harmonics
   irc=0
   do ir=1,nr,lradstp
     irc=irc+1
     rfmt(:,irc)=rhomt(:,ir,ias)
   end do
-  call rfsht(nrc,nrci,1,rfmt,lradstp,rhomt(:,:,ias))
+! inner part of muffin-tin
+  call dgemm('N','N',lmmaxinr,nrci,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rfmt,lmmaxvr, &
+   0.d0,rhomt(:,:,ias),ld)
+! outer part of muffin-tin
+  call dgemm('N','N',lmmaxvr,nrco,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rfmt(:,irco), &
+   lmmaxvr,0.d0,rhomt(:,iro,ias),ld)
+! zero the components with lmax > lmaxinr for the inner part
+  do ir=1,nri,lradstp
+    rhomt(lmmaxinr+1:,ir,ias)=0.d0
+  end do
 ! convert magnetisation to spherical harmonics
   if (spinpol) then
     do idm=1,ndmag
@@ -48,7 +63,16 @@ do ias=1,natmtot
         irc=irc+1
         rfmt(:,irc)=magmt(:,ir,ias,idm)
       end do
-      call rfsht(nrc,nrci,1,rfmt,lradstp,magmt(:,:,ias,idm))
+! inner part of muffin-tin
+      call dgemm('N','N',lmmaxinr,nrci,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rfmt, &
+       lmmaxvr,0.d0,magmt(:,:,ias,idm),ld)
+! outer part of muffin-tin
+      call dgemm('N','N',lmmaxvr,nrco,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+       rfmt(:,irco),lmmaxvr,0.d0,magmt(:,iro,ias,idm),ld)
+! zero the components with lmax > lmaxinr for the inner part
+      do ir=1,nri,lradstp
+        magmt(lmmaxinr+1:,ir,ias,idm)=0.d0
+      end do
     end do
   end if
   deallocate(rfmt)

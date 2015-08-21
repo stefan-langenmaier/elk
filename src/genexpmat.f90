@@ -11,9 +11,10 @@ real(8), intent(in) :: vpl(3)
 complex(8), intent(in) :: expmt(lmmaxvr,nrcmtmax,natmtot)
 complex(8), intent(out) :: emat(nstsv,nstsv)
 ! local variables
-integer ist,jst,ispn,i,j,k,l
-integer is,ia,ias,nrc,nrci
+integer is,ia,ias
 integer ngp,ngpq,igp,ifg
+integer ist,jst,ispn
+integer nrc,i,j,k,l
 real(8) vpc(3),vpql(3),vpqc(3),t1
 complex(8) zsum
 ! allocatable arrays
@@ -88,24 +89,25 @@ em(:,:)=0.d0
 !------------------------------------!
 do is=1,nspecies
   nrc=nrcmt(is)
-  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist=1,nstfv
 ! calculate the wavefunction for k-point p+q
       call wavefmt(lradstp,lmaxvr,ias,ngpq,apwalm2,evecfv2(:,ist),lmmaxvr,wfmt1)
 ! convert from spherical harmonics to spherical coordinates
-      call zbsht(nrc,nrci,wfmt1,wfmt2(:,:,ist))
+      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt1, &
+       lmmaxvr,zzero,wfmt2(:,:,ist),lmmaxvr)
 ! multiply by exp(-iq.r) (conjugate because zfmtinp conjugates first function)
-      call zfmtmul1(nrc,nrci,expmt(:,:,ias),wfmt2(:,:,ist),wfmt1)
+      wfmt1(:,1:nrc)=wfmt2(:,1:nrc,ist)*conjg(expmt(:,1:nrc,ias))
 ! convert from spherical coordinates to spherical harmonics
-      call zfsht(nrc,nrci,wfmt1,wfmt2(:,:,ist))
+      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt1, &
+       lmmaxvr,zzero,wfmt2(:,:,ist),lmmaxvr)
     end do
     do jst=1,nstfv
 ! calculate the wavefunction for k-point p
       call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm1,evecfv1(:,jst),lmmaxvr,wfmt1)
       do ist=1,nstfv
-        em(ist,jst)=em(ist,jst)+zfmtinp(.true.,nrc,nrci,rcmt(:,is), &
+        em(ist,jst)=em(ist,jst)+zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
          wfmt2(:,:,ist),wfmt1)
       end do
     end do

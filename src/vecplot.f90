@@ -133,7 +133,7 @@ case(72,82,142,152)
   else
     open(50,file='MCBXC2D.OUT',action='WRITE',form='FORMATTED')
   end if
-  call plot2d(50,3,rvfmt,rvfir)
+  call plot2d(50,3,lmaxvr,lmmaxvr,rvfmt,rvfir)
   close(50)
   write(*,*)
   write(*,'("Info(vecplot):")')
@@ -156,7 +156,7 @@ case(73,83,143,153)
   else
     open(50,file='MCBXC3D.OUT',action='WRITE',form='FORMATTED')
   end if
-  call plot3d(50,3,rvfmt,rvfir)
+  call plot3d(50,3,lmaxvr,lmmaxvr,rvfmt,rvfir)
   close(50)
   write(*,*)
   write(*,'("Info(vecplot):")')

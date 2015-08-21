@@ -63,29 +63,29 @@ write(fname,'("TEST",I3.3,".OUT")') id
 open(90,file=trim(fname),action='WRITE',form='FORMATTED')
 write(90,'("''",A,"''")') trim(descr)
 if (present(iv)) then
-  write(90,'(2I8)') 1,1
+  write(90,'(I8,I4)') 1,1
   write(90,'(2I8)') 1,iv
 else if (present(rv)) then
-  write(90,'(2I8)') 2,1
+  write(90,'(I8,I4)') 2,1
   write(90,'(G22.12)') tol
   write(90,'(I8,G22.12)') 1,rv
 else if (present(zv)) then
-  write(90,'(2I8)') 3,1
+  write(90,'(I8,I4)') 3,1
   write(90,'(G22.12)') tol
   write(90,'(I8,2G22.12)') 1,dble(zv),aimag(zv)
 else if (present(iva)) then
-  write(90,'(2I8)') 1,nv
+  write(90,'(I8,I4)') 1,nv
   do i=1,nv
     write(90,'(2I8)') i,iva(i)
   end do
 else if (present(rva)) then
-  write(90,'(2I8)') 2,nv
+  write(90,'(I8,I4)') 2,nv
   write(90,'(G22.12)') tol
   do i=1,nv
     write(90,'(I8,G22.12)') i,rva(i)
   end do
 else if (present(zva)) then
-  write(90,'(2I8)') 3,nv
+  write(90,'(I8,I4)') 3,nv
   write(90,'(G22.12)') tol
   do i=1,nv
     write(90,'(I8,2G22.12)') i,dble(zva(i)),aimag(zva(i))

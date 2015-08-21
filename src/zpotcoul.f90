@@ -6,14 +6,13 @@
 !BOP
 ! !ROUTINE: zpotcoul
 ! !INTERFACE:
-subroutine zpotcoul(nr,nri,ld1,r,igp0,gpc,jlgpr,ylmgp,sfacgp,zrhoir,ld2, &
- zvclmt,zvclir,zrho0)
+subroutine zpotcoul(nr,ld1,r,igp0,gpc,jlgpr,ylmgp,sfacgp,zrhoir,ld2,zvclmt, &
+ zvclir,zrho0)
 ! !USES:
 use modmain
 use modphonon
 ! !INPUT/OUTPUT PARAMETERS:
 !   nr     : number of radial points for each species (in,integer(nspecies))
-!   nri    : number of points on inner part of muffin-tin (in,integer(nspecies))
 !   ld1    : leading dimension (in,integer)
 !   r      : radial mesh for each species (in,real(ld1,nspecies))
 !   igp0   : index of the shortest G+p-vector (in,integer)
@@ -92,7 +91,7 @@ use modphonon
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: nr(nspecies),nri(nspecies)
+integer, intent(in) :: nr(nspecies)
 integer, intent(in) :: ld1
 real(8), intent(in) :: r(ld1,nspecies)
 integer, intent(in) :: igp0
@@ -106,8 +105,8 @@ complex(8), intent(inout) :: zvclmt(lmmaxvr,ld2,natmtot)
 complex(8), intent(out) :: zvclir(ngtot)
 complex(8), intent(out) :: zrho0
 ! local variables
-integer is,ia,ias,ir0,ir
-integer l,m,lm,ig,ifg
+integer is,ia,ias,l,m,lm
+integer ir,ig,ifg
 real(8) t0,t1,t2,t3
 complex(8) zsum1,zsum2,z1,z2
 ! automatic arrays
@@ -249,11 +248,6 @@ do is=1,nspecies
 ! add homogenous solution
     lm=0
     do l=0,lmaxvr
-      if (l.le.lmaxinr) then
-        ir0=1
-      else
-        ir0=nri(is)+1
-      end if
       do m=-l,l
         lm=lm+1
         z1=zlm(lm)-zvclmt(lm,nr(is),ias)
@@ -261,10 +255,10 @@ do is=1,nspecies
 ! matrix calculation
         if (tphdyn) then
           if (ias.eq.iasph) then
-            zvnmt(lm,ir0:nr(is))=z1*rl(ir0:nr(is),l)
+            zvnmt(lm,1:nr(is))=z1*rl(1:nr(is),l)
           end if
         end if
-        do ir=ir0,nr(is)
+        do ir=1,nr(is)
           zvclmt(lm,ir,ias)=zvclmt(lm,ir,ias)+z1*rl(ir,l)
         end do
       end do

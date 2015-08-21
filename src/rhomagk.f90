@@ -39,9 +39,10 @@ integer, intent(in) :: ik
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv)
 ! local variables
-integer ispn,jspn,ist,is,ia,ias
-integer nr,nrc,nrci,ir,irc
-integer lmmax,itp,igk,ifg,i,j
+integer ispn,jspn,ist
+integer is,ia,ias,itp
+integer nr,nrc,ir,irc
+integer igk,ifg,i,j,n
 real(8) t0,t1,t2,t3,t4
 real(8) ts0,ts1
 complex(8) zq(2),z1,z2
@@ -49,15 +50,17 @@ complex(8) zq(2),z1,z2
 logical done(nstfv,nspnfv)
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: wfmt1(:,:,:,:),wfmt2(:,:)
-complex(8), allocatable :: wfmt3(:,:,:),wfir(:,:)
+complex(8), allocatable :: wfmt1(:,:)
+complex(8), allocatable :: wfmt2(:,:,:,:)
+complex(8), allocatable :: wfmt3(:,:,:)
+complex(8), allocatable :: wfir(:,:)
 call timesec(ts0)
 !----------------------------------------------!
 !     muffin-tin density and magnetisation     !
 !----------------------------------------------!
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-if (tevecsv) allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv,nspnfv))
-allocate(wfmt2(lmmaxvr,nrcmtmax))
+allocate(wfmt1(lmmaxvr,nrcmtmax))
+if (tevecsv) allocate(wfmt2(lmmaxvr,nrcmtmax,nstfv,nspnfv))
 allocate(wfmt3(lmmaxvr,nrcmtmax,nspinor))
 ! find the matching coefficients
 do ispn=1,nspnfv
@@ -67,7 +70,7 @@ end do
 do is=1,nspecies
   nr=nrmt(is)
   nrc=nrcmt(is)
-  nrci=nrcmtinr(is)
+  n=lmmaxvr*nrc
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! de-phasing factor for spin-spirals
@@ -83,10 +86,10 @@ do is=1,nspecies
       t4=2.d0*t0
       if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
+        wfmt3(:,:,:)=0.d0
         i=0
         do ispn=1,nspinor
           jspn=jspnfv(ispn)
-          wfmt2(:,:)=0.d0
           do ist=1,nstfv
             i=i+1
             z1=evecsv(i,j)
@@ -94,23 +97,24 @@ do is=1,nspecies
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
               if (.not.done(ist,jspn)) then
                 call wavefmt(lradstp,lmaxvr,ias,ngk(jspn,ik), &
-                 apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
-                 wfmt1(:,:,ist,jspn))
+                 apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt1)
+! convert from spherical harmonics to spherical coordinates
+                call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
+                 wfmt1,lmmaxvr,zzero,wfmt2(:,:,ist,jspn),lmmaxvr)
                 done(ist,jspn)=.true.
               end if
 ! add to spinor wavefunction
-              call zfmtadd(nrc,nrci,z1,wfmt1(:,:,ist,jspn),wfmt2)
+              call zaxpy(n,z1,wfmt2(:,:,ist,jspn),1,wfmt3(:,:,ispn),1)
             end if
           end do
-! convert to spherical coordinates
-          call zbsht(nrc,nrci,wfmt2,wfmt3(:,:,ispn))
         end do
       else
 ! spin-unpolarised wavefunction
         call wavefmt(lradstp,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1), &
-         lmmaxvr,wfmt2)
-! convert to spherical coordinates
-        call zbsht(nrc,nrci,wfmt2,wfmt3)
+         lmmaxvr,wfmt1)
+! convert from spherical harmonics to spherical coordinates
+        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt1, &
+         lmmaxvr,zzero,wfmt3,lmmaxvr)
       end if
 ! add to density and magnetisation
 !$OMP CRITICAL
@@ -121,12 +125,7 @@ do is=1,nspecies
           irc=0
           do ir=1,nr,lradstp
             irc=irc+1
-            if (irc.le.nrci) then
-              lmmax=lmmaxinr
-            else
-              lmmax=lmmaxvr
-            end if
-            do itp=1,lmmax
+            do itp=1,lmmaxvr
               z1=wfmt3(itp,irc,1)
               z2=wfmt3(itp,irc,2)
               t1=dble(z1)**2+aimag(z1)**2
@@ -143,12 +142,7 @@ do is=1,nspecies
           irc=0
           do ir=1,nr,lradstp
             irc=irc+1
-            if (irc.le.nrci) then
-              lmmax=lmmaxinr
-            else
-              lmmax=lmmaxvr
-            end if
-            do itp=1,lmmax
+            do itp=1,lmmaxvr
               t1=dble(wfmt3(itp,irc,1))**2+aimag(wfmt3(itp,irc,1))**2
               t2=dble(wfmt3(itp,irc,2))**2+aimag(wfmt3(itp,irc,2))**2
               rhomt(itp,ir,ias)=rhomt(itp,ir,ias)+t0*(t1+t2)
@@ -161,21 +155,16 @@ do is=1,nspecies
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          if (irc.le.nrci) then
-            lmmax=lmmaxinr
-          else
-            lmmax=lmmaxvr
-          end if
-          rhomt(1:lmmax,ir,ias)=rhomt(1:lmmax,ir,ias) &
-           +t0*(dble(wfmt3(1:lmmax,irc,1))**2+aimag(wfmt3(1:lmmax,irc,1))**2)
+          rhomt(:,ir,ias)=rhomt(:,ir,ias) &
+           +t0*(dble(wfmt3(:,irc,1))**2+aimag(wfmt3(:,irc,1))**2)
         end do
       end if
 !$OMP END CRITICAL
     end do
   end do
 end do
-if (tevecsv) deallocate(wfmt1)
-deallocate(apwalm,wfmt2,wfmt3)
+deallocate(apwalm,wfmt1,wfmt3)
+if (tevecsv) deallocate(wfmt2)
 !------------------------------------------------!
 !     interstitial density and magnetisation     !
 !------------------------------------------------!

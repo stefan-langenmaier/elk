@@ -5,7 +5,6 @@
 
 subroutine init3
 use modmain
-use modvars
 implicit none
 ! local variables
 integer ig,iw
@@ -40,11 +39,6 @@ else
   allocate(wrf(nwrf))
   wrf(1)=cmplx(0.d0,swidth,8)
 end if
-! write to VARIABLES.OUT
-call writevars('gmaxrf',rv=gmaxrf)
-call writevars('ngrf',iv=ngrf)
-call writevars('nwrf',iv=nwrf)
-call writevars('wrf',nv=nwrf,zva=wrf)
 
 return
 end subroutine

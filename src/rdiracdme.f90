@@ -6,12 +6,13 @@
 !BOP
 ! !ROUTINE: rdiracdme
 ! !INTERFACE:
-subroutine rdiracdme(sol,m,kpa,e,nr,r,vr,nn,g0,g1,f0,f1)
+subroutine rdiracdme(sol,m,kpa,e,np,nr,r,vr,nn,g0,g1,f0,f1)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol : speed of light in atomic units (in,real)
 !   m   : order of energy derivative (in,integer)
 !   kpa : quantum number kappa (in,integer)
 !   e   : energy (in,real)
+!   np  : order of predictor-corrector polynomial (in,integer)
 !   nr  : number of radial mesh points (in,integer)
 !   r   : radial mesh (in,real(nr))
 !   vr  : potential on radial mesh (in,real(nr))
@@ -36,12 +37,15 @@ real(8), intent(in) :: sol
 integer, intent(in) :: m
 integer, intent(in) :: kpa
 real(8), intent(in) :: e
+integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
 integer, intent(out) :: nn
-real(8), intent(out) :: g0(nr),g1(nr)
-real(8), intent(out) :: f0(nr),f1(nr)
+real(8), intent(out) :: g0(nr)
+real(8), intent(out) :: g1(nr)
+real(8), intent(out) :: f0(nr)
+real(8), intent(out) :: f1(nr)
 ! local variables
 integer im
 ! automatic arrays
@@ -59,10 +63,10 @@ if ((m.lt.0).or.(m.gt.6)) then
   stop
 end if
 if (m.eq.0) then
-  call rdiracint(sol,m,kpa,e,nr,r,vr,.false.,nn,g0p,f0p,g0,g1,f0,f1)
+  call rdiracint(sol,m,kpa,e,np,nr,r,vr,.false.,nn,g0p,f0p,g0,g1,f0,f1)
 else
   do im=0,m
-    call rdiracint(sol,im,kpa,e,nr,r,vr,.false.,nn,g0p,f0p,g0,g1,f0,f1)
+    call rdiracint(sol,im,kpa,e,np,nr,r,vr,.false.,nn,g0p,f0p,g0,g1,f0,f1)
     g0p(:)=g0(:)
     f0p(:)=f0(:)
   end do

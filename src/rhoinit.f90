@@ -22,15 +22,16 @@ use modmain
 implicit none
 ! local variables
 integer, parameter :: lmax=1
-integer is,ia,ias
-integer nr,nrc,ir,irc
-integer l,m,lm,ig,ifg,n
+integer is,ia,ias,nr,n
+integer lmmax,l,m,lm
+integer ir,irc,ig,ifg
 real(8) x,t1,t2
 complex(8) z1,z2,z3
 ! allocatable arrays
 real(8), allocatable :: jl(:,:),ffg(:)
 real(8), allocatable :: fr(:),gr(:)
 complex(8), allocatable :: zfmt(:,:),zfft(:)
+lmmax=(lmax+1)**2
 allocate(zfft(ngtot))
 ! zero the charge density and magnetisation arrays
 rhomt(:,:,:)=0.d0
@@ -42,8 +43,8 @@ end if
 ! compute the superposition of all the atomic density tails
 zfft(:)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ffg,fr,gr,nr,n,ig) &
-!$OMP PRIVATE(ir,x,t1,ia,ias,ifg)
+!$OMP PRIVATE(ffg,fr,gr,nr,n) &
+!$OMP PRIVATE(ig,ir,x,t1,ia,ias,ifg)
 !$OMP DO
 do is=1,nspecies
   allocate(ffg(ngvec),fr(spnrmax),gr(spnrmax))
@@ -78,18 +79,18 @@ end do
 !$OMP END PARALLEL
 ! compute the tails in each muffin-tin
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(jl,zfmt,is,nrc,ig,ifg) &
-!$OMP PRIVATE(irc,x,z1,z2,z3,lm,l,m)
+!$OMP PRIVATE(jl,zfmt,is,ig,ifg) &
+!$OMP PRIVATE(irc,x,z1,z2,z3) &
+!$OMP PRIVATE(lm,l,m,ir)
 !$OMP DO
 do ias=1,natmtot
   allocate(jl(0:lmax,nrcmtmax))
-  allocate(zfmt(lmmaxvr,nrcmtmax))
+  allocate(zfmt(lmmax,nrcmtmax))
   is=idxis(ias)
-  nrc=nrcmt(is)
   zfmt(:,:)=0.d0
   do ig=1,ngvec
     ifg=igfft(ig)
-    do irc=1,nrc
+    do irc=1,nrcmt(is)
       x=gc(ig)*rcmt(irc,is)
       call sbessel(lmax,x,jl(:,irc))
     end do
@@ -100,13 +101,17 @@ do ias=1,natmtot
       do m=-l,l
         lm=lm+1
         z3=z2*conjg(ylmg(lm,ig))
-        do irc=1,nrc
+        do irc=1,nrcmt(is)
           zfmt(lm,irc)=zfmt(lm,irc)+jl(l,irc)*z3
         end do
       end do
     end do
   end do
-  call ztorfmt(nrc,nrcmtinr(is),1,zfmt,lradstp,rhomt(:,:,ias))
+  irc=0
+  do ir=1,nrmt(is),lradstp
+    irc=irc+1
+    call ztorflm(lmax,zfmt(:,irc),rhomt(:,ir,ias))
+  end do
   deallocate(jl,zfmt)
 end do
 !$OMP END DO

@@ -15,30 +15,16 @@ complex(8), intent(in) ::  wfmt22(lmmaxvr,nrcmtmax)
 integer, intent(in) :: ld
 complex(8), intent(out) :: zmagmt(lmmaxvr,nrcmtmax,ld,ndmag)
 ! local variables
-integer nrc,nrci,irc
-integer lmmax,itp
+integer nrc,irc,itp
 complex(8) z1,z2
 nrc=nrcmt(is)
-nrci=nrcmtinr(is)
 ! calculate the z-component of magnetisation: up-up - dn-dn
-do irc=1,nrc
-  if (irc.le.nrci) then
-    lmmax=lmmaxinr
-  else
-    lmmax=lmmaxvr
-  end if
-  zmagmt(1:lmmax,irc,1,ndmag)=conjg(wfmt11(1:lmmax,irc))*wfmt21(1:lmmax,irc) &
-                             -conjg(wfmt12(1:lmmax,irc))*wfmt22(1:lmmax,irc)
-end do
+zmagmt(:,1:nrc,1,ndmag)=conjg(wfmt11(:,1:nrc))*wfmt21(:,1:nrc) &
+                       -conjg(wfmt12(:,1:nrc))*wfmt22(:,1:nrc)
 ! non-collinear case
 if (ncmag) then
   do irc=1,nrc
-    if (irc.le.nrci) then
-      lmmax=lmmaxinr
-    else
-      lmmax=lmmaxvr
-    end if
-    do itp=1,lmmax
+    do itp=1,lmmaxvr
 ! up-dn spin density
       z1=conjg(wfmt11(itp,irc))*wfmt22(itp,irc)
 ! dn-up spin density

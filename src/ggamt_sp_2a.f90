@@ -64,25 +64,27 @@ real(8), intent(out) :: gup2(lmmaxvr,nrmtmax)
 real(8), intent(out) :: gdn2(lmmaxvr,nrmtmax)
 real(8), intent(out) :: gupdn(lmmaxvr,nrmtmax)
 ! local variables
-integer nr,nri,i
+integer nr,i
 ! allocatable arrays
 real(8), allocatable :: rfmt1(:,:),rfmt2(:,:),grfmt(:,:,:)
 allocate(rfmt1(lmmaxvr,nrmtmax),rfmt2(lmmaxvr,nrmtmax))
 allocate(grfmt(lmmaxvr,nrmtmax,3))
 nr=nrmt(is)
-nri=nrmtinr(is)
 !----------------!
 !     rho up     !
 !----------------!
 ! convert rhoup to spherical harmonics
-call rfsht(nr,nri,1,rhoup,1,rfmt1)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rhoup,lmmaxvr,0.d0, &
+ rfmt1,lmmaxvr)
 ! compute grad^2 rhoup in spherical coordinates
-call grad2rfmt(nr,nri,spr(:,is),rfmt1,rfmt2)
-call rbsht(nr,nri,1,rfmt2,1,g2up)
+call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rfmt1,rfmt2)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt2,lmmaxvr,0.d0, &
+ g2up,lmmaxvr)
 ! grad rhoup in spherical coordinates
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 do i=1,3
-  call rbsht(nr,nri,1,grfmt(:,:,i),1,gvup(:,:,i))
+  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
+   lmmaxvr,0.d0,gvup(:,:,i),lmmaxvr)
 end do
 ! (grad rhoup)^2
 gup2(:,1:nr)=gvup(:,1:nr,1)**2+gvup(:,1:nr,2)**2+gvup(:,1:nr,3)**2
@@ -90,14 +92,17 @@ gup2(:,1:nr)=gvup(:,1:nr,1)**2+gvup(:,1:nr,2)**2+gvup(:,1:nr,3)**2
 !     rho down     !
 !------------------!
 ! convert rhodn to spherical harmonics
-call rfsht(nr,nri,1,rhodn,1,rfmt1)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rhodn,lmmaxvr,0.d0, &
+ rfmt1,lmmaxvr)
 ! compute grad^2 rhodn in spherical coordinates
-call grad2rfmt(nr,nri,spr(:,is),rfmt1,rfmt2)
-call rbsht(nr,nri,1,rfmt2,1,g2dn)
+call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rfmt1,rfmt2)
+call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt2,lmmaxvr,0.d0, &
+ g2dn,lmmaxvr)
 ! grad rhodn in spherical coordinates
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
 do i=1,3
-  call rbsht(nr,nri,1,grfmt(:,:,i),1,gvdn(:,:,i))
+  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
+   lmmaxvr,0.d0,gvdn(:,:,i),lmmaxvr)
 end do
 ! (grad rhodn)^2
 gdn2(:,1:nr)=gvdn(:,1:nr,1)**2+gvdn(:,1:nr,2)**2+gvdn(:,1:nr,3)**2

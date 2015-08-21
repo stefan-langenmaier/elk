@@ -17,10 +17,11 @@ bfieldc
 reducebf
   0.5
 
-! Broyden mixing with spin-polarized calculation works only if a large field is
-! provided so that the system does not get stuck in a non-magnetic solution
+! Pulay mixing with spin-polarized calculation
+! is effective only if a large field is provided,
+! such that the system does not get stuck in a non-magnetic solution
 mixtype
-  3
+  2
 
 ! fairly large number of empty states required for magnetic cases
 nempty

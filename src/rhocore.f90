@@ -21,8 +21,8 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer idm,ispn
-integer is,ias,nr,ir
+integer is,ias,idm
+integer nr,ir,ispn
 real(8) v(ndmag),sum,t1
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax)
@@ -60,9 +60,16 @@ do ias=1,natmtot
       t1=abs(v(1))
     end if
     if (t1.gt.1.d-10) v(:)=v(:)/t1
+! compute the core moment in the muffin-tin
+    do ir=1,nr
+      fr(ir)=(rhocr(ir,ias,1)-rhocr(ir,ias,2))*spr(ir,is)**2
+    end do
+    call fderiv(-1,nr,spr(:,is),fr,gr)
+! if the core moment is predominantly negative then flip direction
+    if (gr(nr).lt.0.d0) v(:)=-v(:)
 ! add the core magnetisation to the total
     do ir=1,nr
-      t1=abs((rhocr(ir,ias,1)-rhocr(ir,ias,2))/y00)
+      t1=(rhocr(ir,ias,1)-rhocr(ir,ias,2))/y00
       magmt(1,ir,ias,:)=magmt(1,ir,ias,:)+t1*v(:)
     end do
   end if

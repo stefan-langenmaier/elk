@@ -72,9 +72,6 @@ if (mp_mpi) then
 ! open TENSMOM.OUT
   if (tmomlu) open(67,file='TENSMOM'//trim(filext),action='WRITE', &
    form='FORMATTED')
-! open MOMENTM.OUT
-  if (spinpol) open(68,file='MOMENTM'//trim(filext),action='WRITE', &
-   form='FORMATTED')
 ! write out general information to INFO.OUT
   call writeinfo(60)
   write(60,*)
@@ -83,9 +80,7 @@ end if
 iscl=0
 if (trdstate) then
   call readstate
-  if (mp_mpi) then
-    write(60,'("Potential read in from STATE.OUT")')
-  end if
+  if (mp_mpi) write(60,'("Potential read in from STATE.OUT")')
   if (autolinengy) call readfermi
 else
   call rhoinit
@@ -102,7 +97,7 @@ if (ldapu.ne.0) n=n+2*lmmaxlu*lmmaxlu*nspinor*nspinor*natmtot
 allocate(v(n))
 ! determine the size of the mixer work array
 nwork=-1
-call mixerifc(mixtype,n,v,dv,nwork,v)
+call mixerifc(mixtype,n,v,dv,nwork,work)
 allocate(work(nwork))
 ! set last self-consistent loop flag
 tlast=.false.
@@ -221,21 +216,18 @@ do iscl=1,maxscl
     write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
     write(60,'("Estimated direct band gap   : ",G18.10)') bandgap(2)
     write(60,'(" at k-point ",I6)') ikgap(3)
-! write total energy to TOTENERGY.OUT
+! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)
-! write DOS at Fermi energy to FERMIDOS.OUT
+! write DOS at Fermi energy to FERMIDOS.OUT and flush
     write(62,'(G18.10)') fermidos
     call flushifc(62)
 ! output charges and moments
     call writechg(60)
+! write total moment to MOMENT.OUT and flush
     if (spinpol) then
-! write total moment to MOMENT.OUT
       write(63,'(3G18.10)') momtot(1:ndmag)
       call flushifc(63)
-! write total moment magnitude to MOMENTM.OUT
-      write(68,'(G18.10)') momtotm
-      call flushifc(68)
     end if
 ! write estimated Kohn-Sham indirect band gap
     write(64,'(G22.12)') bandgap(1)
@@ -361,10 +353,8 @@ if (mp_mpi) then
   close(61)
 ! close the FERMIDOS.OUT file
   close(62)
-! close the MOMENT.OUT and MOMENTM.OUT files
-  if (spinpol) then
-    close(63); close(68)
-  end if
+! close the MOMENT.OUT file
+  if (spinpol) close(63)
 ! close the GAP.OUT file
   close(64)
 ! close the RMSDVS.OUT file
@@ -375,8 +365,6 @@ if (mp_mpi) then
   if (tmomlu) close(67)
 end if
 deallocate(v,work)
-! synchronise MPI processes
-call mpi_barrier(mpi_comm_kpt,ierror)
 return
 end subroutine
 !EOC

@@ -48,11 +48,11 @@ zfinp=0.d0
 do ir=1,ngtot
   zfinp=zfinp+cfunir(ir)*conjg(zfir1(ir))*zfir2(ir)
 end do
-zfinp=zfinp*(omega/dble(ngtot))
+zfinp=zfinp*omega/dble(ngtot)
 ! muffin-tin contribution
 do ias=1,natmtot
   is=idxis(ias)
-  zfinp=zfinp+zfmtinp(tsh,nrcmt(is),nrcmtinr(is),rcmt(:,is),zfmt1(:,:,ias), &
+  zfinp=zfinp+zfmtinp(tsh,lmmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,zfmt1(:,:,ias), &
    zfmt2(:,:,ias))
 end do
 return

@@ -8,7 +8,7 @@
 ! positions, set the nuclear mass to be a negative number in the species file.
 
 ! As the calculation progresses, you can plot the files TOTENERGY_OPT.OUT and
-! STRESSMAX.OUT to see the change in the total energy and stress tensor. The
+! STRESSMAX.OUT to see the change in the total energy and stress matrix. The
 ! modulus of the maximum force on the atoms is written to FORCEMAX.OUT.
 
 ! The updated unit cell geometry is written to GEOMETRY_OPT.OUT. The last entry

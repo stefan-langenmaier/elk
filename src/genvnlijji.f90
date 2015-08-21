@@ -100,9 +100,9 @@ do ik=1,nkpt
       call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
        wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
 ! compute the potential and G=0 coefficient of the density
-      call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
-      call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
-       zrhoir,nrcmtmax,zvclmt,zvclir,zrho0)
+      call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
+      call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq,zrhoir, &
+       nrcmtmax,zvclmt,zvclir,zrho0)
       z1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
       vnlijji(ist1,ist2,ik)=wkptnr*dble(z1)+t1

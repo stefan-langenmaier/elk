@@ -7,8 +7,8 @@ subroutine checkfsm
 use modmain
 implicit none
 ! local variables
-integer isym,lspn
 integer is,ia,ja
+integer isym,lspn
 real(8) sc(3,3),v(3),t1
 if (fixspin.eq.0) return
 do isym=1,nsymcrys

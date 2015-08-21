@@ -25,42 +25,43 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer idm,is,ia,ias,ir,irc
-real(8) v1(3),v2(3),t1
+integer is,ia,ias
+integer idm,ir,irc
+real(8) v(3),t1,t2,t3
 if ((.not.spinpol).or.(fixspin.eq.0)) return
+v(:)=0.d0
 ! determine the global effective field
 if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
   if (ncmag) then
-    v1(:)=momtot(:)
+    v(:)=momfix(:)
   else
-    v1(:)=0.d0
-    v1(3)=momtot(1)
+    v(1)=momfix(3)
   end if
-  if (fixspin.gt.0) then
-! fixed spin moment
-    v2(:)=v1(:)-momfix(:)
-  else
-! fixed spin direction
-    t1=sqrt(sum(momfix(:)**2))
-    if (t1.gt.1.d-8) t1=1.d0/t1
-    v2(:)=t1*momfix(:)
-    v2(:)=v1(:)-momtotm*v2(:)
-  end if
-  if (ncmag) then
-    bfsmc(:)=bfsmc(:)+taufsm*v2(:)
-  else
-    bfsmc(1)=bfsmc(1)+taufsm*v2(3)
+! case where only the direction is fixed
+  if (fixspin.lt.0) then
+    if (ncmag) then
+      t1=sqrt(v(1)**2+v(2)**2+v(3)**2)
+      t2=sqrt(momtot(1)**2+momtot(2)**2+momtot(3)**2)
+    else
+      t1=abs(v(1))
+      t2=abs(momtot(1))
+    end if
+    if (t1.gt.1.d-8) t1=t2/t1
+    v(1:ndmag)=t1*v(1:ndmag)
   end if
   do idm=1,ndmag
-    t1=bfsmc(idm)
+    bfsmc(idm)=bfsmc(idm)+taufsm*(momtot(idm)-v(idm))
+  end do
+  do idm=1,ndmag
+    t3=bfsmc(idm)
     do ias=1,natmtot
       is=idxis(ias)
       do irc=1,nrcmt(is)
-        bsmt(:,irc,ias,idm)=bsmt(:,irc,ias,idm)+t1
+        bsmt(:,irc,ias,idm)=bsmt(:,irc,ias,idm)+t3
       end do
     end do
     do ir=1,ngtot
-      bsir(ir,idm)=bsir(ir,idm)+t1*cfunir(ir)
+      bsir(ir,idm)=bsir(ir,idm)+t3*cfunir(ir)
     end do
   end do
 end if
@@ -71,35 +72,32 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
       ias=idxas(ia,is)
 ! if any component is >= 1000 then do not fix the moment
       t1=sum(abs(mommtfix(:,ia,is)))
-      if (t1.ge.1000.d0) cycle
+      if (t1.ge.1000.d0) goto 10
       if (ncmag) then
-        v1(:)=mommt(:,ias)
+        v(:)=mommtfix(:,ia,is)
       else
-        v1(:)=0.d0
-        v1(3)=mommt(1,ias)
+        v(1)=mommtfix(3,ia,is)
       end if
-      if (fixspin.gt.0) then
-! fixed spin moment
-        v2(:)=v1(:)-mommtfix(:,ia,is)
-      else
-! fixed spin direction
-        t1=sqrt(sum(mommtfix(:,ia,is)**2))
-        if (t1.gt.1.d-8) t1=1.d0/t1
-        v2(:)=t1*mommtfix(:,ia,is)
-        t1=sqrt(v1(1)**2+v1(2)**2+v1(3)**2)
-        v2(:)=v1(:)-t1*v2(:)
-      end if
-      if (ncmag) then
-        bfsmcmt(:,ias)=bfsmcmt(:,ias)+taufsm*v2(:)
-      else
-        bfsmcmt(1,ias)=bfsmcmt(1,ias)+taufsm*v2(3)
+! case where only the direction is fixed
+      if (fixspin.lt.0) then
+        if (ncmag) then
+          t1=sqrt(v(1)**2+v(2)**2+v(3)**2)
+          t2=sqrt(mommt(1,ias)**2+mommt(2,ias)**2+mommt(3,ias)**2)
+        else
+          t1=abs(v(1))
+          t2=abs(mommt(1,ias))
+        end if
+        if (t1.gt.1.d-8) t1=t2/t1
+        v(1:ndmag)=t1*v(1:ndmag)
       end if
       do idm=1,ndmag
-        t1=bfsmcmt(idm,ias)
+        bfsmcmt(idm,ias)=bfsmcmt(idm,ias)+taufsm*(mommt(idm,ias)-v(idm))
+        t3=bfsmcmt(idm,ias)
         do irc=1,nrcmt(is)
-          bsmt(:,irc,ias,idm)=bsmt(:,irc,ias,idm)+t1
+          bsmt(:,irc,ias,idm)=bsmt(:,irc,ias,idm)+t3
         end do
       end do
+10 continue
     end do
   end do
 end if

@@ -15,8 +15,7 @@ complex(8), intent(in) :: zrhoir(ngtot)
 complex(8), intent(out) :: zrho0
 ! local variables
 integer is,ia,ias
-integer nrc,nrci,ir,irc
-integer lmax,l,m,lm
+integer l,m,lm,nrc,ir
 real(8) t1,t2
 complex(8) zsum1,zsum2
 ! automatic arrays
@@ -36,29 +35,23 @@ zrho0=zrho0/dble(ngtot)
 ! (note that the phase exp(ip.r) is explicit)
 do is=1,nspecies
   nrc=nrcmt(is)
-  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do irc=1,nrc
-      if (irc.le.nrci) then
-        lmax=lmaxinr
-      else
-        lmax=lmaxvr
-      end if
+    do ir=1,nrc
       zsum1=0.d0
       lm=0
-      do l=0,lmax
+      do l=0,lmaxvr
         lm=lm+1
-        zsum2=zrhomt(lm,irc,ias)*ylmgp(lm)
+        zsum2=zrhomt(lm,ir,ias)*ylmgp(lm)
         do m=-l+1,l
           lm=lm+1
-          zsum2=zsum2+zrhomt(lm,irc,ias)*ylmgp(lm)
+          zsum2=zsum2+zrhomt(lm,ir,ias)*ylmgp(lm)
         end do
-        zsum1=zsum1+jlgpr(l,irc,is)*zilc(l)*zsum2
+        zsum1=zsum1+jlgpr(l,ir,is)*zilc(l)*zsum2
       end do
-      t1=rcmt(irc,is)**2
-      fr1(irc)=dble(zsum1)*t1
-      fr2(irc)=aimag(zsum1)*t1
+      t1=rcmt(ir,is)**2
+      fr1(ir)=dble(zsum1)*t1
+      fr2(ir)=aimag(zsum1)*t1
     end do
     call fderiv(-1,nrc,rcmt(:,is),fr1,gr)
     t1=gr(nrc)

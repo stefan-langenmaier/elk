@@ -9,8 +9,8 @@ use modmpi
 use modstore
 implicit none
 ! local variables
-integer istp,jstp,i
-real(8) sum
+integer istp,jstp,i,j
+real(8) t1
 ! initialise global variables
 call init0
 ! store orginal volume
@@ -32,8 +32,8 @@ allocate(forcetotp(3,natmtot))
 forcetotp(:,:)=0.d0
 ! initial lattice vector step size
 taulatv(:)=tau0latv
-! initialise previous stress tensor
-stressp(:)=0.d0
+! initialise previous stress matrix
+stressp(:,:)=0.d0
 ! open TOTENERGY.OUT
 open(71,file='TOTENERGY_OPT.OUT',action='WRITE',form='FORMATTED')
 ! open FORCEMAX.OUT
@@ -53,8 +53,7 @@ if (mp_mpi) write(*,*)
 do istp=1,maxlatvstp
   do jstp=1,maxatpstp
     if (mp_mpi) then
-      write(*,'("Info(geomopt): Lattice and atomic position optimisation &
-       &steps : ",2I6)') istp,jstp
+      write(*,'("Info(geomopt): atomic position optimisation step : ",I6)') jstp
     end if
 ! ground-state and forces calculation
     call gndstate
@@ -95,7 +94,7 @@ do istp=1,maxlatvstp
       end if
       exit
     end if
-    if ((jstp.eq.maxatpstp).and.mp_mpi) then
+    if (mp_mpi.and.(jstp.eq.maxatpstp)) then
       write(*,*)
       write(*,'("Warning(geomopt): atomic position optimisation failed to &
        &converge in ",I6," steps")') maxatpstp
@@ -106,42 +105,41 @@ do istp=1,maxlatvstp
   end do
 ! exit lattice optimisation loop if required
   if (latvopt.eq.0) exit
-! generate the stress tensor
+  if (mp_mpi) then
+    write(*,'("Info(geomopt): lattice vector optimisation step : ",I6)') istp
+  end if
+! generate the stress matrix
   call genstress
 ! update the lattice vectors
   call latvstep
-! write stress tensor components and maximum magnitude to file
+! write stress magnitude and matrix to file
   if (mp_mpi) then
     write(76,'(G18.10)') stressmax
     call flushifc(76)
     write(77,*)
     write(77,'("Lattice vector optimisation step : ",I6)') istp
-    write(77,'("Derivative of total energy w.r.t. strain tensors :")')
-    do i=1,nstrain
-      write(77,'(G18.10)') stress(i)
+    do j=1,3
+      write(77,'(3G18.10)') (stress(i,j),i=1,3)
     end do
     call flushifc(77)
   end if
 ! check for stress convergence; stress may be non-zero because of volume
-! constraint; checking change in stress tensor components instead
-  sum=0.d0
-  do i=1,nstrain
-    sum=sum+abs(stress(i)-stressp(i))
-  end do
-  if (sum.le.epsstress*tau0latv) then
+! constraint; checking change in stress matrix instead
+  t1=sum(abs(stress(:,:)-stressp(:,:)))
+  if (t1.le.epsstress*tau0latv) then
     if (mp_mpi) then
       write(77,*)
       write(77,'("Stress convergence target achieved")')
     end if
     exit
   end if
-  if ((istp.eq.maxlatvstp).and.mp_mpi) then
+  if (mp_mpi.and.(istp.eq.maxlatvstp)) then
     write(*,*)
     write(*,'("Warning(geomopt): lattice vector optimisation failed to &
      &converge in ",I6," steps")') maxlatvstp
   end if
-! store the current stress tensor components
-  stressp(:)=stress(:)
+! store the current stress matrix
+  stressp(:,:)=stress(:,:)
 ! end loop over lattice optimisation
 end do
 close(71); close(72); close(73); close(74); close(75)

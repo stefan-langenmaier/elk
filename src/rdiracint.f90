@@ -6,12 +6,13 @@
 !BOP
 ! !ROUTINE: rdiracint
 ! !INTERFACE:
-subroutine rdiracint(sol,m,kpa,e,nr,r,vr,trsc,nn,g0p,f0p,g0,g1,f0,f1)
+subroutine rdiracint(sol,m,kpa,e,np,nr,r,vr,trsc,nn,g0p,f0p,g0,g1,f0,f1)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol  : speed of light in atomic units (in,real)
 !   m    : order of energy derivative (in,integer)
 !   kpa  : quantum number kappa (in,integer)
 !   e    : energy (in,real)
+!   np   : order of predictor-corrector polynomial (in,integer)
 !   nr   : number of radial mesh points (in,integer)
 !   r    : radial mesh (in,real(nr))
 !   vr   : potential on radial mesh (in,real(nr))
@@ -47,7 +48,6 @@ subroutine rdiracint(sol,m,kpa,e,nr,r,vr,trsc,nn,g0p,f0p,g0,g1,f0,f1)
 !
 ! !REVISION HISTORY:
 !   Created September 2002 (JKD)
-!   Polynomial order fixed to 3, September 2013 (JKD)
 !EOP
 !BOC
 implicit none
@@ -56,6 +56,7 @@ real(8), intent(in) :: sol
 integer, intent(in) :: m
 integer, intent(in) :: kpa
 real(8), intent(in) :: e
+integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
@@ -66,13 +67,18 @@ real(8), intent(in) :: f0p(nr)
 real(8), intent(out) :: g0(nr),g1(nr)
 real(8), intent(out) :: f0(nr),f1(nr)
 ! local variables
-integer ir,ir0
+integer ir,ir0,npl
 ! rescaling limit
 real(8), parameter :: rsc=1.d100, rsci=1.d0/rsc
 real(8) ci,e0,t1,t2,t3,t4
-if (nr.lt.4) then
+! automatic arrays
+real(8) c(np)
+! external functions
+real(8) polynom
+external polynom
+if (nr.le.0) then
   write(*,*)
-  write(*,'("Error(rdiracint): nr < 4 : ",I8)') nr
+  write(*,'("Error(rdiracint): invalid nr : ",I8)') nr
   write(*,*)
   stop
 end if
@@ -99,21 +105,19 @@ if (m.ne.0) then
   g1(1)=g1(1)+ci*dble(m)*f0p(1)
   f1(1)=f1(1)-ci*dble(m)*g0p(1)
 end if
-! extrapolate to the first four points
-g1(2:4)=g1(1)
-f1(2:4)=f1(1)
 nn=0
 do ir=2,nr
   t2=dble(kpa)/r(ir)
   t3=ci*(t1-vr(ir))
   t4=ci*(vr(ir)-e)
-  ir0=ir-3
-  if (ir0.lt.1) ir0=1
-  g1(ir)=poly3(r(ir0),g1(ir0),r(ir))
-  f1(ir)=poly3(r(ir0),f1(ir0),r(ir))
+! predictor-corrector order
+  npl=min(ir,np)
+  ir0=ir-npl+1
+  g1(ir)=polynom(0,npl-1,r(ir0),g1(ir0),c,r(ir))
+  f1(ir)=polynom(0,npl-1,r(ir0),f1(ir0),c,r(ir))
 ! integrate to find wavefunction
-  g0(ir)=poly4i(r(ir0),g1(ir0),r(ir))+g0(ir0)
-  f0(ir)=poly4i(r(ir0),f1(ir0),r(ir))+f0(ir0)
+  g0(ir)=polynom(-1,npl,r(ir0),g1(ir0),c,r(ir))+g0(ir0)
+  f0(ir)=polynom(-1,npl,r(ir0),f1(ir0),c,r(ir))+f0(ir0)
 ! compute the derivatives
   g1(ir)=t3*f0(ir)-t2*g0(ir)
   f1(ir)=t4*g0(ir)+t2*f0(ir)
@@ -122,8 +126,8 @@ do ir=2,nr
     f1(ir)=f1(ir)-ci*dble(m)*g0p(ir)
   end if
 ! integrate for correction
-  g0(ir)=poly4i(r(ir0),g1(ir0),r(ir))+g0(ir0)
-  f0(ir)=poly4i(r(ir0),f1(ir0),r(ir))+f0(ir0)
+  g0(ir)=polynom(-1,npl,r(ir0),g1(ir0),c,r(ir))+g0(ir0)
+  f0(ir)=polynom(-1,npl,r(ir0),f1(ir0),c,r(ir))+f0(ir0)
 ! compute the derivatives again
   g1(ir)=t3*f0(ir)-t2*g0(ir)
   f1(ir)=t4*g0(ir)+t2*f0(ir)
@@ -153,66 +157,6 @@ do ir=2,nr
   if (g0(ir-1)*g0(ir).lt.0.d0) nn=nn+1
 end do
 return
-
-contains
-
-real(8) function poly3(xa,ya,x)
-implicit none
-! arguments
-real(8) xa(3),ya(3),x
-! local variables
-real(8) x0,x1,x2,y0,y1,y2
-real(8) c1,c2,t0,t1,t2
-! evaluate the polynomial coefficients
-x0=xa(1)
-x1=xa(2)-x0
-x2=xa(3)-x0
-y0=ya(1)
-y1=ya(2)-y0
-y2=ya(3)-y0
-t0=1.d0/(x1*x2*(x2-x1))
-t1=x1*y2
-t2=x2*y1
-c1=x2*t2-x1*t1
-c2=t1-t2
-t1=x-x0
-! evaluate the polynomial
-poly3=y0+t0*t1*(c1+c2*t1)
-return
-end function
-
-real(8) function poly4i(xa,ya,x)
-implicit none
-! arguments
-real(8), intent(in) :: xa(4),ya(4),x
-! local variables
-real(8) x0,x1,x2,x3,y0,y1,y2,y3
-real(8) c1,c2,c3,t0,t1,t2,t3,t4,t5,t6
-! evaluate the polynomial coefficients
-x0=xa(1)
-x1=xa(2)-x0
-x2=xa(3)-x0
-x3=xa(4)-x0
-y0=ya(1)
-y1=ya(2)-y0
-y2=ya(3)-y0
-y3=ya(4)-y0
-t0=1.d0/(x1*x2*x3*(x1-x2)*(x1-x3)*(x2-x3))
-t1=x1*x2*y3
-t2=x2*x3*y1
-t3=x3*x1*y2
-c3=t1*(x1-x2)+t2*(x2-x3)+t3*(x3-x1)
-t6=x3**2
-t5=x2**2
-t4=x1**2
-c2=t1*(t5-t4)+t2*(t6-t5)+t3*(t4-t6)
-c1=t1*(x2*t4-x1*t5)+t2*(x3*t5-x2*t6)+t3*(x1*t6-x3*t4)
-t1=x-x0
-! integrate the polynomial
-poly4i=t1*(y0+t0*t1*(0.5d0*c1+t1*(0.3333333333333333333d0*c2+0.25d0*c3*t1)))
-return
-end function
-
 end subroutine
 !EOC
 

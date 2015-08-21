@@ -5,7 +5,6 @@
 
 subroutine symmetry
 use modmain
-use modvars
 implicit none
 ! inverse of the lattice vector matrix
 call r3minv(avec,ainv)
@@ -21,13 +20,6 @@ call findsymsite
 call checkfsm
 ! check if real symmetric eigen solver can be used
 if (.not.tsyminv) tseqr=.false.
-! write to VARIABLES.OUT
-call writevars('nsymlat',iv=nsymlat)
-call writevars('symlat',nv=9*nsymlat,iva=symlat)
-call writevars('nsymcrys',iv=nsymcrys)
-call writevars('vtlsymc',nv=3*nsymcrys,rva=vtlsymc)
-call writevars('lsplsymc',nv=nsymcrys,iva=lsplsymc)
-call writevars('lspnsymc',nv=nsymcrys,iva=lspnsymc)
 return
 end subroutine
 

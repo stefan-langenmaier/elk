@@ -25,9 +25,8 @@ complex(8), intent(in) :: sfachp(nhkmax,natmtot,nspnfv)
 complex(8), intent(out) :: wfpw(nhkmax,nspinor,nstsv)
 ! local variables
 integer ispn0,ispn1,ispn,jspn
-integer ist,is,ia,ias,i
-integer nrc,nrci,irc0,irc
-integer lmax,l,m,lm,igp,ihp
+integer is,ia,ias,l,m,lm,i
+integer ist,igp,ihp,nrc,irc
 real(8) t0,t1,t2
 complex(8) zsum1,zsum2
 complex(8) z1,z2,z3,z4
@@ -104,7 +103,6 @@ do jspn=1,nspnfv
 ! loop over species
     do is=1,nspecies
       nrc=nrcmt(is)
-      nrci=nrcmtinr(is)
 ! generate spherical Bessel functions
       do irc=1,nrc
         t1=gpc(igp,jspn)*rcmt(irc,is)
@@ -119,17 +117,12 @@ do jspn=1,nspnfv
             z2=z1*wfir(igp,ispn,ist)
             lm=0
             do l=0,lmaxvr
-              if (l.le.lmaxinr) then
-                irc0=1
-              else
-                irc0=nrci+1
-              end if
               z3=z2*zil(l)
               do m=-l,l
                 lm=lm+1
                 z4=z3*ylm(lm)
-                wfmt(lm,irc0:nrc,ias,ispn,ist)=wfmt(lm,irc0:nrc,ias,ispn,ist) &
-                 -z4*jl(l,irc0:nrc)
+                wfmt(lm,1:nrc,ias,ispn,ist)=wfmt(lm,1:nrc,ias,ispn,ist) &
+                 -z4*jl(l,1:nrc)
               end do
             end do
           end do
@@ -151,7 +144,6 @@ do jspn=1,nspnfv
     call genylm(lmaxvr,tphpc(:,ihp,jspn),ylm)
     do is=1,nspecies
       nrc=nrcmt(is)
-      nrci=nrcmtinr(is)
 ! generate spherical Bessel functions
       do irc=1,nrc
         t1=hpc(ihp,jspn)*rcmt(irc,is)
@@ -165,14 +157,9 @@ do jspn=1,nspnfv
         do ist=1,nstsv
           do ispn=ispn0,ispn1
             do irc=1,nrc
-              if (irc.le.nrci) then
-                lmax=lmaxinr
-              else
-                lmax=lmaxvr
-              end if
               zsum1=jl(0,irc)*wfmt(1,irc,ias,ispn,ist)*ylm(1)
               lm=1
-              do l=1,lmax
+              do l=1,lmaxvr
                 lm=lm+1
                 zsum2=wfmt(lm,irc,ias,ispn,ist)*ylm(lm)
                 do m=1-l,l

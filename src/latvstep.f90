@@ -9,19 +9,17 @@ use modmpi
 use modstore
 implicit none
 integer i
-real(8) a(3,3),t1
-do i=1,nstrain
-! compute product of current and previous stress tensor components
-  t1=stress(i)*stressp(i)
-! if component is in the same direction then increase step size parameter
+real(8) t1
+do i=1,3
+! compute the dot-product between the current and previous stress vector
+  t1=dot_product(stress(:,i),stressp(:,i))
+! if stress vector is in the same direction then increase step size parameter
   if (t1.gt.0.d0) then
     taulatv(i)=taulatv(i)+tau0latv
   else
     taulatv(i)=tau0latv
   end if
-  t1=taulatv(i)*(stress(i)+stressp(i))
-  call r3mm(avec,strain(:,:,i),a)
-  avec(:,:)=avec(:,:)-t1*a(:,:)
+  avec(:,i)=avec(:,i)-taulatv(i)*(stress(:,i)+stressp(:,i))
 end do
 ! scale the vectors to conserve volume if required
 if (latvopt.eq.2) then
