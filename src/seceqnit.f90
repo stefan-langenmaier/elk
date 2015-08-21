@@ -27,7 +27,7 @@ complex(8), allocatable :: hv(:,:),ov(:,:)
 ! external functions
 complex(8) zdotc
 external zdotc
-if ((iscl.ge.2).or.trdstate) then
+if (iscl.ge.2) then
 ! read in the eigenvalues/vectors from file
   call getevalfv(vpl,evalfv)
   call getevecfv(vpl,vgpl,evecfv)

@@ -18,10 +18,8 @@ integer ik,ispn,n,lp
 ! local arrays
 real(8), allocatable :: rfmt(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: wfmt(:,:,:,:,:)
-complex(8), allocatable :: wfir(:,:,:)
+complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
+complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 ! allocate local arrays
 allocate(rfmt(lmmaxvr,nrcmtmax,natmtot))
 ! convert muffin-tin potential to spherical coordinates
@@ -44,8 +42,7 @@ do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-  allocate(evecfv(nmatmax,nstfv))
-  allocate(evecsv(nstsv,nstsv))
+  allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
   allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
   allocate(wfir(ngrtot,nspinor,nstsv))
 ! find the matching coefficients

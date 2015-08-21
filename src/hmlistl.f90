@@ -35,18 +35,21 @@ integer, intent(in) :: igpig(ngkmax)
 real(8), intent(in) :: vgpc(3,ngkmax)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ld,iv(3),ig,i,j,k
-real(8) t1
+integer ld,iv(3),jv(3),ig,i,j,k
+real(8) vj(3),t1
 ld=ngp+nlotot
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,i,iv,ig,t1)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(k,jv,vj,i,iv,ig,t1)
 !$OMP DO
 do j=1,ngp
   k=(j-1)*ld
+  jv(:)=ivg(:,igpig(j))
+  vj(:)=vgpc(:,j)
   do i=1,j
     k=k+1
-    iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
+    iv(:)=ivg(:,igpig(i))-jv(:)
     ig=ivgig(iv(1),iv(2),iv(3))
-    t1=0.5d0*(vgpc(1,i)*vgpc(1,j)+vgpc(2,i)*vgpc(2,j)+vgpc(3,i)*vgpc(3,j))
+    t1=0.5d0*(vgpc(1,i)*vj(1)+vgpc(2,i)*vj(2)+vgpc(3,i)*vj(3))
     h(k)=h(k)+veffig(ig)+t1*cfunig(ig)
   end do
 end do

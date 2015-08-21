@@ -22,7 +22,7 @@ use modldapu
 implicit none
 ! local variables
 integer is,ia,ias
-integer ist,l,m,lm,iv(3)
+integer ist,l,m,lm
 real(8) rsum,t1
 real(8) ts0,ts1
 
@@ -183,6 +183,13 @@ if (ndmag.eq.3) then
 else
   ncmag=.false.
 end if
+! check for meta-GGA with non-collinearity
+if ((xcgrad.eq.3).and.ncmag) then
+  write(*,*)
+  write(*,'("Error(init0): meta-GGA is not valid for non-collinear magnetism")')
+  write(*,*)
+  stop
+end if
 ! spin-polarised cores
 if (.not.spinpol) spincore=.false.
 ! set fixed spin moment effective field to zero
@@ -204,14 +211,12 @@ call r3mv(bvec,vqlss,vqcss)
 do is=1,nspecies
   do ia=1,natoms(is)
 ! map atomic lattice coordinates to [0,1)
-    call r3frac(epslat,atposl(:,ia,is),iv)
+    call r3frac(epslat,atposl(:,ia,is))
 ! determine atomic Cartesian coordinates
     call r3mv(avec,atposl(:,ia,is),atposc(:,ia,is))
   end do
 end do
-! automatically determine the muffin-tin radii if required
-if (autormt) call autoradmt
-! check for overlapping muffin-tins
+! check muffin-tins are not too close together
 call checkmt
 
 !-------------------------------!
@@ -260,6 +265,8 @@ do is=1,nspecies
   nrcmt(is)=(nrmt(is)-1)/lradstp+1
   nrcmtmax=max(nrcmtmax,nrcmt(is))
 end do
+! meta-GGA requires that tau is expanded to lmaxvr everywhere in the muffin-tins
+if (xcgrad.eq.3) fracinr=0.d0
 ! set up atomic and muffin-tin radial meshes
 call genrmesh
 
@@ -349,13 +356,16 @@ call gencfun
 !-------------------------!
 ! solve the Kohn-Sham-Dirac equations for all atoms
 call allatoms
-! allocate core state eigenvalue array and set to default
+! allocate core state occupancy and eigenvalue arrays and set to default
+if (allocated(occcr)) deallocate(occcr)
+allocate(occcr(spnstmax,natmtot))
 if (allocated(evalcr)) deallocate(evalcr)
 allocate(evalcr(spnstmax,natmtot))
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist=1,spnst(is)
+      occcr(ist,ias)=spocc(ist,is)
       evalcr(ist,ias)=speval(ist,is)
     end do
   end do
@@ -474,7 +484,7 @@ end if
 !-----------------------!
 !     miscellaneous     !
 !-----------------------!
-! Poisson solver pseudocharge density constant l + n(l)
+! Poisson solver pseudocharge density constant
 if (nspecies.gt.0) then
   t1=0.5d0*gmaxvr*maxval(rmt(1:nspecies))
 else
@@ -501,6 +511,8 @@ iscl=0
 tlast=.false.
 ! set the Fermi energy to zero
 efermi=0.d0
+! set the Tran-Blaha '09 constant c to zero
+c_tb09=0.d0
 
 call timesec(ts1)
 timeinit=timeinit+ts1-ts0

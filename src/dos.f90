@@ -35,29 +35,21 @@ use modtest
 implicit none
 ! local variables
 logical tsqaz
-integer lmax,lmmax
-integer l0,l1,l,m,lm
-integer is,ia,ias
-integer nsd,ispn,jspn
-integer ngknr(2),nsk(3)
-integer ik,jk,igk,ist,iw
+integer lmax,lmmax,l0,l1,l,m,lm
+integer is,ia,ias,nsd,ispn,jspn
+integer nsk(3),ik,jk,ist,iw
 real(8) dw,th,sps(2),vl(3),vc(3)
 real(8) v1(3),v2(3),v3(3),t1
 complex(8) su2(2,2),dm1(2,2),dm2(2,2)
 character(256) fname
-! allocatable arrays
-integer, allocatable :: igkignr(:,:)
 ! low precision for band/spin character array saves memory
 real(4), allocatable :: bc(:,:,:,:,:),sc(:,:,:)
-real(8), allocatable :: vgklnr(:,:,:),vgkcnr(:,:,:)
-real(8), allocatable :: gkcnr(:,:),tpgkcnr(:,:,:)
 real(8), allocatable :: w(:),e(:,:,:),f(:,:)
 real(8), allocatable :: g(:),dt(:,:),dp(:,:,:)
 real(8), allocatable :: elm(:,:)
 complex(8), allocatable :: ulm(:,:,:),a(:,:)
 complex(8), allocatable :: dmat(:,:,:,:,:)
 complex(8), allocatable :: sdmat(:,:,:)
-complex(8), allocatable :: sfacgknr(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:,:)
 complex(8), allocatable :: evecsv(:,:)
@@ -127,18 +119,12 @@ else
 end if
 ! begin parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(igkignr,vgklnr,vgkcnr) &
-!$OMP PRIVATE(gkcnr,tpgkcnr,sfacgknr) &
 !$OMP PRIVATE(apwalm,evecfv,evecsv) &
 !$OMP PRIVATE(dmat,sdmat,a,jk,ispn,jspn) &
-!$OMP PRIVATE(vl,vc,ngknr,igk,is,ia,ias) &
+!$OMP PRIVATE(vl,vc,is,ia,ias) &
 !$OMP PRIVATE(ist,lm,dm1,dm2,t1)
 !$OMP DO
 do ik=1,nkptnr
-  allocate(igkignr(ngkmax,nspnfv))
-  allocate(vgklnr(3,ngkmax,nspnfv),vgkcnr(3,ngkmax,nspnfv))
-  allocate(gkcnr(ngkmax,nspnfv),tpgkcnr(2,ngkmax,nspnfv))
-  allocate(sfacgknr(ngkmax,natmtot,nspnfv))
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv))
   allocate(dmat(lmmax,lmmax,nspinor,nspinor,nstsv))
@@ -160,27 +146,18 @@ do ik=1,nkptnr
         vc(:)=vc(:)-0.5d0*vqcss(:)
       end if
     end if
-! generate the G+k-vectors
-    call gengpvec(vl,vc,ngknr(ispn),igkignr(:,ispn),vgklnr(:,:,ispn), &
-     vgkcnr(:,:,ispn))
-! generate the spherical coordinates of the G+k-vectors
-    do igk=1,ngknr(ispn)
-      call sphcrd(vgkcnr(:,igk,ispn),gkcnr(igk,ispn),tpgkcnr(:,igk,ispn))
-    end do
-! generate structure factors for G+k-vectors
-    call gensfacgp(ngknr(ispn),vgkcnr(:,:,ispn),ngkmax,sfacgknr(:,:,ispn))
 ! find the matching coefficients
-    call match(ngknr(ispn),gkcnr(:,ispn),tpgkcnr(:,:,ispn),sfacgknr(:,:,ispn), &
-     apwalm(:,:,:,:,ispn))
+    call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
+     sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
 ! get the eigenvectors from file for non-reduced k-point
-  call getevecfv(vkl(:,ik),vgklnr,evecfv)
+  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
 ! generate the density matrix
-      call gendmat(.false.,.false.,0,lmax,is,ia,ngknr,apwalm,evecfv,evecsv, &
+      call gendmat(.false.,.false.,0,lmax,ias,ngk(:,ik),apwalm,evecfv,evecsv, &
        lmmax,dmat)
 ! convert (l,m) part to an irreducible representation if required
       if (lmirep) then
@@ -232,9 +209,7 @@ do ik=1,nkptnr
       sc(ispn,ist,ik)=real(t1)
     end do
   end do
-  deallocate(igkignr,vgklnr,vgkcnr,gkcnr)
-  deallocate(tpgkcnr,sfacgknr,apwalm)
-  deallocate(evecfv,evecsv,dmat,sdmat,a)
+  deallocate(apwalm,evecfv,evecsv,dmat,sdmat,a)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

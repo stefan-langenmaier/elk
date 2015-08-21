@@ -40,7 +40,6 @@ real(8), intent(in) :: x
 ! external functions
 real(8) sdelta_mp,sdelta_fd,sdelta_sq,sdelta_lr
 external sdelta_mp,sdelta_fd,sdelta_sq,sdelta_lr
-sdelta=0.d0
 select case(stype)
 case(0)
   sdelta=sdelta_mp(0,x)

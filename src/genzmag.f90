@@ -14,18 +14,20 @@ complex(8), intent(in) ::  wfir2(ngrtot,nspinor)
 complex(8), intent(out) :: zmagmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
 complex(8), intent(out) :: zmagir(ngrtot,ndmag)
 ! local variables
-integer is,ia,ias,ir
+integer is,ias,ir
 complex(8) zt1,zt2
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    call genzmagmt(is,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2),wfmt2(:,:,ias,1), &
-     wfmt2(:,:,ias,2),natmtot,zmagmt(:,:,ias,1))
-  end do
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
+!$OMP DO
+do ias=1,natmtot
+  is=idxis(ias)
+  call genzmagmt(is,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2),wfmt2(:,:,ias,1), &
+   wfmt2(:,:,ias,2),natmtot,zmagmt(:,:,ias,1))
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 !---------------------------!
 !     interstitial part     !
 !---------------------------!

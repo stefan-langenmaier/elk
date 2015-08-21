@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2010 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2011 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -40,7 +40,7 @@ if (mp_mpi) then
     close(50)
   end if
 end if
-! perform the appropriate task
+! perform the tasks
 do itask=1,ntasks
   task=tasks(itask)
   if (mp_mpi) then
@@ -49,10 +49,16 @@ do itask=1,ntasks
   end if
 ! synchronise MPI processes
   call mpi_barrier(mpi_comm_world,ierror)
-  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.135).and. &
-   (task.ne.180).and.(task.ne.185).and.(task.ne.240).and.(task.ne.300)) then
-    write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi,task
-    cycle
+! check if task can be run with MPI
+  if (lp_mpi.gt.0) then
+    select case(task)
+    case(0,1,2,3,5,10,120,135,170,180,185,188,240,300)
+      continue
+    case default
+      write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi, &
+       task
+      cycle
+    end select
   end if
   select case(task)
   case(-1)
@@ -91,6 +97,8 @@ do itask=1,ntasks
     call fermisurf
   case(102)
     call fermisurfbxsf
+  case(105)
+    call nesting
   case(110)
     call mossbauer
   case(115)
@@ -109,6 +117,10 @@ do itask=1,ntasks
     call writewfpw
   case(140)
     call elnes
+  case(170)
+    call writeemd
+  case(175)
+    call compton
   case(180)
     call epsinv_rpa
   case(185)
@@ -121,7 +133,9 @@ do itask=1,ntasks
     call sfacrho
   case(196)
     call sfacmag
-  case(200,205)
+  case(200,201)
+    call phononsc
+  case(205)
     call phonon
   case(210)
     call phdos
@@ -137,6 +151,8 @@ do itask=1,ntasks
     call alpha2f
   case(260)
     call eliashberg
+  case(270)
+    call scdft
   case(300)
     call rdmft
   case(400)
@@ -162,7 +178,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.31}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.4.18}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -207,7 +223,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, August 2011
+!   Halle and Uppsala, March 2012
 !   \newpage
 !
 !   \section{Units}
@@ -485,11 +501,6 @@ end program
 !    to be determined automatically & logical & {\tt .false.}}
 !   See {\tt dlefe} for details.
 !
-!   \block{autormt}{
-!   {\tt autormt} & {\tt .true.} if muffin-tin radii should be determined
-!    automatically & logical & {\tt .false.}}
-!   See {\tt rmtapm} for details.
-!
 !   \block{autoswidth}{
 !   {\tt autoswidth} & {\tt .true.} if the smearing parameter {\tt swidth}
 !    should be determined automatically & logical & {\tt .false.}}
@@ -555,7 +566,7 @@ end program
 !   electron or hole doping is required.
 !
 !   \block{deband}{
-!   {\tt deband} & initial band energy step size & real & $0.05$}
+!   {\tt deband} & initial band energy step size & real & $0.0025$}
 !   The initial step length used when searching for the band energy, which is
 !   used as the APW and local-orbital linearisation energies. This is done by
 !   first searching upwards in energy until the radial wavefunction at the
@@ -865,7 +876,7 @@ end program
 !   {\tt mustar} & Coulomb pseudopotential, $\mu^*$, used in the
 !    McMillan-Allen-Dynes equation & real & $0.15$}
 !   This is used when calculating the superconducting critical temperature with
-!   the formula [Phys. Rev. B 12, 905 (1975)]
+!   the formula {\it Phys. Rev. B 12, 905 (1975)}
 !   $$ T_c=\frac{\omega_{\rm log}}{1.2 k_B}\exp\left[\frac{-1.04(1+\lambda)}
 !    {\lambda-\mu^*(1+0.62\lambda)}\right], $$
 !   where $\omega_{\rm log}$ is the logarithmic average frequency and $\lambda$
@@ -1019,7 +1030,7 @@ end program
 !
 !   \block{radkpt}{
 !   {\tt radkpt } & radius of sphere used to determine $k$-point density &
-!    real & $40.0$}
+!    real & $8.0$}
 !   Used for the automatic determination of the $k$-point mesh. If {\tt autokpt}
 !   is set to {\tt .true.} then the mesh sizes will be determined by
 !   $n_i=\lambda/|{\bf A}_i|+1$.
@@ -1072,17 +1083,6 @@ end program
 !    real & $7.0$}
 !   This sets the maximum length for the ${\bf G}+{\bf k}$ vectors, defined as
 !   {\tt rgkmax} divided by the smallest muffin-tin radius.
-!
-!   \block{rmtapm}{
-!   {\tt rmtapm } & parameters governing the automatic generation of the
-!   muffin-tin radii & real(2) & $(0.25, 0.95)$}
-!   When {\tt autormt} is set to true, the muffin-tin radii are found
-!   automatically from the formula
-!   $$ R_i\propto 1+\zeta|Z_i|^{1/3}, $$
-!   where $Z_i$ is the atomic number of the $i$th species, $\zeta$ is stored in
-!   {\tt rmtapm(1)} and the value which governs the distance between the
-!   muffin-tins is stored in {\tt rmtapm(2)}. When {\tt rmtapm(2)} $=1$, the
-!   closest muffin-tins will touch.
 !
 !   \block{scale}{
 !   {\tt scale } & lattice vector scaling factor & real & $1.0$}
@@ -1208,6 +1208,7 @@ end program
 !   101 & 3D Fermi surface plot using separate bands (minus the Fermi
 !    energy). \\
 !   102 & 3D Fermi surface which can be plotted with XCrysDen. \\
+!   105 & 3D nesting function plot. \\
 !   110 & Calculation of M\"{o}ssbauer contact charge densities and magnetic
 !    fields at the nuclear sites. \\
 !   115 & Calculation of the electric field gradient (EFG) at the nuclear
@@ -1246,7 +1247,7 @@ end program
 !   196 & Calculation of magnetic structure factors. \\
 !   200 & Calculation of dynamical matrices on a $q$-point set defined by
 !    {\tt ngridq}. \\
-!   205 & Phonon dry run: just produce a set of empty DYN files. \\
+!   201 & Phonon dry run: just produce a set of empty DYN files. \\
 !   210 & Phonon density of states. \\
 !   220 & Phonon dispersion plot. \\
 !   230 & Phonon frequencies and eigenvectors for an arbitrary $q$-point. \\
@@ -1311,13 +1312,20 @@ end program
 !
 !   \block{tmomlu}{
 !   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the
-!   corresponding decomposition of LDA+U energy should be calculated
-!   at every loop of the self-consistent cycle & logical & {\tt .false.}}
+!    corresponding decomposition of LDA+U energy should be calculated
+!    at every loop of the self-consistent cycle & logical & {\tt .false.}}
 !   This variable is useful to check the convergence of the tensor moments in
 !   LDA+U caculations. Alternatively, with {\tt task} equal to 400, one can
 !   calculate the tensor moments and corresponding LDA+U energy contributions
 !   from a given density matrix and set of Slater parameters at the end of the
 !   self-consistent cycle.
+!
+!   \block{trimvg}{
+!   {\tt trimvg} & set to {\tt .true.} if the Fourier components of the
+!    effective potential for $|G|>{\tt gmaxvr}/2$ are to be set to zero &
+!    logical & {\tt .false.}}
+!   This fixes stability problems which can occur for large {\tt rgkmax}. Should
+!   be used only in conjunction with large {\tt gmaxvr}.
 !
 !   \block{tseqit}{
 !   {\tt tseqit} & set to {\tt .true.} if the first-variational secular equation
@@ -1355,6 +1363,11 @@ end program
 !    effective mass tensors & real(3) & $(0.0,0.0,0.0)$}
 !   See {\tt deltaem} and {\tt ndspem}.
 !
+!   \block{vkloff}{
+!   {\tt vkloff } & the $k$-point offset vector in lattice coordinates &
+!    real(3) & $(0.0,0.0,0.0)$}
+!   See {\tt ngridk}.
+!
 !   \block{vqlss}{
 !   {\tt vqlss} & the ${\bf q}$-vector of the spin-spiral state in lattice
 !    coordinates & real(3) & $(0.0,0.0,0.0)$}
@@ -1369,11 +1382,6 @@ end program
 !   $$ {\bf m}^{\bf q}({\bf r})=(m_x({\bf r})\cos({\bf q \cdot r}),
 !    m_y({\bf r})\sin({\bf q \cdot r}),m_z({\bf r})), $$
 !    where $m_x$, $m_y$ and $m_z$ are lattice periodic. See also {\tt spinprl}.
-!
-!   \block{vkloff}{
-!   {\tt vkloff } & the $k$-point offset vector in lattice coordinates &
-!    real(3) & $(0.0,0.0,0.0)$}
-!   See {\tt ngridk}.
 !
 !   \block{wsfac}{
 !   {\tt wsfac} & energy window to be used when calculating density or magnetic

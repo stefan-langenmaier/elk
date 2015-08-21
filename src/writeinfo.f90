@@ -53,7 +53,7 @@ write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
 write(fnum,*)
 select case(task)
-case(0,1,200)
+case(0,1,8,200)
   if (trdstate) then
     write(fnum,'("+------------------------------------------+")')
     write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
@@ -98,12 +98,7 @@ write(fnum,'(3G18.10)') bvec(1,2),bvec(2,2),bvec(3,2)
 write(fnum,'(3G18.10)') bvec(1,3),bvec(2,3),bvec(3,3)
 write(fnum,*)
 write(fnum,'("Unit cell volume      : ",G18.10)') omega
-write(fnum,'("Brillouin zone volume : ",G18.10)') (twopi**3)/omega
-if (autormt) then
-  write(fnum,*)
-  write(fnum,'("Automatic determination of muffin-tin radii")')
-  write(fnum,'(" parameters : ",2G18.10)') rmtapm
-end if
+write(fnum,'("Brillouin zone volume : ",G18.10)') omegabz
 do is=1,nspecies
   write(fnum,*)
   write(fnum,'("Species : ",I4," (",A,")")') is,trim(spsymb(is))
@@ -267,7 +262,13 @@ else
   write(fnum,'("Exchange-correlation functional : ",3I6)') xctype(:)
   write(fnum,'(" ",A)') trim(xcdescr)
 end if
-if (xcgrad.ge.1) write(fnum,'(" Generalised gradient approximation (GGA)")')
+if (xcgrad.eq.0) then
+  write(fnum,'(" Local density approximation (LDA)")')
+else if ((xcgrad.eq.1).or.(xcgrad.eq.2)) then
+  write(fnum,'(" Generalised gradient approximation (GGA)")')
+else if (xcgrad.eq.3) then
+  write(fnum,'(" meta-GGA; using kinetic energy density")')
+end if
 if (ldapu.ne.0) then
   write(fnum,*)
   write(fnum,'("LDA+U calculation")')

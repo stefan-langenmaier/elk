@@ -936,6 +936,7 @@ sub print_preamble {
     print "%------------------------ PREAMBLE --------------------------";
     print "\\documentclass[a4paper,11pt]{article}";
     print "\\usepackage{amsmath}";
+    print "\\usepackage{amssymb}";
     print "\\usepackage{epsfig}";
     print "\\usepackage{tabularx}";
     print "\\usepackage{color}";

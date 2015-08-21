@@ -76,13 +76,13 @@ external polynom
 t1=1.d0/sol**2
 t2=dble(l*(l+1))
 ! determine the r -> 0 boundary values of P and Q
-q0(1)=0.d0
-p1(1)=0.d0
-q1(1)=1.d0
+ri=1.d0/r(1)
 t3=2.d0-t1*vr(1)
 t4=t2/(t3*r(1)**2)+vr(1)-e
-p0(1)=r(1)*(p1(1)+t3*q1(1)*r(1))/(1.d0+t3*t4*r(1)**2)
-q0(1)=r(1)*(t4*p0(1)-q1(1))
+q0(1)=1.d0
+q1(1)=0.d0
+p0(1)=(q1(1)+q0(1)*ri)/t4
+p1(1)=t3*q0(1)+p0(1)*ri
 if (m.ne.0) then
   q1(1)=q1(1)-dble(m)*p0p(1)
 end if

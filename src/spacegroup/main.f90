@@ -17,7 +17,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Spacegroup Manual}}\\ \Large{\sc Version 1.2.0}
+! !TITLE: {\huge{\sc The Spacegroup Manual}}\\ \Large{\sc Version 1.2.1}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma and L. Nordstr\"{o}m}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction

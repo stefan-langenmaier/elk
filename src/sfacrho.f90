@@ -26,8 +26,8 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ih
-real(8) v(3),h,a,b,r
+integer ih,iv(3)
+real(8) h,v(3),a,b,r
 ! allocatable arrays
 complex(8), allocatable :: zrhoh(:)
 ! initialise the structure factor specific variables
@@ -46,10 +46,8 @@ write(50,'("      h      k      l  multipl.   |H|            Re(F)&
  &            Im(F)           |F|")')
 write(50,*)
 do ih=1,nhvec
-  v(:)=dble(ivh(1,ih))*bvec(:,1) &
-      +dble(ivh(2,ih))*bvec(:,2) &
-      +dble(ivh(3,ih))*bvec(:,3)
-  h=sqrt(v(1)**2+v(2)**2+v(3)**2)
+! length of H-vector
+  h=sqrt(vhc(1,ih)**2+vhc(2,ih)**2+vhc(3,ih)**2)
 ! apply transformation matrix
   v(:)=vhmat(:,1)*dble(ivh(1,ih)) &
       +vhmat(:,2)*dble(ivh(2,ih)) &
@@ -59,11 +57,12 @@ do ih=1,nhvec
   a=dble(zrhoh(ih))*omega
   b=-aimag(zrhoh(ih))*omega
   r=abs(zrhoh(ih))*omega
-  if ((abs(v(1)-nint(v(1))).le.epslat).and. &
-      (abs(v(2)-nint(v(2))).le.epslat).and. &
-      (abs(v(3)-nint(v(3))).le.epslat)) then
+  iv(:)=nint(v(:))
+  if ((abs(v(1)-iv(1)).le.epslat).and. &
+      (abs(v(2)-iv(2)).le.epslat).and. &
+      (abs(v(3)-iv(3)).le.epslat)) then
 ! integer hkl
-    write(50,'(4I7,4G16.8)') int(v(:)),mulh(ih),h,a,b,r
+    write(50,'(4I7,4G16.8)') iv(:),mulh(ih),h,a,b,r
   else
 ! non-integer hkl
     write(50,'(3F7.2,I7,4G16.8)') v(:),mulh(ih),h,a,b,r

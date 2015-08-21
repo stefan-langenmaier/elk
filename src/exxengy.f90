@@ -12,11 +12,8 @@ integer is,ia,nrc,m1,m2
 integer ik,ist,jst
 complex(8) zt1
 ! allocatable arrays
-complex(8), allocatable :: wfcr1(:,:,:)
-complex(8), allocatable :: wfcr2(:,:,:)
-complex(8), allocatable :: zrhomt(:,:)
-complex(8), allocatable :: zvclmt(:,:)
-complex(8), allocatable :: zfmt(:,:)
+complex(8), allocatable :: wfcr1(:,:,:),wfcr2(:,:,:)
+complex(8), allocatable :: zrhomt(:,:),zvclmt(:,:),zfmt(:,:)
 ! external functions
 complex(8) zfmtinp
 external zfmtinp
@@ -55,11 +52,11 @@ do is=1,nspecies
     do jst=1,spnst(is)
       if (spcore(jst,is)) then
         do m2=-spk(jst,is),spk(jst,is)-1
-          call wavefcr(lradstp,is,ia,jst,m2,nrcmtmax,wfcr2)
+          call wavefcr(.false.,lradstp,is,ia,jst,m2,nrcmtmax,wfcr2)
           do ist=1,spnst(is)
             if (spcore(ist,is)) then
               do m1=-spk(ist,is),spk(ist,is)-1
-                call wavefcr(lradstp,is,ia,ist,m1,nrcmtmax,wfcr1)
+                call wavefcr(.false.,lradstp,is,ia,ist,m1,nrcmtmax,wfcr1)
 ! calculate the complex overlap density
                 zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfcr2(:,1:nrc,1) &
                  +conjg(wfcr1(:,1:nrc,2))*wfcr2(:,1:nrc,2)

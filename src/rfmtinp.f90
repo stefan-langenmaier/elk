@@ -42,7 +42,7 @@ real(8), intent(in) :: rfmt2(ld,nr)
 ! local variables
 integer lmmax,ir,irc
 ! automatic arrays
-real(8) rc(nr),fr(nr),gr(nr),cf(4,nr)
+real(8) rc(nr),fr(nr),gr(nr)
 ! external functions
 real(8) ddot
 external ddot
@@ -71,7 +71,7 @@ do ir=1,nr,lrstp
   rc(irc)=r(ir)
   fr(irc)=ddot(lmmax,rfmt1(:,ir),1,rfmt2(:,ir),1)*(r(ir)**2)
 end do
-call fderiv(-1,irc,rc,fr,gr,cf)
+call fderiv(-1,irc,rc,fr,gr)
 rfmtinp=gr(irc)
 return
 end function

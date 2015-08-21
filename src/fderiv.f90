@@ -6,14 +6,13 @@
 !BOP
 ! !ROUTINE: fderiv
 ! !INTERFACE:
-subroutine fderiv(m,n,x,f,g,cf)
+subroutine fderiv(m,n,x,f,g)
 ! !INPUT/OUTPUT PARAMETERS:
 !   m  : order of derivative (in,integer)
 !   n  : number of points (in,integer)
 !   x  : abscissa array (in,real(n))
 !   f  : function array (in,real(n))
 !   g  : (anti-)derivative of f (out,real(n))
-!   cf : spline coefficients, not referenced if m=-2 or m=-3 (out,real(4,n))
 ! !DESCRIPTION:
 !   Given function $f$ defined on a set of points $x_i$ then if $m\ge 0$ this
 !   routine computes the $m$th derivative of $f$ at each point. If $m<0$ the
@@ -36,10 +35,11 @@ integer, intent(in) :: n
 real(8), intent(in) :: x(n)
 real(8), intent(in) :: f(n)
 real(8), intent(out) :: g(n)
-real(8), intent(out) :: cf(4,n)
 ! local variables
 integer i
-real(8) dx
+real(8) x0,x1,x2,dx
+! automatic arrays
+real(8) cf(3,n)
 if (n.le.0) then
   write(*,*)
   write(*,'("Error(fderiv): invalid number of points : ",I8)') n
@@ -58,13 +58,17 @@ end if
 if (m.eq.-2) then
   g(1)=0.d0
   do i=1,n-2
-    g(i+1)=g(i)+(x(i)-x(i+1))*(f(i+2)*(x(i)-x(i+1))**2+f(i+1)*(x(i+2)-x(i)) &
-     *(x(i)+2.d0*x(i+1)-3.d0*x(i+2))+f(i)*(x(i+2)-x(i+1))*(2.d0*x(i)+x(i+1) &
-     -3.d0*x(i+2)))/(6.d0*(x(i)-x(i+2))*(x(i+1)-x(i+2)))
+    x0=x(i)
+    x1=x(i+1)
+    x2=x(i+2)
+    g(i+1)=g(i)+(x0-x1)*(f(i+2)*(x0-x1)**2+f(i+1)*(x2-x0)*(x0+2.d0*x1-3.d0*x2) &
+     +f(i)*(x2-x1)*(2.d0*x0+x1-3.d0*x2))/(6.d0*(x0-x2)*(x1-x2))
   end do
-  g(n)=g(n-1)+(x(n-1)-x(n))*(f(n-2)*(x(n-1)-x(n))**2+f(n)*(x(n-1)-x(n-2)) &
-   *(3.d0*x(n-2)-x(n-1)-2.d0*x(n))+f(n-1)*(x(n)-x(n-2))*(3.d0*x(n-2) &
-   -2.d0*x(n-1)-x(n)))/(6.d0*(x(n-2)-x(n-1))*(x(n-2)-x(n)))
+  x0=x(n)
+  x1=x(n-1)
+  x2=x(n-2)
+  g(n)=g(n-1)+(x1-x0)*(f(n-2)*(x1-x0)**2+f(n)*(x1-x2)*(3.d0*x2-x1-2.d0*x0) &
+   +f(n-1)*(x0-x2)*(3.d0*x2-2.d0*x1-x0))/(6.d0*(x2-x1)*(x2-x0))
   return
 end if
 if (m.eq.0) then

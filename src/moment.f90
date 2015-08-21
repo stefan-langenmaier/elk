@@ -23,7 +23,7 @@ implicit none
 integer is,ia,ias,ir,idm
 real(8) t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax)
 ! external functions
 real(8) ddot
 external ddot
@@ -43,7 +43,7 @@ do idm=1,ndmag
       do ir=1,nrmt(is)
         fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
       end do
-      call fderiv(-1,nrmt(is),spr(:,is),fr,gr,cf)
+      call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
       mommt(idm,ias)=fourpi*y00*gr(nrmt(is))
       mommttot(idm)=mommttot(idm)+mommt(idm,ias)
     end do

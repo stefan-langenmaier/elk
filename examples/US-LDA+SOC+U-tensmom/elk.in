@@ -61,10 +61,6 @@ bfieldc
 reducebf
   0.5
 
-! automatic muffin-tin radius
-autormt
- .true.
-
 ! this rgkmax is too small for an accurate calculation
 ! rgkmax for actinides must usually be increased around 9.0-9.5
 rgkmax

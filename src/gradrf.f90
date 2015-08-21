@@ -11,24 +11,26 @@ real(8), intent(in) :: rfir(ngrtot)
 real(8), intent(out) :: grfmt(lmmaxvr,nrmtmax,natmtot,3)
 real(8), intent(out) :: grfir(ngrtot,3)
 ! local variables
-integer is,ia,ias,i,ig,ifg
+integer is,ias,i,ig,ifg
 ! allocatable arrays
 real(8), allocatable :: grfmt1(:,:,:)
 complex(8), allocatable :: zfft1(:),zfft2(:)
-allocate(grfmt1(lmmaxvr,nrmtmax,3))
-allocate(zfft1(ngrtot),zfft2(ngrtot))
 ! muffin-tin gradient
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    call gradrfmt(lmaxvr,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,rfmt(:,:,ias), &
-     grfmt1)
-    do i=1,3
-      grfmt(:,1:nrmt(is),ias,i)=grfmt1(:,1:nrmt(is),i)
-    end do
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(grfmt1,is,i)
+!$OMP DO
+do ias=1,natmtot
+  allocate(grfmt1(lmmaxvr,nrmtmax,3))
+  is=idxis(ias)
+  call gradrfmt(lmaxvr,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,rfmt(:,:,ias),grfmt1)
+  do i=1,3
+    grfmt(:,1:nrmt(is),ias,i)=grfmt1(:,1:nrmt(is),i)
   end do
+  deallocate(grfmt1)
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! interstitial gradient
+allocate(zfft1(ngrtot),zfft2(ngrtot))
 zfft1(:)=rfir(:)
 call zfftifc(3,ngrid,-1,zfft1)
 do i=1,3
@@ -40,7 +42,7 @@ do i=1,3
   call zfftifc(3,ngrid,1,zfft2)
   grfir(:,i)=dble(zfft2(:))
 end do
-deallocate(grfmt1,zfft1,zfft2)
+deallocate(zfft1,zfft2)
 return
 end subroutine
 

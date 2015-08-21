@@ -47,6 +47,8 @@ if (mp_mpi) then
   open(95,file='VNLIJJI.OUT'); close(95,status='DELETE')
   open(95,file='VNLIJJK.OUT'); close(95,status='DELETE')
 end if
+! generate the first- and second-variational eigenvectors and eigenvalues
+call genevfsv
 ! generate the kinetic matrix elements in the Cartesian basis
 call genkinmatc
 ! read in the occupancies

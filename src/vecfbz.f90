@@ -6,12 +6,11 @@
 !BOP
 ! !ROUTINE: vecfbz
 ! !INTERFACE:
-subroutine vecfbz(eps,bvec,vpl,iv)
+subroutine vecfbz(eps,bvec,vpl)
 ! !INPUT/OUTPUT PARAMETERS:
 !   eps  : zero component tolerance (in,real)
 !   bvec : reciprocal lattice vectors (in,real(3,3))
 !   vpl  : input vector in lattice coordinates (inout,real(3))
-!   iv   : integer parts of vpl (out,integer(3))
 ! !DESCRIPTION:
 !   Maps a vector in lattice coordinates to the first Brillouin zone. This is
 !   done by first removing its integer components and then adding primitive
@@ -26,12 +25,11 @@ implicit none
 real(8), intent(in) :: eps
 real(8), intent(in) :: bvec(3,3)
 real(8), intent(inout) :: vpl(3)
-integer, intent(out) :: iv(3)
 ! local variables
 integer i1,i2,i3,j1,j2,j3
 real(8) v0(3),v1(3),v2(3),v3(3),t1,t2
 ! map vector to [0,1) interval
-call r3frac(eps,vpl,iv)
+call r3frac(eps,vpl)
 v0(:)=bvec(:,1)*vpl(1)+bvec(:,2)*vpl(2)+bvec(:,3)*vpl(3)
 t1=v0(1)**2+v0(2)**2+v0(3)**2
 j1=0;j2=0;j3=0
@@ -52,9 +50,6 @@ end do
 vpl(1)=vpl(1)+dble(j1)
 vpl(2)=vpl(2)+dble(j2)
 vpl(3)=vpl(3)+dble(j3)
-iv(1)=iv(1)-j1
-iv(2)=iv(2)-j2
-iv(3)=iv(3)-j3
 return
 end subroutine
 !EOC

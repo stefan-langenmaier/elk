@@ -39,12 +39,10 @@ end if
 t1=(chgtot-chgcalc)/omega
 ! add the constant difference to the density
 t2=t1/y00
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      rhomt(1,ir,ias)=rhomt(1,ir,ias)+t2
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    rhomt(1,ir,ias)=rhomt(1,ir,ias)+t2
   end do
 end do
 rhoir(:)=rhoir(:)+t1

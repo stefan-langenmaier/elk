@@ -34,7 +34,7 @@ ngridq
 ! k-point grid density is determined by the radius radkpt
 ! (only used for the phonon calculation)
 radkpt
-  40.0
+  8.0
 
 ! require accurate forces
 lmaxmat

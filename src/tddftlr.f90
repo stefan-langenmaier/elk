@@ -8,11 +8,15 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ik,ig,jg,iw,it,n
+integer ik,ig,jg,iw
+integer iq,isym,it,n
 integer info1,info2
+real(8) vecqc(3),vgqc(3)
+real(8) v(3),t1
 complex(8) fxcp,zt1
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
+real(8), allocatable :: gqc(:)
 complex(8), allocatable :: expqmt(:,:,:)
 complex(8), allocatable :: vchi0(:,:,:),fxc(:,:,:)
 complex(8), allocatable :: eps0(:,:,:),eps(:,:,:)
@@ -43,22 +47,45 @@ do ik=1,nkpt
 end do
 ! allocate local arrays
 allocate(ipiv(ngrpa))
+allocate(gqc(ngrpa))
 allocate(expqmt(lmmaxvr,nrcmtmax,natmtot))
 allocate(vchi0(ngrpa,ngrpa,nwrpa),fxc(ngrpa,ngrpa,nwrpa))
 allocate(eps0(ngrpa,ngrpa,nwrpa),eps(ngrpa,ngrpa,nwrpa))
 allocate(vce(ngrpa,ngrpa),a(ngrpa,ngrpa),work(ngrpa))
 ! generate the exp(iG.r) functions for all the MBPT G-vectors
 call genexpigr
-! generate the exp(iq.r) function for q = 0
-expqmt(:,:,:)=1.d0
-! compute v^1/2 chi0 v^1/2 for q = 0 (the symmetric version of v chi0)
+! check q-vector is commensurate with k-point grid
+v(:)=dble(ngridk(:))*vecql(:)
+v(:)=abs(v(:)-nint(v(:)))
+if ((v(1).gt.epslat).or.(v(2).gt.epslat).or.(v(3).gt.epslat)) then
+  write(*,*)
+  write(*,'("Error(tddftlr): q-vector incommensurate with k-point grid")')
+  write(*,'(" ngridk : ",3I6)') ngridk
+  write(*,'(" vecql : ",3G18.10)') vecql
+  write(*,*)
+  stop
+end if
+call r3mv(bvec,vecql,vecqc)
+call findqpt(vecql,isym,iq)
+! generate the G+q vector lengths
+do ig=1,ngrpa
+  vgqc(:)=vgc(:,ig)+vecqc(:)
+  gqc(ig)=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
+end do
+! generate the exp(iq.r) function
+call genexpmt(vecqc(:),expqmt)
+! compute v^1/2 chi0 v^1/2 (the symmetric version of v chi0)
 vchi0(:,:,:)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
 do ik=1,nkptnr
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  call genvchi0(iq0,ik,optcomp(1,1),gc,expqmt,vchi0)
+!$OMP CRITICAL
+  write(*,'("Info(tddftlr): ",I6," of ",I6," k-points")') ik,nkptnr
+!$OMP END CRITICAL
+! compute v^1/2 chi0 v^1/2
+  call genvchi0(ik,optcomp(1,1),scissor,vecql,gqc,expqmt,vchi0)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -80,7 +107,7 @@ end do
 fxcp=0.d0
 it=0
 10 continue
-! compute vchi0 v{-^1/2} fxc v{-^1/2} vchi0
+! compute vchi0 v^(-1/2) fxc v^(-1/2) vchi0
 call genfxc(vchi0,eps0,eps,fxc)
 ! begin loop over frequencies
 do iw=1,nwrpa
@@ -112,37 +139,45 @@ end do
 ! bootstrap f_xc
 if (fxctype.eq.2) then
   it=it+1
-  if (it.gt.200) then
+  if (it.gt.500) then
     write(*,*)
     write(*,'("Error(tddftlr): bootstrap kernel failed to converge")')
     write(*,*)
     stop
   end if
 ! check for convergence
-  zt1=fxcp-fxc(1,1,1)
+  t1=abs(fxcp)-abs(fxc(1,1,1))
   fxcp=fxc(1,1,1)
-  if (abs(zt1).gt.1.d-8) goto 10
+  if (abs(t1).gt.1.d-8) goto 10
 end if
 ! write G = G' = 0 components to file
 open(50,file="EPSILON_TDDFT.OUT",action='WRITE',form='FORMATTED')
+open(51,file="EELS_TDDFT.OUT",action='WRITE',form='FORMATTED')
 do iw=1,nwrpa
   zt1=1.d0/eps(1,1,iw)
   write(50,'(3G18.10)') dble(wrpa(iw)),dble(zt1)
+  write(51,'(3G18.10)') dble(wrpa(iw)),-dble(eps(1,1,iw))
 end do
 write(50,*)
+write(51,*)
 do iw=1,nwrpa
   zt1=1.d0/eps(1,1,iw)
   write(50,'(3G18.10)') dble(wrpa(iw)),aimag(zt1)
+  write(51,'(3G18.10)') dble(wrpa(iw)),-aimag(eps(1,1,iw))
 end do
 close(50)
+close(51)
 write(*,*)
 write(*,'("Info(tddftlr):")')
 write(*,'(" dielectric tensor written to EPSILON_TDDFT.OUT")')
+write(*,'(" electron loss function written to EELS_TDDFT.OUT")')
 write(*,'(" for component i, j = ",I1)') optcomp(1,1)
-deallocate(ipiv,expqmt,vchi0,fxc)
+write(*,'(" q-vector (lattice coordinates) : ")')
+write(*,'(3G18.10)') vecql
+write(*,'(" q-vector length : ",G18.10)') gqc(1)
+deallocate(ipiv,gqc,expqmt,vchi0,fxc)
 deallocate(eps0,eps,vce,a,work)
 ! deallocate global exp(iG.r) arrays
 deallocate(expgmt,expgir)
 return
 end subroutine
-

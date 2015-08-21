@@ -25,12 +25,8 @@ real(8) function gaunt(l1,l2,l3,m1,m2,m3)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: l1
-integer, intent(in) :: l2
-integer, intent(in) :: l3
-integer, intent(in) :: m1
-integer, intent(in) :: m2
-integer, intent(in) :: m3
+integer, intent(in) :: l1,l2,l3
+integer, intent(in) :: m1,m2,m3
 ! local variables
 integer j,j1,j2,j3,jh
 real(8) t1

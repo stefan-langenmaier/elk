@@ -10,7 +10,7 @@ tasks
   185       ! compute BSE dielectric funcion
 
 scissor
- 0.12
+ 0.21
 
 lmaxvr
  5
@@ -33,9 +33,6 @@ gmaxrpa
 
 nempty
   10
-
-autormt
- .true.
 
 dos
   800 100 0 : nwdos, ngrdos, nsmdos

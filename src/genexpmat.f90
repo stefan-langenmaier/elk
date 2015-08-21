@@ -93,8 +93,7 @@ do is=1,nspecies
     ias=idxas(ia,is)
     do ist=1,nstfv
 ! calculate the wavefunction for k-point p+q
-      call wavefmt(lradstp,lmaxvr,is,ia,ngpq,apwalm2,evecfv2(:,ist),lmmaxvr, &
-       wfmt1)
+      call wavefmt(lradstp,lmaxvr,ias,ngpq,apwalm2,evecfv2(:,ist),lmmaxvr,wfmt1)
 ! convert from spherical harmonics to spherical coordinates
       call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt1, &
        lmmaxvr,zzero,wfmt2(:,:,ist),lmmaxvr)
@@ -106,8 +105,7 @@ do is=1,nspecies
     end do
     do jst=1,nstfv
 ! calculate the wavefunction for k-point p
-      call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm1,evecfv1(:,jst),lmmaxvr, &
-       wfmt1)
+      call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm1,evecfv1(:,jst),lmmaxvr,wfmt1)
       do ist=1,nstfv
         em(ist,jst)=em(ist,jst)+zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
          wfmt2(:,:,ist),wfmt1)

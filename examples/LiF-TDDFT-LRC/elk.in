@@ -25,9 +25,6 @@ nempty
 lradstp
   2
 
-autormt
- .true.
-
 dos
   800 100 0 : nwdos, ngrdos, nsmdos
   0.0 1.5   : wdos

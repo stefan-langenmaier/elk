@@ -37,6 +37,10 @@ real(8) sum,t1
 ! external functions
 real(8) factnm,hermite
 external factnm,hermite
+if (n.eq.0) then
+  sdelta_mp=exp(-x**2)/sqpi
+  return
+end if
 if (n.lt.0) then
   write(*,*)
   write(*,'("Error(sdelta_mp): n < 0 : ",I8)') n

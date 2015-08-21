@@ -24,7 +24,7 @@ integer is,ia,ias
 integer nn,l,io,nr,ir
 real(8) t1
 ! automatic arrays
-real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax)
 real(8) p0(nrmtmax,apwordmax),p1(nrmtmax),p1s(apwordmax)
 real(8) q0(nrmtmax,apwordmax),q1(nrmtmax,apwordmax)
 real(8) hp0(nrmtmax)
@@ -43,7 +43,7 @@ do is=1,nspecies
     do ir=1,nr
       fr(ir)=p0(ir,io)**2
     end do
-    call fderiv(-1,nr,spr(1,is),fr,gr,cf)
+    call fderiv(-1,nr,spr(1,is),fr,gr)
     t1=1.d0/sqrt(abs(gr(nr)))
     p0(1:nr,io)=t1*p0(1:nr,io)
     p1s(io)=t1*p1(nr)
@@ -53,7 +53,7 @@ do is=1,nspecies
     do ir=1,nr
       fr(ir)=p0(ir,io)**2
     end do
-    call fderiv(-1,nr,spr(1,is),fr,gr,cf)
+    call fderiv(-1,nr,spr(1,is),fr,gr)
     t1=abs(gr(nr))
     if (t1.lt.1.d-20) then
       write(*,*)

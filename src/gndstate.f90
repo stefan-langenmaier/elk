@@ -27,14 +27,11 @@ use modldapu
 implicit none
 ! local variables
 logical exist
-integer ik,nwork,lp,n
+integer ik,nwork,n
 real(8) dv,etp,de,timetot
 ! allocatable arrays
 real(8), allocatable :: v(:)
 real(8), allocatable :: work(:)
-real(8), allocatable :: evalfv(:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
 ! initialise global variables
 call init0
 call init1
@@ -67,6 +64,8 @@ if (mp_mpi) then
 ! open MOMENT.OUT if required
   if (spinpol) open(63,file='MOMENT'//trim(filext),action='WRITE', &
    form='FORMATTED')
+! open GAP.OUT
+  open(64,file='GAP'//trim(filext),action='WRITE',form='FORMATTED')
 ! open RMSDVEFF.OUT
   open(65,file='RMSDVEFF'//trim(filext),action='WRITE',form='FORMATTED')
 ! open DTOTENERGY.OUT
@@ -126,6 +125,9 @@ do iscl=1,maxscl
       write(60,*)
       write(60,'("Reached self-consistent loops maximum")')
     end if
+    write(*,*)
+    write(*,'("Warning(gndstate): failed to reach self-consistency after ",I4,&
+     &" loops")') iscl
     tlast=.true.
   end if
   if (mp_mpi) call flushifc(60)
@@ -145,36 +147,8 @@ do iscl=1,maxscl
   call hmlrad
 ! generate muffin-tin effective magnetic fields and s.o. coupling functions
   call genbeffmt
-! begin parallel loop over k-points
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evalfv,evecfv,evecsv)
-!$OMP DO
-  do ik=1,nkpt
-! distribute among MPI processes
-    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-! every thread should allocate its own arrays
-    allocate(evalfv(nstfv,nspnfv))
-    allocate(evecfv(nmatmax,nstfv,nspnfv))
-    allocate(evecsv(nstsv,nstsv))
-! solve the first- and second-variational secular equations
-    call seceqn(ik,evalfv,evecfv,evecsv)
-! write the eigenvalues/vectors to file
-    call putevalfv(ik,evalfv)
-    call putevalsv(ik,evalsv(:,ik))
-    call putevecfv(ik,evecfv)
-    call putevecsv(ik,evecsv)
-    deallocate(evalfv,evecfv,evecsv)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
-! broadcast eigenvalue array to every process
-  do ik=1,nkpt
-    lp=mod(ik-1,np_mpi)
-    call mpi_bcast(evalsv(:,ik),nstsv,mpi_double_precision,lp,mpi_comm_world, &
-     ierror)
-  end do
+! generate the first- and second-variational eigenvectors and eigenvalues
+  call genevfsv
 ! find the occupation numbers and Fermi energy
   call occupy
   if (autoswidth.and.mp_mpi) then
@@ -206,6 +180,12 @@ do iscl=1,maxscl
   end if
 ! compute the effective potential
   call poteff
+  if (mp_mpi) then
+    if ((xcgrad.eq.3).and.(c_tb09.ne.0.d0)) then
+      write(60,*)
+      write(60,'("Tran-Blaha ''09 constant c : ",G18.10)') c_tb09
+    end if
+  end if
 ! pack interstitial and muffin-tin effective potential and field into one array
   call mixpack(.true.,n,v)
 ! mix in the old potential and field with the new
@@ -227,13 +207,14 @@ do iscl=1,maxscl
   end if
 ! compute the energy components
   call energy
-! output energy components
   if (mp_mpi) then
+! output energy components
     call writeengy(60)
     write(60,*)
     write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
     write(60,'(" (states/Hartree/unit cell)")')
-    write(60,'("Estimated band gap : ",G18.10)') bandgap
+    write(60,'("Estimated indirect band gap : ",G18.10)') bandgap
+    write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
 ! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)
@@ -247,6 +228,9 @@ do iscl=1,maxscl
       write(63,'(3G18.10)') momtot(1:ndmag)
       call flushifc(63)
     end if
+! write estimated Kohn-Sham band gap
+    write(64,'(G22.12)') bandgap
+    call flushifc(64)
 ! output effective fields for fixed spin moment calculations
     if (fixspin.ne.0) call writefsm(60)
 ! check for WRITE file
@@ -370,6 +354,8 @@ if (mp_mpi) then
   close(62)
 ! close the MOMENT.OUT file
   if (spinpol) close(63)
+! close the GAP.OUT file
+  close(64)
 ! close the RMSDVEFF.OUT file
   close(65)
 ! close the DTOTENERGY.OUT file

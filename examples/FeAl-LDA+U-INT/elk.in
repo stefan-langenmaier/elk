@@ -48,10 +48,6 @@ atoms
 sppath
   '../../species/'
 
-! automatic muffin tin radius
-autormt
-  .true.
-
 ! fair number of empty states
 nempty
   10

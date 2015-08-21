@@ -38,7 +38,7 @@ real(8), intent(in) :: rfir1(ngrtot)
 real(8), intent(in) :: rfir2(ngrtot)
 ! local variables
 integer is,ias,ir
-real(8) sum,t1
+real(8) sum
 ! external functions
 real(8) rfmtinp
 external rfmtinp
@@ -49,13 +49,12 @@ do ir=1,ngrtot
 end do
 sum=sum*omega/dble(ngrtot)
 ! muffin-tin contribution
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,t1) REDUCTION(+:sum)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is) REDUCTION(+:sum)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  t1=rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
+  sum=sum+rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
    rfmt2(:,:,ias))
-  sum=sum+t1
 end do
 !$OMP END DO
 !$OMP END PARALLEL

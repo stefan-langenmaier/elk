@@ -6,14 +6,13 @@
 !BOP
 ! !ROUTINE: wavefmt
 ! !INTERFACE:
-subroutine wavefmt(lrstp,lmax,is,ia,ngp,apwalm,evecfv,ld,wfmt)
+subroutine wavefmt(lrstp,lmax,ias,ngp,apwalm,evecfv,ld,wfmt)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   lrstp  : radial step length (in,integer)
 !   lmax   : maximum angular momentum required (in,integer)
-!   is     : species number (in,integer)
-!   ia     : atom number (in,integer)
+!   ias    : joint atom and species number (in,integer)
 !   ngp    : number of G+p-vectors (in,integer)
 !   apwalm : APW matching coefficients
 !            (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot))
@@ -48,15 +47,14 @@ implicit none
 ! arguments
 integer, intent(in) :: lrstp
 integer, intent(in) :: lmax
-integer, intent(in) :: is
-integer, intent(in) :: ia
+integer, intent(in) :: ias
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: evecfv(nmatmax)
 integer, intent(in) :: ld
 real(8), intent(out) :: wfmt(2,ld,*)
 ! local variables
-integer ias,l,m,lm,ld2
+integer is,l,m,lm,ld2
 integer ir,nr,io,ilo
 complex(8) zt1
 ! external functions
@@ -68,7 +66,8 @@ if (lmax.gt.lmaxapw) then
   write(*,*)
   stop
 end if
-ias=idxas(ia,is)
+! species number
+is=idxis(ias)
 ! zero the wavefunction
 nr=0
 do ir=1,nrmt(is),lrstp

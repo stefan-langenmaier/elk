@@ -51,7 +51,6 @@ do a2=1,nmbse
       end do
     end do
   end do
-  e=evalbse(a2)
   if (abs(e).gt.1.d-8) then
     do i=1,3
       do j=1,3

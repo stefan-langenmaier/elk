@@ -36,7 +36,7 @@ real(8) r2,x
 ! automatic arrays
 real(8) clow(nrmtmax),chigh(nrmtmax)
 real(8) blow(nrmtmax),bhigh(nrmtmax),fint(nrmtmax)
-real(8) bint(nrmtmax),cint(nrmtmax),cf(4,nrmtmax)
+real(8) bint(nrmtmax),cint(nrmtmax)
 ! allocatable arrays
 real(8), allocatable :: a(:,:)
 real(8), allocatable :: b(:,:)
@@ -61,16 +61,16 @@ do ir=nstart,nr
     ir2=ir1+nstart-1
     blow(ir1)=bint(ir2)*a(k,ir2)
   end do
-  call fderiv(-1,nr1,spr(nstart,is),blow,clow,cf)
+  call fderiv(-1,nr1,spr(nstart,is),blow,clow)
   do ir1=1,nr2
     ir2=ir1+ir-1
     bhigh(ir1)=bint(ir2)*b(k,ir2)
   end do
-  call fderiv(-1,nr2,spr(ir,is),bhigh,chigh,cf)
+  call fderiv(-1,nr2,spr(ir,is),bhigh,chigh)
   cint(ir-nstart+1)=bint(ir)*(b(k,ir)*clow(nr1)+a(k,ir)*chigh(nr2))
 end do
 nr1=nr-nstart+1
-call fderiv(-1,nr1,spr(nstart,is),cint,fint,cf)
+call fderiv(-1,nr1,spr(nstart,is),cint,fint)
 fluykwa0=fint(nr1)
 deallocate(a,b)
 return

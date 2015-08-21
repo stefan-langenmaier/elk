@@ -20,25 +20,23 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir
+integer is,ias,ir
 real(8) t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax)
 ! external functions
 real(8) ddot
-external ddto
+external ddot
 ! find the muffin-tin charges
 chgmttot=0.d0
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      fr(ir)=rhomt(1,ir,ias)*spr(ir,is)**2
-    end do
-    call fderiv(-1,nrmt(is),spr(:,is),fr,gr,cf)
-    chgmt(ias)=fourpi*y00*gr(nrmt(is))
-    chgmttot=chgmttot+chgmt(ias)
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    fr(ir)=rhomt(1,ir,ias)*spr(ir,is)**2
   end do
+  call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
+  chgmt(ias)=fourpi*y00*gr(nrmt(is))
+  chgmttot=chgmttot+chgmt(ias)
 end do
 ! find the interstitial charge
 t1=ddot(ngrtot,rhoir,1,cfunir,1)

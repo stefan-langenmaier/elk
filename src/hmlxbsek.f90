@@ -12,8 +12,9 @@ real(8), intent(in) :: jlgr(0:lnpsd+1,ngvec,nspecies)
 ! local variables
 integer i1,i2,j1,j2
 integer a1,a2,b1,b2
-integer ik1,is,ia,ias,l,irc
+integer ik1,is,ias,l,irc
 integer ist1,ist2,jst1,jst2
+real(8) t0
 complex(8) zrho0,zt1
 ! automatic arrays
 complex(8) zflm(lmmaxvr)
@@ -45,12 +46,13 @@ do i2=1,nvbse
 ! calculate the complex overlap density
     call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
      wfir2(:,:,ist2),wfir2(:,:,jst2),zrhomt,zrhoir)
-! compute the potential and G = 0 coefficient of the density
+! compute the Coulomb potential
     call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt(:,:,:,l))
     call zpotcoul(nrcmt,nrcmtmax,rcmt,1,gc,jlgr,ylmg,sfacg,zrhoir,nrcmtmax, &
      zvclmt(:,:,:,l),zvclir(:,l),zrho0)
   end do
 end do
+t0=occmax*wkptnr
 ! start loop over ik1
 do ik1=1,nkptnr
   if (ik1.eq.ik2) then
@@ -75,7 +77,7 @@ do ik1=1,nkptnr
           a2=ijkbse(i2,j2,ik2)
           l=l+1
 ! compute the matrix element
-          zt1=wkptnr*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
+          zt1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
           hmlbse(a1,a2)=hmlbse(a1,a2)+zt1
 ! compute off-diagonal blocks if required
           if (bsefull) then
@@ -83,17 +85,15 @@ do ik1=1,nkptnr
             b2=a2+nbbse
             hmlbse(b1,b2)=hmlbse(b1,b2)-conjg(zt1)
 ! conjugate the potential
-            do is=1,nspecies
-              do ia=1,natoms(is)
-                ias=idxas(ia,is)
-                do irc=1,nrcmt(is)
-                  zflm(:)=zvclmt(:,irc,ias,l)
-                  call zflmconj(lmaxvr,zflm,zvclmt(:,irc,ias,l))
-                end do
+            do ias=1,natmtot
+              is=idxis(ias)
+              do irc=1,nrcmt(is)
+                zflm(:)=zvclmt(:,irc,ias,l)
+                call zflmconj(lmaxvr,zflm,zvclmt(:,irc,ias,l))
               end do
             end do
             zvclir(:,l)=conjg(zvclir(:,l))
-            zt1=wkptnr*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
+            zt1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
             hmlbse(a1,b2)=hmlbse(a1,b2)+zt1
             hmlbse(b1,a2)=hmlbse(b1,a2)-conjg(zt1)
           end if

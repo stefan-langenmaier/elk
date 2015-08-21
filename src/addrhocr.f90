@@ -24,7 +24,7 @@ integer is,ia,ias
 integer nr,ir,ispn
 real(8) sum,v(3),t1,t2
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax)
 do is=1,nspecies
   nr=nrmt(is)
   do ia=1,natoms(is)
@@ -38,7 +38,7 @@ do is=1,nspecies
         fr(ir)=rhocr(ir,ias,ispn)*spr(ir,is)**2
       end do
 ! compute the core charge inside the muffin-tins
-      call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+      call fderiv(-1,nr,spr(:,is),fr,gr)
       sum=sum+fourpi*gr(nr)
     end do
 ! core leakage charge

@@ -25,9 +25,6 @@ integer, intent(in) :: fnum
 integer is,js,ia,ja
 integer i1,i2,i3
 real(8) d,dmin,v(3)
-! external functions
-real(8) r3dist
-external r3dist
 do is=1,nspecies
   do ia=1,natoms(is)
     write(fnum,*)
@@ -41,7 +38,8 @@ do is=1,nspecies
             do i3=-1,1
               v(:)=dble(i1)*avec(:,1)+dble(i2)*avec(:,2)+dble(i3)*avec(:,3) &
                +atposc(:,ja,js)
-              d=r3dist(atposc(:,ia,is),v)
+              v(:)=v(:)-atposc(:,ia,is)
+              d=sqrt(v(1)**2+v(2)**2+v(3)**2)
               dmin=min(d,dmin)
             end do
           end do

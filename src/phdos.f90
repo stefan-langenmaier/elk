@@ -18,7 +18,7 @@ real(8) v(3),t1,t2
 real(8), allocatable :: wp(:)
 real(8), allocatable :: w(:)
 real(8), allocatable :: gw(:)
-real(8), allocatable :: f(:),g(:),cf(:,:)
+real(8), allocatable :: f(:),g(:)
 complex(8), allocatable :: dynq(:,:,:)
 complex(8), allocatable :: dynr(:,:,:)
 complex(8), allocatable :: dynp(:,:)
@@ -30,7 +30,7 @@ nb=3*natmtot
 allocate(wp(nb))
 allocate(w(nwdos))
 allocate(gw(nwdos))
-allocate(f(nwdos),g(nwdos),cf(4,nwdos))
+allocate(f(nwdos),g(nwdos))
 allocate(dynq(nb,nb,nqpt))
 allocate(dynr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
 allocate(dynp(nb,nb))
@@ -106,7 +106,7 @@ open(50,file='THERMO.OUT',action='WRITE',form='FORMATTED')
 do iw=1,nwdos
   f(iw)=gw(iw)*w(iw)
 end do
-call fderiv(-1,nwdos,w,f,g,cf)
+call fderiv(-1,nwdos,w,f,g)
 t1=0.5d0*dble(natmtot)*g(nwdos)
 write(50,*)
 write(50,'("Zero-point energy : ",G18.10)') t1
@@ -122,7 +122,7 @@ do i=1,ntemp
       f(iw)=0.d0
     end if
   end do
-  call fderiv(-1,nwdos,w,f,g,cf)
+  call fderiv(-1,nwdos,w,f,g)
   t1=0.5d0*dble(natmtot)*g(nwdos)
   write(50,'(2G18.10)') temp(i),t1
   s(i)=t1
@@ -139,7 +139,7 @@ do i=1,ntemp
       f(iw)=0.d0
     end if
   end do
-  call fderiv(-1,nwdos,w,f,g,cf)
+  call fderiv(-1,nwdos,w,f,g)
   t1=dble(natmtot)*kboltz*temp(i)*g(nwdos)
   write(50,'(2G18.10)') temp(i),t1
 ! compute entropy from S = (F-E)/T
@@ -164,7 +164,7 @@ do i=1,ntemp
       f(iw)=0.d0
     end if
   end do
-  call fderiv(-1,nwdos,w,f,g,cf)
+  call fderiv(-1,nwdos,w,f,g)
   t1=dble(natmtot)*kboltz*g(nwdos)
   write(50,'(2G18.10)') temp(i),t1
 end do
@@ -172,7 +172,7 @@ close(50)
 write(*,'(" thermodynamic properties written to THERMO.OUT")')
 ! write phonon DOS to test file
 call writetest(210,'phonon DOS',nv=nwdos,tol=1.d-2,rva=gw)
-deallocate(wp,w,gw,f,g,cf,dynq,dynr,dynp,ev)
+deallocate(wp,w,gw,f,g,dynq,dynr,dynp,ev)
 return
 end subroutine
 

@@ -32,7 +32,7 @@ integer j,l,nn,info
 real(8) t1
 ! automatic arrays
 logical done(natmmax)
-real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax)
 real(8) p0(nrmtmax,maxlorbord),p1(nrmtmax)
 real(8) q0(nrmtmax,maxlorbord),q1(nrmtmax,maxlorbord)
 real(8) p0s(nrmtmax),q0s(nrmtmax),q1s(nrmtmax)
@@ -65,7 +65,7 @@ do is=1,nspecies
          nr,spr(:,is),vr,nn,p0(:,jo),p1,q0(:,jo),q1(:,jo))
 ! normalise radial functions
         fr(1:nr)=p0(1:nr,jo)**2
-        call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+        call fderiv(-1,nr,spr(:,is),fr,gr)
         t1=1.d0/sqrt(abs(gr(nr)))
         p0(1:nr,jo)=t1*p0(1:nr,jo)
         q0(1:nr,jo)=t1*q0(1:nr,jo)
@@ -106,7 +106,7 @@ do is=1,nspecies
       end do
 ! normalise radial functions
       fr(1:nr)=p0s(1:nr)**2
-      call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+      call fderiv(-1,nr,spr(:,is),fr,gr)
       t1=1.d0/sqrt(abs(gr(nr)))
       p0s(1:nr)=t1*p0s(1:nr)
       q0s(1:nr)=t1*q0s(1:nr)

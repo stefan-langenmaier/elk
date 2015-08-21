@@ -12,7 +12,8 @@ complex(8), intent(in) :: eps0(ngrpa,ngrpa,nwrpa)
 complex(8), intent(in) :: eps(ngrpa,ngrpa,nwrpa)
 complex(8), intent(out) :: fxc(ngrpa,ngrpa,nwrpa)
 ! local variables
-integer ig,iw
+integer ig,jg,iw
+real(8) t1
 ! allocatable arrays
 complex(8), allocatable :: a(:,:)
 ! allocate local arrays
@@ -32,8 +33,11 @@ case(1)
 case(2)
 ! bootstrap
   fxc(:,:,:)=0.d0
+  t1=-1.d0/(dble(eps0(1,1,1))-1.d0)
   do ig=1,ngrpa
-    fxc(ig,ig,:)=-eps(ig,ig,1)/(dble(eps0(1,1,1))-1.d0)
+    do jg=1,ngrpa
+      fxc(ig,jg,:)=t1*eps(ig,jg,1)
+    end do
   end do
 case default
   write(*,*)

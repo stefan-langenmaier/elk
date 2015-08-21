@@ -51,7 +51,7 @@ integer kpa,it,nn,ir,irm,nnd,nndp
 real(8), parameter :: eps=1.d-11
 real(8) t1,de
 ! automatic arrays
-real(8) g1(nr),f1(nr),fr(nr),gr(nr),cf(4,nr)
+real(8) g1(nr),f1(nr),fr(nr),gr(nr)
 if (k.le.0) then
   write(*,*)
   write(*,'("Error(rdirac): k <= 0 : ",I8)') k
@@ -126,7 +126,7 @@ f0(irm:nr)=0.d0
 do ir=1,nr
   fr(ir)=g0(ir)**2+f0(ir)**2
 end do
-call fderiv(-1,nr,r,fr,gr,cf)
+call fderiv(-1,nr,r,fr,gr)
 t1=sqrt(abs(gr(nr)))
 if (t1.gt.0.d0) then
   t1=1.d0/t1

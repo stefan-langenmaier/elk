@@ -11,8 +11,7 @@ real(8), intent(out) :: srgen(3,3,12)
 real(8), intent(out) :: stgen(3,12)
 ! local variables
 logical pr
-integer i,m,n,no,nop
-integer axis,id(3)
+integer i,m,n,no,nop,axis
 ! zero vector tolerance
 real(8), parameter :: eps=1.d-6
 real(8) av(3),r(3,3),t1
@@ -398,7 +397,7 @@ goto 10
 20 continue
 ! map translations to [0,1)
 do i=1,ngen
-  call r3frac(eps,stgen(:,i),id)
+  call r3frac(eps,stgen(:,i))
 end do
 return
 end subroutine

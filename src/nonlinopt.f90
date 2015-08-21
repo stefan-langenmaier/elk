@@ -68,7 +68,7 @@ end if
 allocate(chiw(nwdos,3))
 allocate(chi2w(nwdos,2))
 ! i divided by the complex relaxation time
-eta=cmplx(0.d0,swidth)
+eta=cmplx(0.d0,swidth,8)
 ! begin loop over components
 do l=1,noptcomp
   a=optcomp(1,l)

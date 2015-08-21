@@ -11,21 +11,19 @@ integer, intent(in) :: ikp
 complex(8), intent(out) :: vnlcv(ncrmax,natmtot,nstsv)
 complex(8), intent(out) :: vnlvv(nstsv,nstsv)
 ! local variables
-integer ngknr,ik,jk,igk
-integer ist1,ist2,ist3
 integer is,ia,ias,nrc
-integer ic,jc,m1,m2
-integer iq,ig,iv(3),igq0
+integer ik,jk,iv(3)
+integer ig,iq,igq0
+integer ist1,ist2,ist3
+integer ic,jc,m1,m2,n
 real(8) v(3),cfq
 complex(8) zrho01,zrho02,zt1,zt2
 ! automatic arrays
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
-integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:),gkcnr(:),tpgkcnr(:,:)
 real(8), allocatable :: vgqc(:,:),tpgqc(:,:),gqc(:)
 real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
-complex(8), allocatable :: sfacgknr(:,:),apwalm(:,:,:,:)
+complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
@@ -37,11 +35,9 @@ complex(8), allocatable :: zvclmt(:,:,:),zvclir(:),zfmt(:,:)
 complex(8) zfinp,zfmtinp
 external zfinp,zfmtinp
 ! allocate local arrays
-allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax),vgkcnr(3,ngkmax),gkcnr(ngkmax),tpgkcnr(2,ngkmax))
 allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
 allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
-allocate(sfacgknr(ngkmax,natmtot),apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
@@ -70,19 +66,6 @@ call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
 do ik=1,nkptnr
 ! equivalent reduced k-point
   jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-! generate G+k-vectors
-  call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k-vectors
-  do igk=1,ngknr
-    call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-  end do
-! get the eigenvectors from file for non-reduced k-points
-  call getevecfv(vkl(:,ik),vgklnr,evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
-! generate the structure factors
-  call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-  call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
 ! determine q-vector
   iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -104,9 +87,14 @@ do ik=1,nkptnr
 ! compute the required spherical Bessel functions
   call genjlgpr(lnpsd+1,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
+! find the matching coefficients
+  call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
+! get the eigenvectors from file for non-reduced k-points
+  call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
+  call getevecsv(vkl(:,ik),evecsv)
 ! calculate the wavefunctions for occupied states
-  call genwfsv(.false.,.false.,.true.,ngknr,igkignr,evalsv(:,jk),apwalm, &
-   evecfv,evecsv,wfmt2,ngrtot,wfir2)
+  call genwfsv(.false.,.false.,.true.,ngk(1,ik),igkig(:,1,ik),evalsv(:,jk), &
+   apwalm,evecfv,evecsv,wfmt2,ngrtot,wfir2)
   do ist3=1,nstsv
     if (evalsv(ist3,jk).lt.efermi) then
 ! compute the complex overlap densities for all valence-valence states
@@ -118,6 +106,7 @@ do ik=1,nkptnr
       jc=0
       do is=1,nspecies
         nrc=nrcmt(is)
+        n=lmmaxvr*nrc
         do ia=1,natoms(is)
           ias=idxas(ia,is)
           do ist1=1,spnst(is)
@@ -125,12 +114,14 @@ do ik=1,nkptnr
               do m1=-spk(ist1,is),spk(ist1,is)-1
                 jc=jc+1
 ! pass m-1/2 to wavefcr
-                call wavefcr(lradstp,is,ia,ist1,m1,nrcmtmax,wfcr1)
-                zfmt(:,1:nrc)=conjg(wfmt2(:,1:nrc,ias,1,ist3))*wfcr1(:,1:nrc,1)
+                call wavefcr(.false.,lradstp,is,ia,ist1,m1,nrcmtmax,wfcr1)
                 if (spinpol) then
-                  zfmt(:,1:nrc)=zfmt(:,1:nrc)+conjg(wfmt2(:,1:nrc,ias,2,ist3)) &
-                   *wfcr1(:,1:nrc,2)
+                  call zvmul2(n,wfmt2(:,:,ias,1,ist3),wfcr1(:,:,1), &
+                   wfmt2(:,:,ias,2,ist3),wfcr1(:,:,2),zfmt)
+                else
+                  call zvmul1(n,wfmt2(:,:,ias,1,ist3),wfcr1(:,:,1),zfmt)
                 end if
+! convert to spherical harmonics
                 call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
                  zfmt,lmmaxvr,zzero,zrhomt2(:,:,jc),lmmaxvr)
               end do
@@ -194,19 +185,21 @@ end do
 ! begin loops over atoms and species
 do is=1,nspecies
   nrc=nrcmt(is)
+  n=lmmaxvr*nrc
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist3=1,spnst(is)
       if (spcore(ist3,is)) then
         do m1=-spk(ist3,is),spk(ist3,is)-1
 ! pass m-1/2 to wavefcr
-          call wavefcr(lradstp,is,ia,ist3,m1,nrcmtmax,wfcr1)
+          call wavefcr(.false.,lradstp,is,ia,ist3,m1,nrcmtmax,wfcr1)
 ! compute the complex overlap densities for the core-valence states
           do ist1=1,nstsv
-            zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfmt1(:,1:nrc,ias,1,ist1)
             if (spinpol) then
-              zfmt(:,1:nrc)=zfmt(:,1:nrc)+conjg(wfcr1(:,1:nrc,2)) &
-               *wfmt1(:,1:nrc,ias,2,ist1)
+              call zvmul2(n,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist1),wfcr1(:,:,2), &
+               wfmt1(:,:,ias,2,ist1),zfmt)
+            else
+              call zvmul1(n,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist1),zfmt)
             end if
             call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
              zfmt,lmmaxvr,zzero,zrhomt1(:,:,ias,ist1),lmmaxvr)
@@ -217,9 +210,9 @@ do is=1,nspecies
             if (spcore(ist1,is)) then
               do m2=-spk(ist1,is),spk(ist1,is)-1
                 ic=ic+1
-                call wavefcr(lradstp,is,ia,ist1,m2,nrcmtmax,wfcr2)
-                zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfcr2(:,1:nrc,1) &
-                             +conjg(wfcr1(:,1:nrc,2))*wfcr2(:,1:nrc,2)
+                call wavefcr(.false.,lradstp,is,ia,ist1,m2,nrcmtmax,wfcr2)
+                call zvmul2(n,wfcr1(:,:,1),wfcr2(:,:,1),wfcr1(:,:,2), &
+                 wfcr2(:,:,2),zfmt)
                 call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
                  zfmt,lmmaxvr,zzero,zrhomt2(:,:,ic),lmmaxvr)
               end do
@@ -265,9 +258,8 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
-deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
 deallocate(vgqc,tpgqc,gqc,jlgqr,jlgq0r)
-deallocate(sfacgknr,apwalm,evecfv,evecsv,ylmgq,sfacgq)
+deallocate(apwalm,evecfv,evecsv,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2,wfcr1,wfcr2)
 deallocate(zrhomt1,zrhomt2,zrhoir1)
 deallocate(zvclmt,zvclir,zfmt)

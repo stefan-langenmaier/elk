@@ -34,7 +34,7 @@ integer l1,l2,l3,m2,lm2
 integer ilo,jlo,io,jo
 real(8) t1
 ! allocatable arrays
-real(8), allocatable :: fr(:),gr(:),cf(:,:)
+real(8), allocatable :: fr(:),gr(:)
 ! automatic arrays
 real(8) r2(nrmtmax)
 ! begin loops over atoms and species
@@ -42,12 +42,12 @@ do is=1,nspecies
   nr=nrmt(is)
   r2(1:nr)=spr(1:nr,is)**2
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(fr,gr,cf,ias) &
+!$OMP PRIVATE(fr,gr,ias) &
 !$OMP PRIVATE(l1,l2,l3,io,jo,ir) &
 !$OMP PRIVATE(lm2,m2,t1,ilo,jlo) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
-    allocate(fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax))
+    allocate(fr(nrmtmax),gr(nrmtmax))
     ias=idxas(ia,is)
 !---------------------------!
 !     APW-APW integrals     !
@@ -60,7 +60,7 @@ do is=1,nspecies
               do ir=1,nr
                 fr(ir)=apwfr(ir,1,io,l1,ias)*apwfr(ir,2,jo,l3,ias)*r2(ir)
               end do
-              call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+              call fderiv(-1,nr,spr(:,is),fr,gr)
               haa(1,jo,l3,io,l1,ias)=gr(nr)/y00
             else
               haa(1,jo,l3,io,l1,ias)=0.d0
@@ -74,7 +74,7 @@ do is=1,nspecies
                     t1=apwfr(ir,1,io,l1,ias)*apwfr(ir,1,jo,l3,ias)*r2(ir)
                     fr(ir)=t1*veffmt(lm2,ir,ias)
                   end do
-                  call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+                  call fderiv(-1,nr,spr(:,is),fr,gr)
                   haa(lm2,jo,l3,io,l1,ias)=gr(nr)
                 end do
               end do
@@ -94,7 +94,7 @@ do is=1,nspecies
             do ir=1,nr
               fr(ir)=lofr(ir,1,ilo,ias)*apwfr(ir,2,io,l3,ias)*r2(ir)
             end do
-            call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+            call fderiv(-1,nr,spr(:,is),fr,gr)
             hloa(1,io,l3,ilo,ias)=gr(nr)/y00
           else
             hloa(1,io,l3,ilo,ias)=0.d0
@@ -106,7 +106,7 @@ do is=1,nspecies
                 t1=lofr(ir,1,ilo,ias)*apwfr(ir,1,io,l3,ias)*r2(ir)
                 fr(ir)=t1*veffmt(lm2,ir,ias)
               end do
-              call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+              call fderiv(-1,nr,spr(:,is),fr,gr)
               hloa(lm2,io,l3,ilo,ias)=gr(nr)
             end do
           end do
@@ -124,7 +124,7 @@ do is=1,nspecies
           do ir=1,nr
             fr(ir)=lofr(ir,1,ilo,ias)*lofr(ir,2,jlo,ias)*r2(ir)
           end do
-          call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+          call fderiv(-1,nr,spr(:,is),fr,gr)
           hlolo(1,jlo,ilo,ias)=gr(nr)/y00
         else
           hlolo(1,jlo,ilo,ias)=0.d0
@@ -136,13 +136,13 @@ do is=1,nspecies
               t1=lofr(ir,1,ilo,ias)*lofr(ir,1,jlo,ias)*r2(ir)
               fr(ir)=t1*veffmt(lm2,ir,ias)
             end do
-            call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+            call fderiv(-1,nr,spr(:,is),fr,gr)
             hlolo(lm2,jlo,ilo,ias)=gr(nr)
           end do
         end do
       end do
     end do
-    deallocate(fr,gr,cf)
+    deallocate(fr,gr)
 ! end loops over atoms and species
   end do
 !$OMP END DO

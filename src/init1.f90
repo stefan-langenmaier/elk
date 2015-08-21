@@ -22,9 +22,9 @@ use modtest
 implicit none
 ! local variables
 logical lsym(48)
-integer isym,is,ia,ias
-integer ik,io,ilo,iv(3)
-integer i1,i2,i3,ispn,igk
+integer is,ia,ias,nppt
+integer io,ilo,i1,i2,i3
+integer ik,igk,isym,ispn
 integer l1,l2,l3,m1,m2,m3
 integer lm1,lm2,lm3
 real(8) vl(3),vc(3),t1
@@ -83,6 +83,7 @@ if ((task.eq.20).or.(task.eq.21)) then
     vkl(:,ik)=vplp1d(:,ik)
     call r3mv(bvec,vkl(:,ik),vkc(:,ik))
   end do
+  nkptnr=nkpt
 else if (task.eq.25) then
 ! effective mass calculation
   nkpt=(2*ndspem+1)**3
@@ -93,7 +94,7 @@ else if (task.eq.25) then
   if (allocated(vkc)) deallocate(vkc)
   allocate(vkc(3,nkpt))
 ! map vector to [0,1)
-  call r3frac(epslat,vklem,iv)
+  call r3frac(epslat,vklem)
   ik=0
   do i3=-ndspem,ndspem
     do i2=-ndspem,ndspem
@@ -108,10 +109,11 @@ else if (task.eq.25) then
       end do
     end do
   end do
+  nkptnr=nkpt
 else
 ! determine the k-point grid automatically from radkpt if required
   if (autokpt) then
-    ngridk(:)=int(radkpt/sqrt(avec(1,:)**2+avec(2,:)**2+avec(3,:)**2))+1
+    ngridk(:)=int(radkpt*sqrt(bvec(1,:)**2+bvec(2,:)**2+bvec(3,:)**2))+1
   end if
 ! setup the default k-point box
   kptboxl(:,1)=vkloff(:)/dble(ngridk(:))
@@ -151,24 +153,30 @@ call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
 !---------------------!
 !     G+k-vectors     !
 !---------------------!
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.10).or.(task.eq.300)) then
+!****** scdft
+  nppt=nkptnr
+else
+  nppt=nkpt
+end if
 ! find the maximum number of G+k-vectors
 call getngkmax
 ! allocate the G+k-vector arrays
 if (allocated(ngk)) deallocate(ngk)
-allocate(ngk(nspnfv,nkpt))
+allocate(ngk(nspnfv,nppt))
 if (allocated(igkig)) deallocate(igkig)
-allocate(igkig(ngkmax,nspnfv,nkpt))
+allocate(igkig(ngkmax,nspnfv,nppt))
 if (allocated(vgkl)) deallocate(vgkl)
-allocate(vgkl(3,ngkmax,nspnfv,nkpt))
+allocate(vgkl(3,ngkmax,nspnfv,nppt))
 if (allocated(vgkc)) deallocate(vgkc)
-allocate(vgkc(3,ngkmax,nspnfv,nkpt))
+allocate(vgkc(3,ngkmax,nspnfv,nppt))
 if (allocated(gkc)) deallocate(gkc)
-allocate(gkc(ngkmax,nspnfv,nkpt))
+allocate(gkc(ngkmax,nspnfv,nppt))
 if (allocated(tpgkc)) deallocate(tpgkc)
-allocate(tpgkc(2,ngkmax,nspnfv,nkpt))
+allocate(tpgkc(2,ngkmax,nspnfv,nppt))
 if (allocated(sfacgk)) deallocate(sfacgk)
-allocate(sfacgk(ngkmax,natmtot,nspnfv,nkpt))
-do ik=1,nkpt
+allocate(sfacgk(ngkmax,natmtot,nspnfv,nppt))
+do ik=1,nppt
   do ispn=1,nspnfv
     vl(:)=vkl(:,ik)
     vc(:)=vkc(:,ik)
@@ -267,9 +275,15 @@ nmatmax=0
 do ik=1,nkpt
   do ispn=1,nspnfv
     nmat(ispn,ik)=ngk(ispn,ik)+nlotot
+    if (nstfv.gt.nmat(ispn,ik)) then
+      write(*,*)
+      write(*,'("Error(init1): number of first-variational states larger than &
+       &matrix size")')
+      write(*,'("Increase rgkmax or decrease nempty")')
+      write(*,*)
+      stop
+    end if
     nmatmax=max(nmatmax,nmat(ispn,ik))
-! the number of first-variational states should not exceed the matrix size
-    nstfv=min(nstfv,nmat(ispn,ik))
   end do
 end do
 ! number of second-variational states

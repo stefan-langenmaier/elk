@@ -1,3 +1,4 @@
+
 ! Soft x-ray absorption spectroscopy example for bcc Fe, including XAS, XMCD,
 ! and XMLD. Species file Fe_lo.in has an additional local orbital at the 2p
 ! energy. Spin-orbit coupling has to be included for 2p 1/2 - 2p 3/2 splitting.
@@ -56,16 +57,14 @@ reducebf
 nempty
   40
 
-! small step length for determination of linearization energy needed for low-lying local orbital
+! small step length for determination of linearization energy needed for
+! low-lying local orbital
 deband
   0.01
 
 ! a Lorentzian broadening is applied to the spectrum
 swidth
   0.01
-
-autormt
- .true.
 
 avec
   1.0  1.0 -1.0
@@ -80,4 +79,3 @@ atoms
   'Fe_lo.in'                          : spfname
   1                                   : natoms
   0.0  0.0  0.0    0.0  0.0  0.0      : atposl, bfcmt
-

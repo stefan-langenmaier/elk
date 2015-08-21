@@ -50,9 +50,6 @@ bfieldc
 reducebf
   0.5
 
-autormt
- .true.
-
 sppath
   '../../species/'
 

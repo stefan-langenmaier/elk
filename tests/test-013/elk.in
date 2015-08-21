@@ -46,9 +46,6 @@ atoms
 sppath
   '../../species/'
 
-autormt
-  .true.
-
 ngridk
   2  2  2
 

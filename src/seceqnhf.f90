@@ -10,25 +10,22 @@ implicit none
 integer, intent(in) :: ikp
 complex(8), intent(inout) :: evecsvp(nstsv,nstsv)
 ! local variables
-integer is,ia,ias
-integer ngknr,ik,jk,iq
-integer ig,iv(3),igq0,igk
+integer is,ias,irc,ir,idm
+integer ik,jk,iv(3)
+integer ig,iq,igq0
 integer ist1,ist2,ist3
-integer ir,irc,idm
 integer lwork,info,ld
 real(8) cfq,v(3),t1
 complex(8) zrho01,zrho02,zt1,zt2
 ! automatic arrays
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
-integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:),gkcnr(:),tpgkcnr(:,:)
 real(8), allocatable :: vgqc(:,:),gqc(:),tpgqc(:,:)
 real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
 real(8), allocatable :: vmt(:,:,:),vir(:)
 real(8), allocatable :: bmt(:,:,:,:),bir(:,:)
 real(8), allocatable :: rfmt(:,:),rwork(:)
-complex(8), allocatable :: sfacgknr(:,:),apwalm(:,:,:,:)
+complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: h(:,:),vmat(:,:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
@@ -44,11 +41,9 @@ external zfinp
 write(*,'("Info(seceqnhf): ",I6," of ",I6," k-points")') ikp,nkpt
 !$OMP END CRITICAL
 ! allocate local arrays
-allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax),vgkcnr(3,ngkmax),gkcnr(ngkmax),tpgkcnr(2,ngkmax))
 allocate(vgqc(3,ngvec),gqc(ngvec),tpgqc(2,ngvec))
 allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
-allocate(sfacgknr(ngkmax,natmtot),apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(h(nstsv,nstsv),vmat(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
@@ -83,17 +78,15 @@ if (hybrid) then
   allocate(rfmt(lmmaxvr,nrcmtmax))
   allocate(vir(ngrtot))
   t1=1.d0-hybmix
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      irc=0
-      do ir=1,nrmt(is),lradstp
-        irc=irc+1
-        rfmt(:,irc)=vclmt(:,ir,ias)+t1*vxcmt(:,ir,ias)
-      end do
-      call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt, &
-       lmmaxvr,0.d0,vmt(:,:,ias),lmmaxvr)
+  do ias=1,natmtot
+    is=idxis(ias)
+    irc=0
+    do ir=1,nrmt(is),lradstp
+      irc=irc+1
+      rfmt(:,irc)=vclmt(:,ir,ias)+t1*vxcmt(:,ir,ias)
     end do
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt, &
+     lmmaxvr,0.d0,vmt(:,:,ias),lmmaxvr)
   end do
   vir(:)=vclir(:)+t1*vxcir(:)
   call genvmatk(vmt,vir,wfmt1,wfir1,vmat)
@@ -103,12 +96,10 @@ if (hybrid) then
     allocate(bmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
     allocate(bir(ngrtot,ndmag))
     do idm=1,ndmag
-      do is=1,nspecies
-        do ia=1,natoms(is)
-          ias=idxas(ia,is)
-          call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,t1,rbshtvr,lmmaxvr, &
-           bxcmt(:,:,ias,idm),ld,0.d0,bmt(:,:,ias,idm),lmmaxvr)
-        end do
+      do ias=1,natmtot
+        is=idxis(ias)
+        call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,t1,rbshtvr,lmmaxvr, &
+         bxcmt(:,:,ias,idm),ld,0.d0,bmt(:,:,ias,idm),lmmaxvr)
       end do
       bir(:,idm)=t1*bxcir(:,idm)
     end do
@@ -118,12 +109,10 @@ if (hybrid) then
   end if
 else
 ! normal Hartree-Fock
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-       vclmt(:,:,ias),ld,0.d0,vmt(:,:,ias),lmmaxvr)
-    end do
+  do ias=1,natmtot
+    is=idxis(ias)
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+     vclmt(:,:,ias),ld,0.d0,vmt(:,:,ias),lmmaxvr)
   end do
   call genvmatk(vmt,vclir,wfmt1,wfir1,vmat)
   h(:,:)=h(:,:)+vmat(:,:)
@@ -136,24 +125,7 @@ vmat(:,:)=0.d0
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! find the equivalent reduced k-point
-  iv(:)=ivk(:,ik)
-  jk=ikmap(iv(1),iv(2),iv(3))
-! generate the G+k-vectors
-  call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k-vectors
-  do igk=1,ngknr
-    call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-  end do
-! generate the structure factors
-  call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-  call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvectors from file for non-reduced k-point
-  call getevecfv(vkl(:,ik),vgklnr,evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
-! calculate the wavefunctions for all states
-  call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
-   evecsv,wfmt2,ngrtot,wfir2)
+  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! determine q-vector
   iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -175,6 +147,14 @@ do ik=1,nkptnr
 ! compute the required spherical Bessel functions
   call genjlgpr(lnpsd+1,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
+! find the matching coefficients
+  call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
+! get the eigenvectors from file for non-reduced k-point
+  call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
+  call getevecsv(vkl(:,ik),evecsv)
+! calculate the wavefunctions for all states
+  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv,apwalm, &
+   evecfv,evecsv,wfmt2,ngrtot,wfir2)
   do ist3=1,nstsv
     if (occsv(ist3,jk).gt.epsocc) then
 ! calculate the complex overlap densities for all states (T. McQueen)
@@ -237,9 +217,8 @@ end if
 evecsv(:,:)=evecsvp(:,:)
 call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,h,nstsv,zzero,evecsvp, &
  nstsv)
-deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
 deallocate(vgqc,tpgqc,gqc,jlgqr,jlgq0r)
-deallocate(sfacgknr,apwalm,evecfv,evecsv)
+deallocate(apwalm,evecfv,evecsv)
 deallocate(h,vmat,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2)
 deallocate(zrhomt,zrhoir,zfmt)

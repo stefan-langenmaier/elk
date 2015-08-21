@@ -11,9 +11,9 @@ subroutine rdmentropy
 use modmain
 use modrdm
 ! !DESCRIPTION:
-!  Calculates RDMFT entropy $S=\sum_i n_i\log(n_i/n_{\rm max})+(n_{\rm max}-n_i)
-!  \log(1-n_i/n_{\rm max})$, where $n_{\rm max}$ is the maximum allowed
-!  occupancy (1 or 2).
+!  Calculates RDMFT entropy $S=-\sum_i n_i\log(n_i/n_{\rm max})
+!  +(n_{\rm max}-n_i)\log(1-n_i/n_{\rm max})$, where $n_{\rm max}$ is the
+!  maximum allowed occupancy (1 or 2).
 !
 ! !REVISION HISTORY:
 !   Created 2008 (Baldsiefen)

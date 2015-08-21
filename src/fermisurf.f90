@@ -88,9 +88,9 @@ if (ndmag.eq.1) then
         do i1=0,ngridk(1)-1
           ik=ikmapnr(i1,i2,i3)
           jk=ikmap(i1,i2,i3)
-          write(50,'(G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
-          write(51,'(G18.10,40F14.8)') vkc(:,ik),evalsv(nstfv+ist0:ist1,jk) &
-           -efermi
+          write(50,'(3G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
+          write(51,'(3G18.10,40F14.8)') vkc(:,ik), &
+           evalsv(nstfv+ist0:nstfv+ist1,jk)-efermi
         end do
       end do
     end do

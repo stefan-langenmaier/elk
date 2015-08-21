@@ -44,7 +44,7 @@ do ik=1,nkpt
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-      call gendmat(.false.,.false.,0,lmaxlu,is,ia,ngk(:,ik),apwalm,evecfv, &
+      call gendmat(.false.,.false.,0,lmaxlu,ias,ngk(:,ik),apwalm,evecfv, &
        evecsv,lmmaxlu,dmat)
       do ist=1,nstsv
         t1=wkpt(ik)*occsv(ist,ik)

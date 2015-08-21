@@ -25,18 +25,16 @@ implicit none
 integer, intent(in) :: ikp
 complex(8), intent(out) :: vnlijjk(nstsv,nstsv,nstsv,nkpt)
 ! local variables
-integer ngknr,ik,igk
+integer ik,iv(3)
+integer ig,iq,igq0
 integer ist1,ist2,ist3
-integer ig,iq,igq0,iv(3)
 real(8) cfq,v(3),t1
 complex(8) zrho01,zrho02,zt1,zt2
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
-integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:),gkcnr(:),tpgkcnr(:,:)
 real(8), allocatable :: vgqc(:,:),tpgqc(:,:),gqc(:)
 real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
-complex(8), allocatable :: sfacgknr(:,:),apwalm(:,:,:,:)
+complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
@@ -47,11 +45,9 @@ complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
 complex(8) zfinp
 external zfinp
 ! allocate local arrays
-allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax),vgkcnr(3,ngkmax),gkcnr(ngkmax),tpgkcnr(2,ngkmax))
 allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
 allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
-allocate(sfacgknr(ngkmax,natmtot),apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
@@ -61,22 +57,14 @@ allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,nstsv),zrhoir(ngrtot,nstsv))
 allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
-! generate G+k-vectors for non-reduced k-point ikp
-call gengpvec(vkl(:,ikp),vkc(:,ikp),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k-vectors
-do igk=1,ngknr
-  call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-end do
-! generate the structure factors
-call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
 ! find the matching coefficients
-call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
+call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! get the eigenvectors from file for non-reduced k-point ikp
-call getevecfv(vkl(:,ikp),vgklnr,evecfv)
+call getevecfv(vkl(:,ikp),vgkl(:,:,1,ikp),evecfv)
 call getevecsv(vkl(:,ikp),evecsv)
 ! calculate the wavefunctions for all states for passed non-reduced k-point ikp
-call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
- evecsv,wfmt2,ngrtot,wfir2)
+call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
+ evecfv,evecsv,wfmt2,ngrtot,wfir2)
 ! start loop over reduced k-point set
 do ik=1,nkpt
 ! get the eigenvectors from file
@@ -125,31 +113,26 @@ do ik=1,nkpt
       zt1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho02)**2+aimag(zrho02)**2)
       vnlijjk(ist1,ist1,ist2,ik)=wkptnr*dble(zt1)+t1
-      do ist3=1,nstsv
-        if (ist1.lt.ist3) then
-          zt1=zfinp(.true.,zrhomt(:,:,:,ist3),zvclmt,zrhoir(:,ist3),zvclir)
+      do ist3=ist1+1,nstsv
+        zt1=zfinp(.true.,zrhomt(:,:,:,ist3),zvclmt,zrhoir(:,ist3),zvclir)
 ! compute the density coefficient of the smallest G+q-vector
-          call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist3), &
-           zrhoir(:,ist3),zrho01)
-          zt2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
-          vnlijjk(ist3,ist1,ist2,ik)=wkptnr*zt1+zt2
-        end if
+        call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist3), &
+         zrhoir(:,ist3),zrho01)
+        zt2=cfq*wiq2(iq)*conjg(zrho01)*zrho02
+        vnlijjk(ist3,ist1,ist2,ik)=wkptnr*zt1+zt2
       end do
     end do
   end do
 ! calculate the lower diagonal
   do ist1=1,nstsv
-    do ist3=1,nstsv
-      if (ist1.gt.ist3) then
-        vnlijjk(ist3,ist1,:,ik)=conjg(vnlijjk(ist1,ist3,:,ik))
-      end if
+    do ist3=1,ist1-1
+      vnlijjk(ist3,ist1,:,ik)=conjg(vnlijjk(ist1,ist3,:,ik))
     end do
   end do
 ! end loop over reduced k-point set
 end do
-deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
 deallocate(vgqc,tpgqc,gqc,jlgqr,jlgq0r)
-deallocate(sfacgknr,apwalm,evecfv,evecsv,ylmgq,sfacgq)
+deallocate(apwalm,evecfv,evecsv,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2)
 deallocate(zrhomt,zrhoir,zvclmt,zvclir)
 return

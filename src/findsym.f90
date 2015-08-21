@@ -46,7 +46,7 @@ integer, intent(out) :: lspn(48)
 integer, intent(out) :: iea(natmmax,nspecies,48)
 ! local variables
 integer isym,jsym,jsym0,jsym1
-integer is,ia,ja,iv(3),md
+integer is,ia,ja,md
 real(8) sl(3,3),sc(3,3),v(3),t1
 ! automatic arrays
 integer jea(natmmax,nspecies)
@@ -61,13 +61,13 @@ do isym=1,nsymlat
 ! map apl1 coordinates to [0,1) and store in apl3
     do ia=1,natoms(is)
       apl3(:,ia)=apl1(:,ia,is)
-      call r3frac(epslat,apl3(:,ia),iv)
+      call r3frac(epslat,apl3(:,ia))
     end do
     do ja=1,natoms(is)
 ! apply lattice symmetry to atomic positions
       v(:)=sl(:,1)*apl2(1,ja,is)+sl(:,2)*apl2(2,ja,is)+sl(:,3)*apl2(3,ja,is)
 ! map coordinates to [0,1)
-      call r3frac(epslat,v,iv)
+      call r3frac(epslat,v)
 ! check if atomic positions are invariant
       do ia=1,natoms(is)
         t1=abs(apl3(1,ia)-v(1))+abs(apl3(2,ia)-v(2))+abs(apl3(3,ia)-v(3))

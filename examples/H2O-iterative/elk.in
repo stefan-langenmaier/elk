@@ -28,10 +28,6 @@ avec
  0.0 6.0 0.0
  0.0 0.0 6.0
 
-! automatic determination of muffin-tin radii
-autormt
- .true.
-
 rgkmax
  6.0
 

@@ -13,7 +13,7 @@ complex(8), intent(in) :: dyn(3*natmtot,3*natmtot)
 complex(8), intent(inout) :: dyns(3*natmtot,3*natmtot)
 ! local variables
 integer is,ia,ja,ias,jas
-integer lspl,i,j,k,l,m,n,iv(3)
+integer lspl,i,j,k,l,m,n
 real(8) s(3,3),a(3,3),b(3,3),c(3,3)
 real(8) v1(3),v2(3),v3(3),t1
 complex(8) zt1
@@ -31,7 +31,7 @@ end if
 s(:,:)=dble(symlat(:,:,lspl))
 ! map vpl to the first Brillouin zone
 v1(:)=vpl(:)
-call vecfbz(epslat,bvec,v1,iv)
+call vecfbz(epslat,bvec,v1)
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)

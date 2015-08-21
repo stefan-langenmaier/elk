@@ -125,16 +125,14 @@ do is=1,nspecies
   end do
 end do
 ! compute the multipole moments from the muffin-tin potentials
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    lm=0
-    do l=0,lmaxvr
-      t1=dble(2*l+1)*rmtl(l+1,is)/fourpi
-      do m=-l,l
-        lm=lm+1
-        qlm(lm,ias)=t1*zvclmt(lm,nr(is),ias)
-      end do
+do ias=1,natmtot
+  is=idxis(ias)
+  lm=0
+  do l=0,lmaxvr
+    t1=dble(2*l+1)*rmtl(l+1,is)/fourpi
+    do m=-l,l
+      lm=lm+1
+      qlm(lm,ias)=t1*zvclmt(lm,nr(is),ias)
     end do
   end do
 end do
@@ -170,43 +168,41 @@ end do
 ! find the smooth pseudocharge within the muffin-tin whose multipoles are the
 ! difference between the real muffin-tin and interstitial multipoles
 t0=factnm(2*lnpsd+3,2)
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    lm=0
-    do l=0,lmaxvr
-      t1=t0/(factnm(2*l+1,2)*rmtl(l,is))
-      zt1=t1*conjg(zil(l))
-      do m=-l,l
-        lm=lm+1
-        zlm(lm)=zt1*qlm(lm,ias)
-      end do
+do ias=1,natmtot
+  is=idxis(ias)
+  lm=0
+  do l=0,lmaxvr
+    t1=t0/(factnm(2*l+1,2)*rmtl(l,is))
+    zt1=t1*conjg(zil(l))
+    do m=-l,l
+      lm=lm+1
+      zlm(lm)=zt1*qlm(lm,ias)
     end do
+  end do
 ! add the pseudocharge and real interstitial densities in G-space
-    do ig=1,ngvec
-      ifg=igfft(ig)
-      if (gpc(ig).gt.epslat) then
-        t1=gpc(ig)*rmt(is)
-        t2=1.d0/t1**(lnpsd+1)
-        zsum1=0.d0
-        lm=0
-        do l=0,lmaxvr
+  do ig=1,ngvec
+    ifg=igfft(ig)
+    if (gpc(ig).gt.epslat) then
+      t1=gpc(ig)*rmt(is)
+      t2=1.d0/t1**(lnpsd+1)
+      zsum1=t2*zlm(1)*ylmgp(1,ig)
+      lm=1
+      do l=1,lmaxvr
+        lm=lm+1
+        zsum2=zlm(lm)*ylmgp(lm,ig)
+        do m=-l+1,l
           lm=lm+1
-          zsum2=zlm(lm)*ylmgp(lm,ig)
-          do m=-l+1,l
-            lm=lm+1
-            zsum2=zsum2+zlm(lm)*ylmgp(lm,ig)
-          end do
-          zsum1=zsum1+t2*zsum2
-          t2=t2*t1
+          zsum2=zsum2+zlm(lm)*ylmgp(lm,ig)
         end do
-        zt1=fpo*jlgpr(lnpsd+1,ig,is)*conjg(sfacgp(ig,ias))
-        zvclir(ifg)=zvclir(ifg)+zt1*zsum1
-      else
-        t1=fpo*y00/factnm(2*lnpsd+3,2)
-        zvclir(ifg)=zvclir(ifg)+t1*zlm(1)
-      end if
-    end do
+        t2=t2*t1
+        zsum1=zsum1+t2*zsum2
+      end do
+      zt1=fpo*jlgpr(lnpsd+1,ig,is)*conjg(sfacgp(ig,ias))
+      zvclir(ifg)=zvclir(ifg)+zt1*zsum1
+    else
+      t1=fpo*y00/factnm(2*lnpsd+3,2)
+      zvclir(ifg)=zvclir(ifg)+t1*zlm(1)
+    end if
   end do
 end do
 ! set zrho0 (pseudocharge density coefficient of the smallest G+p-vector)

@@ -57,7 +57,7 @@ real(8), parameter :: c1=0.7071067811865475244d0
 real(8) t1,t2,t3
 complex(8) zt1
 ! automatic arrays
-real(8) ri(nr),f(nr),g1(nr),g2(nr),cf(4,nr)
+real(8) ri(nr),f(nr),g1(nr),g2(nr)
 ! external functions
 real(8) clebgor
 external clebgor
@@ -77,9 +77,9 @@ do l=0,lmax
     lm=lm+1
 ! compute the radial derivatives
     f(1:nr)=dble(zfmt(lm,1:nr))
-    call fderiv(1,nr,r,f,g1,cf)
+    call fderiv(1,nr,r,f,g1)
     f(1:nr)=aimag(zfmt(lm,1:nr))
-    call fderiv(1,nr,r,f,g2,cf)
+    call fderiv(1,nr,r,f,g2)
     j=1
     do i=-1,1
       if (i.eq.0) j=3

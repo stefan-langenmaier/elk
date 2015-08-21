@@ -52,7 +52,6 @@ real(8) t1,t2
 real(8), allocatable :: p0p(:)
 real(8), allocatable :: g0(:),g1(:)
 real(8), allocatable :: f0(:),f1(:)
-real(8), allocatable :: cf(:,:)
 if (nr.le.0) then
   write(*,*)
   write(*,'("Error(rschroddme): invalid nr : ",I8)') nr
@@ -81,7 +80,6 @@ else
 ! use the Dirac equation
   allocate(g0(nr),g1(nr))
   allocate(f0(nr),f1(nr))
-  allocate(cf(4,nr))
   if (k.eq.l) then
     kpa=k
   else if (k.eq.l+1) then
@@ -101,8 +99,8 @@ else
     p1(ir)=g1(ir)
     q0(ir)=(p1(ir)-p0(ir)/r(ir))/t2
   end do
-  call fderiv(1,nr,r,q0,q1,cf)
-  deallocate(g0,g1,f0,f1,cf)
+  call fderiv(1,nr,r,q0,q1)
+  deallocate(g0,g1,f0,f1)
 end if
 return
 end subroutine

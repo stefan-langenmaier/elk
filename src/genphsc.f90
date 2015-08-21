@@ -11,7 +11,7 @@ implicit none
 integer, intent(in) :: p
 real(8), intent(in) :: dph
 ! local variables
-integer js,ja,na,i,n,iv(3)
+integer js,ja,na,i,n
 integer i1,i2,i3,scl(3,3)
 real(8) v1(3),v2(3),dmin,t1
 if ((p.ne.0).and.(p.ne.1)) then
@@ -124,7 +124,7 @@ do i1=-ngridq(1),ngridq(1)
       if (n.eq.nphsc) goto 30
       v1(:)=dble(i1)*avec0(:,1)+dble(i2)*avec0(:,2)+dble(i3)*avec0(:,3)
       call r3mv(ainv,v1,v2)
-      call r3frac(epslat,v2,iv)
+      call r3frac(epslat,v2)
       call r3mv(avec,v2,v1)
       do i=1,n
         t1=abs(v1(1)-vphsc(1,i))+abs(v1(2)-vphsc(2,i))+abs(v1(3)-vphsc(3,i))
@@ -167,7 +167,7 @@ do js=1,nspecies
       end if
 ! convert to new lattice coordinates
       call r3mv(ainv,v1,atposl(:,na,js))
-      call r3frac(epslat,atposl(:,na,js),iv)
+      call r3frac(epslat,atposl(:,na,js))
     end do
   end do
   natoms(js)=na

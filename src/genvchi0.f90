@@ -3,20 +3,21 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genvchi0(iq,ikp,icmp,gqc,expqmt,vchi0)
+subroutine genvchi0(ikp,icmp,scsr,vgql,gqc,expqmt,vchi0)
 use modmain
 implicit none
 ! local variables
-integer, intent(in) :: iq
 integer, intent(in) :: ikp
 integer, intent(in) :: icmp
+real(8), intent(in) :: scsr
+real(8), intent(in) :: vgql(3)
 real(8), intent(in) :: gqc(ngrpa)
 complex(8), intent(in) :: expqmt(lmmaxvr,nrcmtmax,natmtot)
 complex(8), intent(inout) :: vchi0(ngrpa,ngrpa,nwrpa)
 ! local variables
 integer ispn,ias,is,irc
 integer ist,jst,iw,ig,jg
-integer isym,jkp,jkpq
+integer isym,jkp,jkpq,igq0
 real(8) vpql(3),eij,t1,t2
 complex(8) zt1,zt2
 ! allocatable arrays
@@ -29,7 +30,7 @@ complex(8), allocatable :: zw(:),zv(:)
 complex(8) zfinp
 external zfinp
 ! p+q-vector in lattice coordinates
-vpql(:)=vkl(:,ikp)+vql(:,iq)
+vpql(:)=vkl(:,ikp)+vgql(:)
 ! equivalent reduced k-points for p and p+q
 call findkpt(vkl(:,ikp),isym,jkp)
 call findkpt(vpql,isym,jkpq)
@@ -43,6 +44,8 @@ call genwfsvp(.false.,.false.,vpql,wfmtpq,ngrtot,wfirpq)
 ! read the momentum matrix elements from file
 allocate(pmat(3,nstsv,nstsv))
 call getpmat(vkl(:,ikp),pmat)
+! find the shortest G+q-vector
+call findigp0(ngrpa,gqc,igq0)
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(zrhomt,zrhoir,zw,zv) &
 !$OMP PRIVATE(ispn,ias,is,irc,jst) &
@@ -65,15 +68,15 @@ do ist=1,nstsv
     t1=(wkptnr/omega)*occsv(ist,jkp)*(1.d0-occsv(jst,jkpq)/occmax)
     if (t1.gt.1.d-8) then
       eij=evalsv(ist,jkp)-evalsv(jst,jkpq)
-! scissor operator momentum matrix elements scaling factor
-      if (abs(eij).gt.1.d-8) then
-        t2=(eij-scissor)/eij
-      else
-        t2=1.d0
-      end if
-      eij=eij-scissor
+! scissor operator
+      if (abs(scsr).gt.1.d-8) then
+        if (abs(eij).gt.1.d-8) then
 ! scale momentum matrix elements
-      pmat(:,ist,jst)=t2*pmat(:,ist,jst)
+          t2=(eij-scsr)/eij
+          pmat(:,ist,jst)=t2*pmat(:,ist,jst)
+        end if
+        eij=eij-scsr
+      end if
 ! frequency-dependent part in response function formula for all MBPT frequencies
 ! (note: this formula is unsuitable for systems without time-reversal symmetry)
       do iw=1,nwrpa
@@ -86,10 +89,10 @@ do ist=1,nstsv
       do ig=1,ngrpa
         zv(ig)=zfinp(.false.,zrhomt,expgmt(:,:,:,ig),zrhoir,expgir(:,ig))
       end do
+!$OMP CRITICAL
 !------------------------!
 !     body of matrix     !
 !------------------------!
-!$OMP CRITICAL
       do ig=1,ngrpa
         zt1=conjg(zv(ig))
         do jg=1,ngrpa
@@ -100,9 +103,8 @@ do ist=1,nstsv
           end if
         end do
       end do
-!$OMP END CRITICAL
 ! special case of q = 0
-      if ((iq.eq.iq0).and.(abs(eij).gt.1.d-8)) then
+      if ((gqc(igq0).lt.epslat).and.(abs(eij).gt.1.d-8)) then
 !----------------------------------------!
 !     head of matrix: G = G' = q = 0     !
 !----------------------------------------!
@@ -114,8 +116,7 @@ do ist=1,nstsv
           t1=dble(pmat(icmp,ist,jst))**2+aimag(pmat(icmp,ist,jst))**2
         end if
         t1=fourpi*t1/eij**2
-!$OMP CRITICAL
-        vchi0(1,1,:)=vchi0(1,1,:)+t1*zw(:)
+        vchi0(igq0,igq0,:)=vchi0(igq0,igq0,:)+t1*zw(:)
 !-------------------------!
 !     wings of matrix     !
 !-------------------------!
@@ -128,15 +129,15 @@ do ist=1,nstsv
 ! G = q = 0
         do ig=2,ngrpa
           zt2=zt1*conjg(zv(ig))/gqc(ig)
-          vchi0(ig,1,:)=vchi0(ig,1,:)+zt2*zw(:)
+          vchi0(ig,igq0,:)=vchi0(ig,igq0,:)+zt2*zw(:)
         end do
 ! G' = q = 0
         do jg=2,ngrpa
           zt2=conjg(zt1)*zv(jg)/gqc(jg)
-          vchi0(1,jg,:)=vchi0(1,jg,:)+zt2*zw(:)
+          vchi0(igq0,jg,:)=vchi0(igq0,jg,:)+zt2*zw(:)
         end do
-!$OMP END CRITICAL
       end if
+!$OMP END CRITICAL
     end if
 ! end loop over jst
   end do

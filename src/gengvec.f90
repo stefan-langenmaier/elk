@@ -27,7 +27,7 @@ use modtest
 implicit none
 ! local variables
 integer ig,i1,i2,i3,j1,j2,j3,k
-real(8) v(3),t1
+real(8) v(3)
 ! allocatable arrays
 integer, allocatable :: idx(:)
 integer, allocatable :: iar(:)
@@ -52,15 +52,15 @@ ig=0
 do i1=intgv(1,1),intgv(1,2)
   do i2=intgv(2,1),intgv(2,2)
     do i3=intgv(3,1),intgv(3,2)
-      v(:)=dble(i1)*bvec(:,1)+dble(i2)*bvec(:,2)+dble(i3)*bvec(:,3)
-      t1=v(1)**2+v(2)**2+v(3)**2
       ig=ig+1
 ! map from G-vector to (i1,i2,i3) index
       ivg(1,ig)=i1
       ivg(2,ig)=i2
       ivg(3,ig)=i3
+! G-vector in Cartesian coordinates
+      v(:)=dble(i1)*bvec(:,1)+dble(i2)*bvec(:,2)+dble(i3)*bvec(:,3)
 ! length of each G-vector
-      gc(ig)=sqrt(t1)
+      gc(ig)=sqrt(v(1)**2+v(2)**2+v(3)**2)
     end do
   end do
 end do
@@ -86,7 +86,7 @@ do ig=1,ngrtot
   i1=ivg(1,ig)
   i2=ivg(2,ig)
   i3=ivg(3,ig)
-! map from (i1,i2,i3) index to G-vector
+! map from (i1,i2,i3) to G-vector index
   ivgig(i1,i2,i3)=ig
 ! assign G-vectors to global array
   vgc(:,ig)=dble(i1)*bvec(:,1)+dble(i2)*bvec(:,2)+dble(i3)*bvec(:,3)

@@ -69,7 +69,7 @@ do is=1,nspecies
         do m=-spk(ist,is),spk(ist,is)-1
           ic=ic+1
 ! pass in m-1/2 to wavefcr
-          call wavefcr(lradstp,is,ia,ist,m,nrcmtmax,wfcr)
+          call wavefcr(.false.,lradstp,is,ia,ist,m,nrcmtmax,wfcr)
           do jst=1,nstsv
             if (evalsv(jst,ik).gt.efermi) then
 ! calculate the complex overlap density in the muffin-tin

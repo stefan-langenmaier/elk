@@ -50,7 +50,7 @@ end if
 ! allocate local arrays
 allocate(vpl(3,np3d(1)*np3d(2)*np3d(3)))
 allocate(fp(np3d(1)*np3d(2)*np3d(3),nf))
-! generate 3D grid
+! generate 3D grid from corner vectors
 v1(:)=vclp3d(:,2)-vclp3d(:,1)
 v2(:)=vclp3d(:,3)-vclp3d(:,1)
 v3(:)=vclp3d(:,4)-vclp3d(:,1)

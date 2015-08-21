@@ -36,7 +36,7 @@ do is=1,nspecies
 end do
 close(50)
 write(*,*)
-write(*,'("Info(writexsf):")')
+write(*,'("Info(geomplot):")')
 write(*,'(" XCrysDen file written to crystal.xsf")')
 !-----------------------------------------------!
 !     write the V_Sim file to crystal.ascii     !
@@ -73,7 +73,7 @@ do is=1,nspecies
 end do
 close(50)
 write(*,*)
-write(*,'("Info(writevsim):")')
+write(*,'("Info(geomplot):")')
 write(*,'(" V_Sim file written to crystal.ascii")')
 return
 end subroutine

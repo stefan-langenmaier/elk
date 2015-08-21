@@ -30,17 +30,17 @@ integer, intent(in) :: ngp
 integer, intent(in) :: igpig(ngkmax)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ld,iv(3),ig,i,j,k
+integer ld,iv(3),jv(3),i,j,k
 ld=ngp+nlotot
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,i,iv,ig)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,jv,i,iv)
 !$OMP DO
 do j=1,ngp
   k=(j-1)*ld
+  jv(:)=ivg(:,igpig(j))
   do i=1,j
     k=k+1
-    iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
-    ig=ivgig(iv(1),iv(2),iv(3))
-    o(k)=o(k)+cfunig(ig)
+    iv(:)=ivg(:,igpig(i))-jv(:)
+    o(k)=o(k)+cfunig(ivgig(iv(1),iv(2),iv(3)))
   end do
 end do
 !$OMP END DO

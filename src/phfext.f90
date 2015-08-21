@@ -7,10 +7,7 @@ subroutine phfext(iq,is,ia,ip,fext)
 use modmain
 implicit none
 ! arguments
-integer, intent(in) :: iq
-integer, intent(in) :: is
-integer, intent(in) :: ia
-integer, intent(in) :: ip
+integer, intent(in) :: iq,is,ia,ip
 character(256), intent(out) :: fext
 ! local variables
 integer i,j,m(3),n(3)

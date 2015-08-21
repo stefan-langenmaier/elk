@@ -17,7 +17,8 @@ use modmain
 !     {\bf b}_3&=\frac{2\pi}{s}({\bf a}_1\times{\bf a}_2)
 !   \end{align*}
 !   and finds the unit cell volume $\Omega=|s|$, where
-!   $s={\bf a}_1\cdot({\bf a}_2\times{\bf a}_3)$.
+!   $s={\bf a}_1\cdot({\bf a}_2\times{\bf a}_3)$, and the Brillouin zone volume
+!   $\Omega_{\rm BZ}=(2\pi)^3/\Omega$.
 !
 ! !REVISION HISTORY:
 !   Created September 2002 (JKD)
@@ -40,6 +41,8 @@ if (omega.lt.1.d-6) then
   stop
 end if
 bvec(:,:)=(twopi/t1)*bvec(:,:)
+! Brillouin zone volume
+omegabz=(twopi**3)/omega
 return
 end subroutine
 !EOC

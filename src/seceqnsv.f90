@@ -79,16 +79,16 @@ do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
     do ist=1,nstfv
-      call wavefmt(lradstp,lmaxvr,is,ia,ngk(1,ik),apwalm,evecfv(:,ist), &
-       lmmaxvr,wfmt1(:,:,ist))
+      call wavefmt(lradstp,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,ist),lmmaxvr, &
+       wfmt1(:,:,ist))
     end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! begin loop over states
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(wfmt2,wfmt3,wfmt4,gwfmt) &
-!$OMP PRIVATE(irc,t1,lm,l,nm,i,j,k) &
-!$OMP PRIVATE(zlflm,ispn,jspn,ist)
+!$OMP PRIVATE(irc,zlflm,t1,l,nm,lm) &
+!$OMP PRIVATE(i,j,k,ispn,jspn,ist)
 !$OMP DO
     do jst=1,nstfv
       allocate(wfmt2(lmmaxvr,nrcmtmax))
@@ -99,8 +99,9 @@ do is=1,nspecies
 ! convert wavefunction to spherical coordinates
         call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
          wfmt1(:,:,jst),lmmaxvr,zzero,wfmt2,lmmaxvr)
-! apply effective magnetic field and convert to spherical harmonics
+! apply effective magnetic field
         wfmt3(:,1:nrc)=wfmt2(:,1:nrc)*beffmt(:,1:nrc,ias,ndmag)
+! conver to spherical harmonics and store in wfmt4
         call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
          wfmt3,lmmaxvr,zzero,wfmt4(:,:,1),lmmaxvr)
         wfmt4(:,1:nrc,2)=-wfmt4(:,1:nrc,1)

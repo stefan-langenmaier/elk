@@ -3,16 +3,15 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine readdveff(iq,is,ia,ip,dveffmt,dveffir)
+subroutine readdveff(iq,is,ia,ip)
 use modmain
+use modphonon
 implicit none
 ! arguments
 integer, intent(in) :: iq
 integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ip
-complex(8), intent(out) :: dveffmt(lmmaxvr,nrcmtmax,natmtot)
-complex(8), intent(out) :: dveffir(ngrtot)
 ! local variables
 integer js,iostat
 integer version_(3),nspecies_,lmmaxvr_

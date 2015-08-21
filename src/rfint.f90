@@ -10,10 +10,10 @@ implicit none
 real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: rfir(ngrtot)
 ! local variables
-integer is,ia,ias,ir
+integer is,ias,ir
 real(8) sum
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) fr(nrmtmax),gr(nrmtmax)
 sum=0.d0
 ! interstitial contribution
 do ir=1,ngrtot
@@ -21,15 +21,13 @@ do ir=1,ngrtot
 end do
 sum=sum*omega/dble(ngrtot)
 ! muffin-tin contribution
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      fr(ir)=rfmt(1,ir,ias)*spr(ir,is)**2
-    end do
-    call fderiv(-1,nrmt(is),spr(:,is),fr,gr,cf)
-    sum=sum+fourpi*y00*gr(nrmt(is))
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    fr(ir)=rfmt(1,ir,ias)*spr(ir,is)**2
   end do
+  call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
+  sum=sum+fourpi*y00*gr(nrmt(is))
 end do
 rfint=sum
 return

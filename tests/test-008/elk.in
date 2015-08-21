@@ -21,9 +21,6 @@ swidth
 rgkmax
  5.0
 
-autormt
- .true.
-
 avec
   1.0  0.0  0.0
   0.0  1.0  0.0

@@ -29,7 +29,7 @@ real(8) x,t1,t2
 complex(8) zt1,zt2,zt3
 ! allocatable arrays
 real(8), allocatable :: jlgr(:,:),ffg(:)
-real(8), allocatable :: fr(:),gr(:),cf(:,:)
+real(8), allocatable :: fr(:),gr(:)
 complex(8), allocatable :: zfmt(:,:)
 complex(8), allocatable :: zfft(:)
 lmmax=(lmax+1)**2
@@ -44,11 +44,11 @@ end if
 ! compute the superposition of all the atomic density tails
 zfft(:)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ffg,fr,gr,cf,nr,n) &
+!$OMP PRIVATE(ffg,fr,gr,nr,n) &
 !$OMP PRIVATE(ig,ir,x,t1,ia,ias,ifg)
 !$OMP DO
 do is=1,nspecies
-  allocate(ffg(ngvec),fr(spnrmax),gr(spnrmax),cf(4,spnrmax))
+  allocate(ffg(ngvec),fr(spnrmax),gr(spnrmax))
   nr=nrmt(is)
   n=spnr(is)-nrmt(is)+1
   do ig=1,ngvec
@@ -62,7 +62,7 @@ do is=1,nspecies
       end if
       fr(ir)=t1*sprho(ir,is)*spr(ir,is)**2
     end do
-    call fderiv(-1,n,spr(nr,is),fr(nr),gr(nr),cf)
+    call fderiv(-1,n,spr(nr,is),fr(nr),gr(nr))
     ffg(ig)=(fourpi/omega)*gr(spnr(is))
   end do
   do ia=1,natoms(is)
@@ -74,7 +74,7 @@ do is=1,nspecies
 !$OMP END CRITICAL
     end do
   end do
-  deallocate(fr,gr,cf,ffg)
+  deallocate(fr,gr,ffg)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

@@ -72,9 +72,8 @@ do is=1,nspecies
               if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
               if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
                 if (.not.done(ist,jspn)) then
-                  call wavefmt(1,lmaxvr,is,ia,ngk(jspn,ik), &
-                   apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
-                   wfmt1(:,:,ist,jspn))
+                  call wavefmt(1,lmaxvr,ias,ngk(jspn,ik),apwalm(:,:,:,:,jspn), &
+                   evecfv(:,ist,jspn),lmmaxvr,wfmt1(:,:,ist,jspn))
                   done(ist,jspn)=.true.
                 end if
 ! add to spinor wavefunction
@@ -84,7 +83,7 @@ do is=1,nspecies
           end do
         else
 ! spin-unpolarised wavefunction
-          call wavefmt(1,lmaxvr,is,ia,ngk(1,ik),apwalm,evecfv(:,j,1),lmmaxvr, &
+          call wavefmt(1,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1),lmmaxvr, &
            wfmt2)
         end if
 ! compute the gradient of the wavefunction

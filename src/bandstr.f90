@@ -104,8 +104,8 @@ do ik=1,nkpt
       do ia=1,natoms(is)
         ias=idxas(ia,is)
 ! generate the diagonal of the density matrix
-        call gendmat(.true.,.true.,0,lmax,is,ia,ngk(:,ik),apwalm,evecfv, &
-         evecsv,lmmax,dmat)
+        call gendmat(.true.,.true.,0,lmax,ias,ngk(:,ik),apwalm,evecfv,evecsv, &
+         lmmax,dmat)
         do ist=1,nstsv
           do l=0,lmax
             sum=0.d0

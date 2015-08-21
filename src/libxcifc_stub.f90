@@ -9,17 +9,43 @@ module libxcifc
 
 contains
 
-subroutine xcifc_libxc(xctype,n,rho,rhoup,rhodn,grho2,gup2,gdn2,gupdn,ex,ec, &
- vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2,dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2, &
- dcdgud)
+subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
+ gup2,gdn2,gupdn,tau,tauup,taudn,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2, &
+ dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
 implicit none
+! mandatory arguments
 integer xctype(3),n
-real(8), optional :: rho(n),rhoup(n),rhodn(n)
-real(8), optional :: grho2(n),gup2(n),gdn2(n),gupdn(n)
-real(8), optional :: ex(n),ec(n),vx(n),vc(n)
-real(8), optional :: vxup(n),vxdn(n),vcup(n),vcdn(n)
-real(8), optional :: dxdg2(n),dxdgu2(n),dxdgd2(n),dxdgud(n)
-real(8), optional :: dcdg2(n),dcdgu2(n),dcdgd2(n),dcdgud(n)
+! optional arguments
+real(8), optional :: c_tb09
+real(8), optional :: rho(n)
+real(8), optional :: rhoup(n)
+real(8), optional :: rhodn(n)
+real(8), optional :: g2rho(n)
+real(8), optional :: g2up(n)
+real(8), optional :: g2dn(n)
+real(8), optional :: grho2(n)
+real(8), optional :: gup2(n)
+real(8), optional :: gdn2(n)
+real(8), optional :: gupdn(n)
+real(8), optional :: tau(n)
+real(8), optional :: tauup(n)
+real(8), optional :: taudn(n)
+real(8), optional :: ex(n)
+real(8), optional :: ec(n)
+real(8), optional :: vx(n)
+real(8), optional :: vc(n)
+real(8), optional :: vxup(n)
+real(8), optional :: vxdn(n)
+real(8), optional :: vcup(n)
+real(8), optional :: vcdn(n)
+real(8), optional :: dxdg2(n)
+real(8), optional :: dxdgu2(n)
+real(8), optional :: dxdgd2(n)
+real(8), optional :: dxdgud(n)
+real(8), optional :: dcdg2(n)
+real(8), optional :: dcdgu2(n)
+real(8), optional :: dcdgd2(n)
+real(8), optional :: dcdgud(n)
 write(*,*)
 write(*,'("Error(libxcifc): libxc not or improperly installed")')
 write(*,*)
@@ -28,8 +54,11 @@ end subroutine
 
 subroutine xcdata_libxc(xctype,xcdescr,xcspin,xcgrad)
 implicit none
-integer xctype(3),xcspin,xcgrad
+! arguments
+integer :: xctype(3)
 character(512) :: xcdescr
+integer :: xcspin
+integer :: xcgrad
 write(*,*)
 write(*,'("Error(libxcifc):  libxc not or improperly installed")')
 write(*,*)

@@ -23,7 +23,7 @@ use modmain
 implicit none
 ! local variables
 integer is,js,ia,ja,ka,na
-integer i1,i2,i3,iv(3),i,j,n
+integer i1,i2,i3,i,j,n
 real(8) v1(3),v2(3),v3(3)
 real(8) t1,t2
 ! allocatable arrays
@@ -32,7 +32,7 @@ real(8), allocatable :: vp(:,:)
 do is=1,nspecies
   do ia=1,natoms(is)
 ! make sure all atomic coordinates are in [0,1)
-    call r3frac(epslat,atposl(:,ia,is),iv)
+    call r3frac(epslat,atposl(:,ia,is))
 ! determine atomic Cartesian coordinates
     call r3mv(avec,atposl(:,ia,is),atposc(:,ia,is))
   end do
@@ -62,7 +62,7 @@ do ia=1,natoms(is)
         do js=1,nspecies
           do ja=1,natoms(js)
             v3(:)=atposl(:,ja,js)+v2(:)
-            call r3frac(epslat,v3,iv)
+            call r3frac(epslat,v3)
             do ka=1,natoms(js)
 ! check both positions and magnetic fields are the same
               t1=sum(abs(atposl(:,ka,js)-v3(:)))
@@ -133,7 +133,7 @@ do is=1,nspecies
   na=0
   do ia=1,natoms(is)
     call r3mv(ainv,atposc(:,ia,is),v1)
-    call r3frac(epslat,v1,iv)
+    call r3frac(epslat,v1)
     do ja=1,na
       t1=sum(abs(atposl(:,ja,is)-v1(:)))
       if (t1.lt.epslat) goto 30

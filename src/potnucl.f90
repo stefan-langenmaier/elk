@@ -13,9 +13,10 @@ real(8), intent(in) :: zn
 real(8), intent(out) :: vn(nr)
 ! local variables
 integer ir
-! nuclear radius constant in Bohr
-real(8), parameter :: r0=1.25d-15/0.52917720859d-10
 real(8) rn,t1,t2
+! external functions
+real(8) radnucl
+external radnucl
 if (zn.eq.0.d0) then
   vn(:)=0.d0
   return
@@ -24,8 +25,8 @@ if (ptnucl) then
 ! nucleus is taken to be a point particle
   vn(:)=zn/r(:)
 else
-! nucleus has a finite radius approximated by r0*A^(1/3)
-  rn=r0*abs(zn)**(1.d0/3.d0)
+! approximate nuclear radius
+  rn=radnucl(zn)
   t1=zn/(2.d0*rn**3)
   t2=3.d0*rn**2
   do ir=1,nr

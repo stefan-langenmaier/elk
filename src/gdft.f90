@@ -14,7 +14,7 @@ integer ist,jst,is,ia,ias
 integer ir,irc,itp
 real(8) sum,t1,t2
 ! automatic arrays
-real(8) fr(nrcmtmax),gr(nrcmtmax),cf(4,nrcmtmax)
+real(8) fr(nrcmtmax),gr(nrcmtmax)
 real(8) rflm(lmmaxvr),rftp(lmmaxvr)
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:)
@@ -92,7 +92,7 @@ do ist=1,nstsv
         do irc=1,nrcmt(is)
           fr(irc)=rfmt(1,irc,ias)*rcmt(irc,is)**2
         end do
-        call fderiv(-1,nrcmt(is),rcmt(1,is),fr,gr,cf)
+        call fderiv(-1,nrcmt(is),rcmt(1,is),fr,gr)
         sum=sum+fourpi*y00*gr(nrcmt(is))
       end do
     end do

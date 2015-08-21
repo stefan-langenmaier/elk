@@ -8,7 +8,7 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer is,ia,ias,ik
+integer is,ias,ik
 integer ir,irc,idm
 integer ld,it,n
 real(8) tau,resp,t1
@@ -94,22 +94,19 @@ do it=1,maxitoep
     end if
   end if
 ! convert muffin-tin residuals to spherical harmonics
-  do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias,idm) SHARED(is)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
+  do ias=1,natmtot
+    is=idxis(ias)
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+     dvxmt(:,:,ias),lmmaxvr,0.d0,rfmt(:,:,ias),ld)
+    do idm=1,ndmag
       call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-       dvxmt(:,:,ias),lmmaxvr,0.d0,rfmt(:,:,ias),ld)
-      do idm=1,ndmag
-        call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-         dbxmt(:,:,ias,idm),lmmaxvr,0.d0,rvfmt(:,:,ias,idm),ld)
-      end do
+       dbxmt(:,:,ias,idm),lmmaxvr,0.d0,rvfmt(:,:,ias,idm),ld)
     end do
+  end do
 !$OMP END DO
 !$OMP END PARALLEL
-  end do
 ! symmetrise the residuals
   call symrf(lradstp,rfmt,dvxir)
   if (spinpol) call symrvf(lradstp,rvfmt,dbxir)
@@ -131,27 +128,24 @@ do it=1,maxitoep
   end if
   resp=resoep
 ! update complex potential and field
-  do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias,irc,ir,idm)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,irc,ir,idm)
 !$OMP DO
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      irc=0
-      do ir=1,nrmt(is),lradstp
-        irc=irc+1
+  do ias=1,natmtot
+    is=idxis(ias)
+    irc=0
+    do ir=1,nrmt(is),lradstp
+      irc=irc+1
 ! convert residual to spherical coordinates and subtract from complex potential
-        call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr,rfmt(:,ir,ias),1, &
-         1.d0,zvxmt(:,irc,ias),2)
-        do idm=1,ndmag
-          call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr, &
-           rvfmt(:,ir,ias,idm),1,1.d0,zbxmt(:,irc,ias,idm),2)
-        end do
+      call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr,rfmt(:,ir,ias),1, &
+       1.d0,zvxmt(:,irc,ias),2)
+      do idm=1,ndmag
+        call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr, &
+         rvfmt(:,ir,ias,idm),1,1.d0,zbxmt(:,irc,ias,idm),2)
       end do
     end do
+  end do
 !$OMP END DO
 !$OMP END PARALLEL
-  end do
   zvxir(:)=zvxir(:)-tau*dvxir(:)
   do idm=1,ndmag
     zbxir(:,idm)=zbxir(:,idm)-tau*dbxir(:,idm)
@@ -159,36 +153,36 @@ do it=1,maxitoep
 ! end iteration loop
 end do
 ! generate the real potential and field
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,irc,ir,idm)
+!$OMP DO
+do ias=1,natmtot
+  is=idxis(ias)
+  irc=0
+  do ir=1,nrmt(is),lradstp
+    irc=irc+1
 ! convert to real spherical harmonics
-      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,zvxmt(:,irc,ias),2, &
-       0.d0,rfmt(:,ir,ias),1)
-      do idm=1,ndmag
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-         zbxmt(:,irc,ias,idm),2,0.d0,rvfmt(:,ir,ias,idm),1)
-      end do
+    call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,zvxmt(:,irc,ias),2, &
+     0.d0,rfmt(:,ir,ias),1)
+    do idm=1,ndmag
+      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+       zbxmt(:,irc,ias,idm),2,0.d0,rvfmt(:,ir,ias,idm),1)
     end do
   end do
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! convert potential and field from a coarse to a fine radial mesh
 call rfmtctof(rfmt)
 do idm=1,ndmag
   call rfmtctof(rvfmt(:,:,:,idm))
 end do
 ! add to existing (density derived) correlation potential and field
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      vxcmt(:,ir,ias)=vxcmt(:,ir,ias)+rfmt(:,ir,ias)
-      do idm=1,ndmag
-        bxcmt(:,ir,ias,idm)=bxcmt(:,ir,ias,idm)+rvfmt(:,ir,ias,idm)
-      end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    vxcmt(:,ir,ias)=vxcmt(:,ir,ias)+rfmt(:,ir,ias)
+    do idm=1,ndmag
+      bxcmt(:,ir,ias,idm)=bxcmt(:,ir,ias,idm)+rvfmt(:,ir,ias,idm)
     end do
   end do
 end do

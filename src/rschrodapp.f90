@@ -25,8 +25,7 @@ subroutine rschrodapp(sol,l,nr,r,vr,p0,q0,q1,hp0)
 !   $$ H P_l=\left[\frac{l(l+1)}{2Mr^2}+V\right]P_l-\frac{1}{r}Q_l
 !    -\frac{d}{dr}Q_l, $$
 !   where $V$ is the external potential, $M=1-V/2c^2$ and $Q_l$ is obtained from
-!   integrating the coupled scalar relativistic equations. See the routine
-!   {\tt rschrodint} for further details.
+!   integrating the coupled scalar relativistic equations.
 !
 ! !REVISION HISTORY:
 !   Created October 2003 (JKD)

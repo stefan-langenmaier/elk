@@ -24,9 +24,6 @@ avec
 sppath
   '../../species/'
 
-autormt
- .true.
-
 atoms
   4                                     : nspecies
   'Y.in'                                : spfname

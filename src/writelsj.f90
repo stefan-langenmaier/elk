@@ -52,7 +52,7 @@ if (task.eq.15) then
       do ia=1,natoms(is)
         ias=idxas(ia,is)
 ! generate the density matrix
-        call gendmat(.false.,.false.,0,lmaxapw,is,ia,ngk(:,ik),apwalm,evecfv, &
+        call gendmat(.false.,.false.,0,lmaxapw,ias,ngk(:,ik),apwalm,evecfv, &
          evecsv,lmmaxapw,dmat2)
         do ist=1,nstsv
           t1=wkpt(ik)*occsv(ist,ik)
@@ -137,7 +137,7 @@ else
       do ia=1,natoms(is)
         ias=idxas(ia,is)
 ! generate the density matrix
-        call gendmat(.false.,.false.,0,lmaxapw,is,ia,ngk(:,ik),apwalm,evecfv, &
+        call gendmat(.false.,.false.,0,lmaxapw,ias,ngk(:,ik),apwalm,evecfv, &
          evecsv,lmmaxapw,dmat2)
 ! compute tr(LD)
         xl(:)=0.d0

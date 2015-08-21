@@ -5,6 +5,7 @@
 
 !BOP
 ! !ROUTINE: fsmooth
+! !INTERFACE:
 subroutine fsmooth(m,n,ld,f)
 ! !INPUT/OUTPUT PARAMETERS:
 !   m  : number of 3-point running averages to perform (in,integer)

@@ -51,10 +51,6 @@ atoms
 reducebf
   0.5
 
-! automatic muffin-tin radius
-autormt
-  .true.
-
 ! fairly high number of empty states
 nempty
   10

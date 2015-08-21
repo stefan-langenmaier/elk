@@ -27,7 +27,6 @@ real(8), intent(in) :: x
 ! external functions
 real(8) stheta_mp,stheta_fd,stheta_sq,stheta_lr
 external stheta_mp,stheta_fd,stheta_sq,stheta_lr
-stheta=0.d0
 select case(stype)
 case(0)
   stheta=stheta_mp(0,x)

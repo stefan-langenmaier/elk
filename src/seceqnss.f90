@@ -63,12 +63,16 @@ do is=1,nspecies
 ! compute the first-variational wavefunctions
     do ispn=1,nspnfv
       if (ispn.eq.2) zq=conjg(zq)
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
       do ist=1,nstfv
-        call wavefmt(lradstp,lmaxvr,is,ia,ngk(ispn,ik),apwalm(:,:,:,:,ispn), &
+        call wavefmt(lradstp,lmaxvr,ias,ngk(ispn,ik),apwalm(:,:,:,:,ispn), &
          evecfv(:,ist,ispn),lmmaxvr,wfmt1(:,:,ist,ispn))
 ! de-phase if required
         if (ssdph) wfmt1(:,1:nrc,ist,ispn)=zq*wfmt1(:,1:nrc,ist,ispn)
       end do
+!$OMP END DO
+!$OMP END PARALLEL
     end do
     do jst=1,nstfv
       do ispn=1,nspnfv

@@ -47,6 +47,8 @@ call genlofr
 call olprad
 ! compute the Hamiltonian radial integrals
 call hmlrad
+! generate the first- and second-variational eigenvectors and eigenvalues
+call genevfsv
 ! generate the kinetic matrix elements in the Cartesian basis
 call genkinmatc
 ! find the occupation numbers and Fermi energy

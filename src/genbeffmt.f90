@@ -11,7 +11,7 @@ integer ld,is,ia,ias
 integer nrc,irc,ir,i
 real(8) cb,cso,rm,t1
 ! allocatable arrays
-real(8), allocatable :: vr(:),drv(:),cf(:,:)
+real(8), allocatable :: vr(:),drv(:)
 if (.not.spinpol) return
 ! coupling constant of the external field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
@@ -20,10 +20,11 @@ cso=1.d0/(4.d0*solsc**2)
 ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(is,ia,nrc,i,t1) &
-!$OMP PRIVATE(vr,drv,cf,irc,ir,rm)
+!$OMP PRIVATE(vr,drv,irc,ir,rm)
 !$OMP DO
 do ias=1,natmtot
-  is=idxis(ias); ia=idxia(ias)
+  is=idxis(ias)
+  ia=idxia(ias)
   nrc=nrcmt(is)
 ! exchange-correlation magnetic field in spherical coordinates
   do i=1,ndmag
@@ -41,17 +42,17 @@ do ias=1,natmtot
   end if
 ! spin-orbit coupling radial function
   if (spinorb) then
-    allocate(vr(nrmtmax),drv(nrmtmax),cf(4,nrmtmax))
+    allocate(vr(nrmtmax),drv(nrmtmax))
 ! radial derivative of the spherical part of the potential
     vr(1:nrmt(is))=veffmt(1,1:nrmt(is),ias)*y00
-    call fderiv(1,nrmt(is),spr(:,is),vr,drv,cf)
+    call fderiv(1,nrmt(is),spr(:,is),vr,drv)
     irc=0
     do ir=1,nrmt(is),lradstp
       irc=irc+1
       rm=1.d0-2.d0*cso*vr(ir)
       socfr(irc,ias)=cso*drv(ir)/(spr(ir,is)*rm**2)
     end do
-    deallocate(vr,drv,cf)
+    deallocate(vr,drv)
   end if
 end do
 !$OMP END DO

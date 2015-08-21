@@ -63,11 +63,10 @@ do it=1,maxit
   else
     e1=efermi
   end if
-  if ((e1-e0).lt.epsocc) goto 10
+  if ((e1-e0).lt.1.d-12) goto 10
 end do
 write(*,*)
-write(*,'("Error(occupy): could not find Fermi energy")')
-write(*,*)
+write(*,'("Warning(occupy): could not find Fermi energy")')
 stop
 10 continue
 ! find the density of states at the Fermi surface in units of
@@ -90,19 +89,27 @@ call writetest(500,'DOS at Fermi energy',tol=1.d-3,rv=fermidos)
 ! estimate the band gap (FC)
 e0=-1.d8
 e1=1.d8
+ikgap(1)=1
+ikgap(2)=1
 do ik=1,nkpt
   do ist=1,nstsv
     e=evalsv(ist,ik)
     if (e.lt.efermi) then
-      if (e.gt.e0) e0=e
+      if (e.gt.e0) then
+        e0=e
+        ikgap(1)=ik
+      end if
     else
-      if (e.lt.e1) e1=e
+      if (e.lt.e1) then
+        e1=e
+        ikgap(2)=ik
+      end if
     end if
   end do
 end do
 bandgap=e1-e0
 ! write band gap to test file
-call writetest(510,'estimated band gap',tol=1.d-2,rv=bandgap)
+call writetest(510,'estimated indirect band gap',tol=1.d-2,rv=bandgap)
 return
 end subroutine
 !EOC

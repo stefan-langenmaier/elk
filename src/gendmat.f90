@@ -3,8 +3,7 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine gendmat(tspndg,tlmdg,lmin,lmax,is,ia,ngp,apwalm,evecfv,evecsv,ld, &
- dmat)
+subroutine gendmat(tspndg,tlmdg,lmin,lmax,ias,ngp,apwalm,evecfv,evecsv,ld,dmat)
 use modmain
 implicit none
 ! arguments
@@ -12,8 +11,7 @@ logical, intent(in) :: tspndg
 logical, intent(in) :: tlmdg
 integer, intent(in) :: lmin
 integer, intent(in) :: lmax
-integer, intent(in) :: is
-integer, intent(in) :: ia
+integer, intent(in) :: ias
 integer, intent(in) :: ngp(nspnfv)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
@@ -21,15 +19,15 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv)
 integer, intent(in) :: ld
 complex(8), intent(out) :: dmat(ld,ld,nspinor,nspinor,nstsv)
 ! local variables
-integer ispn,jspn,lmmax
+integer lmmax,is,ia
+integer ispn,jspn,ist
 integer l,m1,m2,lm1,lm2
-integer i,j,n,ist,irc
+integer i,j,n,irc
 real(8) t1,t2
 complex(8) zq(2),zt1
 ! automatic arrays
 logical done(nstfv,nspnfv)
-real(8) fr1(nrcmtmax),fr2(nrcmtmax)
-real(8) gr(nrcmtmax),cf(4,nrcmtmax)
+real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 ! allocatable arrays
 complex(8), allocatable :: wfmt1(:,:,:,:)
 complex(8), allocatable :: wfmt2(:,:,:)
@@ -49,6 +47,9 @@ lmmax=(lmax+1)**2
 ! allocate local arrays
 allocate(wfmt1(lmmax,nrcmtmax,nstfv,nspnfv))
 allocate(wfmt2(lmmax,nrcmtmax,nspinor))
+! species and atom numbers
+is=idxis(ias)
+ia=idxia(ias)
 ! de-phasing factor for spin-spirals
 if (spinsprl.and.ssdph) then
   t1=-0.5d0*dot_product(vqcss(:),atposc(:,ia,is))
@@ -77,7 +78,7 @@ do j=1,nstsv
         if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
         if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
           if (.not.done(ist,jspn)) then
-            call wavefmt(lradstp,lmax,is,ia,ngp(jspn),apwalm(:,:,:,:,jspn), &
+            call wavefmt(lradstp,lmax,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
              evecfv(:,ist,jspn),lmmax,wfmt1(:,:,ist,jspn))
             done(ist,jspn)=.true.
           end if
@@ -88,7 +89,7 @@ do j=1,nstsv
     end do
   else
 ! spin-unpolarised wavefunction
-    call wavefmt(lradstp,lmax,is,ia,ngp,apwalm,evecfv(:,j,1),lmmax,wfmt2)
+    call wavefmt(lradstp,lmax,ias,ngp,apwalm,evecfv(:,j,1),lmmax,wfmt2)
   end if
   do ispn=1,nspinor
     do jspn=1,nspinor
@@ -105,9 +106,9 @@ do j=1,nstsv
               fr1(irc)=dble(zt1)*t1
               fr2(irc)=aimag(zt1)*t1
             end do
-            call fderiv(-2,nrcmt(is),rcmt(:,is),fr1,gr,cf)
+            call fderiv(-2,nrcmt(is),rcmt(:,is),fr1,gr)
             t1=gr(nrcmt(is))
-            call fderiv(-2,nrcmt(is),rcmt(:,is),fr2,gr,cf)
+            call fderiv(-2,nrcmt(is),rcmt(:,is),fr2,gr)
             t2=gr(nrcmt(is))
             dmat(lm1,lm2,ispn,jspn,j)=cmplx(t1,t2,8)
 10 continue

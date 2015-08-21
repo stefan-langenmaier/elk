@@ -101,11 +101,11 @@ do is=1,nspecies
                 if (.not.done(ist)) then
                   if (tsh) then
 ! wavefunction returned in spherical harmonics
-                    call wavefmt(lradstp,lmaxvr,is,ia,ngp(jspn), &
+                    call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
                      apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
                      wfmt1(:,:,ist))
                   else
-                    call wavefmt(lradstp,lmaxvr,is,ia,ngp(jspn), &
+                    call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
                      apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt2)
 ! convert from spherical harmonics to spherical coordinates
                     call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr, &
@@ -124,11 +124,11 @@ do is=1,nspecies
 ! spin-unpolarised wavefunction
           if (tsh) then
 ! wavefunction returned in spherical harmonics
-            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j,1), &
-             lmmaxvr,wfmt(:,:,ias,1,j))
+            call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,j,1),lmmaxvr, &
+             wfmt(:,:,ias,1,j))
           else
-            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j,1), &
-             lmmaxvr,wfmt2)
+            call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,j,1),lmmaxvr, &
+             wfmt2)
 ! convert from spherical harmonics to spherical coordinates
             call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr,lmmaxvr, &
              wfmt2,lmmaxvr,zzero,wfmt(:,:,ias,1,j),lmmaxvr)

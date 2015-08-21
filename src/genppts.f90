@@ -79,10 +79,10 @@ real(8), intent(out) :: vpc(3,npptnr)
 real(8), intent(out) :: wppt(npptnr)
 real(8), intent(out) :: wpptnr
 ! local variables
-integer i1,i2,i3,iv(3)
-integer isym,ip,jp,i
+integer i1,i2,i3,i
+integer isym,ip,jp
 real(8) v1(3),v2(3),v3(3),v4(3)
-real(8) b(3,3),s(3,3),t1
+real(8) b(3,3),t1
 if ((ngridp(1).le.0).or.(ngridp(2).le.0).or.(ngridp(3).le.0)) then
   write(*,*)
   write(*,'("Error(genppts): invalid ngridp : ",3I8)') ngridp
@@ -115,12 +115,11 @@ do i3=0,ngridp(3)-1
       if (nsym.gt.1) then
 ! determine if this point is equivalent to one already in the set
         do isym=1,nsym
-          s(:,:)=dble(sym(:,:,isym))
-          call r3mtv(s,v2,v3)
-          call r3frac(epslat,v3,iv)
+          v3(:)=sym(1,:,isym)*v2(1)+sym(2,:,isym)*v2(2)+sym(3,:,isym)*v2(3)
+          call r3frac(epslat,v3)
           do i=1,ip
             v4(:)=vpl(:,i)
-            call r3frac(epslat,v4,iv)
+            call r3frac(epslat,v4)
             t1=abs(v4(1)-v3(1))+abs(v4(2)-v3(2))+abs(v4(3)-v3(3))
             if (t1.lt.epslat) then
 ! equivalent p-point found so add to existing weight
@@ -151,7 +150,7 @@ end do
 nppt=ip
 do ip=1,npptnr
 ! map vpl to the first Brillouin zone if required
-  if (tfbz) call vecfbz(epslat,bvec,vpl(:,ip),iv)
+  if (tfbz) call vecfbz(epslat,bvec,vpl(:,ip))
 ! determine the Cartesian coordinates of the p-points
   call r3mv(bvec,vpl(:,ip),vpc(:,ip))
 end do

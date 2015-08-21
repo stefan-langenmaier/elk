@@ -40,7 +40,7 @@ integer l,m,lm,ir
 real(8), parameter :: fourpi=12.566370614359172954d0
 real(8) t1,t2,t3,t4
 ! automatic arrays
-real(8) ri(nr),rl1(nr),rl2(nr),rl3(nr),rl4(nr),cf(4,nr)
+real(8) ri(nr),rl1(nr),rl2(nr),rl3(nr),rl4(nr)
 real(8) fr1(nr),fr2(nr),fr3(nr),fr4(nr),fr5(nr)
 ! initialise r^l, r^(-l-1), r^(l+2) and r^(-l+1)
 do ir=1,nr
@@ -63,10 +63,10 @@ do l=0,lmax
       fr3(ir)=t1*rl4(ir)
       fr4(ir)=t2*rl4(ir)
     end do
-    call fderiv(-1,nr,r,fr1,fr5,cf)
-    call fderiv(-1,nr,r,fr2,fr1,cf)
-    call fderiv(-1,nr,r,fr3,fr2,cf)
-    call fderiv(-1,nr,r,fr4,fr3,cf)
+    call fderiv(-1,nr,r,fr1,fr5)
+    call fderiv(-1,nr,r,fr2,fr1)
+    call fderiv(-1,nr,r,fr3,fr2)
+    call fderiv(-1,nr,r,fr4,fr3)
     t1=fr2(nr)
     t2=fr3(nr)
     do ir=1,nr

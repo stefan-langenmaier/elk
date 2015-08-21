@@ -33,14 +33,15 @@ SRC_libxc = libxcifc_stub.f90
 
 # modules
 SRC_modules = modmain.f90 $(SRC_mpi) modmpi.f90 $(SRC_libxc) modxcifc.f90 \
- modldapu.f90 modrdm.f90 modphonon.f90 modscdft.f90 modtest.f90
+ modfxcifc.f90 modldapu.f90 modrdm.f90 modphonon.f90 modscdft.f90 modtest.f90 \
+ modrandom.f90
 
 # main program
 SRC_main = main.f90
 
 # subroutines and functions
 SRC_routines = \
- autoradmt.f90 findprim.f90 findsym.f90 findsymcrys.f90 genppts.f90 rfinp.f90 \
+ findprim.f90 findsym.f90 findsymcrys.f90 genppts.f90 rfinp.f90 \
  rvfcross.f90 seceqn.f90 symrf.f90 symrfir.f90 wavefmt.f90 force.f90 \
  elfplot.f90 rhonorm.f90 energy.f90 gensdmat.f90 zpotclmt.f90 writegeom.f90 \
  nfftifc.f90 zfftifc.f90 allatoms.f90 gridsize.f90 poteff.f90 genrmesh.f90 \
@@ -73,18 +74,21 @@ SRC_routines = \
  ggair_sp_2a.f90 ggamt_sp_2b.f90 ggair_sp_2b.f90 writeqpts.f90 potefield.f90 \
  findswidth.f90 wfcrplot.f90 zftrf.f90 genhvec.f90 sfacrho.f90 sfacmag.f90 \
  sfacinit.f90 findqpt.f90 seceqnfvz.f90 seceqnfvr.f90 genpmat.f90 \
- writepmat.f90 getpmat.f90 geomopt.f90 geomstep.f90
+ writepmat.f90 getpmat.f90 geomopt.f90 geomstep.f90 nesting.f90 gentau.f90 \
+ xc_c_tb09.f90 mtdmin.f90 writeemd.f90 genwfhk.f90 compton.f90 genevfsv.f90 \
+ gentauk.f90 gentaucr.f90
 
 SRC_phonon = \
- phonon.f90 dyntask.f90 genphsc.f90 phdisp.f90 readdyn.f90 dynqtor.f90 \
+ phononsc.f90 dyntask.f90 genphsc.f90 phdisp.f90 readdyn.f90 dynqtor.f90 \
  dynrtoq.f90 dynsymapp.f90 dynsym.f90 dyndiag.f90 phdos.f90 sumrule.f90 \
  writephn.f90 phfext.f90 writegamma.f90 readgamma.f90 phlwidth.f90 \
  writelambda.f90 alpha2f.f90 phdelete.f90 phgvec.f90 phdveff.f90 \
  writedveff.f90 readdveff.f90 ephcouple.f90 genephmat.f90 eliashberg.f90 \
- readalpha2f.f90 mcmillan.f90
+ readalpha2f.f90 mcmillan.f90 phonon.f90
 
 SRC_SCDFT = \
- bdginv.f90
+ hmlbdg.f90 seceqnbdg.f90 scdft.f90 genachi.f90 bdginv.f90 achiinit.f90 \
+ genidxbdg.f90
 
 SRC_advanced = \
  genzrho.f90 genwiq2.f90 writewiq2.f90 genjlgq0r.f90 exxengy.f90 exxengyk.f90 \
@@ -92,7 +96,7 @@ SRC_advanced = \
  zrhogp.f90 moke.f90 dielectric.f90 nonlinopt.f90 genvchi0.f90 epsinv_rpa.f90 \
  genexpigr.f90 bse.f90 hmlxbse.f90 hmlxbsek.f90 hmldbse.f90 hmldbsek.f90 \
  dielectric_bse.f90 getcf2pt.f90 genwfpw.f90 writewfpw.f90 getwfpw.f90 \
- getwfpwh.f90
+ getwfpwh.f90 genidxbse.f90
 
 SRC_LDAU = \
  gendmatlu.f90 genveelu.f90 genvmatlu.f90 writeldapu.f90 readalphalu.f90 \
@@ -112,7 +116,7 @@ SRC_TDDFT = tddftlr.f90 genfxc.f90
 
 SRC_lib = \
  euler.f90 wigner3j.f90 gaunt.f90 gauntyry.f90 r3mm.f90 r3mtm.f90 r3mmt.f90 \
- r3mv.f90 r3mtv.f90 r3cross.f90 r3dist.f90 r3minv.f90 r3mdet.f90 r3frac.f90 \
+ r3mv.f90 r3mtv.f90 r3cross.f90 r3minv.f90 r3mdet.f90 r3frac.f90 \
  i3mdet.f90 i3mtv.f90 factnm.f90 factr.f90 hermite.f90 brzint.f90 sphcrd.f90 \
  sphcover.f90 erf.f90 clebgor.f90 wigner6j.f90 sbessel.f90 sbesseldm.f90 \
  genylm.f90 genrlm.f90 zher2a.f90 zher2b.f90 lopzflm.f90 \
@@ -125,11 +129,12 @@ SRC_lib = \
  rotaxang.f90 i3minv.f90 axangsu2.f90 z2mm.f90 z2mctm.f90 z2mmct.f90 \
  potnucl.f90 timesec.f90 vecfbz.f90 mixadapt.f90 mixpulay.f90 \
  ylmrot.f90 ylmroty.f90 rlmrot.f90 rotrflm.f90 sdelta_lr.f90 stheta_lr.f90 \
- grad2rfmt.f90 mixbroyden.f90 rfirvec.f90 pade.f90
+ grad2rfmt.f90 mixbroyden.f90 rfirvec.f90 pade.f90 radnucl.f90 zvmul1.f90 \
+ zvmul2.f90
 
 SRC_xc = \
   xc_pzca.f90 xc_pwca.f90 xc_pbe.f90 xc_am05.f90 xc_xalpha.f90 xc_wc06.f90 \
-  x_wc06.f90 x_pbe.f90 c_pbe.f90 c_pbe_gcor.f90 xc_vbh.f90
+  x_wc06.f90 x_pbe.f90 c_pbe.f90 c_pbe_gcor.f90 xc_vbh.f90 fxc_pwca.f90
 
 SRC = $(SRC_modules) $(SRC_main) $(SRC_routines) $(SRC_lib) $(SRC_advanced) \
  $(SRC_phonon) $(SRC_SCDFT) $(SRC_xc) $(SRC_LDAU) $(SRC_RDMFT) $(SRC_TDDFT)

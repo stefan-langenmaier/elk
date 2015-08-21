@@ -16,7 +16,7 @@ real(8), intent(out) :: g2rfmt(ld,nr)
 integer l,m,lm,ir
 real(8) t1
 ! automatic arrays
-real(8) ri(nr),ri2(nr),cf(4,nr)
+real(8) ri(nr),ri2(nr),cf(3,nr)
 ! tabulate 1/r and 1/r^2
 do ir=1,nr
   ri(ir)=1.d0/r(ir)
@@ -30,9 +30,7 @@ do l=0,lmax
 ! use a cubic spline to compute radial derivatives
     call spline(nr,r,ld,rfmt(lm,1),cf)
 ! apply Laplacian
-    do ir=1,nr
-      g2rfmt(lm,ir)=2.d0*(ri(ir)*cf(1,ir)+cf(2,ir))+ri2(ir)*t1*rfmt(lm,ir)
-    end do
+    g2rfmt(lm,:)=2.d0*(ri(:)*cf(1,:)+cf(2,:))+ri2(:)*t1*rfmt(lm,:)
   end do
 end do
 return

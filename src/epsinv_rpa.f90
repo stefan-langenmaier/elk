@@ -65,7 +65,7 @@ do iq=1,nqpt
 ! distribute among MPI processes
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
 ! compute v^1/2 chi0 v^1/2 and store in array epsinv
-    call genvchi0(iq,ik,0,gqc,expqmt,epsinv)
+    call genvchi0(ik,0,0.d0,vql(:,iq),gqc,expqmt,epsinv)
   end do
 !$OMP END DO
 !$OMP END PARALLEL

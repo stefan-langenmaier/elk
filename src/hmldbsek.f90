@@ -9,16 +9,17 @@ implicit none
 ! arguments
 integer, intent(in) :: ik2
 ! local variables
-integer ik1,ig,jg,n
-integer is,ia,ias,irc
+integer ik1,iv(3),iq,ig,jg
+integer is,ias,irc,n
 integer i1,i2,j1,j2,a1,a2,b1,b2
 integer ist1,ist2,jst1,jst2
-real(8) vl(3),vc(3)
-real(8) vgqc(3),t0,t1
+real(8) vl(3),vc(3),qc
+real(8) vgqc(3),gqc,t0,t1,t2
 complex(8) zsum
 character(256) fname
+! automatic arrays
+real(8) vcl(ngrpa)
 ! allocatable arrays
-real(8), allocatable :: gqc(:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
 complex(8), allocatable :: expqmt(:,:,:),expgqmt(:,:,:)
@@ -29,7 +30,6 @@ complex(8), allocatable :: epsinv(:,:,:)
 ! external functions
 complex(8) zfinp
 external zfinp
-allocate(gqc(ngrpa))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
@@ -51,24 +51,39 @@ fname='EPSINV_RPA.OUT'
 do ik1=1,nkptnr
 ! generate the wavefunctions at k-point ik1
   call genwfsvp(.false.,.false.,vkl(:,ik1),wfmt1,ngrtot,wfir1)
+! determine equivalent q-vector in first Brillouin zone
+  iv(:)=ivk(:,ik1)-ivk(:,ik2)
+  iv(:)=modulo(iv(:),ngridk(:))
+  iq=iqmap(iv(1),iv(2),iv(3))
 ! q-vector in lattice and Cartesian coordinates
   vl(:)=vkl(:,ik1)-vkl(:,ik2)
   vc(:)=vkc(:,ik1)-vkc(:,ik2)
+! length of q-vector in FBZ
+  qc=sqrt(vqc(1,iq)**2+vqc(2,iq)**2+vqc(3,iq)**2)
 ! generate the function exp(iq.r) in the muffin-tins
   call genexpmt(vc,expqmt)
-! loop over MBPT G-vectors
+! loop over G-vectors
   do ig=1,ngrpa
 ! G+q-vector in Cartesian coordinates
     vgqc(:)=vgc(:,ig)+vc(:)
 ! length of G+q-vector
-    gqc(ig)=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
+    gqc=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
+! compute the regularised Coulomb interaction
+    t1=abs(gqc-qc)
+    if (t1.gt.epslat) then
+! G+q-vector is outside FBZ so use symmetrised 4 pi/(G+q)^2 interaction
+      vcl(ig)=sqrt(fourpi)/gqc
+    else
+! volume of small parallelepiped around q-point (see genwiq2)
+      t2=omegabz*wkptnr
+! average symmetrised interaction over volume
+      vcl(ig)=sqrt(fourpi*wiq2(iq)/t2)
+    end if
 ! compute the function exp(i(G+q).r) in the muffin-tins
-    do is=1,nspecies
-      do ia=1,natoms(is)
-        ias=idxas(ia,is)
-        do irc=1,nrcmt(is)
-          expgqmt(:,irc,ias)=expgmt(:,irc,ias,ig)*expqmt(:,irc,ias)
-        end do
+    do ias=1,natmtot
+      is=idxis(ias)
+      do irc=1,nrcmt(is)
+        expgqmt(:,irc,ias)=expgmt(:,irc,ias,ig)*expqmt(:,irc,ias)
       end do
     end do
 ! compute the <v|exp(i(G+q).r)|v'> matrix elements
@@ -140,7 +155,7 @@ do ik1=1,nkptnr
   end do
 ! get RPA inverse epsilon from file
   call getcf2pt(fname,vl,ngrpa,nwrpa,epsinv)
-  t0=fourpi*wkptnr/omega
+  t0=wkptnr/omega
   do i1=1,nvbse
     do j1=1,ncbse
       a1=ijkbse(i1,j1,ik1)
@@ -149,12 +164,10 @@ do ik1=1,nkptnr
           a2=ijkbse(i2,j2,ik2)
           zsum=0.d0
           do ig=1,ngrpa
+            t1=t0*vcl(ig)
             do jg=1,ngrpa
-              t1=gqc(ig)*gqc(jg)
-              if (t1.gt.1.d-6) then
-                t1=t0/t1
-                zsum=zsum+t1*epsinv(ig,jg,1)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
-              end if
+              t2=t1*vcl(jg)
+              zsum=zsum+t2*epsinv(ig,jg,1)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
             end do
           end do
           hmlbse(a1,a2)=hmlbse(a1,a2)-zsum
@@ -165,13 +178,10 @@ do ik1=1,nkptnr
             hmlbse(b1,b2)=hmlbse(b1,b2)+conjg(zsum)
             zsum=0.d0
             do ig=1,ngrpa
+              t1=t0*vcl(ig)
               do jg=1,ngrpa
-                t1=gqc(ig)*gqc(jg)
-                if (t1.gt.1.d-8) then
-                  t1=t0/t1
-                  zsum=zsum+t1*epsinv(ig,jg,1)*zcv(ig,j1,i2) &
-                   *conjg(zvc(jg,i1,j2))
-                end if
+                t2=t1*vcl(jg)
+                zsum=zsum+t2*epsinv(ig,jg,1)*zcv(ig,j1,i2)*conjg(zvc(jg,i1,j2))
               end do
             end do
             hmlbse(a1,b2)=hmlbse(a1,b2)-zsum
@@ -185,7 +195,7 @@ do ik1=1,nkptnr
   end do
 ! end loop over ik1
 end do
-deallocate(gqc,wfmt1,wfmt2,wfir1,wfir2,expqmt,expgqmt)
+deallocate(wfmt1,wfmt2,wfir1,wfir2,expqmt,expgqmt)
 deallocate(zrhomt,zrhoir,zvv,zcc,epsinv)
 if (bsefull) deallocate(zvc,zcv)
 return

@@ -41,14 +41,13 @@ complex(8), intent(out) :: zfh(nhvec)
 integer is,ia,ias
 integer nrc,irc,ir
 integer ih,ig,l,m,lm
-real(8) vhl(3),vhc(3),hc
-real(8) tp(2),x,t1,t2
+real(8) x,h,tp(2)
+real(8) t0,t1,t2
 complex(8) zsum1,zsum2
 complex(8) zt1,zt2,zt3
 ! automatic arrays
 real(8) jl(0:lmaxvr,nrcmtmax)
-real(8) fr1(nrcmtmax),fr2(nrcmtmax)
-real(8) gr(nrcmtmax),cf(4,nrcmtmax)
+real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 complex(8) ylm(lmmaxvr)
 ! allocatable arrays
 complex(8), allocatable :: zfft(:)
@@ -76,14 +75,12 @@ end do
 !     muffin-tin part     !
 !-------------------------!
 ! convert function from real to complex spherical harmonic expansion
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
-      call rtozflm(lmaxvr,rfmt(:,ir,ias),zfmt(:,irc,ias))
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  irc=0
+  do ir=1,nrmt(is),lradstp
+    irc=irc+1
+    call rtozflm(lmaxvr,rfmt(:,ir,ias),zfmt(:,irc,ias))
   end do
 end do
 ! remove continuation of interstitial function into muffin-tin
@@ -97,7 +94,7 @@ do ig=1,ngvec
     end do
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-      zt1=zfft(igfft(ig))*fourpi*sfacg(ig,ias)
+      zt1=fourpi*zfft(igfft(ig))*sfacg(ig,ias)
       lm=0
       do l=0,lmaxvr
         zt2=zt1*zil(l)
@@ -110,23 +107,22 @@ do ig=1,ngvec
     end do
   end do
 end do
+t0=fourpi/omega
 ! loop over input H-vectors
 do ih=1,nhvec
-  vhl(:)=dble(ivh(:,ih))
-  call r3mv(bvec,vhl,vhc)
-  call sphcrd(vhc,hc,tp)
+  call sphcrd(vhc(:,ih),h,tp)
   call genylm(lmaxvr,tp,ylm)
   do is=1,nspecies
     nrc=nrcmt(is)
 ! generate spherical Bessel functions
     do irc=1,nrc
-      x=hc*rcmt(irc,is)
+      x=h*rcmt(irc,is)
       call sbessel(lmaxvr,x,jl(:,irc))
     end do
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-! structure factor
-      t1=dot_product(vhc,atposc(:,ia,is))
+! conjugate structure factor
+      t1=-dot_product(vhc(:,ih),atposc(:,ia,is))
       zt1=cmplx(cos(t1),sin(t1),8)
       do irc=1,nrc
         zsum1=0.d0
@@ -143,11 +139,11 @@ do ih=1,nhvec
         fr1(irc)=dble(zsum1)
         fr2(irc)=aimag(zsum1)
       end do
-      call fderiv(-1,nrc,rcmt(:,is),fr1,gr,cf)
+      call fderiv(-1,nrc,rcmt(:,is),fr1,gr)
       t1=gr(nrc)
-      call fderiv(-1,nrc,rcmt(:,is),fr2,gr,cf)
+      call fderiv(-1,nrc,rcmt(:,is),fr2,gr)
       t2=gr(nrc)
-      zfh(ih)=zfh(ih)+(fourpi/omega)*conjg(zt1)*cmplx(t1,t2,8)
+      zfh(ih)=zfh(ih)+t0*zt1*cmplx(t1,t2,8)
     end do
   end do
 end do

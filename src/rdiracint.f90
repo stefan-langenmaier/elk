@@ -96,14 +96,13 @@ ci=1.d0/sol
 e0=sol**2
 t1=2.d0*e0+e
 ! determine the r -> 0 boundary values of F and G
-f0(1)=0.d0
-g1(1)=1.d0
+t2=dble(kpa)/r(1)
+t3=ci*(t1-vr(1))
+t4=ci*(vr(1)-e)
+f0(1)=1.d0
 f1(1)=0.d0
-t2=r(1)/dble(kpa)
-t3=ci*(t1-vr(1))*t2**2
-t4=ci*(e-vr(1))
-g0(1)=(t3*f1(1)-t2*g1(1))/(1.d0-t3*t4)
-f0(1)=t2*(t4*g0(1)+f1(1))
+g0(1)=(f1(1)-t2*f0(1))/t4
+g1(1)=t3*f0(1)-t2*g0(1)
 if (m.ne.0) then
   g1(1)=g1(1)+ci*dble(m)*f0p(1)
   f1(1)=f1(1)-ci*dble(m)*g0p(1)

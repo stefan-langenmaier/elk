@@ -1,10 +1,15 @@
+
+! Copyright (C) 2007 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! This file is distributed under the terms of the GNU General Public License.
+! See the file COPYING for license details.
+
 subroutine gencrystal
 use modmain
 implicit none
 ! local variables
 integer is,ia,ip,i,j
 integer i1,i2,i3
-integer id(3),ngen,ngrp
+integer ngen,ngrp
 real(8) abr,acr,bcr
 real(8) sab,cab,cac,cbc
 real(8) v1(3),v2(3),t1
@@ -65,7 +70,7 @@ do is=1,nspecies
             v2(1)=(v1(1)+dble(i1))/dble(ncell(1))
             v2(2)=(v1(2)+dble(i2))/dble(ncell(2))
             v2(3)=(v1(3)+dble(i3))/dble(ncell(3))
-            call r3frac(epslat,v2,id)
+            call r3frac(epslat,v2)
 ! check if new position already exists
             do ia=1,natoms(is)
               t1=sum(abs(v2(:)-atposl(:,ia,is)))

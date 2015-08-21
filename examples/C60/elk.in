@@ -18,10 +18,6 @@ tseqit
 molecule
  .true.
 
-! automatic determination of muffin-tin radii
-autormt
- .true.
-
 ! use very small energy cut-off
 rgkmax
   4.0

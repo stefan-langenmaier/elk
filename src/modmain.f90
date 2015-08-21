@@ -10,6 +10,8 @@ module modmain
 !----------------------------!
 ! lattice vectors stored column-wise
 real(8) avec(3,3)
+! magnitude of random displacements added to lattice vectors
+real(8) rndavec
 ! inverse of lattice vector matrix
 real(8) ainv(3,3)
 ! reciprocal lattice vectors
@@ -18,6 +20,8 @@ real(8) bvec(3,3)
 real(8) binv(3,3)
 ! unit cell volume
 real(8) omega
+! Brillouin zone volume
+real(8) omegabz
 ! any vector with length less than epslat is considered zero
 real(8) epslat
 
@@ -49,6 +53,8 @@ logical primcell
 real(8) atposl(3,maxatoms,maxspecies)
 ! atomic positions in Cartesian coordinates
 real(8) atposc(3,maxatoms,maxspecies)
+! magnitude of random displacements added to the atomic positions
+real(8) rndatposc
 
 !----------------------------------!
 !     atomic species variables     !
@@ -118,10 +124,8 @@ integer nprad
 integer nrmt(maxspecies)
 ! maximum nrmt over all the species
 integer nrmtmax
-! autormt is .true. for automatic determination of muffin-tin radii
-logical autormt
-! parameters for determining muffin-tin radii automatically
-real(8) rmtapm(2)
+! minimum allowed distance between muffin-tin surfaces
+real(8) rmtdelta
 ! muffin-tin radii
 real(8) rmt(maxspecies)
 ! species for which the muffin-tin radius will be used for calculating gkmax
@@ -194,6 +198,8 @@ real(8) bfieldc0(3)
 real(8) bfcmt(3,maxatoms,maxspecies)
 ! initial field
 real(8) bfcmt0(3,maxatoms,maxspecies)
+! magnitude of random vectors added to muffin-tin fields
+real(8) rndbfcmt
 ! external magnetic fields are multiplied by reducebf after each s.c. loop
 real(8) reducebf
 ! spinsprl is .true. if a spin-spiral is to be calculated
@@ -276,9 +282,9 @@ integer ngrtot
 integer intgv(3,2)
 ! number of G-vectors with G < gmaxvr
 integer ngvec
-! G-vector integer coordinates
+! G-vector integer coordinates (i1,i2,i3)
 integer, allocatable :: ivg(:,:)
-! map from integer grid to G-vector array
+! map from (i1,i2,i3) to G-vector index
 integer, allocatable :: ivgig(:,:,:)
 ! map from G-vector array to FFT array
 integer, allocatable :: igfft(:)
@@ -365,7 +371,7 @@ real(8), allocatable :: vgkc(:,:,:,:)
 real(8), allocatable :: gkc(:,:,:)
 ! (theta, phi) coordinates of G+k-vectors
 real(8), allocatable :: tpgkc(:,:,:,:)
-! structure factor for the G+k-vectors
+! structure factors for the G+k-vectors
 complex(8), allocatable :: sfacgk(:,:,:,:)
 
 !-------------------------------!
@@ -427,6 +433,8 @@ integer xcspin
 integer xcgrad
 ! exchange-correlation functional kinetic energy density requirement
 integer xctau
+! Tran-Blaha '09 constant c [Phys. Rev. Lett. 102, 226401 (2009)]
+real(8) c_tb09
 ! muffin-tin charge density
 real(8), allocatable :: rhomt(:,:,:)
 ! interstitial real-space charge density
@@ -463,6 +471,8 @@ real(8), allocatable :: veffmt(:,:,:)
 real(8), allocatable :: veffir(:)
 ! G-space interstitial effective potential
 complex(8), allocatable :: veffig(:)
+! trimvg is .true. if veffir should be trimmed for |G| > gmaxvr/2
+logical trimvg
 ! muffin-tin exchange energy density
 real(8), allocatable :: exmt(:,:,:)
 ! interstitial real-space exchange energy density
@@ -657,8 +667,10 @@ real(8) efermi
 real(8) scissor
 ! density of states at the Fermi energy
 real(8) fermidos
-! estimated band gap
+! estimated indirect band gap
 real(8) bandgap
+! k-points of indirect gap
+integer ikgap(2)
 ! error tolerance for the first-variational eigenvalues
 real(8) evaltol
 ! second-variational eigenvalues
@@ -675,6 +687,8 @@ integer kstlist(2,maxkst)
 !------------------------------!
 !     core state variables     !
 !------------------------------!
+! occupancies for core states
+real(8), allocatable :: occcr(:,:)
 ! eigenvalues for core states
 real(8), allocatable :: evalcr(:,:)
 ! radial wavefunctions for core states
@@ -810,10 +824,14 @@ real(8) hmax
 real(8) vhmat(3,3)
 ! number of H-vectors
 integer nhvec
-! H-vector integer coordinates
+! H-vector integer coordinates (i1,i2,i3)
 integer, allocatable :: ivh(:,:)
+! map from (i1,i2,i3) to H-vector index
+integer, allocatable :: ivhih(:,:,:)
 ! H-vector multiplicity
 integer, allocatable :: mulh(:)
+! H-vectors in Cartesian coordinates
+real(8), allocatable :: vhc(:,:)
 ! structure factor energy window
 real(8) wsfac(2)
 ! reduceh is .true. if the H-vectors are reduced with the crystal symmetries
@@ -994,7 +1012,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,3,31 /
+data version / 1,4,18 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

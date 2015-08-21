@@ -88,6 +88,17 @@ do ih=1,nhvec
   mulh(ih)=iar(idx(ih))
 end do
 deallocate(idx,iar,h2)
+if (allocated(ivhih)) deallocate(ivhih)
+allocate(ivhih(ihv(1,1):ihv(1,2),ihv(2,1):ihv(2,2),ihv(3,1):ihv(3,2)))
+if (allocated(vhc)) deallocate(vhc)
+allocate(vhc(3,nhvec))
+do ih=1,nhvec
+  i1=ivh(1,ih); i2=ivh(2,ih); i3=ivh(3,ih)
+! map from (i1,i2,i3) to H-vector index
+  ivhih(i1,i2,i3)=ih
+! H-vector in Cartesian coordinates
+  vhc(:,ih)=dble(i1)*bvec(:,1)+dble(i2)*bvec(:,2)+dble(i3)*bvec(:,3)
+end do
 return
 end subroutine
 

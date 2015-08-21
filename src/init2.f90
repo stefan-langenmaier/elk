@@ -40,8 +40,8 @@ else
   end do
 end if
 ! OEP, Hartree-Fock, RPA epsilon, BSE or RDMFT
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.180).or.(task.eq.185).or. &
- (task.eq.188).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.105).or.(task.eq.180).or. &
+ (task.eq.185).or.(task.eq.188).or.(task.eq.300)) then
   ngridq(:)=ngridk(:)
 end if
 ! allocate the q-point arrays
@@ -78,10 +78,10 @@ write(*,*)
 stop
 10 continue
 
-!-----------------------------------------------!
-!     OEP, Hartree-Fock and RDMFT variables     !
-!-----------------------------------------------!
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.300)) then
+!----------------------------------------------------!
+!     OEP, Hartree-Fock, RDMFT and BSE variables     !
+!----------------------------------------------------!
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.185).or.(task.eq.300)) then
 ! determine the 1/q^2 integral weights if required
   call genwiq2
 ! output the 1/q^2 integrals to WIQ2.OUT

@@ -11,8 +11,6 @@ implicit none
 integer istp
 ! initialise global variables
 call init0
-! muffin-tin radii must be fixed during optimisation
-autormt=.false.
 ! atomic forces are required
 tforce=.true.
 if (task.eq.3) then
@@ -38,16 +36,12 @@ open(73,file='GEOMETRY_OPT.OUT',action='WRITE',form='FORMATTED')
 open(74,file='IADIST_OPT.OUT',action='WRITE',form='FORMATTED')
 ! open FORCES_OPT.OUT
 open(75,file='FORCES_OPT.OUT',action='WRITE',form='FORMATTED')
+if (mp_mpi) write(*,*)
 do istp=1,maxgeostp
   if (mp_mpi) write(*,'("Info(geomopt): geometry optimisation step : ",I6)') &
    istp
 ! ground-state and forces calculation
   call gndstate
-! check that calculation converged
-  if (iscl.ge.maxscl) then
-    write(*,*)
-    write(*,'("Warning(geomopt): ground-state calculation failed to converge")')
-  end if
 ! subsequent calculations will read in the potential from STATE.OUT
   trdstate=.true.
   if (mp_mpi) then

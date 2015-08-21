@@ -14,11 +14,11 @@ integer igp
 real(8), parameter :: eps=1.d-14
 real(8) t1
 igp0=1
-t1=gpc(igp0)+eps
+t1=gpc(1)-eps
 do igp=2,ngp
   if (gpc(igp).lt.t1) then
     igp0=igp
-    t1=gpc(igp)+eps
+    t1=gpc(igp)-eps
   end if
 end do
 return

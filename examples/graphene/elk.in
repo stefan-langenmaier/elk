@@ -32,9 +32,6 @@ avec
 scale
   4.64890
 
-autormt
- .true.
-
 sppath
   '../../species/'
 

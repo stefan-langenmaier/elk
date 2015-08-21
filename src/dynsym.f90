@@ -10,13 +10,13 @@ implicit none
 real(8), intent(in) :: vpl(3)
 complex(8), intent(inout) :: dynp(3*natmtot,3*natmtot)
 ! local variables
-integer iv(3),isym,lspl,i,j,n
+integer isym,lspl,i,j,n
 real(8) v1(3),v2(3),s(3,3),t1
 ! automatic arrays
 complex(8) dyns(3*natmtot,3*natmtot)
 ! map input vector to first Brillouin zone
 v1(:)=vpl(:)
-call vecfbz(epslat,bvec,v1,iv)
+call vecfbz(epslat,bvec,v1)
 n=0
 dyns(:,:)=0.d0
 ! use the symmetries which leave vpl invariant
@@ -24,7 +24,7 @@ do isym=1,nsymcrys
   lspl=lsplsymc(isym)
   s(:,:)=dble(symlat(:,:,lspl))
   call r3mtv(s,v1,v2)
-  call vecfbz(epslat,bvec,v2,iv)
+  call vecfbz(epslat,bvec,v2)
   t1=abs(v1(1)-v2(1))+abs(v1(2)-v2(2))+abs(v1(3)-v2(3))
   if (t1.lt.epslat) then
     call dynsymapp(isym,v1,dynp,dyns)

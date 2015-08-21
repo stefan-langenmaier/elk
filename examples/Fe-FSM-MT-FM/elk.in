@@ -12,9 +12,6 @@ fixspin
 mommtfix
  1 1   0.0 0.0 1.0     : ia, is, mommtfix 
 
-autormt
- .true.
-
 lmaxapw
  10
 

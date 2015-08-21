@@ -12,12 +12,13 @@ contains
 !BOP
 ! !ROUTINE: xcifc
 ! !INTERFACE:
-subroutine xcifc(xctype,n,rho,rhoup,rhodn,grho,gup,gdn,g2rho,g2up,g2dn,g3rho, &
- g3up,g3dn,grho2,gup2,gdn2,gupdn,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2, &
- dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
+subroutine xcifc(xctype,n,c_tb09,rho,rhoup,rhodn,grho,gup,gdn,g2rho,g2up,g2dn, &
+ g3rho,g3up,g3dn,grho2,gup2,gdn2,gupdn,tau,tauup,taudn,ex,ec,vx,vc,vxup,vxdn, &
+ vcup,vcdn,dxdg2,dxdgu2,dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
 ! !INPUT/OUTPUT PARAMETERS:
 !   xctype : type of exchange-correlation functional (in,integer(3))
 !   n      : number of density points (in,integer)
+!   c_tb09 : Tran-Blaha '09 constant c (in,real,optional)
 !   rho    : spin-unpolarised charge density (in,real(n),optional)
 !   rhoup  : spin-up charge density (in,real(n),optional)
 !   rhodn  : spin-down charge density (in,real(n),optional)
@@ -34,6 +35,9 @@ subroutine xcifc(xctype,n,rho,rhoup,rhodn,grho,gup,gdn,g2rho,g2up,g2dn,g3rho, &
 !   gup2   : |grad rhoup|^2 (in,real(n),optional)
 !   gdn2   : |grad rhodn|^2 (in,real(n),optional)
 !   gupdn  : (grad rhoup).(grad rhodn) (in,real(n),optional)
+!   tau    : kinetic energy density (in,real(n),optional)
+!   tauup  : spin-up kinetic energy density (in,real(n),optional)
+!   taudn  : spin-down kinetic energy density (in,real(n),optional)
 !   ex     : exchange energy density (out,real(n),optional)
 !   ec     : correlation energy density (out,real(n),optional)
 !   vx     : spin-unpolarised exchange potential (out,real(n),optional)
@@ -51,7 +55,18 @@ subroutine xcifc(xctype,n,rho,rhoup,rhodn,grho,gup,gdn,g2rho,g2up,g2dn,g3rho, &
 !   dcdgd2 : de_c/d(|grad rhodn|^2) (out,real(n),optional)
 !   dcdgud : de_c/d((grad rhoup).(grad rhodn)) (out,real(n),optional)
 ! !DESCRIPTION:
-!   Interface to the exchange-correlation routines.
+!   Interface to the exchange-correlation routines. In the most general case
+!   (meta-GGA), the exchange-correlation energy is given by
+!   $$ E_{xc}[\rho^{\uparrow},\rho^{\downarrow}]=\int d^3r\,
+!    \rho({\bf r})\,\varepsilon_{xc}(\rho^{\uparrow},\rho^{\downarrow},
+!    |\nabla\rho|,|\nabla\rho^{\uparrow}|,|\nabla\rho^{\downarrow}|,
+!    \nabla^2\rho^{\uparrow},\nabla^2\rho^{\downarrow},\tau), $$
+!   where $\rho({\bf r})=\rho^{\uparrow}({\bf r})+\rho^{\downarrow}({\bf r})$ is
+!   the density;
+!   $$ \tau({\bf r})\equiv\sum_{i\;{\rm occ}}\nabla\psi({\bf r})\cdot
+!   \nabla\psi({\bf r}) $$
+!   is twice the spin-contracted kinetic energy density; and $\varepsilon_{xc}$
+!   is the exchange-correlation energy per electron.
 !
 ! !REVISION HISTORY:
 !   Created October 2002 (JKD)
@@ -62,6 +77,7 @@ implicit none
 integer, intent(in) :: xctype(3)
 integer, intent(in) :: n
 ! optional arguments
+real(8), optional, intent(in) :: c_tb09
 real(8), optional, intent(in) :: rho(n)
 real(8), optional, intent(in) :: rhoup(n)
 real(8), optional, intent(in) :: rhodn(n)
@@ -78,6 +94,9 @@ real(8), optional, intent(in) :: grho2(n)
 real(8), optional, intent(in) :: gup2(n)
 real(8), optional, intent(in) :: gdn2(n)
 real(8), optional, intent(in) :: gupdn(n)
+real(8), optional, intent(in) :: tau(n)
+real(8), optional, intent(in) :: tauup(n)
+real(8), optional, intent(in) :: taudn(n)
 real(8), optional, intent(out) :: ex(n)
 real(8), optional, intent(out) :: ec(n)
 real(8), optional, intent(out) :: vx(n)
@@ -107,18 +126,18 @@ end if
 select case(abs(xctype(1)))
 case(1)
 ! No density-derived exchange-correlation energy or potential
-  if (present(ex)) ex(1:n)=0.d0
-  if (present(ec)) ec(1:n)=0.d0
-  if (present(vx)) vx(1:n)=0.d0
-  if (present(vc)) vc(1:n)=0.d0
-  if (present(vxup)) vxup(1:n)=0.d0
-  if (present(vxdn)) vxdn(1:n)=0.d0
-  if (present(vcup)) vcup(1:n)=0.d0
-  if (present(vcdn)) vcdn(1:n)=0.d0
+  if (present(ex)) ex(:)=0.d0
+  if (present(ec)) ec(:)=0.d0
+  if (present(vx)) vx(:)=0.d0
+  if (present(vc)) vc(:)=0.d0
+  if (present(vxup)) vxup(:)=0.d0
+  if (present(vxdn)) vxdn(:)=0.d0
+  if (present(vcup)) vcup(:)=0.d0
+  if (present(vcdn)) vcdn(:)=0.d0
 case(2)
 ! Perdew-Zunger parameterisation of Ceperley-Alder electron gas
 ! J. Perdew and A. Zunger, Phys. Rev. B 23, 5048 (1981)
-! D.M. Ceperly and B.J. Alder, Phys. Rev. Lett. 45, 566 (1980)
+! D. M. Ceperly and B. J. Alder, Phys. Rev. Lett. 45, 566 (1980)
   if (present(rho).and.present(ex).and.present(ec).and.present(vx) &
    .and.present(vc)) then
     call xc_pzca(n,rho,ex,ec,vx,vc)
@@ -128,7 +147,7 @@ case(2)
 case(3)
 ! Perdew-Wang parameterisation of the spin-polarised Ceperley-Alder electron gas
 ! J. Perdew and Y. Wang, Phys. Rev. B 45, 13244 (1992)
-! D.M. Ceperly and B.J. Alder, Phys. Rev. Lett. 45, 566 (1980)
+! D. M. Ceperly and B. J. Alder, Phys. Rev. Lett. 45, 566 (1980)
   if (present(rhoup).and.present(rhodn).and.present(ex).and.present(ec) &
    .and.present(vxup).and.present(vxdn).and.present(vcup) &
    .and.present(vcdn)) then
@@ -138,7 +157,7 @@ case(3)
    .and.present(vc)) then
 ! divide spin-unpolarised density into up and down
     allocate(ra(n,1))
-    ra(1:n,1)=0.5d0*rho(1:n)
+    ra(:,1)=0.5d0*rho(:)
     call xc_pwca(n,ra(:,1),ra(:,1),ex,ec,vx,vx,vc,vc)
     deallocate(ra)
   else
@@ -151,8 +170,8 @@ case(4)
    .and.present(vc)) then
     call xc_xalpha(n,rho,ex,vx)
 ! set correlation energy and potential to zero
-    ec(1:n)=0.d0
-    vc(1:n)=0.d0
+    ec(:)=0.d0
+    vc(:)=0.d0
   else
     goto 10
   end if
@@ -168,7 +187,7 @@ case(5)
    .and.present(vc)) then
 ! divide spin-unpolarised density into up and down
     allocate(ra(n,1))
-    ra(1:n,1)=0.5d0*rho(1:n)
+    ra(:,1)=0.5d0*rho(:)
     call xc_vbh(n,ra(:,1),ra(:,1),ex,ec,vx,vx,vc,vc)
     deallocate(ra)
   else
@@ -203,10 +222,10 @@ case(20,21,22)
    .and.present(g3rho).and.present(ex).and.present(ec).and.present(vx) &
    .and.present(vc)) then
     allocate(ra(n,6))
-    ra(1:n,1)=0.5d0*rho(1:n)
-    ra(1:n,2)=0.5d0*grho(1:n)
-    ra(1:n,3)=0.5d0*g2rho(1:n)
-    ra(1:n,4)=0.25d0*g3rho(1:n)
+    ra(:,1)=0.5d0*rho(:)
+    ra(:,2)=0.5d0*grho(:)
+    ra(:,3)=0.5d0*g2rho(:)
+    ra(:,4)=0.25d0*g3rho(:)
     call xc_pbe(n,kappa,mu,beta,ra(:,1),ra(:,1),grho,ra(:,2),ra(:,2),ra(:,3), &
      ra(:,3),g3rho,ra(:,4),ra(:,4),ex,ec,vx,ra(:,5),vc,ra(:,6))
     deallocate(ra)
@@ -233,11 +252,21 @@ case(30)
   end if
 case(100)
 ! libxc library functionals
-  if (present(rhoup).and.present(rhodn).and.present(gup2).and.present(gdn2) &
-   .and.present(gupdn).and.present(ex).and.present(ec).and.present(vxup) &
-   .and.present(vxdn).and.present(vcup).and.present(vcdn).and.present(dxdgu2) &
-   .and.present(dxdgd2).and.present(dxdgud).and.present(dcdgu2) &
-   .and.present(dcdgd2).and.present(dcdgd2).and.present(dcdgud)) then
+  if (present(rhoup).and.present(rhodn).and.present(g2up).and.present(g2dn) &
+   .and.present(gup2).and.present(gdn2).and.present(gupdn).and.present(tauup) &
+   .and.present(taudn).and.present(vxup).and.present(vxdn).and.present(vcup) &
+   .and.present(vcdn)) then
+! spin-polarised potential-only meta-GGA
+    call xcifc_libxc(xctype,n,c_tb09=c_tb09,rhoup=rhoup,rhodn=rhodn,g2up=g2up, &
+     g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tauup=tauup,taudn=taudn, &
+     vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
+  else if (present(rhoup).and.present(rhodn).and.present(gup2) &
+   .and.present(gdn2).and.present(gupdn).and.present(ex).and.present(ec) &
+   .and.present(vxup).and.present(vxdn).and.present(vcup).and.present(vcdn) &
+   .and.present(dxdgu2).and.present(dxdgd2).and.present(dxdgud) &
+   .and.present(dcdgu2).and.present(dcdgd2).and.present(dcdgd2) &
+   .and.present(dcdgud)) then
+! spin-polarised GGA
     call xcifc_libxc(xctype,n,rhoup=rhoup,rhodn=rhodn,gup2=gup2,gdn2=gdn2, &
      gupdn=gupdn,ex=ex,ec=ec,vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn, &
      dxdgu2=dxdgu2,dxdgd2=dxdgd2,dxdgud=dxdgud,dcdgu2=dcdgu2,dcdgd2=dcdgd2, &
@@ -245,14 +274,22 @@ case(100)
   else if (present(rhoup).and.present(rhodn).and.present(ex).and.present(ec) &
    .and.present(vxup).and.present(vxdn).and.present(vcup) &
    .and.present(vcdn)) then
+! LSDA
     call xcifc_libxc(xctype,n,rhoup=rhoup,rhodn=rhodn,ex=ex,ec=ec,vxup=vxup, &
      vxdn=vxdn,vcup=vcup,vcdn=vcdn)
+  else if (present(rho).and.present(g2rho).and.present(grho2).and.present(tau) &
+   .and.present(vx).and.present(vc)) then
+! spin-unpolarised potential-only meta-GGA
+    call xcifc_libxc(xctype,n,c_tb09=c_tb09,rho=rho,g2rho=g2rho,grho2=grho2, &
+     tau=tau,vx=vx,vc=vc)
   else if (present(rho).and.present(grho2).and.present(ex).and.present(ec) &
    .and.present(vx).and.present(vc).and.present(dxdg2).and.present(dcdg2)) then
+! spin-unpolarised GGA
     call xcifc_libxc(xctype,n,rho=rho,grho2=grho2,ex=ex,ec=ec,vx=vx,vc=vc, &
      dxdg2=dxdg2,dcdg2=dcdg2)
   else if (present(rho).and.present(ex).and.present(ec).and.present(vx) &
    .and.present(vc)) then
+! LDA
     call xcifc_libxc(xctype,n,rho=rho,ex=ex,ec=ec,vx=vx,vc=vc)
   else
     goto 10
@@ -265,9 +302,9 @@ case default
 end select
 ! set exchange potential to zero for EXX
 if (xctype(1).le.-2) then
-  if (present(vx)) vx(1:n)=0.d0
-  if (present(vxup)) vxup(1:n)=0.d0
-  if (present(vxdn)) vxdn(1:n)=0.d0
+  if (present(vx)) vx(:)=0.d0
+  if (present(vxup)) vxup(:)=0.d0
+  if (present(vxdn)) vxdn(:)=0.d0
 end if
 return
 10 continue

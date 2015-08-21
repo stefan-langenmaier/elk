@@ -32,7 +32,7 @@ integer nr,ir,nn,l,io,jo
 real(8) t1
 ! automatic arrays
 logical done(natmmax)
-real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax)
 real(8) p0(nrmtmax,apwordmax),p1(nrmtmax),p1s(apwordmax)
 real(8) q0(nrmtmax,apwordmax),q1(nrmtmax,apwordmax)
 real(8) hp0(nrmtmax)
@@ -51,7 +51,7 @@ do is=1,nspecies
          spr(:,is),vr,nn,p0(:,io),p1,q0(:,io),q1(:,io))
 ! normalise radial functions
         fr(1:nr)=p0(1:nr,io)**2
-        call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+        call fderiv(-1,nr,spr(:,is),fr,gr)
         t1=1.d0/sqrt(abs(gr(nr)))
         p0(1:nr,io)=t1*p0(1:nr,io)
         p1s(io)=t1*p1(nr)
@@ -60,7 +60,7 @@ do is=1,nspecies
 ! subtract linear combination of previous vectors
         do jo=1,io-1
           fr(1:nr)=p0(1:nr,io)*p0(1:nr,jo)
-          call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+          call fderiv(-1,nr,spr(:,is),fr,gr)
           t1=gr(nr)
           p0(1:nr,io)=p0(1:nr,io)-t1*p0(1:nr,jo)
           p1s(io)=p1s(io)-t1*p1s(jo)
@@ -69,7 +69,7 @@ do is=1,nspecies
         end do
 ! normalise radial functions
         fr(1:nr)=p0(1:nr,io)**2
-        call fderiv(-1,nr,spr(:,is),fr,gr,cf)
+        call fderiv(-1,nr,spr(:,is),fr,gr)
         t1=abs(gr(nr))
         if (t1.lt.1.d-20) then
           write(*,*)

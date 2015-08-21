@@ -22,12 +22,8 @@ complex(8) function gauntyry(l1,l2,l3,m1,m2,m3)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: l1
-integer, intent(in) :: l2
-integer, intent(in) :: l3
-integer, intent(in) :: m1
-integer, intent(in) :: m2
-integer, intent(in) :: m3
+integer, intent(in) :: l1,l2,l3
+integer, intent(in) :: m1,m2,m3
 ! local variables
 ! real constant sqrt(2)/2
 real(8), parameter :: c1=0.7071067811865475244d0

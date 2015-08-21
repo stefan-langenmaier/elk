@@ -19,8 +19,7 @@ integer l,m,lm,nrc,ir
 real(8) t1,t2
 complex(8) zsum1,zsum2
 ! automatic arrays
-real(8) fr1(nrcmtmax),fr2(nrcmtmax)
-real(8) gr(nrcmtmax),cf(4,nrcmtmax)
+real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 !-----------------------------------!
 !     interstitial contribution     !
 !-----------------------------------!
@@ -54,9 +53,9 @@ do is=1,nspecies
       fr1(ir)=dble(zsum1)*t1
       fr2(ir)=aimag(zsum1)*t1
     end do
-    call fderiv(-1,nrc,rcmt(:,is),fr1,gr,cf)
+    call fderiv(-1,nrc,rcmt(:,is),fr1,gr)
     t1=gr(nrc)
-    call fderiv(-1,nrc,rcmt(:,is),fr2,gr,cf)
+    call fderiv(-1,nrc,rcmt(:,is),fr2,gr)
     t2=gr(nrc)
     zrho0=zrho0+(fourpi/omega)*conjg(sfacgp(ias))*cmplx(t1,t2,8)
   end do

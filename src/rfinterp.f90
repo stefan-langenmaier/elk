@@ -38,7 +38,7 @@ real(8), intent(out) :: fo(ldo,no)
 integer i,j,k,l
 real(8) x,dx
 ! automatic arrays
-real(8) cf(4,ni)
+real(8) cf(3,ni)
 if (ni.le.0) then
   write(*,*)
   write(*,'("Error(rfinterp): invalid number of input points : ",I8)') ni

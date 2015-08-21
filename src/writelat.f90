@@ -47,7 +47,7 @@ write(50,'(3G18.10)') binv(1,:)
 write(50,'(3G18.10)') binv(2,:)
 write(50,'(3G18.10)') binv(3,:)
 write(50,*)
-write(50,'("Brillouin zone volume : ",G18.10)') (twopi**3)/omega
+write(50,'("Brillouin zone volume : ",G18.10)') omegabz
 close(50)
 return
 end subroutine

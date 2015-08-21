@@ -13,11 +13,9 @@ real(8), intent(in) :: sr2(3,3)
 real(8), intent(in) :: st2(3)
 real(8), intent(out) :: sr3(3,3)
 real(8), intent(out) :: st3(3)
-! local variables
-integer id(3)
 call r3mv(sr1,st2,st3)
 st3(:)=st3(:)+st1(:)
-call r3frac(eps,st3,id)
+call r3frac(eps,st3)
 call r3mm(sr1,sr2,sr3)
 return
 end subroutine

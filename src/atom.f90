@@ -71,7 +71,7 @@ real(8), parameter :: eps=1.d-6
 real(8) sum,dv,dvp,ze,beta,t1
 ! allocatable arrays
 real(8), allocatable :: vn(:),vh(:),ex(:),ec(:),vx(:),vc(:),vrp(:)
-real(8), allocatable :: ri(:),fr1(:),fr2(:),gr1(:),gr2(:),cf(:,:)
+real(8), allocatable :: ri(:),fr1(:),fr2(:),gr1(:),gr2(:)
 real(8), allocatable :: grho(:),g2rho(:),g3rho(:)
 if (nst.le.0) then
   write(*,*)
@@ -93,7 +93,7 @@ if (nr.lt.np) then
 end if
 ! allocate local arrays
 allocate(vn(nr),vh(nr),ex(nr),ec(nr),vx(nr),vc(nr),vrp(nr))
-allocate(ri(nr),fr1(nr),fr2(nr),gr1(nr),gr2(nr),cf(4,nr))
+allocate(ri(nr),fr1(nr),fr2(nr),gr1(nr),gr2(nr))
 if (xcgrad.eq.1) then
   allocate(grho(nr),g2rho(nr),g3rho(nr))
 end if
@@ -141,8 +141,8 @@ do iscl=1,maxscl
     fr2(ir)=sum*ri(ir)
     rho(ir)=(1.d0/fourpi)*sum*ri(ir)**2
   end do
-  call fderiv(-1,nr,r,fr1,gr1,cf)
-  call fderiv(-1,nr,r,fr2,gr2,cf)
+  call fderiv(-1,nr,r,fr1,gr1)
+  call fderiv(-1,nr,r,fr2,gr2)
 ! find the Hartree potential
   t1=gr2(nr)
   do ir=1,nr
@@ -156,9 +156,9 @@ do iscl=1,maxscl
   if (xcgrad.eq.1) then
 ! GGA functional
 ! |grad rho|
-    call fderiv(1,nr,r,rho,grho,cf)
+    call fderiv(1,nr,r,rho,grho)
 ! grad^2 rho
-    call fderiv(2,nr,r,rho,g2rho,cf)
+    call fderiv(2,nr,r,rho,g2rho)
     do ir=1,nr
       g2rho(ir)=g2rho(ir)+2.d0*ri(ir)*grho(ir)
     end do
@@ -201,7 +201,7 @@ write(*,*)
 write(*,'("Warning(atom): maximum iterations exceeded")')
 10 continue
 deallocate(vn,vh,ex,ec,vx,vc,vrp)
-deallocate(ri,fr1,fr2,gr1,gr2,cf)
+deallocate(ri,fr1,fr2,gr1,gr2)
 if (xcgrad.eq.1) deallocate(grho,g2rho,g3rho)
 return
 end subroutine

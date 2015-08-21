@@ -15,7 +15,7 @@ use modmain
 !   $\nabla\rho^{\downarrow}$, $(\nabla\rho^{\uparrow})^2$,
 !   $(\nabla\rho^{\downarrow})^2$ and
 !   $\nabla\rho^{\uparrow}\cdot\nabla\rho^{\downarrow}$. These are used for GGA
-!   functionals of type 2. See {\tt ggamt\_sp\_2a} for full details.
+!   functionals of type 2 and meta-GGA. See {\tt ggamt\_sp\_2a} for details.
 !
 ! !REVISION HISTORY:
 !   Created November 2009 (JKD and TMcQ)
@@ -35,10 +35,8 @@ real(8), intent(out) :: gupdn(ngrtot)
 ! local variables
 integer ig,ifg,i
 ! allocatable arrays
-complex(8), allocatable :: zfft1(:)
-complex(8), allocatable :: zfft2(:)
-allocate(zfft1(ngrtot))
-allocate(zfft2(ngrtot))
+complex(8), allocatable :: zfft1(:),zfft2(:)
+allocate(zfft1(ngrtot),zfft2(ngrtot))
 !----------------!
 !     rho up     !
 !----------------!
@@ -90,9 +88,7 @@ end do
 ! (grad rhodn)^2
 gdn2(:)=gvdn(:,1)**2+gvdn(:,2)**2+gvdn(:,3)**2
 ! (grad rhoup).(grad rhodn)
-gupdn(:)=gvup(:,1)*gvdn(:,1) &
-        +gvup(:,2)*gvdn(:,2) &
-        +gvup(:,3)*gvdn(:,3)
+gupdn(:)=gvup(:,1)*gvdn(:,1)+gvup(:,2)*gvdn(:,2)+gvup(:,3)*gvdn(:,3)
 deallocate(zfft1,zfft2)
 return
 end subroutine

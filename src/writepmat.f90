@@ -24,6 +24,8 @@ integer ik,ispn,recl
 complex(8), allocatable :: evecfv(:,:,:)
 complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
+complex(8), allocatable :: wfmt(:,:,:,:,:)
+complex(8), allocatable :: wfir(:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
 ! initialise universal variables
 call init0
@@ -50,7 +52,7 @@ deallocate(pmat)
 open(85,file='PMAT.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  recl=recl)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv,apwalm,pmat,ispn)
+!$OMP PRIVATE(evecfv,evecsv,apwalm,wfmt,wfir,pmat,ispn)
 !$OMP DO
 do ik=1,nkpt
 ! distribute among MPI processes
@@ -58,6 +60,8 @@ do ik=1,nkpt
   allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+  allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+  allocate(wfir(ngkmax,nspinor,nstsv))
   allocate(pmat(3,nstsv,nstsv))
 !$OMP CRITICAL
   write(*,'("Info(writepmat): ",I6," of ",I6," k-points")') ik,nkpt
@@ -70,13 +74,16 @@ do ik=1,nkpt
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
      sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
+! generate the second-variational wavefunctions
+  call genwfsv(.true.,.true.,.false.,ngk(:,ik),igkig(:,:,ik),evalsv,apwalm, &
+   evecfv,evecsv,wfmt,ngkmax,wfir)
 ! calculate the momentum matrix elements
-  call genpmat(ngk(:,ik),igkig(:,:,ik),vgkc(:,:,:,ik),apwalm,evecfv,evecsv,pmat)
+  call genpmat(ngk(:,ik),igkig(:,:,ik),vgkc(:,:,:,ik),wfmt,wfir,pmat)
 ! write the matrix elements to direct-access file
 !$OMP CRITICAL
   write(85,rec=ik) vkl(:,ik),nstsv,pmat
 !$OMP END CRITICAL
-  deallocate(evecfv,evecsv,apwalm,pmat)
+  deallocate(evecfv,evecsv,apwalm,wfmt,wfir,pmat)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -88,6 +95,7 @@ if (mp_mpi) then
   write(*,'("Info(writepmat):")')
   write(*,'(" momentum matrix elements written to file PMAT.OUT")')
 end if
+return
 end subroutine
 !EOC
 

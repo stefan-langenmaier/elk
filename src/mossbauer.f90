@@ -11,15 +11,13 @@ subroutine mossbauer
 use modmain
 ! !DESCRIPTION:
 !   Computes the contact charge density and contact magnetic hyperfine field for
-!   each atom and outputs the data to the file {\tt MOSSBAUER.OUT}. The nuclear
-!   radius used for the contact density is approximated by the empirical formula
-!   $R_{\rm N}=1.25 Z^{1/3}$ fm, where $Z$ is the atomic number. The Thomson
+!   each atom and outputs the data to the file {\tt MOSSBAUER.OUT}. The Thomson
 !   radius, $R_{\rm T}=Z/c^2$, is used for determining the contact moment $m_c$,
 !   the relation of which to field strength is via Fermi's formula
 !   $$ B_c=\frac{8\pi}{3}\mu_B m_c, $$
 !   where the orbital and dipolar contributions are neglected. See
 !   S. Bl\"{u}gel, H. Akai, R. Zeller, and P. H. Dederichs, {\it Phys. Rev. B}
-!   {\bf 35}, 3271 (1987).
+!   {\bf 35}, 3271 (1987). See also {\tt radnucl}.
 !
 ! !REVISION HISTORY:
 !   Created May 2004 (JKD)
@@ -29,26 +27,23 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer ir,nrn,nrt
-! nuclear radius constant in Bohr
-real(8), parameter :: r0=1.25d-15/au_si
 real(8) rn,rt,vn,vt
 real(8) rho0,mc,bc,t1
 ! allocatable arrays
-real(8), allocatable :: fr(:)
-real(8), allocatable :: gr(:)
-real(8), allocatable :: cf(:,:)
+real(8), allocatable :: fr(:),gr(:)
+! external functions
+real(8) radnucl
+external radnucl
 ! initialise universal variables
 call init0
 ! read density and potentials from file
 call readstate
 ! allocate local arrays
-allocate(fr(nrmtmax))
-allocate(gr(nrmtmax))
-allocate(cf(4,nrmtmax))
+allocate(fr(nrmtmax),gr(nrmtmax))
 open(50,file='MOSSBAUER.OUT',action='WRITE',form='FORMATTED')
 do is=1,nspecies
 ! approximate nuclear radius and volume
-  rn=r0*abs(spzn(is))**(1.d0/3.d0)
+  rn=radnucl(spzn(is))
   do ir=1,nrmt(is)-1
     if (spr(ir,is).gt.rn) goto 10
   end do
@@ -71,9 +66,9 @@ do is=1,nspecies
 !     contact charge density     !
 !--------------------------------!
     do ir=1,nrn
-      fr(ir)=(fourpi*spr(ir,is)**2)*y00*rhomt(1,ir,ias)
+      fr(ir)=(fourpi*spr(ir,is)**2)*rhomt(1,ir,ias)*y00
     end do
-    call fderiv(-1,nrn,spr(:,is),fr,gr,cf)
+    call fderiv(-1,nrn,spr(:,is),fr,gr)
     rho0=gr(nrn)/vn
     write(50,*)
     write(50,*)
@@ -81,6 +76,9 @@ do is=1,nspecies
     write(50,*)
     write(50,'(" approximate nuclear radius : ",G18.10)') rn
     write(50,'(" number of mesh points to nuclear radius : ",I6)') nrn
+    write(50,'(" density at nuclear center      : ",G18.10)') rhomt(1,1,ias)*y00
+    write(50,'(" density at nuclear surface     : ",G18.10)') &
+     rhomt(1,nrn,ias)*y00
     write(50,'(" average contact charge density : ",G18.10)') rho0
 !------------------------------------------!
 !     contact magnetic hyperfine field     !
@@ -98,7 +96,7 @@ do is=1,nspecies
         end if
         fr(ir)=(fourpi*spr(ir,is)**2)*y00*t1
       end do
-      call fderiv(-1,nrt,spr(:,is),fr,gr,cf)
+      call fderiv(-1,nrt,spr(:,is),fr,gr)
       mc=gr(nrt)/vt
       write(50,*)
       write(50,'(" Thomson radius : ",G18.10)') rt
@@ -114,7 +112,7 @@ close(50)
 write(*,*)
 write(*,'("Info(mossbauer):")')
 write(*,'(" Mossbauer parameters written to MOSSBAUER.OUT")')
-deallocate(fr,gr,cf)
+deallocate(fr,gr)
 return
 end subroutine
 !EOC

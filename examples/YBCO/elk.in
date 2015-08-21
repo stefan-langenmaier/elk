@@ -22,10 +22,6 @@ avec
 sppath
   '../../species/'
 
-! automatic determination of the muffin-tin radii is used
-autormt
- .true.
-
 atoms
   4                                     : nspecies
   'Y.in'                                : spfname

@@ -12,7 +12,10 @@ use modmain
 use modldapu
 use modrdm
 use modphonon
+use modmpi
 use modtest
+use modrandom
+use modscdft
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
 !   values for the input parameters.
@@ -24,9 +27,9 @@ use modtest
 implicit none
 ! local variables
 integer is,js,ia,ias
-integer i,l,k,iv,iostat
+integer i,j,k,l,iv,iostat
 real(8) sc,sc1,sc2,sc3
-real(8) solscf,v(3)
+real(8) solscf,v(3),t1
 character(256) block,str
 
 !------------------------!
@@ -48,7 +51,7 @@ tshift=.true.
 ngridk(:)=1
 vkloff(:)=0.d0
 autokpt=.false.
-radkpt=40.0
+radkpt=8.d0
 reducek=1
 ngridq(:)=1
 reduceq=1
@@ -138,9 +141,7 @@ fixspin=0
 momfix(:)=0.d0
 mommtfix(:,:,:)=0.d0
 taufsm=0.01d0
-autormt=.false.
-rmtapm(1)=0.25d0
-rmtapm(2)=0.95d0
+rmtdelta=0.05d0
 isgkmax=-1
 nosym=.false.
 deltaph=0.03d0
@@ -166,8 +167,6 @@ ssdph=.true.
 vqlss(:)=0.d0
 nwrite=0
 tevecsv=.false.
-
-! LDA+U defaults
 ldapu=0
 inptypelu=1
 llu(:)=-1
@@ -179,8 +178,6 @@ ulufix(:)=0.d0
 lambdalu0(:)=0.d0
 tmomlu=.false.
 readalu=.false.
-
-! reduced density matrix functional theory (RMDFT) defaults
 rdmxctype=2
 rdmmaxscl=2
 maxitn=200
@@ -190,7 +187,6 @@ taurdmc=0.25d0
 rdmalpha=0.565d0
 rdmbeta=0.25d0
 rdmtemp=0.d0
-
 reducebf=1.d0
 ptnucl=.true.
 tseqr=.true.
@@ -219,8 +215,8 @@ ecvcut=-3.5d0
 esccut=-0.4d0
 gmaxrpa=3.d0
 ntemp=20
-
-! BSE defaults
+trimvg=.false.
+taubdg=0.1d0
 nvbse0=2
 ncbse0=3
 nvxbse=0
@@ -228,11 +224,13 @@ ncxbse=0
 bsefull=.false.
 hxbse=.true.
 hdbse=.true.
-
-! TDDFT defaults
 fxctype=1
 fxclrc(1)=0.d0
 fxclrc(2)=0.d0
+rndatposc=0.d0
+rndbfcmt=0.d0
+rndavec=0.d0
+ewbdg=0.5d0
 
 !--------------------------!
 !     read from elk.in     !
@@ -276,7 +274,9 @@ case('tasks')
   write(*,*)
   stop
 case('species')
-  call genspecies(50)
+  if (mp_mpi) call genspecies(50)
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
 case('avec')
   read(50,*,err=20) avec(:,1)
   read(50,*,err=20) avec(:,2)
@@ -753,18 +753,14 @@ case('taufsm')
     stop
   end if
 case('autormt')
-  read(50,*,err=20) autormt
-case('rmtapm')
-  read(50,*,err=20) rmtapm(:)
-  if (rmtapm(1).lt.0.d0) then
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''autormt'' is no longer used")')
+case('rmtdelta')
+  read(50,*,err=20) rmtdelta
+  if (rmtdelta.lt.0.d0) then
     write(*,*)
-    write(*,'("Error(readinput): rmtapm(1) < 0 : ",G18.10)') rmtapm(1)
-    write(*,*)
-    stop
-  end if
-  if ((rmtapm(2).le.0.d0).or.(rmtapm(2).gt.1.d0)) then
-    write(*,*)
-    write(*,'("Error(readinput): rmtapm(2) not in (0,1] : ",G18.10)') rmtapm(2)
+    write(*,'("Error(readinput): rmtdelta < 0 : ",G18.10)') rmtdelta
     write(*,*)
     stop
   end if
@@ -1148,6 +1144,28 @@ case('ntemp')
     write(*,*)
     stop
   end if
+case('trimvg')
+  read(50,*,err=20) trimvg
+case('rndseed')
+  read(50,*,err=20) i
+! set random number generator state with seed
+  rndstate(0)=abs(i)
+case('taubdg')
+  read(50,*,err=20) taubdg
+case('rndatposc')
+  read(50,*,err=20) rndatposc
+case('rndbfcmt')
+  read(50,*,err=20) rndbfcmt
+case('rndavec')
+  read(50,*,err=20) rndavec
+case('ewbdg')
+  read(50,*,err=20) ewbdg
+  if (ewbdg.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): ewbdg <= 0 : ",G18.10)') ewbdg
+    write(*,*)
+    stop
+  end if
 case('')
   goto 10
 case default
@@ -1173,6 +1191,15 @@ avec(:,1)=sc1*avec(:,1)
 avec(:,2)=sc2*avec(:,2)
 avec(:,3)=sc3*avec(:,3)
 avec(:,:)=sc*avec(:,:)
+! randomise lattice vectors if required
+if (rndavec.gt.0.d0) then
+  do i=1,3
+    do j=1,3
+      t1=rndavec*(randomu()-0.5d0)
+      avec(i,j)=avec(i,j)+t1
+    end do
+  end do
+end if
 ! case of isolated molecule
 if (molecule) then
 ! convert atomic positions from Cartesian to lattice coordinates
@@ -1181,6 +1208,31 @@ if (molecule) then
     do ia=1,natoms(is)
       call r3mv(ainv,atposl(:,ia,is),v)
       atposl(:,ia,is)=v(:)
+    end do
+  end do
+end if
+! randomise atomic positions if required
+if (rndatposc.gt.0.d0) then
+  call r3minv(avec,ainv)
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      call r3mv(avec,atposl(:,ia,is),v)
+      do i=1,3
+        t1=rndatposc*(randomu()-0.5d0)
+        v(i)=v(i)+t1
+      end do
+      call r3mv(ainv,v,atposl(:,ia,is))
+    end do
+  end do
+end if
+! randomise the muffin-tin magnetic fields if required
+if (rndbfcmt.gt.0.d0) then
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      do i=1,3
+        t1=rndbfcmt*(randomu()-0.5d0)
+        bfcmt0(i,ia,is)=bfcmt0(i,ia,is)+t1
+      end do
     end do
   end do
 end if
