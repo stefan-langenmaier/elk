@@ -49,7 +49,7 @@ nri=nrmtinr(is)
 ! convert dxdgu2 to spherical harmonics
 call rfsht(nr,nri,1,dxdgu2,1,rfmt1)
 ! compute grad dxdgu2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdgu2).(grad rhoup) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
@@ -61,7 +61,7 @@ vxup(:,1:nr)=vxup(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdgu2(:,1:nr)*g2up(:,1:nr)) &
 ! convert dxdgd2 to spherical harmonics
 call rfsht(nr,nri,1,dxdgd2,1,rfmt1)
 ! compute grad dxdgd2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdgd2).(grad rhodn) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
@@ -73,7 +73,7 @@ vxdn(:,1:nr)=vxdn(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdgd2(:,1:nr)*g2dn(:,1:nr)) &
 ! convert dxdgud to spherical harmonics
 call rfsht(nr,nri,1,dxdgud,1,rfmt1)
 ! compute grad dxdgud
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdgud).(grad rhodn) and (grad dxdgud).(grad rhoup)
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)
@@ -86,7 +86,7 @@ end do
 ! convert dcdgu2 to spherical harmonics
 call rfsht(nr,nri,1,dcdgu2,1,rfmt1)
 ! compute grad dcdgu2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdgu2).(grad rhoup) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
@@ -98,7 +98,7 @@ vcup(:,1:nr)=vcup(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dcdgu2(:,1:nr)*g2up(:,1:nr)) &
 ! convert dcdgd2 to spherical harmonics
 call rfsht(nr,nri,1,dcdgd2,1,rfmt1)
 ! compute grad dcdgd2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdgd2).(grad rhodn) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
@@ -110,7 +110,7 @@ vcdn(:,1:nr)=vcdn(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dcdgd2(:,1:nr)*g2dn(:,1:nr)) &
 ! convert dcdgud to spherical harmonics
 call rfsht(nr,nri,1,dcdgud,1,rfmt1)
 ! compute grad dcdgud
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdgud).(grad rhodn) and (grad dcdgud).(grad rhoup)
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)

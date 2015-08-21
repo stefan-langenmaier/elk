@@ -22,9 +22,7 @@ subroutine fsmooth(m,n,ld,f)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: m
-integer, intent(in) :: n
-integer, intent(in) :: ld
+integer, intent(in) :: m,n,ld
 real(8), intent(inout) :: f(ld,n)
 ! local variables
 integer i,j

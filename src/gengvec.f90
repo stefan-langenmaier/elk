@@ -78,7 +78,7 @@ do i1=intgv(1,1),intgv(2,1)
 end do
 ! sort by vector length
 call sortidx(ngtot,gc0,idx)
-! re-order arrays
+! reorder arrays
 do ig=1,ngtot
   jg=idx(ig)
   ivg(:,ig)=ivg0(:,jg)

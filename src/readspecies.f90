@@ -25,25 +25,25 @@ do is=1,nspecies
   read(50,*) spname(is)
   read(50,*) spzn(is)
   read(50,*) spmass(is)
-  read(50,*) sprmin(is),rmt(is),sprmax(is),nrmt(is)
-  if (sprmin(is).le.0.d0) then
+  read(50,*) rminsp(is),rmt(is),rmaxsp(is),nrmt(is)
+  if (rminsp(is).le.0.d0) then
     write(*,*)
-    write(*,'("Error(readspecies): sprmin <= 0 : ",G18.10)') sprmin(is)
+    write(*,'("Error(readspecies): rminsp <= 0 : ",G18.10)') rminsp(is)
     write(*,'(" for species ",I4)') is
     write(*,*)
     stop
   end if
-  if (rmt(is).le.sprmin(is)) then
+  if (rmt(is).le.rminsp(is)) then
     write(*,*)
-    write(*,'("Error(readspecies): rmt <= sprmin : ",2G18.10)') rmt(is), &
-     sprmin(is)
+    write(*,'("Error(readspecies): rmt <= rminsp : ",2G18.10)') rmt(is), &
+     rminsp(is)
     write(*,'(" for species ",I4)') is
     write(*,*)
     stop
   end if
-  if (sprmax(is).lt.rmt(is)) then
+  if (rmaxsp(is).lt.rmt(is)) then
     write(*,*)
-    write(*,'("Error(readspecies): sprmax < rmt : ",2G18.10)') sprmax(is), &
+    write(*,'("Error(readspecies): rmaxsp < rmt : ",2G18.10)') rmaxsp(is), &
      rmt(is)
     write(*,*)
     stop
@@ -56,46 +56,46 @@ do is=1,nspecies
     stop
   end if
 ! multiply nrmt by the scale factor
-  nrmt(is)=nrmt(is)*nrmtscf
+  nrmt(is)=nint(nrmt(is)*nrmtscf)
 ! reduce the minimum radial mesh point by the same factor
-  sprmin(is)=sprmin(is)/dble(nrmtscf)
-  read(50,*) spnst(is)
-  if ((spnst(is).le.0).or.(spnst(is).gt.maxspst)) then
+  rminsp(is)=rminsp(is)/nrmtscf
+  read(50,*) nstsp(is)
+  if ((nstsp(is).le.0).or.(nstsp(is).gt.maxstsp)) then
     write(*,*)
-    write(*,'("Error(readspecies): spnst out of range : ",I8)') spnst(is)
+    write(*,'("Error(readspecies): nstsp out of range : ",I8)') nstsp(is)
     write(*,'(" for species ",I4)') is
     write(*,*)
     stop
   end if
-  do ist=1,spnst(is)
-    read(50,*) spn(ist,is),spl(ist,is),spk(ist,is),spocc(ist,is),spcore(ist,is)
-    if (spn(ist,is).lt.1) then
+  do ist=1,nstsp(is)
+    read(50,*) nsp(ist,is),lsp(ist,is),ksp(ist,is),occsp(ist,is),spcore(ist,is)
+    if (nsp(ist,is).lt.1) then
       write(*,*)
-      write(*,'("Error(readspecies): spn < 1 : ",I8)') spn(ist,is)
+      write(*,'("Error(readspecies): nsp < 1 : ",I8)') nsp(ist,is)
       write(*,'(" for species ",I4)') is
       write(*,'(" and state ",I4)') ist
       write(*,*)
       stop
     end if
-    if (spl(ist,is).lt.0) then
+    if (lsp(ist,is).lt.0) then
       write(*,*)
-      write(*,'("Error(readspecies): spl < 0 : ",I8)') spl(ist,is)
+      write(*,'("Error(readspecies): lsp < 0 : ",I8)') lsp(ist,is)
       write(*,'(" for species ",I4)') is
       write(*,'(" and state ",I4)') ist
       write(*,*)
       stop
     end if
-    if (spk(ist,is).lt.1) then
+    if (ksp(ist,is).lt.1) then
       write(*,*)
-      write(*,'("Error(readspecies): spk < 1 : ",I8)') spk(ist,is)
+      write(*,'("Error(readspecies): ksp < 1 : ",I8)') ksp(ist,is)
       write(*,'(" for species ",I4)') is
       write(*,'(" and state ",I4)') ist
       write(*,*)
       stop
     end if
-    if (spocc(ist,is).lt.0.d0) then
+    if (occsp(ist,is).lt.0.d0) then
       write(*,*)
-      write(*,'("Error(readspecies): spocc < 0 : ",G18.10)') spocc(ist,is)
+      write(*,'("Error(readspecies): occsp < 0 : ",G18.10)') occsp(ist,is)
       write(*,'(" for species ",I4)') is
       write(*,'(" and state ",I4)') ist
       write(*,*)
@@ -194,11 +194,11 @@ do is=1,nspecies
       e0min=min(e0min,apwe0(io,lx,is))
     end do
   end do
-! add excess APW functions
-  if (nxapwlo.gt.0) then
+! add excess order to APW functions if required
+  if (nxoapwlo.gt.0) then
     do l=0,lmaxapw
       jo=apword(l,is)
-      ko=jo+nxapwlo
+      ko=jo+nxoapwlo
       if (ko.gt.maxapword) ko=maxapword
       i=0
       do io=jo+1,ko
@@ -275,7 +275,36 @@ do is=1,nspecies
       end if
       e0min=min(e0min,lorbe0(io,ilo,is))
     end do
-    if (nxapwlo.gt.0) then
+  end do
+! add excess local-orbitals if required
+  if (nxlo.gt.0) then
+    lx=-1
+    do ilo=1,nlorb(is)
+      do io=1,lorbord(ilo,is)
+        if (lorbe0(io,ilo,is).lt.0.d0) goto 10
+      end do
+      if (lorbl(ilo,is).gt.lx) lx=lorbl(ilo,is)
+10 continue
+    end do
+    ilo=nlorb(is)
+    do i=1,nxlo
+      if (ilo.eq.maxlorb) exit
+      l=lx+i
+      if (l.gt.lmaxmat) exit
+      ilo=ilo+1
+      lorbl(ilo,is)=l
+      lorbord(ilo,is)=apword(l,is)+1
+      do io=1,lorbord(ilo,is)
+        lorbe0(io,ilo,is)=apwe0(1,l,is)
+        lorbdm(io,ilo,is)=io-1
+        lorbve(io,ilo,is)=apwve(1,l,is)
+      end do
+    end do
+    nlorb(is)=ilo
+  end if
+! add excess order to local-orbitals if required
+  if (nxoapwlo.gt.0) then
+    do ilo=1,nlorb(is)
 ! find the maximum energy derivative
       jo=1
       j=lorbdm(jo,ilo,is)
@@ -286,8 +315,7 @@ do is=1,nspecies
           j=i
         end if
       end do
-! add excess local-orbitals
-      ko=lorbord(ilo,is)+nxapwlo
+      ko=lorbord(ilo,is)+nxoapwlo
       if (ko.gt.maxlorbord) ko=maxlorbord
       i=0
       do io=lorbord(ilo,is)+1,ko
@@ -297,8 +325,8 @@ do is=1,nspecies
         lorbve(io,ilo,is)=lorbve(jo,ilo,is)
       end do
       lorbord(ilo,is)=ko
-    end if
-  end do
+    end do
+  end if
   close(50)
 end do
 ! add conduction state local-orbitals if required

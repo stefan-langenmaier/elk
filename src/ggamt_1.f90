@@ -32,17 +32,17 @@ is=idxis(ias)
 nr=nrmt(is)
 nri=nrmtinr(is)
 ! |grad rho|
-call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,gvrho(:,:,i))
 end do
 grho(:,1:nr)=sqrt(gvrho(:,1:nr,1)**2+gvrho(:,1:nr,2)**2+gvrho(:,1:nr,3)**2)
 ! grad^2 rho in spherical coordinates
-call grad2rfmt(nr,nri,spr(:,is),rhomt(:,:,ias),rfmt)
+call grad2rfmt(nr,nri,rsp(:,is),rhomt(:,:,ias),rfmt)
 call rbsht(nr,nri,1,rfmt,1,g2rho)
 ! (grad rho).(grad |grad rho|)
 call rfsht(nr,nri,1,grho,1,rfmt)
-call gradrfmt(nr,nri,spr(:,is),rfmt,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt,nrmtmax,grfmt)
 g3rho(:,1:nr)=0.d0
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt)

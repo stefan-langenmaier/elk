@@ -25,6 +25,8 @@ allocate(dmat2(lmmaxvr,nspinor,lmmaxvr,nspinor,nstsv))
 allocate(zlflm(lmmaxvr,3))
 ! read density and potentials from file
 call readstate
+! read Fermi energy from file
+call readfermi
 ! find the new linearisation energies
 call linengy
 ! generate the APW radial functions

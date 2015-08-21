@@ -278,17 +278,17 @@ allocate(lofr(nrmtmax,2,nlomax,natmtot))
 if (dftu.ne.0) then
 ! allocate energy arrays to calculate Slater integrals with Yukawa potential
   if (allocated(fdue)) deallocate(fdue)
-  allocate(fdue(maxapword,0:lmaxdm,natmtot))
+  allocate(fdue(0:lmaxdm,natmtot))
 ! allocate radial functions to calculate Slater integrals with Yukawa potential
   if (allocated(fdufr)) deallocate(fdufr)
-  allocate(fdufr(nrmtmax,2,apwordmax,0:lmaxdm,natmtot))
+  allocate(fdufr(nrmtmax,0:lmaxdm,natmtot))
 end if
 
 !---------------------------------------!
 !     eigenvalue equation variables     !
 !---------------------------------------!
 ! total number of empty states (M. Meinert)
-nempty=nint(nempty0*nspinor*max(natmtot,1))
+nempty=nint(nempty0*max(natmtot,1))
 if (nempty.lt.1) nempty=1
 ! number of first-variational states
 nstfv=int(chgval/2.d0)+nempty+1

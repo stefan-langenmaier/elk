@@ -93,6 +93,7 @@ do ik=1,nkpt
   call getevecsv(filext,vkl(:,ik),evecsvt)
   call zgemm('C','N',nstsv,nstsv,nstsv,zone,a,nstsv,evecsvt,nstsv,zzero,c,nstsv)
   call zgemm('N','N',nstsv,nstsv,nstsv,zone,b,nstsv,c,nstsv,zzero,evecsvt,nstsv)
+! write the new eigenvectors to file
   call putevecsv(filext,ik,evecsvt)
   deallocate(w,a,b,c,evecsvt)
 end do

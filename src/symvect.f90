@@ -29,21 +29,21 @@ logical, intent(in) :: tspin
 real(8), intent(inout) :: vc(3,natmtot)
 ! local variables
 integer is,ia,ja,ias,jas
-integer isym,lsp
+integer isym,ls
 real(8) v(3),t1
 ! automatic arrays
 real(8) vs(3,natmtot)
 ! make symmetric average
 vs(:,:)=0.d0
 do isym=1,nsymcrys
-  lsp=lsplsymc(isym)
-  if (tspin) lsp=lspnsymc(isym)
+  ls=lsplsymc(isym)
+  if (tspin) ls=lspnsymc(isym)
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
       ja=ieqatom(ia,is,isym)
       jas=idxas(ja,is)
-      call r3mv(symlatc(:,:,lsp),vc(:,jas),v)
+      call r3mv(symlatc(:,:,ls),vc(:,jas),v)
       vs(:,ias)=vs(:,ias)+v(:)
     end do
   end do

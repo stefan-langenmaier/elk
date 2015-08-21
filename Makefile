@@ -17,3 +17,6 @@ clean:
 test:
 	cd tests; ./tests.sh
 
+vim:
+	cd src; ./vimelk
+

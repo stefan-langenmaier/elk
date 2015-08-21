@@ -136,9 +136,9 @@ do is=1,nspecies
   nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do jst=1,spnst(is)
+    do jst=1,nstsp(is)
       if (spcore(jst,is)) then
-        do m=-spk(jst,is),spk(jst,is)-1
+        do m=-ksp(jst,is),ksp(jst,is)-1
 ! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,jst,m,nrcmtmax,wfcr)
           do ist=1,nst1
@@ -152,7 +152,8 @@ do is=1,nspecies
             call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ias))
 ! calculate the Coulomb potential
             call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ias),zvclmt(:,:,ias))
-            z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt(:,:,ias),zvclmt(:,:,ias))
+            z1=zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),zrhomt(:,:,ias), &
+             zvclmt(:,:,ias))
             ex=ex-occmax*wkpt(ikp)*dble(z1)
           end do
 ! end loop over m

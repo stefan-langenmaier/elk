@@ -6,7 +6,7 @@
 subroutine writetddft
 use modmain
 use modtddft
-use modmpi
+use moddftu
 implicit none
 ! local variables
 integer ias
@@ -14,8 +14,6 @@ real(8) t1
 character(256) fext
 ! allocatable arrays
 real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
-! only the master process writes to file
-if (.not.mp_mpi) goto 10
 ! file extension
 write(fext,'("_TS",I8.8,".OUT")') itimes
 ! delete all files at first time-step
@@ -114,9 +112,19 @@ if (tdmag2d.or.tdmag3d) then
   end if
   deallocate(rvfmt,rvfir)
 end if
+! calculate and write tensor moments
+if (dftu.ne.0) then
+  if (tmwrite) then
+    open(50,file='TMDFTU'//trim(fext),action='WRITE',form='FORMATTED')
+    if (spinorb) then
+      call writetm3du(50)
+    else
+      call writetm2du(50)
+    end if
+    close(50)
+  end if
+end if
 10 continue
-! synchronise MPI processes
-call mpi_barrier(mpi_comm_kpt,ierror)
 return
 end subroutine
 

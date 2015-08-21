@@ -14,7 +14,7 @@ do
     echo " Failed! See test.log and output files"
   else
     echo " Passed"
-    \rm -f *.OUT test.log
+    \rm -f *.OUT test.log fort.* gmon.out
   fi
   cd ..
 done

@@ -78,7 +78,7 @@ do is=1,nspecies
       end if
 ! compute the gradient of the wavefunction
       do ispn=1,nspinor
-        call gradzfmt(nr,nri,spr(:,is),wfmt2(:,:,ispn),nrmtmax,gwfmt)
+        call gradzfmt(nr,nri,rsp(:,is),wfmt2(:,:,ispn),nrmtmax,gwfmt)
 ! convert gradient from spherical harmonics to spherical coordinates
         do i=1,3
           call zbsht(nr,nri,gwfmt(:,:,i),zfmt)

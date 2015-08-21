@@ -43,7 +43,8 @@ do jst=1,nstsv
       call vmtapp(nrc,nrci,vmt(:,:,ias),wfmt(:,:,ias,ispn,jst),wfmt1)
       do ist=1,jst
 ! compute inner product (functions are in spherical coordinates)
-        z1=zfcmtinp(nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,ist),wfmt1)
+        z1=zfcmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),wfmt(:,:,ias,ispn,ist), &
+         wfmt1)
         vmat(ist,jst)=vmat(ist,jst)+z1
       end do
     end do

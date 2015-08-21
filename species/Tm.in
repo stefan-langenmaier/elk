@@ -2,9 +2,9 @@
  'thulium'                                  : spname
   -69.0000                                  : spzn
    307948.2261                              : spmass
-  0.240772E-06    2.8000   52.6285   700    : sprmin, rmt, sprmax, nrmt
-  20                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.240772E-06    2.8000   52.6285   700    : rminsp, rmt, rmaxsp, nrmt
+  20                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

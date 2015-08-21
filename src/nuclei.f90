@@ -19,7 +19,7 @@ do is=1,nspecies
 ! number of radial mesh points to nuclear radius
   nrnucl(is)=1
   do ir=1,nrmt(is)
-    if (spr(ir,is).gt.rnucl(is)) then
+    if (rsp(ir,is).gt.rnucl(is)) then
       nrnucl(is)=ir
       exit
     end if

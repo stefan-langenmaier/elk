@@ -2,9 +2,9 @@
  'lawrencium'                               : spname
   -103.000                                  : spzn
    477596.7830                              : spmass
-  0.197066E-06    3.0000   68.3662   800    : sprmin, rmt, sprmax, nrmt
-  28                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.197066E-06    3.0000   65.5938   800    : rminsp, rmt, rmaxsp, nrmt
+  28                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

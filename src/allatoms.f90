@@ -9,6 +9,7 @@
 subroutine allatoms
 ! !USES:
 use modmain
+use modxcifc
 ! !DESCRIPTION:
 !   Solves the Kohn-Sham-Dirac equations for each atom type in the solid and
 !   finds the self-consistent radial wavefunctions, eigenvalues, charge
@@ -25,25 +26,27 @@ use modmain
 !EOP
 !BOC
 implicit none
-integer xctype_(3),xcgrad_
+logical hybrid_
+integer xcspin_,xcgrad_
 integer is
+real(8) hybridc_
+character(512) xcdescr_
 ! allocatable arrays
 real(8), allocatable :: rwf(:,:,:)
 ! allocate global species charge density and potential arrays
-if (allocated(sprho)) deallocate(sprho)
-allocate(sprho(spnrmax,nspecies))
-if (allocated(spvr)) deallocate(spvr)
-allocate(spvr(spnrmax,nspecies))
-! use LDA (xctype=3) to set up atomic densities
-xctype_(1)=3; xctype_(2:3)=0
-xcgrad_=0
+if (allocated(rhosp)) deallocate(rhosp)
+allocate(rhosp(nrspmax,nspecies))
+if (allocated(vrsp)) deallocate(vrsp)
+allocate(vrsp(nrspmax,nspecies))
+! get the exchange-correlation functional data
+call getxcdata(xctsp,xcdescr_,xcspin_,xcgrad_,hybrid_,hybridc_)
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(rwf)
 !$OMP DO
 do is=1,nspecies
-  allocate(rwf(spnrmax,2,spnstmax))
-  call atom(solsc,ptnucl,spzn(is),spnst(is),spn(:,is),spl(:,is),spk(:,is), &
-   spocc(:,is),xctype_,xcgrad_,spnr(is),spr(:,is),speval(:,is),sprho(:,is), &
-   spvr(:,is),rwf)
+  allocate(rwf(nrspmax,2,nstspmax))
+  call atom(solsc,ptnucl,spzn(is),nstsp(is),nsp(:,is),lsp(:,is),ksp(:,is), &
+   occsp(:,is),xctsp,xcgrad_,nrsp(is),rsp(:,is),evalsp(:,is),rhosp(:,is), &
+   vrsp(:,is),rwf)
   deallocate(rwf)
 end do
 !$OMP END DO

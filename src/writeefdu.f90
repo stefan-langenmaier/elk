@@ -20,18 +20,17 @@ use moddftu
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,i,l,io
+integer is,ia,ias,i,l
 open(50,file='ENGYFDU'//trim(filext),action='WRITE',form='FORMATTED')
 do i=1,ndftu
   is=idftu(1,i)
   l=idftu(2,i)
-  io=1
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     write(50,*)
     write(50,'("Species : ",I4," (",A,"), atom : ",I4)') is,trim(spsymb(is)),ia
     write(50,'(" Radial functions used for Slater parameters :")')
-    write(50,'("  l = ",I2,", order = ",I2," : ",G18.10)') l,io,fdue(io,l,ias)
+    write(50,'("  l = ",I2," : ",G18.10)') l,fdue(l,ias)
   end do
 end do
 close(50)

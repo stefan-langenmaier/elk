@@ -1,3 +1,64 @@
+elk-3.1.12
+-Important: fixed an inaccuracy in the scalar relativistic part of the code
+ which has existed for around 12 years; this may slightly affect calculations of
+ heavy elements; special thanks to Stefaan Cottenier, José A. Flores Livas and
+ Marcin Dulak for the extensive calculations
+-real-time evolution now works with DFT+U (experimental)
+-added 'ramp' vector potential to time evolution code; this can simulate
+ constant and constantly increasing electric fields; see manual for details;
+ see the example Si-ramp
+-lots of optimisations everywhere: code should be noticeably faster
+-José made some changes to the 'highq' and 'vhighq' options
+-fixed bug with non-collinear optimised effective potential (OEP)
+-new task (150) writes out the Kohn-Sham-Dirac eigenvalues of the atomic species
+-SS added two new f_xc kernels: single iteration bootstrap (fxctype=211) and
+ revised bootstrap (RBO) (fxctype=212), see S. Rigamonti, et al., Phys. Rev.
+ Lett. 114, 146402; added two examples: Ne-RBO and LiF-RBO
+-improved the accuracy of the magnetic anisotropy energy (MAE) calculation by
+ rotating the spherical coverings of the spherical harmonic transform; thanks to
+ James Glasbrenner for testing
+-David Ernsting found and fixed a bug in the Compton interpolation routine
+-improved the stability of structural optimisation
+-removed the smoothing option from the exchange-correlation magnetic field
+ source projection routine
+-the number of first-variational states for magnetic systems was twice as large
+ as it needed to be: now fixed
+-improved the vim syntax highlighting generator; run 'make vim' again
+-organised the examples into categories
+-minor bug fixes and improvements
+-note for developers: changed some of the variable names related to atomic
+ species (purely cosmetic)
+
+elk-3.0.18
+-fixed electron-phonon coupling again; thanks to Karel Carva and Elie Moujaes
+ for the careful testing and discussion
+-DFPT phonons now work with MPI
+-SS added the 'single-iteration bootstrap kernel' for linear optics
+ calculations; this is selected with fxctype=211; see the example
+ 'Ar-bootstrap-single'
+-SS fixed a problem with RDMFT which had appeared in recent versions
+-SS made minor changes to the non-linear optics code
+-Important: fixed problem with the option 'cmagz' for forcing spin-orbit
+ calculations to be collinear; this may affect MAE calculations; thanks to
+ Martin Gmitra for finding this and the careful testing
+-Important: fixed a problem with the magnetisation directions selected for MAE
+ calculations
+-reworked the 'ncgga' option for non-collinear GGA calculations; should be much
+ more reliable now
+-several important optimisations; the Hamiltonian matrix setup and density
+ symmetrisation are now faster
+-magnetic anisotropy energy (MAE) calculation now outputs the direction vectors;
+ thanks to Galya Madzharova and Yu-ichiro Matsushita for the suggestion
+-added option 'vhighq' for very high quality calculations;see example 'Os-Delta'
+-'highq' and 'vhighq' options now write out the parameters which are changed
+-increased default 'lmaxmat' from 6 to 7
+-added new option 'nxlo'; this adds extra local-orbitals to the species in order
+ to make the APW functions smoother; this can make calculations, particularly of
+ excited state properties, more accurate
+-syntax highlighting now available for the vim editor; just run 'make vim' and
+ highlighting will be enabled
+
+
 elk-3.0.4
 -real-time propagation for solids now available thanks to the considerable
  efforts of Kevin Krieger over the past three years; see the example

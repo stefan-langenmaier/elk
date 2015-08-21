@@ -2,9 +2,9 @@
  'helium'                                   : spname
   -2.00000                                  : spzn
    7296.297095                              : spmass
-  0.141421E-05    1.4000   24.1776   200    : sprmin, rmt, sprmax, nrmt
-   1                                        : spnst
-   1   0   1   2.00000    F                 : spn, spl, spk, spocc, spcore
+  0.141421E-05    1.4000   25.9145   200    : rminsp, rmt, rmaxsp, nrmt
+   1                                        : nstsp
+   1   0   1   2.00000    F                 : nsp, lsp, ksp, occsp, spcore
    1                                        : apword
     0.1500   0  F                           : apwe0, apwdm, apwve
    0                                        : nlx

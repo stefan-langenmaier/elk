@@ -28,6 +28,8 @@ call init2
 call readstate
 ! generate the core wavefunctions and densities
 call gencore
+! read Fermi energy from file
+call readfermi
 ! find the new linearisation energies
 call linengy
 ! generate the APW radial functions
@@ -52,7 +54,7 @@ call genevfsv
 ! find the occupation numbers
 call occupy
 ! generate the kinetic matrix elements in the first-variational basis
-call genkmat(.true.,.true.)
+call genkmat(.true.,.false.)
 ! open information files (MPI master process only)
 if (mp_mpi) then
   open(60,file='RDM_INFO.OUT',action='WRITE',form='FORMATTED')

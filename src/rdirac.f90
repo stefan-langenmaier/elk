@@ -40,12 +40,16 @@ real(8), intent(inout) :: eval
 real(8), intent(out) :: g0(nr),f0(nr)
 ! local variables
 integer, parameter :: maxit=2000
-integer kpa,it,nn,ir,irm,nnd,nndp
+integer kpa,it,ir,irm
+integer nn,nnd,nndp
 ! energy convergence tolerance
 real(8), parameter :: eps=1.d-12
 real(8) t1,de
 ! automatic arrays
-real(8) g1(nr),f1(nr),fr(nr),gr(nr)
+real(8) g1(nr),f1(nr),fr(nr)
+! external functions
+real(8) fintgt
+external fintgt
 if (k.le.0) then
   write(*,*)
   write(*,'("Error(rdirac): k <= 0 : ",I8)') k
@@ -78,7 +82,7 @@ de=1.d0
 nndp=0
 do it=1,maxit
 ! integrate the Dirac equation
-  call rdiracdme(sol,0,kpa,eval,nr,r,vr,nn,g0,g1,f0,f1)
+  call rdiracint(sol,kpa,eval,nr,r,vr,nn,g0,g1,f0,f1)
 ! check the number of nodes
   nnd=nn-(n-l-1)
   if (nnd.gt.0) then
@@ -118,8 +122,8 @@ f0(irm:nr)=0.d0
 do ir=1,nr
   fr(ir)=g0(ir)**2+f0(ir)**2
 end do
-call fderiv(-1,nr,r,fr,gr)
-t1=sqrt(abs(gr(nr)))
+t1=fintgt(-1,nr,r,fr)
+t1=sqrt(abs(t1))
 if (t1.gt.0.d0) then
   t1=1.d0/t1
 else

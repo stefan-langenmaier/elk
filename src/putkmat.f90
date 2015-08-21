@@ -50,6 +50,9 @@ else
   call genvmatk(vmt,vir,ngk(:,ik),igkig(:,:,ik),wfmt,ngkmax,wfir,kmat)
 end if
 deallocate(wfir)
+! add the DFT+U matrix elements if required
+call genvmmtsv(wfmt,kmat)
+! negate the potential matrix elements because we have to subtract them
 kmat(:,:)=-kmat(:,:)
 ! add second-variational eigenvalues along the diagonal
 do ist=1,nstsv

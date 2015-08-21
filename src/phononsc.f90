@@ -170,13 +170,13 @@ if (mp_mpi) then
     end do
   end do
   close(80)
-end if
 ! write the complex Kohn-Sham potential derivative to file
-natoms(:)=natoms0(:)
-ngridg(:)=ngridg0(:)
-if (mp_mpi) call writedvs(filext)
+  natoms(:)=natoms0(:)
+  ngridg(:)=ngridg0(:)
+  call writedvs(filext)
 ! delete the non-essential files
-call phscdelete
+  call phscdelete
+end if
 ! synchronise MPI processes
 call mpi_barrier(mpi_comm_kpt,ierror)
 goto 10

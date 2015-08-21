@@ -27,9 +27,9 @@ do is=1,nspecies
   nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ist3=1,spnst(is)
+    do ist3=1,nstsp(is)
       if (spcore(ist3,is)) then
-        do m=-spk(ist3,is),spk(ist3,is)-1
+        do m=-ksp(ist3,is),ksp(ist3,is)-1
 ! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,ist3,m,nrcmtmax,wfcr)
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(zfmt)
@@ -54,7 +54,7 @@ do is=1,nspecies
             allocate(zfmt(lmmaxvr,nrcmtmax))
             call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ist2),zfmt)
             do ist1=1,ist2
-              z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt(:,:,ist1),zfmt)
+              z1=zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),zrhomt(:,:,ist1),zfmt)
               vmat(ist1,ist2)=vmat(ist1,ist2)-z1
             end do
             deallocate(zfmt)

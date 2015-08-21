@@ -18,7 +18,7 @@ integer, parameter :: mtype=3
 real(8) ddv,a,b
 character(256) fext
 ! allocatable arrays
-real(8), allocatable :: evalfv(:,:)
+real(8), allocatable :: evalfv(:,:),devalsv(:)
 real(8), allocatable :: v(:),work(:)
 complex(8), allocatable :: dyn(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:),apwalmq(:,:,:,:,:)
@@ -137,12 +137,14 @@ do iscl=1,maxscl
   end if
 ! parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evalfv,apwalm,apwalmq,dapwalm,dapwalmq) &
+!$OMP PRIVATE(evalfv,devalsv,apwalm,apwalmq,dapwalm,dapwalmq) &
 !$OMP PRIVATE(evecfv,devalfv,devecfv,evecsv,devecsv) &
 !$OMP PRIVATE(jk,jspn)
 !$OMP DO
   do ik=1,nkptnr
-    allocate(evalfv(nstfv,nspnfv))
+! distribute among MPI processes
+    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
+    allocate(evalfv(nstfv,nspnfv),devalsv(nstsv))
     allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
     allocate(apwalmq(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
     allocate(dapwalm(ngkmax,apwordmax,lmmaxapw,nspnfv))
@@ -187,18 +189,19 @@ do iscl=1,maxscl
 
 !*******
 devecsv=0.d0
-devalsv(:,ik)=dble(devalfv(:,1))
+devalsv(:)=dble(devalfv(:,1))
 !*******
 
 ! write the eigenvalue/vector derivatives to file
     call putdevalfv(ik,devalfv)
+    call putdevalsv(ik,devalsv)
     call putdevecfv(ik,devecfv)
     call putdevecsv(ik,devecsv)
 ! add to the density and magnetisation derivatives
     call drhomagk(ngk(:,ik),ngkq(:,ik),igkig(:,:,ik),igkqig(:,:,ik), &
      occsv(:,jk),doccsv(:,ik),apwalm,apwalmq,dapwalm,evecfv,devecfv,evecsv, &
      devecsv)
-    deallocate(evalfv,apwalm,apwalmq,dapwalm,dapwalmq)
+    deallocate(evalfv,devalsv,apwalm,apwalmq,dapwalm,dapwalmq)
     deallocate(evecfv,devalfv,devecfv,evecsv,devecsv)
   end do
 !$OMP END DO
@@ -208,6 +211,23 @@ devalsv(:,ik)=dble(devalfv(:,1))
   do idm=1,ndmag
     call zfmtctof(dmagmt(:,:,:,idm))
   end do
+! add densities from each process and redistribute
+  if (np_mpi.gt.1) then
+    n=lmmaxvr*nrmtmax*natmtot
+    call mpi_allreduce(mpi_in_place,drhomt,n,mpi_double_complex,mpi_sum, &
+     mpi_comm_kpt,ierror)
+    call mpi_allreduce(mpi_in_place,drhoir,ngtot,mpi_double_complex,mpi_sum, &
+     mpi_comm_kpt,ierror)
+    if (spinpol) then
+      call mpi_allreduce(mpi_in_place,dmagmt,n,mpi_double_complex,mpi_sum, &
+       mpi_comm_kpt,ierror)
+      n=ngtot*ndmag
+      call mpi_allreduce(mpi_in_place,dmagir,n,mpi_double_complex,mpi_sum, &
+       mpi_comm_kpt,ierror)
+    end if
+  end if
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_kpt,ierror)
 ! add gradient contribution to density derivative
   call gradrhomt
 ! compute the Kohn-Sham potential derivative
@@ -216,10 +236,17 @@ devalsv(:,ik)=dble(devalfv(:,1))
   call phmixpack(.true.,n,v)
 ! mix in the old potential and field with the new
   call mixerifc(mtype,n,v,ddv,nwork,work)
+! make sure every MPI process has a numerically identical potential
+  if (np_mpi.gt.1) then
+    call mpi_bcast(v,n,mpi_double_precision,0,mpi_comm_kpt,ierror)
+    call mpi_bcast(ddv,1,mpi_double_precision,0,mpi_comm_kpt,ierror)
+  end if
 ! unpack potential and field
   call phmixpack(.false.,n,v)
-  write(65,'(G18.10)') ddv
-  call flushifc(65)
+  if (mp_mpi) then
+    write(65,'(G18.10)') ddv
+    call flushifc(65)
+  end if
 ! check for convergence
   if (iscl.ge.2) then
     if (ddv.lt.epspot) goto 20
@@ -235,26 +262,32 @@ write(*,'("Warning(phonon): failed to reach self-consistency after ",I4,&
  &" loops")') maxscl
 20 continue
 ! close the RMSDDVS.OUT file
-close(65)
+if (mp_mpi) close(65)
 ! generate the dynamical matrix row from force derivatives
 call dforce(dyn)
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_kpt,ierror)
 ! write dynamical matrix row to file
-do ias=1,natmtot
-  is=idxis(ias)
-  ia=idxia(ias)
-  do ip=1,3
-    a=dble(dyn(ip,ias))
-    b=aimag(dyn(ip,ias))
-    if (abs(a).lt.1.d-12) a=0.d0
-    if (abs(b).lt.1.d-12) b=0.d0
-    write(80,'(2G18.10," : is = ",I4,", ia = ",I4,", ip = ",I4)') a,b,is,ia,ip
+if (mp_mpi) then
+  do ias=1,natmtot
+    is=idxis(ias)
+    ia=idxia(ias)
+    do ip=1,3
+      a=dble(dyn(ip,ias))
+      b=aimag(dyn(ip,ias))
+      if (abs(a).lt.1.d-12) a=0.d0
+      if (abs(b).lt.1.d-12) b=0.d0
+      write(80,'(2G18.10," : is = ",I4,", ia = ",I4,", ip = ",I4)') a,b,is,ia,ip
+    end do
   end do
-end do
-close(80)
+  close(80)
 ! write the complex Kohn-Sham potential derivative to file
-call writedvs(fext)
+  call writedvs(fext)
 ! delete the non-essential files
-call phdelete
+  call phdelete
+end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_kpt,ierror)
 goto 10
 end subroutine
 

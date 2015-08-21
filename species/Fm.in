@@ -2,9 +2,9 @@
  'fermium'                                  : spname
  -100.0000                                  : spzn
    468482.3406                              : spmass
-  0.200000E-06    3.0000   55.4667   800    : sprmin, rmt, sprmax, nrmt
-  27                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.200000E-06    3.0000   52.1300   800    : rminsp, rmt, rmaxsp, nrmt
+  27                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

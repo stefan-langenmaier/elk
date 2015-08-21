@@ -51,9 +51,9 @@ real(8) edu(0:lmaxdm,maxdftu)
 ! screening length of Yukawa potential to calculate Slater integrals
 real(8) lambdadu(maxdftu)
 ! energies to calculate radial functions for Slater integrals
-real(8), allocatable :: fdue(:,:,:)
+real(8), allocatable :: fdue(:,:)
 ! radial functions to calculate Slater integrals
-real(8), allocatable :: fdufr(:,:,:,:,:)
+real(8), allocatable :: fdufr(:,:,:)
 ! fixed value of U for which screening length has to be determined
 real(8) udufix(maxdftu)
 ! initial values of screening length if U is fixed

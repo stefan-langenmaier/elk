@@ -22,7 +22,7 @@ zrhoir(:)=0.d0
 ! generate the nuclear monopole potentials
 t1=1.d0/y00
 do is=1,nspecies
-  call potnucl(ptnucl,nrmt(is),spr(:,is),spzn(is),vn)
+  call potnucl(ptnucl,nrmt(is),rsp(:,is),spzn(is),vn)
   vn0(is)=vn(1)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
@@ -33,7 +33,7 @@ do is=1,nspecies
   end do
 end do
 ! solve the complex Poisson's equation
-call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
+call zpotcoul(nrmt,nrmtinr,nrspmax,rsp,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
  zvclmt,zvclir,zrho0)
 ! compute the nuclear-nuclear energy
 engynn=0.d0

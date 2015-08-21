@@ -2,9 +2,9 @@
  'berkelium'                                : spname
   -97.0000                                  : spzn
    450253.4557                              : spmass
-  0.203069E-06    3.0000   55.3463   800    : sprmin, rmt, sprmax, nrmt
-  27                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.203069E-06    3.0000   52.0199   800    : rminsp, rmt, rmaxsp, nrmt
+  27                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

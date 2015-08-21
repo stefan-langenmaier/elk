@@ -59,6 +59,8 @@ allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(zfft1(ngtot),zfft2(ngtot))
 ! read density and potentials from file
 call readstate
+! generate the core wavefunctions and densities
+call gencore
 ! read Fermi energy from file
 call readfermi
 ! find the new linearisation energies
@@ -67,8 +69,6 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
-! generate the core wavefunctions and densities
-call gencore
 ! set the gradient squared to zero
 gwf2mt(:,:,:)=0.d0
 gwf2ir(:)=0.d0
@@ -92,7 +92,7 @@ do ias=1,natmtot
 ! convert rho from spherical harmonics to spherical coordinates
   call rbsht(nr,nri,1,rhomt(:,:,ias),1,rfmt1)
 ! compute the gradient of the density
-  call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt1)
+  call gradrfmt(nr,nri,rsp(:,is),rhomt(:,:,ias),nrmtmax,grfmt1)
 ! convert gradient to spherical coordinates
   do i=1,3
     call rbsht(nr,nri,1,grfmt1(:,:,i),1,grfmt2(:,:,i))

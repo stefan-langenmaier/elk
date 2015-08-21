@@ -48,14 +48,14 @@ do is=1,nspecies
   nrc=nrcmt(is)
   nrci=nrcmtinr(is)
   do ia=1,natoms(is)
-    do jst=1,spnst(is)
+    do jst=1,nstsp(is)
       if (spcore(jst,is)) then
-        do m2=-spk(jst,is),spk(jst,is)-1
+        do m2=-ksp(jst,is),ksp(jst,is)-1
 ! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,jst,m2,nrcmtmax,wfcr2)
-          do ist=1,spnst(is)
+          do ist=1,nstsp(is)
             if (spcore(ist,is)) then
-              do m1=-spk(ist,is),spk(ist,is)-1
+              do m1=-ksp(ist,is),ksp(ist,is)-1
                 call wavefcr(.false.,lradstp,is,ia,ist,m1,nrcmtmax,wfcr1)
 ! calculate the complex overlap density
                 call genzrmt2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2),wfcr2(:,:,1), &
@@ -63,7 +63,7 @@ do is=1,nspecies
                 call zfsht(nrc,nrci,zfmt,zrhomt)
 ! calculate the Coulomb potential
                 call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt,zvclmt)
-                z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt,zvclmt)
+                z1=zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),zrhomt,zvclmt)
                 engyx=engyx-0.5d0*dble(z1)
               end do
 ! end loop over ist

@@ -1,48 +1,43 @@
 
-! Copyright (C) 2002-2005 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2015 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
 !BOP
 ! !ROUTINE: rschrodint
 ! !INTERFACE:
-subroutine rschrodint(sol,m,l,e,nr,r,vr,nn,p0p,p0,p1,q0,q1)
+subroutine rschrodint(sol,l,e,nr,r,vr,nn,p0,p1,q0,q1)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol : speed of light in atomic units (in,real)
-!   m   : order of energy derivative (in,integer)
 !   l   : angular momentum quantum number (in,integer)
 !   e   : energy (in,real)
 !   nr  : number of radial mesh points (in,integer)
 !   r   : radial mesh (in,real(nr))
 !   vr  : potential on radial mesh (in,real(nr))
 !   nn  : number of nodes (out,integer)
-!   p0p : m-1 th energy derivative of P (in,real(nr))
 !   p0  : m th energy derivative of P (out,real(nr))
 !   p1  : radial derivative of p0 (out,real(nr))
 !   q0  : m th energy derivative of Q (out,real(nr))
 !   q1  : radial derivative of q0 (out,real(nr))
 ! !DESCRIPTION:
-!   Integrates the $m$th energy derivative of the scalar relativistic radial
-!   Schr\"{o}dinger equation from $r=0$ outwards. This involves using the
-!   predictor-corrector method to solve the coupled first-order equations (in
-!   atomic units)
+!   Integrates the scalar relativistic radial Schr\"{o}dinger equation from
+!   $r=0$ outwards. This involves using the predictor-corrector method to solve
+!   the coupled first-order equations (in atomic units)
 !   \begin{align*}
-!    \frac{d}{dr}P^{(m)}_l&=2MQ^{(m)}_l+\frac{1}{r}P^{(m)}_l\\
-!    \frac{d}{dr}Q^{(m)}_l&=-\frac{1}{r}Q^{(m)}_l+\left[\frac{l(l+1)}{2Mr^2}
-!    +(V-E)\right]P^{(m)}_l-mP^{(m-1)}_l,
+!    \frac{d}{dr}P_l&=2MQ_l+\frac{1}{r}P_l\\
+!    \frac{d}{dr}Q_l&=-\frac{1}{r}Q_l+\left[\frac{l(l+1)}{2Mr^2}
+!    +(V-E)\right]P_l,
 !   \end{align*}
 !   where $V$ is the external potential, $E$ is the eigen energy and
-!   $M=1-V/2c^2$. Following the convention of Koelling and Harmon, {\it J. Phys.
-!   C: Solid State Phys.} {\bf 10}, 3107 (1977), the functions $P_l$ and $Q_l$
-!   are defined by
+!   $M=1+(E-V)/2c^2$. Following the convention of Koelling and Harmon,
+!   {\it J. Phys. C: Solid State Phys.} {\bf 10}, 3107 (1977), the functions
+!   $P_l$ and $Q_l$ are defined by
 !   \begin{align*}
 !    P_l&=rg_l\\
 !    Q_l&=\frac{r}{2M}\frac{dg_l}{dr},
 !   \end{align*}
 !   where $g_l$ is the major component of the Dirac equation (see the routine
-!   {\tt rdiracint}). Note that in order to make the equations linear in energy,
-!   the full definition $M=1+(E-V)/2c^2$ is not used. If $m=0$ then the array
-!   {\tt p0p} is not referenced.
+!   {\tt rdiracint}).
 !
 ! !REVISION HISTORY:
 !   Created October 2003 (JKD)
@@ -51,12 +46,11 @@ subroutine rschrodint(sol,m,l,e,nr,r,vr,nn,p0p,p0,p1,q0,q1)
 implicit none
 ! arguments
 real(8), intent(in) :: sol
-integer, intent(in) :: m,l
+integer, intent(in) :: l
 real(8), intent(in) :: e
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr),vr(nr)
 integer, intent(out) :: nn
-real(8), intent(in) :: p0p(nr)
 real(8), intent(out) :: p0(nr),p1(nr)
 real(8), intent(out) :: q0(nr),q1(nr)
 ! local variables
@@ -66,22 +60,19 @@ t1=1.d0/sol**2
 t2=dble(l*(l+1))
 ! determine the r -> 0 boundary values of P and Q
 ri=1.d0/r(1)
-t3=2.d0-t1*vr(1)
+t3=2.d0+t1*(e-vr(1))
 t4=t2/(t3*r(1)**2)+vr(1)-e
 q0(1)=1.d0
 q1(1)=0.d0
 p0(1)=(q1(1)+q0(1)*ri)/t4
 p1(1)=t3*q0(1)+p0(1)*ri
-if (m.ne.0) then
-  q1(1)=q1(1)-dble(m)*p0p(1)
-end if
 ! extrapolate to the first four points
 p1(2:4)=p1(1)
 q1(2:4)=q1(1)
 nn=0
 do ir=2,nr
   ri=1.d0/r(ir)
-  t3=2.d0-t1*vr(ir)
+  t3=2.d0+t1*(e-vr(ir))
   t4=t2/(t3*r(ir)**2)+vr(ir)-e
   ir0=ir-3
   if (ir0.lt.1) ir0=1
@@ -93,18 +84,12 @@ do ir=2,nr
 ! compute the derivatives
   p1(ir)=t3*q0(ir)+p0(ir)*ri
   q1(ir)=t4*p0(ir)-q0(ir)*ri
-  if (m.ne.0) then
-    q1(ir)=q1(ir)-dble(m)*p0p(ir)
-  end if
 ! integrate for correction
   p0(ir)=poly4i(r(ir0),p1(ir0),r(ir))+p0(ir0)
   q0(ir)=poly4i(r(ir0),q1(ir0),r(ir))+q0(ir0)
 ! compute the derivatives again
   p1(ir)=t3*q0(ir)+p0(ir)*ri
   q1(ir)=t4*p0(ir)-q0(ir)*ri
-  if (m.ne.0) then
-    q1(ir)=q1(ir)-dble(m)*p0p(ir)
-  end if
 ! check for overflow
   if ((abs(p0(ir)).gt.1.d100).or.(abs(p1(ir)).gt.1.d100).or. &
       (abs(q0(ir)).gt.1.d100).or.(abs(q1(ir)).gt.1.d100)) then

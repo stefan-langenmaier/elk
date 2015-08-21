@@ -66,18 +66,18 @@ nri=nrmtinr(is)
 ! convert rhoup to spherical harmonics
 call rfsht(nr,nri,1,rhoup,1,rfmt1)
 ! grad rhoup in spherical coordinates
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,gvup(:,:,i))
 end do
 ! |grad rhoup|
 gup(:,1:nr)=sqrt(gvup(:,1:nr,1)**2+gvup(:,1:nr,2)**2+gvup(:,1:nr,3)**2)
 ! grad^2 rhoup in spherical coordinates
-call grad2rfmt(nr,nri,spr(:,is),rfmt1,rfmt2)
+call grad2rfmt(nr,nri,rsp(:,is),rfmt1,rfmt2)
 call rbsht(nr,nri,1,rfmt2,1,g2up)
 ! (grad rhoup).(grad |grad rhoup|)
 call rfsht(nr,nri,1,gup,1,rfmt1)
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 g3up(:,1:nr)=0.d0
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)
@@ -89,17 +89,17 @@ end do
 ! convert rhodn to spherical harmonics
 call rfsht(nr,nri,1,rhodn,1,rfmt1)
 ! grad rhodn in spherical coordinates
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,gvdn(:,:,i))
 end do
 gdn(:,1:nr)=sqrt(gvdn(:,1:nr,1)**2+gvdn(:,1:nr,2)**2+gvdn(:,1:nr,3)**2)
 ! grad^2 rhodn in spherical coordinates
-call grad2rfmt(nr,nri,spr(:,is),rfmt1,rfmt2)
+call grad2rfmt(nr,nri,rsp(:,is),rfmt1,rfmt2)
 call rbsht(nr,nri,1,rfmt2,1,g2dn)
 ! (grad rhodn).(grad |grad rhodn|)
 call rfsht(nr,nri,1,gdn,1,rfmt1)
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 g3dn(:,1:nr)=0.d0
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)
@@ -114,7 +114,7 @@ grho(:,1:nr)=sqrt((gvup(:,1:nr,1)+gvdn(:,1:nr,1))**2 &
                  +(gvup(:,1:nr,3)+gvdn(:,1:nr,3))**2)
 ! (grad rho).(grad |grad rho|)
 call rfsht(nr,nri,1,grho,1,rfmt1)
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 g3rho(:,1:nr)=0.d0
 do i=1,3
   call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)

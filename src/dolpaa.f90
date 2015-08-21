@@ -18,6 +18,8 @@ integer, intent(in) :: ld
 complex(8), intent(inout) :: od(ld,*)
 ! local variables
 integer is,l,m,lm,io
+! automatic arrays
+complex(8) x(ngpq)
 if (ias.ne.iasph) return
 is=idxis(ias)
 lm=0
@@ -25,8 +27,10 @@ do l=0,lmaxmat
   do m=-l,l
     lm=lm+1
     do io=1,apword(l,is)
-      call zgerci(ngpq,ngp,zone,apwalmq(:,io,lm,ias),dapwalm(:,io,lm),ld,od)
-      call zgerci(ngpq,ngp,zone,dapwalmq(:,io,lm),apwalm(:,io,lm,ias),ld,od)
+      x(1:ngpq)=conjg(apwalmq(1:ngpq,io,lm,ias))
+      call zgerci(ngpq,ngp,zone,x,dapwalm(:,io,lm),ld,od)
+      x(1:ngpq)=conjg(dapwalmq(1:ngpq,io,lm))
+      call zgerci(ngpq,ngp,zone,x,apwalm(:,io,lm,ias),ld,od)
     end do
   end do
 end do

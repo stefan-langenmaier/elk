@@ -21,12 +21,12 @@ do ias=1,natmtot
   nr=nrmt(is)
 ! radial derivative of the spherical part of the Kohn-Sham potential
   vr(1:nr)=vsmt(1,1:nr,ias)*y00
-  call fderiv(1,nr,spr(:,is),vr,dvr)
+  call fderiv(1,nr,rsp(:,is),vr,dvr)
   irc=0
   do ir=1,nr,lradstp
     irc=irc+1
     rm=1.d0-2.d0*cso*vr(ir)
-    socfr(irc,ias)=cso*dvr(ir)/(spr(ir,is)*rm**2)
+    socfr(irc,ias)=cso*dvr(ir)/(rsp(ir,is)*rm**2)
   end do
 end do
 deallocate(vr,dvr)

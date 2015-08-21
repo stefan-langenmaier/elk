@@ -2,9 +2,9 @@
  'neodymium'                                : spname
   -60.0000                                  : spzn
    262933.4350                              : spmass
-  0.258199E-06    2.8000   53.3159   700    : sprmin, rmt, sprmax, nrmt
-  20                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.258199E-06    2.8000   59.8660   700    : rminsp, rmt, rmaxsp, nrmt
+  20                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

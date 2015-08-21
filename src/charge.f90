@@ -20,22 +20,21 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,ias,ir
+integer is,ias,nr
 real(8) t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax)
+real(8) fr(nrmtmax)
 ! external functions
-real(8) ddot
-external ddot
+real(8) fintgt,ddot
+external fintgt,ddot
 ! find the muffin-tin charges
 chgmttot=0.d0
 do ias=1,natmtot
   is=idxis(ias)
-  do ir=1,nrmt(is)
-    fr(ir)=rhomt(1,ir,ias)*spr(ir,is)**2
-  end do
-  call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
-  chgmt(ias)=fourpi*y00*gr(nrmt(is))
+  nr=nrmt(is)
+  fr(1:nr)=rhomt(1,1:nr,ias)*r2sp(1:nr,is)
+  t1=fintgt(-1,nrmt(is),rsp(:,is),fr)
+  chgmt(ias)=fourpi*y00*t1
   chgmttot=chgmttot+chgmt(ias)
 end do
 ! find the interstitial charge

@@ -2,9 +2,9 @@
  'lanthanum'                                : spname
   -57.0000                                  : spzn
    253209.2364                              : spmass
-  0.264906E-06    2.8000   55.6305   700    : sprmin, rmt, sprmax, nrmt
-  19                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.264906E-06    2.8000   51.9000   700    : rminsp, rmt, rmaxsp, nrmt
+  19                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

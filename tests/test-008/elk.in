@@ -16,10 +16,10 @@ mommtfix
  1 2   0.0 0.0 -1.0     : is, ia, mommtfix
 
 swidth
- 0.1
+ 0.01
 
 rgkmax
- 5.0
+ 6.0
 
 avec
   1.0  0.0  0.0
@@ -40,4 +40,4 @@ atoms
   0.5  0.5  0.5    0.0  0.0   -0.001
 
 ngridk
-  2  2  2
+  4  4  4

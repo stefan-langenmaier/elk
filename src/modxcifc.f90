@@ -318,8 +318,7 @@ implicit none
 ! arguments
 integer, intent(in) :: xctype(3)
 character(512), intent(out) :: xcdescr
-integer, intent(out) :: xcspin
-integer, intent(out) :: xcgrad
+integer, intent(out) :: xcspin,xcgrad
 logical, intent(out) :: hybrid
 real(8), intent(out) :: hybridc
 select case(abs(xctype(1)))

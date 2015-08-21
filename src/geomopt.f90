@@ -14,10 +14,13 @@ real(8) ds
 ! store original rmtdelta (minimum distance between muffin-tin surfaces)
 rmtdelta0=rmtdelta
 ! make rmtdelta large enough to accommodate changes in atomic positions
-rmtdelta=0.1d0
+rmtdelta=0.2d0
 ! initialise global variables (and the muffin-tin radii)
 call init0
 call init1
+! trim vsig for |G| > gmaxvr/2
+trimvg0=trimvg
+trimvg=.true.
 ! make rmtdelta small so the muffin-tin radii are not subsequently adjusted
 rmtdelta=0.01d0
 ! store orginal volume
@@ -186,6 +189,7 @@ end if
 ! ground-state should be run again after lattice vector optimisation
 if (latvopt.ne.0) call gndstate
 ! restore original parameters
+trimvg=trimvg0
 rmtdelta=rmtdelta0
 return
 end subroutine

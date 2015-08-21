@@ -73,7 +73,7 @@ do ig=1,ngp
           end do
           zsum1=zsum1+jl(l,irc)*zilc(l)*zsum2
         end do
-        zsum1=zsum1*rcmt(irc,is)**2
+        zsum1=zsum1*r2cmt(irc,is)
         fr1(irc)=dble(zsum1)
         fr2(irc)=aimag(zsum1)
       end do

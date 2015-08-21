@@ -18,7 +18,7 @@ real(8), intent(in) :: eval(nst)
 ! local variables
 integer lmax,nlo
 integer ist,jst,i
-logical core(maxspst),lorb(maxspst)
+logical core(maxstsp),lorb(maxstsp)
 ! default APW band energy
 real(8), parameter :: e0=0.15d0
 ! find which states belong to core
@@ -60,10 +60,10 @@ if (mp_mpi) then
   write(55,'(" ''",A,"''",T45,": spname")') trim(name)
   write(55,'(G14.6,T45,": spzn")') zn
   write(55,'(G18.10,T45,": spmass")') mass
-  write(55,'(G14.6,2F10.4,I6,T45,": sprmin, rmt, sprmax, nrmt")') rmin,rm, &
+  write(55,'(G14.6,2F10.4,I6,T45,": rminsp, rmt, rmaxsp, nrmt")') rmin,rm, &
    rmax,nrm
-  write(55,'(I4,T45,": spnst")') nst
-  write(55,'(3I4,G14.6,L1,T45,": spn, spl, spk, spocc, spcore")') n(1),l(1), &
+  write(55,'(I4,T45,": nstsp")') nst
+  write(55,'(3I4,G14.6,L1,T45,": nsp, lsp, ksp, occsp, spcore")') n(1),l(1), &
    k(1),occ(1),core(1)
   do ist=2,nst
     write(55,'(3I4,G14.6,L1)') n(ist),l(ist),k(ist),occ(ist),core(ist)

@@ -45,7 +45,8 @@ do ias=1,natmtot
   else
     rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
   end if
-  engyvcl=engyvcl+rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vclmt(:,:,ias))
+  engyvcl=engyvcl+rfmtinp(nr,nrmtinr(is),1,rsp(:,is),r2sp(:,is),rfmt, &
+   vclmt(:,:,ias))
 end do
 deallocate(rfmt)
 engykn=engykncr
@@ -66,7 +67,7 @@ deallocate(evecsv)
 engymad=0.d0
 do is=1,nspecies
 ! compute the bare nucleus potential at the origin
-  call potnucl(ptnucl,1,spr(:,is),spzn(is),vn)
+  call potnucl(ptnucl,1,rsp(:,is),spzn(is),vn)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     engymad=engymad+0.5d0*spzn(is)*(vclmt(1,1,ias)*y00-vn)

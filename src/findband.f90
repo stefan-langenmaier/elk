@@ -6,11 +6,10 @@
 !BOP
 ! !ROUTINE: findband
 ! !INTERFACE:
-subroutine findband(sol,l,k,nr,r,vr,eps,demax,e,fnd)
+subroutine findband(sol,l,nr,r,vr,eps,demax,e,fnd)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol   : speed of light in atomic units (in,real)
 !   l     : angular momentum quantum number (in,integer)
-!   k     : quantum number k, zero if Dirac eqn. is not to be used (in,integer)
 !   nr    : number of radial mesh points (in,integer)
 !   r     : radial mesh (in,real(nr))
 !   vr    : potential on radial mesh (in,real(nr))
@@ -38,12 +37,9 @@ subroutine findband(sol,l,k,nr,r,vr,eps,demax,e,fnd)
 implicit none
 ! arguments
 real(8), intent(in) :: sol
-integer, intent(in) :: l,k
-integer, intent(in) :: nr
-real(8), intent(in) :: r(nr)
-real(8), intent(in) :: vr(nr)
-real(8), intent(in) :: eps
-real(8), intent(in) :: demax
+integer, intent(in) :: l,nr
+real(8), intent(in) :: r(nr),vr(nr)
+real(8), intent(in) :: eps,demax
 real(8), intent(inout) :: e
 logical, intent(out) :: fnd
 ! local variables
@@ -71,7 +67,7 @@ do ip=1,2
     if (e.lt.0.d0) then
       if (et.gt.e+demax) exit
     end if
-    call rschroddme(sol,0,l,k,et,nr,r,vr,nn,p0,p1,q0,q1)
+    call rschrodint(sol,l,et,nr,r,vr,nn,p0,p1,q0,q1)
     t=p0(nr)
     if (ie.gt.1) then
       if (t*tp.le.0.d0) then
@@ -95,7 +91,7 @@ do ip=1,2
   do ie=1,maxstp
     eb=eb+de
     if (eb.lt.e-demax) return
-    call rschroddme(sol,0,l,k,eb,nr,r,vr,nn,p0,p1,q0,q1)
+    call rschrodint(sol,l,eb,nr,r,vr,nn,p0,p1,q0,q1)
     t=p1(nr)
     if (ie.gt.1) then
       if (t*tp.le.0.d0) then

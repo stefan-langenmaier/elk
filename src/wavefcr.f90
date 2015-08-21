@@ -19,8 +19,8 @@ complex(8), intent(out) :: wfcr(lmmaxvr,ld,2)
 integer ias,nri,ir,irc
 integer k,l,lm,lm1
 real(8) c1,c2,t1,t2,t3
-l=spl(ist,is)
-k=spk(ist,is)
+l=lsp(ist,is)
+k=ksp(ist,is)
 if (((k.ne.l+1).and.(k.ne.l)).or.(m.lt.-k).or.(m.gt.k-1)) then
   write(*,*)
   write(*,'("Error(wavefcr): mismatched l, k or m : ",3I4)') l,k,m
@@ -64,7 +64,7 @@ irc=0
 do ir=1,nrmt(is),lrstp
   irc=irc+1
 ! major component of radial wavefunction
-  t1=rwfcr(ir,1,ist,ias)/spr(ir,is)
+  t1=rwfcr(ir,1,ist,ias)/rsp(ir,is)
   if (tsh) then
     if (lm.gt.0) wfcr(lm,irc,1)=t1*c1
     if (lm1.gt.0) wfcr(lm1,irc,2)=t1*c2

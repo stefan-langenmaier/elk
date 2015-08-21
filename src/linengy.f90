@@ -51,7 +51,7 @@ do is=1,nspecies
           end do
 ! find the band energy starting from default
           apwe(io,l,ias)=apwe0(io,l,is)
-          call findband(solsc,l,0,nrmt(is),spr(:,is),vr,epsband,demaxbnd, &
+          call findband(solsc,l,nrmt(is),rsp(:,is),vr,epsband,demaxbnd, &
            apwe(io,l,ias),fnd)
           if (.not.fnd) nnf=nnf+1
         else
@@ -79,7 +79,7 @@ do is=1,nspecies
           l=lorbl(ilo,is)
 ! find the band energy starting from default
           lorbe(io,ilo,ias)=lorbe0(io,ilo,is)
-          call findband(solsc,l,0,nrmt(is),spr(:,is),vr,epsband,demaxbnd, &
+          call findband(solsc,l,nrmt(is),rsp(:,is),vr,epsband,demaxbnd, &
            lorbe(io,ilo,ias),fnd)
           if (.not.fnd) nnf=nnf+1
         else

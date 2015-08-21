@@ -18,7 +18,6 @@ if (.not.mp_mpi) goto 10
 do ipph=1,3
   do isph=1,nspecies
     do iaph=1,natoms(isph)
-      iasph=idxas(iaph,isph)
       do iqph=1,nqpt
 ! construct the phonon file extension
         call phfext(iqph,isph,iaph,ipph,fext)
@@ -26,6 +25,7 @@ do ipph=1,3
         inquire(file='DYN'//trim(fext),exist=exist)
         if (.not.exist) then
           open(fnum,file='DYN'//trim(fext),action='WRITE',form='FORMATTED')
+          iasph=idxas(iaph,isph)
           goto 10
         end if
       end do
@@ -40,6 +40,7 @@ write(*,'("Info(dyntask): nothing more to do")')
 call mpi_bcast(iqph,1,mpi_integer,0,mpi_comm_kpt,ierror)
 call mpi_bcast(isph,1,mpi_integer,0,mpi_comm_kpt,ierror)
 call mpi_bcast(iaph,1,mpi_integer,0,mpi_comm_kpt,ierror)
+call mpi_bcast(iasph,1,mpi_integer,0,mpi_comm_kpt,ierror)
 call mpi_bcast(ipph,1,mpi_integer,0,mpi_comm_kpt,ierror)
 if (iqph.eq.0) then
   fext='.OUT'

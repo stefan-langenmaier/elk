@@ -2,9 +2,9 @@
  'promethium'                               : spname
   -61.0000                                  : spzn
    264318.8303                              : spmass
-  0.256074E-06    2.8000   54.6331   700    : sprmin, rmt, sprmax, nrmt
-  20                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.256074E-06    2.8000   52.1574   700    : rminsp, rmt, rmaxsp, nrmt
+  20                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

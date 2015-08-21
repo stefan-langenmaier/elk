@@ -20,12 +20,12 @@ call readstate
 ! use existing density if wsfac is default
 if ((wsfac(1).le.-1.d6).or.(wsfac(2).ge.1.d6)) goto 10
 ! make a copy of the core state occupancies
-allocate(occcr0(spnstmax,natmtot))
+allocate(occcr0(nstspmax,natmtot))
 occcr0(:,:)=occcr(:,:)
 ! zero the core state occupancies for eigenvalues not in energy window
 do ias=1,natmtot
   is=idxis(ias)
-  do ist=1,spnst(is)
+  do ist=1,nstsp(is)
     if (spcore(ist,is)) then
       if ((evalcr(ist,ias).lt.wsfac(1)).or.(evalcr(ist,ias).gt.wsfac(2))) then
         occcr(ist,ias)=0.d0
@@ -38,6 +38,8 @@ call gencore
 ! restore the core state occupancies
 occcr(:,:)=occcr0(:,:)
 deallocate(occcr0)
+! read Fermi energy from file
+call readfermi
 ! find the new linearisation energies
 call linengy
 ! generate the APW radial functions

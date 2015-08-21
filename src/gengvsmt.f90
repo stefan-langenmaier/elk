@@ -17,7 +17,7 @@ nri=nrmtinr(isph)
 ! convert potential to complex spherical harmonics
 call rtozfmt(nr,nri,1,vsmt(:,:,iasph),1,zfmt)
 ! calculate the gradient
-call gradzfmt(nr,nri,spr(:,isph),zfmt,nrmtmax,gzfmt)
+call gradzfmt(nr,nri,rsp(:,isph),zfmt,nrmtmax,gzfmt)
 ! copy current polarisation component to global array
 gvsmt(:,1:nr)=gzfmt(:,1:nr,ipph)
 deallocate(zfmt,gzfmt)

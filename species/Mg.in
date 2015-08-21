@@ -2,9 +2,9 @@
  'magnesium'                                : spname
   -12.0000                                  : spzn
    44305.30462                              : spmass
-  0.577350E-06    2.2000   43.7580   400    : sprmin, rmt, sprmax, nrmt
-   5                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.577350E-06    2.2000   45.4518   400    : rminsp, rmt, rmaxsp, nrmt
+   5                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    F
    2   1   1   2.00000    F
    2   1   2   4.00000    F

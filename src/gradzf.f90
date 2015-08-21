@@ -20,7 +20,7 @@ allocate(gzfmt1(lmmaxvr,nrmtmax,3))
 do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
-  call gradzfmt(nr,nrmtinr(is),spr(:,is),zfmt(:,:,ias),nrmtmax,gzfmt1)
+  call gradzfmt(nr,nrmtinr(is),rsp(:,is),zfmt(:,:,ias),nrmtmax,gzfmt1)
   do i=1,3
     gzfmt(:,1:nr,ias,i)=gzfmt1(:,1:nr,i)
   end do

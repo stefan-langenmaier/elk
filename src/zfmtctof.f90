@@ -24,10 +24,10 @@ do ias=1,natmtot
   do lm=1,lmmaxvr
 ! real part
     call rfinterp(nrcmt(is),rcmt(:,is),ld1,zfmt(1,lm,1,ias),nrmt(is), &
-     spr(:,is),ld2,zfmt(1,lm,1,ias))
+     rsp(:,is),ld2,zfmt(1,lm,1,ias))
 ! imaginary part
     call rfinterp(nrcmt(is),rcmt(:,is),ld1,zfmt(2,lm,1,ias),nrmt(is), &
-     spr(:,is),ld2,zfmt(2,lm,1,ias))
+     rsp(:,is),ld2,zfmt(2,lm,1,ias))
   end do
 end do
 !$OMP END DO

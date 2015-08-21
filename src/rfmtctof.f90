@@ -34,7 +34,7 @@ do ias=1,natmtot
   end do
 ! interpolate with a clamped spline
   do lm=1,lmmaxvr
-    call rfinterp(nrcmt(is),rcmt(:,is),ld,rfmt(lm,1,ias),nrmt(is),spr(:,is), &
+    call rfinterp(nrcmt(is),rcmt(:,is),ld,rfmt(lm,1,ias),nrmt(is),rsp(:,is), &
      lmmaxvr,rfmt(lm,1,ias))
   end do
 end do

@@ -23,6 +23,7 @@ use modmain
 implicit none
 ! local variables
 integer itp,info
+real(8) v1(3),v2(3),r
 ! automatic arrays
 integer ipiv(lmmaxvr)
 real(8) tp(2,lmmaxvr),rlm(lmmaxvr),work(lmmaxvr)
@@ -42,6 +43,14 @@ if (allocated(zfshtvr)) deallocate(zfshtvr)
 allocate(zfshtvr(lmmaxvr,lmmaxvr))
 ! generate spherical covering set
 call sphcover(lmmaxvr,tp)
+! rotate the spherical covering set if required
+if (trotsht) then
+  do itp=1,lmmaxvr
+    call sctovec(tp(:,itp),v1)
+    call r3mv(rotsht,v1,v2)
+    call sphcrd(v2,r,tp(:,itp))
+  end do
+end if
 ! generate real and complex spherical harmonics and set the backward SHT arrays
 do itp=1,lmmaxvr
   call genrlm(lmaxvr,tp(:,itp),rlm)

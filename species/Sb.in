@@ -2,9 +2,9 @@
  'antimony'                                 : spname
   -51.0000                                  : spzn
    221954.9019                              : spmass
-  0.280056E-06    2.6000   44.3358   600    : sprmin, rmt, sprmax, nrmt
-  17                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.280056E-06    2.6000   44.3358   600    : rminsp, rmt, rmaxsp, nrmt
+  17                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

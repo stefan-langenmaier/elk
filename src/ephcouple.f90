@@ -12,9 +12,10 @@ implicit none
 ! local variables
 integer iq,ik,jk,jkq
 integer iv(3),ist,jst
-integer is,ia,ias,js,ja,jas
+integer is,ia,ias,js,jas
 integer ip,ir,irc,isym,i,j,n
-real(8) vl(3),x,t1,t2,t3,t4,t5
+real(8) vl(3),x,de
+real(8) t1,t2,t3,t4
 complex(8) z1
 ! allocatable arrays
 real(8), allocatable :: wq(:,:),gq(:,:)
@@ -23,8 +24,8 @@ complex(8), allocatable :: dvphmt(:,:,:,:),dvphir(:,:)
 complex(8), allocatable :: zfmt(:,:),gzfmt(:,:,:,:)
 complex(8), allocatable :: ephmat(:,:,:)
 ! external functions
-real(8) sdelta,stheta
-external sdelta,stheta
+real(8) sdelta
+external sdelta
 ! increase the angular momentum cut-off on the inner part of the muffin-tin
 lmaxinr0=lmaxinr
 lmaxinr=max(lmaxinr,4)
@@ -56,7 +57,7 @@ allocate(zfmt(lmmaxvr,nrmtmax))
 allocate(gzfmt(lmmaxvr,nrmtmax,3,natmtot))
 ! read in the density and potentials from file
 call readstate
-! read in the Fermi energy
+! read Fermi energy from file
 call readfermi
 ! find the linearisation energies
 call linengy
@@ -90,7 +91,7 @@ do ias=1,natmtot
 ! convert potential to complex spherical harmonic expansion
   call rtozfmt(nrmt(is),nrmtinr(is),1,vsmt(:,:,ias),1,zfmt)
 ! compute the gradients of the Kohn-Sham potential for the rigid-ion term
-  call gradzfmt(nrmt(is),nrmtinr(is),spr(:,is),zfmt,nrmtmax,gzfmt(:,:,:,ias))
+  call gradzfmt(nrmt(is),nrmtinr(is),rsp(:,is),zfmt,nrmtmax,gzfmt(:,:,:,ias))
 end do
 ! loop over phonon q-points
 do iq=1,nqpt
@@ -120,32 +121,31 @@ do iq=1,nqpt
 ! read in the Cartesian change in Kohn-Sham potential
           call readdvs(iq,is,ia,ip)
 ! add the rigid-ion term
-          do ir=1,nrmt(is)
-            dvsmt(:,ir,ias)=dvsmt(:,ir,ias)-gzfmt(:,ir,ip,ias)
-          end do
+          z1=-1.d0
+          call zfmtadd(nrmt(is),nrmtinr(is),z1,gzfmt(:,:,ip,ias),dvsmt(:,:,ias))
 ! multiply with eigenvector component and add to total phonon potential
           z1=t1*ev(i,j)
-          do js=1,nspecies
-            do ja=1,natoms(js)
-              jas=idxas(ja,js)
-              irc=0
-              do ir=1,nrmt(js),lradstp
-                irc=irc+1
-                dvphmt(:,irc,jas,j)=dvphmt(:,irc,jas,j)+z1*dvsmt(:,ir,jas)
-              end do
+          do jas=1,natmtot
+            js=idxis(jas)
+            irc=0
+            do ir=1,nrmt(js),lradstp
+              irc=irc+1
+              dvphmt(:,irc,jas,j)=dvphmt(:,irc,jas,j)+z1*dvsmt(:,ir,jas)
             end do
           end do
-          dvphir(:,j)=dvphir(:,j)+z1*dvsir(:)
+          call zaxpy(ngtot,z1,dvsir,1,dvphir(:,j),1)
         end do
       end do
     end do
   end do
+! energy window for calculating the electron-phonon matrix elements
+  de=10.d0*swidth
 ! zero the phonon linewidths array
   gq(:,iq)=0.d0
 ! begin parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(ephmat,jk,vl,isym,jkq) &
-!$OMP PRIVATE(t1,t2,t3,t4,t5,ist,jst,x,i)
+!$OMP PRIVATE(t1,t2,t3,t4,ist,jst,x,i)
 !$OMP DO
   do ik=1,nkptnr
 ! distribute among MPI processes
@@ -154,25 +154,24 @@ do iq=1,nqpt
 ! equivalent reduced k-point
     jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! compute the electron-phonon coupling matrix elements
-    call genephmat(iq,ik,dvphmt,dvphir,ephmat)
+    call genephmat(iq,ik,de,dvphmt,dvphir,ephmat)
 ! k+q-vector in lattice coordinates
     vl(:)=vkl(:,ik)+vql(:,iq)
 ! index to k+q-vector
     call findkpt(vl,isym,jkq)
-    t1=twopi*wkptnr*occmax
+    t1=twopi*wkptnr*occmax/2.d0
+! loop over second-variational states
     do ist=1,nstsv
-      x=(efermi-evalsv(ist,jkq))/swidth
-      t2=stheta(stype,x)
+      x=(evalsv(ist,jkq)-efermi)/swidth
+      t2=t1*sdelta(stype,x)/swidth
       do jst=1,nstsv
-        x=(efermi-evalsv(jst,jk))/swidth
-        t3=stheta(stype,x)
+        x=(evalsv(jst,jk)-efermi)/swidth
+        t3=t2*sdelta(stype,x)/swidth
 ! loop over phonon branches
         do i=1,nbph
-          x=(wq(i,iq)+evalsv(jst,jk)-evalsv(ist,jkq))/swidth
-          t4=sdelta(stype,x)/swidth
-          t5=dble(ephmat(ist,jst,i))**2+aimag(ephmat(ist,jst,i))**2
+          t4=dble(ephmat(ist,jst,i))**2+aimag(ephmat(ist,jst,i))**2
 !$OMP CRITICAL
-          gq(i,iq)=gq(i,iq)+t1*(t3-t2)*t4*t5
+          gq(i,iq)=gq(i,iq)+wq(i,iq)*t3*t4
 !$OMP END CRITICAL
         end do
       end do

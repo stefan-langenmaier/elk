@@ -9,8 +9,7 @@ use modmain
 use moddftu
 implicit none
 ! arguments
-integer, intent(in) :: ngp
-integer, intent(in) :: igpig(ngkmax)
+integer, intent(in) :: ngp,igpig(ngkmax)
 real(8), intent(in) :: vgpc(3,ngkmax)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(in) :: evalfv(nstfv)
@@ -18,6 +17,7 @@ complex(8), intent(in) :: evecfv(nmatmax,nstfv)
 real(8), intent(out) :: evalsvp(nstsv)
 complex(8), intent(out) :: evecsv(nstsv,nstsv)
 ! local variables
+logical socz
 integer nsc,nsd,ld,ist,jst
 integer ispn,jspn,is,ias
 integer nrc,nrci,iro,irc
@@ -51,7 +51,7 @@ call timesec(ts0)
 ca=1.d0/solsc
 ! number of spin combinations after application of Hamiltonian
 if (spinpol) then
-  if (ncmag) then
+  if (ncmag.or.spinorb) then
     nsc=3
   else
     nsc=2
@@ -60,6 +60,12 @@ if (spinpol) then
 else
   nsc=1
   nsd=1
+end if
+! special case of spin-orbit coupling and collinear magnetism
+if (spinorb.and.cmagz) then
+  socz=.true.
+else
+  socz=.false.
 end if
 ld=lmmaxdm*nspinor
 ! zero the second-variational Hamiltonian (stored in the eigenvector array)
@@ -101,6 +107,7 @@ do ias=1,natmtot
          -bsmt(:,iro:nrc,ias,2),8)*wfmt2(:,iro:nrc)
         call zfsht(nrc,nrci,wfmt3,wfmt4(:,:,3))
       end if
+      if (socz) call zfmtzero(nrc,nrci,wfmt4(:,:,3))
 ! apply spin-orbit coupling if required
       if (spinorb) then
 ! inner part of muffin-tin
@@ -109,7 +116,7 @@ do ias=1,natmtot
           t1=socfr(irc,ias)
           wfmt4(1:lmi,irc,1)=wfmt4(1:lmi,irc,1)+t1*zlflm(1:lmi,3)
           wfmt4(1:lmi,irc,2)=wfmt4(1:lmi,irc,2)-t1*zlflm(1:lmi,3)
-          if (ncmag) wfmt4(1:lmi,irc,3)=wfmt4(1:lmi,irc,3)+t1*(zlflm(1:lmi,1) &
+          wfmt4(1:lmi,irc,3)=wfmt4(1:lmi,irc,3)+t1*(zlflm(1:lmi,1) &
            +cmplx(aimag(zlflm(1:lmi,2)),-dble(zlflm(1:lmi,2)),8))
         end do
 ! outer part of muffin-tin
@@ -118,12 +125,14 @@ do ias=1,natmtot
           t1=socfr(irc,ias)
           wfmt4(:,irc,1)=wfmt4(:,irc,1)+t1*zlflm(:,3)
           wfmt4(:,irc,2)=wfmt4(:,irc,2)-t1*zlflm(:,3)
-          if (ncmag) wfmt4(:,irc,3)=wfmt4(:,irc,3)+t1*(zlflm(:,1) &
+          wfmt4(:,irc,3)=wfmt4(:,irc,3)+t1*(zlflm(:,1) &
            +cmplx(aimag(zlflm(:,2)),-dble(zlflm(:,2)),8))
         end do
       end if
     else
-      wfmt4(:,:,:)=0.d0
+      do k=1,nsc
+        call zfmtzero(nrc,nrci,wfmt4(:,:,k))
+      end do
     end if
 ! apply muffin-tin potential matrix if required
     if (tvmatmt) then
@@ -177,8 +186,8 @@ do ias=1,natmtot
           j=jst+nstfv
         end if
         if (i.le.j) then
-          evecsv(i,j)=evecsv(i,j)+zfmtinp(nrc,nrci,rcmt(:,is),wfmt1(:,:,ist), &
-           wfmt4(:,:,k))
+          evecsv(i,j)=evecsv(i,j)+zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is), &
+           wfmt1(:,:,ist),wfmt4(:,:,k))
         end if
       end do
     end do
@@ -194,6 +203,7 @@ if (afieldpol) deallocate(gwfmt)
 !     interstitial part     !
 !---------------------------!
 if (spinpol) then
+  if (socz) nsc=2
   allocate(wfir1(ngtot),wfir2(ngtot),z(ngkmax,nsc))
 ! begin loop over states
   do jst=1,nstfv
@@ -210,8 +220,8 @@ if (spinpol) then
     do igp=1,ngp
       ifg=igfft(igpig(igp))
       z(igp,1)=wfir2(ifg)
-      z(igp,2)=-wfir2(ifg)
     end do
+    z(1:ngp,2)=-z(1:ngp,1)
     if (ncmag) then
       wfir2(:)=cmplx(bsir(:,1),-bsir(:,2),8)*wfir1(:)
       call zfftifc(3,ngridg,-1,wfir2)
@@ -272,8 +282,12 @@ end do
 allocate(rwork(3*nstsv))
 lwork=2*nstsv
 allocate(work(lwork))
-if (ndmag.eq.1) then
-! collinear: block diagonalise H
+if (ncmag.or.spinorb.or.(.not.spinpol)) then
+! non-collinear, spin-orbit coupling or spin-unpolarised: full diagonalisation
+  call zheev('V','U',nstsv,evecsv,nstsv,evalsvp,work,lwork,rwork,info)
+  if (info.ne.0) goto 10
+else
+! collinear with no spin-orbit coupling: block diagonalise H
   call zheev('V','U',nstfv,evecsv,nstsv,evalsvp,work,lwork,rwork,info)
   if (info.ne.0) goto 10
   i=nstfv+1
@@ -285,10 +299,6 @@ if (ndmag.eq.1) then
       evecsv(i+nstfv,j)=0.d0
     end do
   end do
-else
-! non-collinear or spin-unpolarised: full diagonalisation
-  call zheev('V','U',nstsv,evecsv,nstsv,evalsvp,work,lwork,rwork,info)
-  if (info.ne.0) goto 10
 end if
 deallocate(rwork,work)
 call timesec(ts1)

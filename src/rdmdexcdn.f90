@@ -32,7 +32,7 @@ real(8) t1,t2,t3,t4
 ! allocatable arays
 real(8), allocatable :: vclijji(:,:,:)
 if (rdmxctype.eq.0) return
-! calculate the pre-factor
+! calculate the prefactor
 if (rdmxctype.eq.1) then
   t1=1.d0/occmax
 ! power functional

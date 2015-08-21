@@ -8,12 +8,8 @@ use modmain
 use modphonon
 implicit none
 ! arguments
-real(8), intent(in) :: w(nwplot)
-real(8), intent(in) :: a2f(nwplot)
-real(8), intent(out) :: lambda
-real(8), intent(out) :: wlog
-real(8), intent(out) :: wrms
-real(8), intent(out) :: tc
+real(8), intent(in) :: w(nwplot),a2f(nwplot)
+real(8), intent(out) :: lambda,wlog,wrms,tc
 ! local variables
 integer iw
 real(8) l1,l2,f1,f2,t1

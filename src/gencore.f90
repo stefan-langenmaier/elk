@@ -30,17 +30,18 @@ use modmain
 implicit none
 ! local variables
 integer is,ia,ja,ias,jas
-integer ispn,ist,nr,ir
+integer ispn,ist,nr,nrs,ir
 real(8) t1
 ! automatic arrays
 logical done(natmmax)
-real(8) vr(spnrmax),eval(spnstmax)
+real(8) vr(nrspmax),eval(nstspmax)
 ! allocatable arrays
 real(8), allocatable :: br(:)
 if (spincore) allocate(br(nrmtmax))
 ! loop over species and atoms
 do is=1,nspecies
   nr=nrmt(is)
+  nrs=nrsp(is)
   done(:)=.false.
   do ia=1,natoms(is)
     if (done(ia)) cycle
@@ -72,20 +73,20 @@ do is=1,nspecies
         end if
       end if
 ! append the Kohn-Sham potential from the atomic calculation for r > R_MT
-      t1=vr(nr)-spvr(nr,is)
-      do ir=nr+1,spnr(is)
-        vr(ir)=spvr(ir,is)+t1
+      t1=vr(nr)-vrsp(nr,is)
+      do ir=nr+1,nrs
+        vr(ir)=vrsp(ir,is)+t1
       end do
       rhocr(:,ias,ispn)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(t1,ir) SHARED(is)
 !$OMP DO
-      do ist=1,spnst(is)
+      do ist=1,nstsp(is)
         if (spcore(ist,is)) then
 ! solve the Dirac equation
           eval(ist)=evalcr(ist,ias)
-          call rdirac(solsc,spn(ist,is),spl(ist,is),spk(ist,is),spnr(is), &
-           spr(:,is),vr,eval(ist),rwfcr(:,1,ist,ias),rwfcr(:,2,ist,ias))
+          call rdirac(solsc,nsp(ist,is),lsp(ist,is),ksp(ist,is),nrs,rsp(:,is), &
+           vr,eval(ist),rwfcr(:,1,ist,ias),rwfcr(:,2,ist,ias))
           if (spincore) then
 ! use the spin-averaged eigenvalue for the polarised core
             if (ispn.eq.1) then
@@ -100,7 +101,7 @@ do is=1,nspecies
           end if
 ! add to the core density
 !$OMP CRITICAL
-          do ir=1,spnr(is)
+          do ir=1,nrs
             rhocr(ir,ias,ispn)=rhocr(ir,ias,ispn) &
              +t1*(rwfcr(ir,1,ist,ias)**2+rwfcr(ir,2,ist,ias)**2)
           end do
@@ -109,8 +110,8 @@ do is=1,nspecies
       end do
 !$OMP END DO
 !$OMP END PARALLEL
-      do ir=1,spnr(is)
-        rhocr(ir,ias,ispn)=rhocr(ir,ias,ispn)/(fourpi*spr(ir,is)**2)
+      do ir=1,nrs
+        rhocr(ir,ias,ispn)=rhocr(ir,ias,ispn)/(fourpi*r2sp(ir,is))
       end do
 ! end loop over spin channels
     end do
@@ -119,13 +120,13 @@ do is=1,nspecies
     do ja=1,natoms(is)
       if ((.not.done(ja)).and.(eqatoms(ia,ja,is))) then
         jas=idxas(ja,is)
-        do ist=1,spnst(is)
+        do ist=1,nstsp(is)
           if (spcore(ist,is)) then
             evalcr(ist,jas)=evalcr(ist,ias)
-            rwfcr(1:spnr(is),:,ist,jas)=rwfcr(1:spnr(is),:,ist,ias)
+            rwfcr(1:nrs,:,ist,jas)=rwfcr(1:nrs,:,ist,ias)
           end if
         end do
-        rhocr(1:spnr(is),jas,:)=rhocr(1:spnr(is),ias,:)
+        rhocr(1:nrs,jas,:)=rhocr(1:nrs,ias,:)
         done(ja)=.true.
       end if
     end do

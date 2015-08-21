@@ -35,7 +35,7 @@ integer dftu_,lmmaxdm_
 real(8) t1
 ! allocatable arrays
 integer, allocatable :: mapir(:)
-real(8), allocatable :: spr_(:,:),rcmt_(:,:)
+real(8), allocatable :: rsp_(:,:),rcmt_(:,:)
 real(8), allocatable :: rhomt_(:,:,:),rhoir_(:)
 real(8), allocatable :: vclmt_(:,:,:),vclir_(:)
 real(8), allocatable :: vxcmt_(:,:,:),vxcir_(:)
@@ -82,7 +82,7 @@ end if
 read(50) lmmaxvr_
 read(50) nrmtmax_
 read(50) nrcmtmax_
-allocate(spr_(nrmtmax_,nspecies))
+allocate(rsp_(nrmtmax_,nspecies))
 allocate(rcmt_(nrcmtmax_,nspecies))
 do is=1,nspecies
   read(50) natoms_
@@ -95,7 +95,7 @@ do is=1,nspecies
     stop
   end if
   read(50) nrmt_(is)
-  read(50) spr_(1:nrmt_(is),is)
+  read(50) rsp_(1:nrmt_(is),is)
   read(50) nrcmt_(is)
   read(50) rcmt_(1:nrcmt_(is),is)
 end do
@@ -228,31 +228,31 @@ lmmax=min(lmmaxvr,lmmaxvr_)
 do ias=1,natmtot
   is=idxis(ias)
   do lm=1,lmmax
-    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,rhomt_(lm,1,ias),nrmt(is), &
-     spr(:,is),lmmaxvr,rhomt(lm,1,ias))
+    call rfinterp(nrmt_(is),rsp_(:,is),lmmaxvr_,rhomt_(lm,1,ias),nrmt(is), &
+     rsp(:,is),lmmaxvr,rhomt(lm,1,ias))
   end do
   do lm=1,lmmax
-    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vclmt_(lm,1,ias),nrmt(is), &
-     spr(:,is),lmmaxvr,vclmt(lm,1,ias))
+    call rfinterp(nrmt_(is),rsp_(:,is),lmmaxvr_,vclmt_(lm,1,ias),nrmt(is), &
+     rsp(:,is),lmmaxvr,vclmt(lm,1,ias))
   end do
   do lm=1,lmmax
-    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vxcmt_(lm,1,ias),nrmt(is), &
-     spr(:,is),lmmaxvr,vxcmt(lm,1,ias))
+    call rfinterp(nrmt_(is),rsp_(:,is),lmmaxvr_,vxcmt_(lm,1,ias),nrmt(is), &
+     rsp(:,is),lmmaxvr,vxcmt(lm,1,ias))
   end do
   do lm=1,lmmax
-    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vsmt_(lm,1,ias),nrmt(is), &
-     spr(:,is),lmmaxvr,vsmt(lm,1,ias))
+    call rfinterp(nrmt_(is),rsp_(:,is),lmmaxvr_,vsmt_(lm,1,ias),nrmt(is), &
+     rsp(:,is),lmmaxvr,vsmt(lm,1,ias))
   end do
   if ((spinpol).and.(spinpol_)) then
     do idm=idm0,idm1
       jdm=mapidm(idm)
       do lm=1,lmmax
-        call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,magmt_(lm,1,ias,jdm), &
-         nrmt(is),spr(:,is),lmmaxvr,magmt(lm,1,ias,idm))
+        call rfinterp(nrmt_(is),rsp_(:,is),lmmaxvr_,magmt_(lm,1,ias,jdm), &
+         nrmt(is),rsp(:,is),lmmaxvr,magmt(lm,1,ias,idm))
       end do
       do lm=1,lmmax
-        call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,bxcmt_(lm,1,ias,jdm), &
-         nrmt(is),spr(:,is),lmmaxvr,bxcmt(lm,1,ias,idm))
+        call rfinterp(nrmt_(is),rsp_(:,is),lmmaxvr_,bxcmt_(lm,1,ias,jdm), &
+         nrmt(is),rsp(:,is),lmmaxvr,bxcmt(lm,1,ias,idm))
       end do
       do lm=1,lmmax
         call rfinterp(nrcmt_(is),rcmt_(:,is),lmmaxvr_,bsmt_(lm,1,ias,jdm), &
@@ -316,7 +316,7 @@ if ((spinpol).and.(spinpol_)) then
     end do
   end do
 end if
-deallocate(mapir,spr_,rcmt_,rhomt_,rhoir_,vclmt_,vclir_)
+deallocate(mapir,rsp_,rcmt_,rhomt_,rhoir_,vclmt_,vclir_)
 deallocate(vxcmt_,vxcir_,vsmt_,vsir_)
 if (spinpol_) deallocate(magmt_,magir_,bxcmt_,bxcir_,bsmt_,bsir_)
 ! Fourier transform Kohn-Sham potential to G-space

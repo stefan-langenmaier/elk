@@ -45,9 +45,9 @@ call timesec(ts0)
 !------------------------------------!
 !     angular momentum variables     !
 !------------------------------------!
-lmmaxvr=(lmaxvr+1)**2
 lmmaxapw=(lmaxapw+1)**2
 lmmaxmat=(lmaxmat+1)**2
+lmmaxvr=(lmaxvr+1)**2
 lmmaxinr=(lmaxinr+1)**2
 if (lmaxvr.gt.lmaxapw) then
   write(*,*)
@@ -329,24 +329,24 @@ call genrmesh
 chgzn=0.d0
 chgcrtot=0.d0
 chgval=0.d0
-spnstmax=0
+nstspmax=0
 nstcr=0
 do is=1,nspecies
 ! nuclear charge
   chgzn=chgzn+spzn(is)*natoms(is)
 ! find the maximum number of atomic states
-  spnstmax=max(spnstmax,spnst(is))
+  nstspmax=max(nstspmax,nstsp(is))
 ! compute the electronic charge for each species, as well as the total core and
 ! valence charge
   spze(is)=0.d0
   chgcr(is)=0.d0
-  do ist=1,spnst(is)
-    spze(is)=spze(is)+spocc(ist,is)
+  do ist=1,nstsp(is)
+    spze(is)=spze(is)+occsp(ist,is)
     if (spcore(ist,is)) then
-      chgcr(is)=chgcr(is)+spocc(ist,is)
-      nstcr=nstcr+2*spk(ist,is)*natoms(is)
+      chgcr(is)=chgcr(is)+occsp(ist,is)
+      nstcr=nstcr+2*ksp(ist,is)*natoms(is)
     else
-      chgval=chgval+spocc(ist,is)*natoms(is)
+      chgval=chgval+occsp(ist,is)*natoms(is)
     end if
   end do
   chgcrtot=chgcrtot+chgcr(is)*natoms(is)
@@ -455,21 +455,21 @@ call writevars('igfft',nv=ngtot,iva=igfft)
 call allatoms
 ! allocate core state occupancy and eigenvalue arrays and set to default
 if (allocated(occcr)) deallocate(occcr)
-allocate(occcr(spnstmax,natmtot))
+allocate(occcr(nstspmax,natmtot))
 if (allocated(evalcr)) deallocate(evalcr)
-allocate(evalcr(spnstmax,natmtot))
+allocate(evalcr(nstspmax,natmtot))
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ist=1,spnst(is)
-      occcr(ist,ias)=spocc(ist,is)
-      evalcr(ist,ias)=speval(ist,is)
+    do ist=1,nstsp(is)
+      occcr(ist,ias)=occsp(ist,is)
+      evalcr(ist,ias)=evalsp(ist,is)
     end do
   end do
 end do
 ! allocate core state radial wavefunction array
 if (allocated(rwfcr)) deallocate(rwfcr)
-allocate(rwfcr(spnrmax,2,spnstmax,natmtot))
+allocate(rwfcr(nrspmax,2,nstspmax,natmtot))
 ! number of core spin channels
 if (spincore) then
   nspncr=2
@@ -478,7 +478,7 @@ else
 end if
 ! allocate core state charge density array
 if (allocated(rhocr)) deallocate(rhocr)
-allocate(rhocr(spnrmax,natmtot,nspncr))
+allocate(rhocr(nrspmax,natmtot,nspncr))
 
 !---------------------------------------!
 !     charge density and potentials     !

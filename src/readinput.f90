@@ -18,6 +18,7 @@ use modscdft
 use modpw
 use modtddft
 use modvars
+use modmpi
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
 !   values for the input parameters.
@@ -64,13 +65,14 @@ rgkmax=7.d0
 gmaxvr=12.d0
 lmaxapw=8
 lmaxvr=7
-lmaxmat=6
+lmaxmat=7
 lmaxinr=3
 fracinr=0.01d0
 trhonorm=.true.
 xctype(1)=3
-xctype(2)=0
-xctype(3)=0
+xctype(2:3)=0
+xctsp(1)=3
+xctsp(2:3)=0
 stype=3
 swidth=0.001d0
 autoswidth=.false.
@@ -143,6 +145,7 @@ epsband=1.d-12
 demaxbnd=2.5d0
 autolinengy=.false.
 dlefe=-0.1d0
+deapwlo=0.1d0
 bfieldc0(:)=0.d0
 efieldc(:)=0.d0
 afieldc(:)=0.d0
@@ -248,7 +251,7 @@ hmaxvr=20.d0
 hkmax=12.d0
 lorbcnd=.false.
 lorbordc=3
-nrmtscf=1
+nrmtscf=1.d0
 lmaxdos=3
 epsph=0.005d0
 msmooth=0
@@ -264,8 +267,10 @@ ncgga=.false.
 tstime=1000.d0
 dtimes=0.1d0
 npulse=0
+nramp=0
 ntswrite=10
-nxapwlo=0
+nxoapwlo=0
+nxlo=0
 tdrho1d=.false.
 tdrho2d=.false.
 tdrho3d=.false.
@@ -460,6 +465,10 @@ case('xctype')
   read(50,'(A256)',err=20) str
   str=trim(str)//' 0 0'
   read(str,*,err=20) xctype
+case('xctsp')
+  read(50,'(A256)',err=20) str
+  str=trim(str)//' 0 0'
+  read(str,*,err=20) xctsp
 case('stype')
   read(50,*,err=20) stype
 case('swidth')
@@ -802,6 +811,14 @@ case('autolinengy')
   read(50,*,err=20) autolinengy
 case('dlefe')
   read(50,*,err=20) dlefe
+case('deapwlo')
+  read(50,*,err=20) deapwlo
+  if (abs(deapwlo).lt.1.d-8) then
+    write(*,*)
+    write(*,'("Error(readinput): invalid deapwlo : ",G18.10)') deapwlo
+    write(*,*)
+    stop
+  end if
 case('bfieldc')
   read(50,*,err=20) bfieldc0
 case('efieldc')
@@ -1326,24 +1343,72 @@ case('c_tb09')
   tc_tb09=.true.
 case('rndachi')
   read(50,*,err=20) rndachi
-case('highq')
+case('highq','vhighq')
   read(50,*,err=20) highq
-! parameter set for high-quality calculation
   if (highq) then
-    rgkmax=8.d0
-    gmaxvr=18.d0
-    lmaxapw=10
-    lmaxvr=8
-    lmaxmat=8
-    fracinr=0.005d0
-    nrmtscf=2
-    radkpt=50.d0
-    autokpt=.true.
-    vkloff(:)=0.d0
-    nempty0=10.d0
-    epspot=1.d-7
-    epsengy=1.d-5
-    epsforce=1.d-4
+! parameter set for high quality calculation
+    if (trim(block).eq.'highq') then
+      rgkmax=8.d0
+      gmaxvr=20.d0
+      trimvg=.true.
+      lmaxapw=10
+      lmaxvr=8
+      lmaxinr=4
+      lmaxmat=8
+      fracinr=0.005d0
+      nrmtscf=1.5d0
+      nxlo=2
+      radkpt=50.d0
+      autokpt=.true.
+      vkloff(:)=0.d0
+      nempty0=10.d0
+      epspot=1.d-7
+      epsengy=1.d-5
+      epsforce=1.d-4
+      autolinengy=.true.
+    else
+! parameter set for very high quality calculation
+      rgkmax=9.d0
+      gmaxvr=24.d0
+      trimvg=.true.
+      lmaxapw=12
+      lmaxvr=9
+      lmaxinr=4
+      lmaxmat=12
+      fracinr=0.005d0
+      nrmtscf=2.d0
+      nxlo=3
+      radkpt=90.d0
+      autokpt=.true.
+      vkloff(:)=0.d0
+      nempty0=20.d0
+      epspot=1.d-7
+      epsengy=1.d-5
+      epsforce=1.d-4
+      autolinengy=.true.
+    end if
+    if (mp_mpi) then
+      write(*,*)
+      write(*,'("Info(readinput): parameters set by ",A," option")') trim(block)
+      write(*,'(" rgkmax : ",G18.10)') rgkmax
+      write(*,'(" gmaxvr : ",G18.10)') gmaxvr
+      write(*,'(" trimvg : ",L1)') autokpt
+      write(*,'(" lmaxapw : ",I4)') lmaxapw
+      write(*,'(" lmaxmat : ",I4)') lmaxmat
+      write(*,'(" lmaxvr : ",I4)') lmaxvr
+      write(*,'(" lmaxinr : ",I4)') lmaxinr
+      write(*,'(" fracinr : ",G18.10)') fracinr
+      write(*,'(" nrmtscf : ",G18.10)') nrmtscf
+      write(*,'(" nxlo : ",I4)') nxlo
+      write(*,'(" radkpt : ",G18.10)') radkpt
+      write(*,'(" autokpt : ",L1)') autokpt
+      write(*,'(" vkloff : ",3G18.10)') vkloff
+      write(*,'(" nempty0 : ",G18.10)') nempty0
+      write(*,'(" epspot : ",G18.10)') epspot
+      write(*,'(" epsengy : ",G18.10)') epsengy
+      write(*,'(" epsforce : ",G18.10)') epsforce
+      write(*,'(" autolinengy : ",L1)') autolinengy
+    end if
   end if
 case('hmaxvr')
   read(50,*,err=20) hmaxvr
@@ -1380,9 +1445,9 @@ case('lorbordc')
   end if
 case('nrmtscf')
   read(50,*,err=20) nrmtscf
-  if (nrmtscf.lt.1) then
+  if (nrmtscf.lt.0.5d0) then
     write(*,*)
-    write(*,'("Error(readinput): nrmtscf < 1 : ",I8)') nrmtscf
+    write(*,'("Error(readinput): nrmtscf < 0.5 : ",G18.10)') nrmtscf
     write(*,*)
     stop
   end if
@@ -1517,15 +1582,36 @@ case('pulse')
   do i=1,npulse
     read(50,*,err=20) pulse(:,i)
   end do
+case('ramp')
+  read(50,*,err=20) nramp
+  if (nramp.lt.1) then
+    write(*,*)
+    write(*,'("Error(readinput): nramp < 1 : ",I8)') nramp
+    write(*,*)
+    stop
+  end if
+  if (allocated(ramp)) deallocate(ramp)
+  allocate(ramp(6,nramp))
+  do i=1,nramp
+    read(50,*,err=20) ramp(:,i)
+  end do
 case('ncgga')
   read(50,*,err=20) ncgga
 case('ntswrite')
   read(50,*,err=20) ntswrite
-case('nxapwlo')
-  read(50,*,err=20) nxapwlo
-  if (nxapwlo.lt.0) then
+case('nxoapwlo','nxapwlo')
+  read(50,*,err=20) nxoapwlo
+  if (nxoapwlo.lt.0) then
     write(*,*)
-    write(*,'("Error(readinput): nxapwlo < 0 : ",I8)') nxapwlo
+    write(*,'("Error(readinput): nxoapwlo < 0 : ",I8)') nxoapwlo
+    write(*,*)
+    stop
+  end if
+case('nxlo')
+  read(50,*,err=20) nxlo
+  if (nxlo.lt.0) then
+    write(*,*)
+    write(*,'("Error(readinput): nxlo < 0 : ",I8)') nxlo
     write(*,*)
     stop
   end if

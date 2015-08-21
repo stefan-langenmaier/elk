@@ -45,7 +45,7 @@ do i=0,1; do j=0,1; do k=0,1
 ! vector in Cartesian coordinates
   v2(:)=bvec(:,1)*v1(1)+bvec(:,2)*v1(2)+bvec(:,3)*v1(3)
 ! check length is within range
-  t1=sqrt(v1(1)**2+v1(2)**2+v1(3)**2)
+  t1=sqrt(v2(1)**2+v2(2)**2+v2(3)**2)
   if (t1.gt.hkmax) cycle
 ! find the lattice symmetry which maps the non-reduced to reduced k-point
   call findkpt(vkl(:,jk),isym,ik)

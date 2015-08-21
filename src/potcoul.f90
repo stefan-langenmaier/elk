@@ -41,13 +41,13 @@ end do
 !$OMP END PARALLEL
 ! solve the complex Poisson's equation in the muffin-tins
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
-call genzvclmt(nrmt,nrmtinr,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
+call genzvclmt(nrmt,nrmtinr,nrspmax,rsp,nrmtmax,zrhomt,zvclmt)
 deallocate(zrhomt)
 ! add the nuclear monopole potentials
 t1=1.d0/y00
 do is=1,nspecies
   nr=nrmt(is)
-  call potnucl(ptnucl,nr,spr(:,is),spzn(is),vn)
+  call potnucl(ptnucl,nr,rsp(:,is),spzn(is),vn)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     zvclmt(1,1:nr,ias)=zvclmt(1,1:nr,ias)+t1*vn(1:nr)
@@ -58,7 +58,7 @@ allocate(zrhoir(ngtot))
 zrhoir(:)=rhoir(:)
 ! solve Poisson's equation in the entire unit cell
 allocate(zvclir(ngtot))
-call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
+call zpotcoul(nrmt,nrmtinr,nrspmax,rsp,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
  zvclmt,zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)

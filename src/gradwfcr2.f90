@@ -21,16 +21,16 @@ do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
   nri=nrmtinr(is)
-  do ist=1,spnst(is)
-    if (spcore(ist,is).and.(spk(ist,is).eq.spl(ist,is)+1)) then
-      l=spl(ist,is)
+  do ist=1,nstsp(is)
+    if (spcore(ist,is).and.(ksp(ist,is).eq.lsp(ist,is)+1)) then
+      l=lsp(ist,is)
       do m=-l,l
         lm=idxlm(l,m)
         wfmt(:,1:nr)=0.d0
         do ir=1,nr
-          wfmt(lm,ir)=rwfcr(ir,1,ist,ias)/spr(ir,is)
+          wfmt(lm,ir)=rwfcr(ir,1,ist,ias)/rsp(ir,is)
         end do
-        call gradzfmt(nr,nri,spr(:,is),wfmt,nrmtmax,gwfmt)
+        call gradzfmt(nr,nri,rsp(:,is),wfmt,nrmtmax,gwfmt)
         do i=1,3
           call zbsht(nr,nri,gwfmt(:,:,i),zfmt)
 ! inner part of muffin-tin

@@ -117,3 +117,7 @@ echo
 echo "Then run 'make' to compile the code."
 echo
 
+echo
+echo "To enable syntax highlighting in vim run 'make vim'"
+echo
+

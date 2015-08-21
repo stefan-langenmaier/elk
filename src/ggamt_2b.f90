@@ -39,7 +39,7 @@ nri=nrmtinr(is)
 ! convert dxdg2 to spherical harmonics
 call rfsht(nr,nri,1,dxdg2,1,rfmt1)
 ! compute grad dxdg2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdg2).(grad rho) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
@@ -53,7 +53,7 @@ vx(:,1:nr)=vx(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdg2(:,1:nr)*g2rho(:,1:nr))
 ! convert dcdg2 to spherical harmonics
 call rfsht(nr,nri,1,dcdg2,1,rfmt1)
 ! compute grad dcdg2
-call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdg2).(grad rho) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3

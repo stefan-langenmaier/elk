@@ -154,9 +154,7 @@ do j=1,nst
         if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
           if (tgp) then
 ! wavefunction in G+p-space
-            do igp=1,ngp(jspn)
-              wfir(igp,ispn,j)=wfir(igp,ispn,j)+z1*evecfv(igp,ist,jspn)
-            end do
+            call zaxpy(ngp(jspn),z1,evecfv(:,ist,jspn),1,wfir(:,ispn,j),1)
           else
 ! wavefunction in real-space
             z1=t1*z1
@@ -171,9 +169,7 @@ do j=1,nst
   else
 ! spin-unpolarised wavefunction
     if (tgp) then
-      do igp=1,ngp(1)
-        wfir(igp,1,j)=evecfv(igp,k,1)
-      end do
+      call zcopy(ngp(1),evecfv(:,k,1),1,wfir(:,1,j),1)
     else
       do igp=1,ngp(1)
         ifg=igfft(igpig(igp,1))

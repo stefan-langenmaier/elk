@@ -18,7 +18,7 @@ complex(8), allocatable :: zfft1(:),zfft2(:)
 allocate(grfmt1(lmmaxvr,nrmtmax,3))
 do ias=1,natmtot
   is=idxis(ias)
-  call gradrfmt(nrmt(is),nrmtinr(is),spr(:,is),rfmt(:,:,ias),nrmtmax,grfmt1)
+  call gradrfmt(nrmt(is),nrmtinr(is),rsp(:,is),rfmt(:,:,ias),nrmtmax,grfmt1)
   do i=1,3
     grfmt(:,1:nrmt(is),ias,i)=grfmt1(:,1:nrmt(is),i)
   end do

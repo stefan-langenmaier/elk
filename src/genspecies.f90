@@ -12,10 +12,10 @@ integer, intent(in) :: fnum
 ! local variables
 integer nz,nmax,nst,ist
 integer ne,nrm,nr,ir,it,i
-integer n(maxspst),l(maxspst),k(maxspst)
+integer n(maxstsp),l(maxstsp),k(maxstsp)
 real(8) mass,zn,t1,t2,t3
 real(8) rm,rmin,rmax
-real(8) occ(maxspst),eval(maxspst)
+real(8) occ(maxstsp),eval(maxstsp)
 character(256) symb,name
 ! allocatable arrays
 real(8), allocatable :: r(:),rho(:),vr(:),rwf(:,:,:)
@@ -32,7 +32,7 @@ read(fnum,*,err=20) mass
 mass=mass*amu
 read(fnum,*,err=20) rm
 read(fnum,*,err=20) nst
-if ((nst.le.0).or.(nst.gt.maxspst)) then
+if ((nst.le.0).or.(nst.gt.maxstsp)) then
   write(*,*)
   write(*,'("Error(genspecies): nst out of range : ",I8)') nst
   write(*,'(" for species ",A)') trim(name)

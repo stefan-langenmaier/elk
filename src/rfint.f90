@@ -7,27 +7,25 @@ real(8) function rfint(rfmt,rfir)
 use modmain
 implicit none
 ! arguments
-real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(in) :: rfir(ngtot)
+real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot)
 ! local variables
-integer is,ias,ir
-real(8) sum
+integer is,ias,nr
+real(8) sum,t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax)
-sum=0.d0
+real(8) fr(nrmtmax)
+! external functions
+real(8) ddot,fintgt
+external ddot,fintgt
 ! interstitial contribution
-do ir=1,ngtot
-  sum=sum+rfir(ir)*cfunir(ir)
-end do
+sum=ddot(ngtot,rfir,1,cfunir,1)
 sum=sum*omega/dble(ngtot)
 ! muffin-tin contribution
 do ias=1,natmtot
   is=idxis(ias)
-  do ir=1,nrmt(is)
-    fr(ir)=rfmt(1,ir,ias)*spr(ir,is)**2
-  end do
-  call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
-  sum=sum+fourpi*y00*gr(nrmt(is))
+  nr=nrmt(is)
+  fr(1:nr)=rfmt(1,1:nr,ias)*r2sp(1:nr,is)
+  t1=fintgt(-1,nr,rsp(:,is),fr)
+  sum=sum+fourpi*y00*t1
 end do
 rfint=sum
 return

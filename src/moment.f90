@@ -23,10 +23,10 @@ implicit none
 integer idm,is,ias,ir
 real(8) t1
 ! automatic arrays
-real(8) fr(nrmtmax),gr(nrmtmax)
+real(8) fr(nrmtmax)
 ! external functions
-real(8) ddot
-external ddot
+real(8) fintgt,ddot
+external fintgt,ddot
 if (.not.spinpol) then
   mommt(:,:)=0.d0
   mommttot(:)=0.d0
@@ -40,10 +40,10 @@ do idm=1,ndmag
   do ias=1,natmtot
     is=idxis(ias)
     do ir=1,nrmt(is)
-      fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
+      fr(ir)=magmt(1,ir,ias,idm)*r2sp(ir,is)
     end do
-    call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
-    mommt(idm,ias)=fourpi*y00*gr(nrmt(is))
+    t1=fintgt(-1,nrmt(is),rsp(:,is),fr)
+    mommt(idm,ias)=fourpi*y00*t1
     mommttot(idm)=mommttot(idm)+mommt(idm,ias)
   end do
 end do

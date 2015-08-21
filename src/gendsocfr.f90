@@ -24,13 +24,13 @@ do ias=1,natmtot
   nr=nrmt(is)
   vr1(1:nr)=dble(dvsmt(1,1:nr,ias))*y00
   vr2(1:nr)=aimag(dvsmt(1,1:nr,ias))*y00
-  call fderiv(1,nr,spr(:,is),vr1,dvr1)
-  call fderiv(1,nr,spr(:,is),vr2,dvr2)
+  call fderiv(1,nr,rsp(:,is),vr1,dvr1)
+  call fderiv(1,nr,rsp(:,is),vr2,dvr2)
   irc=0
   do ir=1,nr,lradstp
     irc=irc+1
     z1=cmplx(dvr1(ir),dvr2(ir),8)
-    dsocfr(irc,ias)=(cso/spr(ir,is))*z1
+    dsocfr(irc,ias)=(cso/rsp(ir,is))*z1
   end do
 end do
 deallocate(vr1,vr2,dvr1,dvr2)

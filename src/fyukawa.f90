@@ -31,7 +31,7 @@ integer, intent(in) :: is
 integer, intent(in) :: l,k
 real(8), intent(in) :: lambda
 ! local variables
-integer ias,io,nr,ir
+integer ias,nr,ir
 integer nr1,nr2,ir1,ir2
 real(8) r2,x,t1
 ! automatic arrays
@@ -41,7 +41,6 @@ real(8) bint(nrmtmax),cint(nrmtmax)
 ! allocatable arrays
 real(8), allocatable :: a(:,:),b(:,:)
 ias=idxas(1,is)
-io=1
 nr=nrmt(is)
 ! (-1)**k factor takes care of the additional (-1)**k introduced by zbessela(b)
 t1=lambda*dble((2*k+1)*(-1)**(k+1))
@@ -57,10 +56,10 @@ clow(:)=0.d0
 chigh(:)=0.d0
 ! calculate Slater parameters
 do ir=1,nr
-  r2=spr(ir,is)**2
-  bint(ir)=fdufr(ir,1,io,l,ias)*fdufr(ir,1,io,l,ias)*r2
+  r2=r2sp(ir,is)
+  bint(ir)=fdufr(ir,l,ias)*fdufr(ir,l,ias)*r2
 ! argument of Bessel and Hankel functions divided by i
-  x=spr(ir,is)*lambda
+  x=rsp(ir,is)*lambda
 ! calculate Bessel and Hankel functions divided by i
   call zbessela(2*l,x,a(:,ir))
   call zbesselb(2*l,x,b(:,ir))
@@ -74,18 +73,18 @@ do ir=1,nr
     blow(ir1)=bint(ir2)*a(k,ir2)
   end do
 ! integrate 1st term
-  call fderiv(-1,nr1,spr(1,is),blow,clow)
+  call fderiv(-1,nr1,rsp(1,is),blow,clow)
 ! 2nd term : r2 > r
   do ir1=1,nr2
     ir2=ir1+ir-1
     bhigh(ir1)=bint(ir2)*b(k,ir2)
   end do
 ! integrate 2nd term
-  call fderiv(-1,nr2,spr(ir,is),bhigh,chigh)
+  call fderiv(-1,nr2,rsp(ir,is),bhigh,chigh)
 ! sum of the two terms
   cint(ir)=bint(ir)*(b(k,ir)*clow(nr1)+a(k,ir)*chigh(nr2))
 end do
-call fderiv(-1,nr,spr(1,is),cint,fint)
+call fderiv(-1,nr,rsp(1,is),cint,fint)
 fyukawa=t1*fint(nr)
 deallocate(a,b)
 return

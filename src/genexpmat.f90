@@ -105,8 +105,8 @@ do is=1,nspecies
 ! calculate the wavefunction for k-point p
       call wavefmt(lradstp,ias,ngp,apwalm1,evecfv1(:,jst),wfmt1)
       do ist=1,nstfv
-        em(ist,jst)=em(ist,jst)+zfmtinp(nrc,nrci,rcmt(:,is),wfmt2(:,:,ist), &
-         wfmt1)
+        em(ist,jst)=em(ist,jst)+zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is), &
+         wfmt2(:,:,ist),wfmt1)
       end do
     end do
 ! end loops over atoms and species

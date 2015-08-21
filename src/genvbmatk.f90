@@ -54,7 +54,8 @@ do jst=1,nstsv
     do ist=1,jst
 ! compute inner product
       do ispn=1,nspinor
-        z1=zfcmtinp(nrc,nrci,rcmt(:,is),wfmt(:,:,ias,ispn,ist),wfmt1(:,:,ispn))
+        z1=zfcmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),wfmt(:,:,ias,ispn,ist), &
+         wfmt1(:,:,ispn))
         vbmat(ist,jst)=vbmat(ist,jst)+z1
       end do
     end do

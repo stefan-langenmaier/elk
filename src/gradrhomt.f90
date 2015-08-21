@@ -15,7 +15,7 @@ real(8), allocatable :: rfmt(:,:),grfmt(:,:,:)
 allocate(rfmt(lmmaxvr,nrmtmax),grfmt(lmmaxvr,nrmtmax,3))
 nr=nrmt(isph)
 nri=nrmtinr(isph)
-call gradrfmt(nr,nri,spr(:,isph),rhomt(:,:,iasph),nrmtmax,grfmt)
+call gradrfmt(nr,nri,rsp(:,isph),rhomt(:,:,iasph),nrmtmax,grfmt)
 ! convert to spherical coordinates
 call rbsht(nr,nri,1,grfmt(:,:,ipph),1,rfmt)
 ! subtract from density derivative

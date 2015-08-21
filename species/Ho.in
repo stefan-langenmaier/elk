@@ -2,9 +2,9 @@
  'holmium'                                  : spname
   -67.0000                                  : spzn
    300649.5811                              : spmass
-  0.244339E-06    2.8000   53.7512   700    : sprmin, rmt, sprmax, nrmt
-  20                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.244339E-06    2.8000   52.5157   700    : rminsp, rmt, rmaxsp, nrmt
+  20                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

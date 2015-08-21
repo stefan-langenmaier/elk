@@ -15,11 +15,11 @@ integer, parameter :: nit=4
 integer nst,ist,jst
 integer nmax,in,il,ik
 integer nrm,nr,ir,it
-integer n(maxspst),l(maxspst),k(maxspst)
-integer idx(maxspst),iv(maxspst)
+integer n(maxstsp),l(maxstsp),k(maxstsp)
+integer idx(maxstsp),iv(maxstsp)
 real(8) rm,rmin,rmax
 real(8) mass,t1,t2,t3
-real(8) occ(maxspst),eval(maxspst),rv(maxspst)
+real(8) occ(maxstsp),eval(maxstsp),rv(maxstsp)
 character(256) name
 ! allocatable arrays
 real(8), allocatable :: r(:),rho(:),vr(:),rwf(:,:,:)
@@ -32,7 +32,7 @@ occ(:)=0.d0
 t1=abs(zn)
 nmax=1
 ist=0
-do in=1,maxspst
+do in=1,maxstsp
   do il=0,in-1
     do ik=max(il,1),il+1
       t2=dble(2*ik)
@@ -44,7 +44,7 @@ do in=1,maxspst
       occ(ist)=t2
       if (t2.gt.epsocc) nmax=in
       t1=t1-t2
-      if (ist.eq.maxspst) then
+      if (ist.eq.maxstsp) then
         if (t1.gt.epsocc) then
           write(*,*)
           write(*,'("Error(genfspecies): too many states for fractional &
@@ -74,16 +74,16 @@ do it=1,nit
   t2=log(rmax/rmin)
   t3=dble(nrm)*t2/t1
   nr=int(t3)
-  allocate(r(nr),rho(nr),vr(nr),rwf(nr,2,maxspst))
+  allocate(r(nr),rho(nr),vr(nr),rwf(nr,2,maxstsp))
 ! generate logarithmic radial mesh
   t2=t1/dble(nrm-1)
   do ir=1,nr
     r(ir)=rmin*exp(dble(ir-1)*t2)
   end do
 ! solve the Kohn-Sham-Dirac equation for the atom
-  call atom(sol,.true.,zn,maxspst,n,l,k,occ,3,0,nr,r,eval,rho,vr,rwf)
+  call atom(sol,.true.,zn,maxstsp,n,l,k,occ,3,0,nr,r,eval,rho,vr,rwf)
 ! check for spurious eigenvalues
-  do ist=2,maxspst
+  do ist=2,maxstsp
     if (eval(ist).lt.eval(1)) eval(ist)=1.d6
   end do
 ! recompute the effective infinity
@@ -103,11 +103,11 @@ do it=1,nit
   if (rm.lt.1.d0) rm=1.d0
   if (rm.gt.3.2d0) rm=3.2d0
 ! sort the eigenvalues
-  call sortidx(maxspst,eval,idx)
+  call sortidx(maxstsp,eval,idx)
 ! recompute the occupancies
   occ(:)=0.d0
   t1=abs(zn)
-  do ist=1,maxspst
+  do ist=1,maxstsp
     jst=idx(ist)
     ik=k(jst)
     t2=dble(2*ik)
@@ -130,7 +130,7 @@ rv(:)=eval(:)
 eval(:)=rv(idx(:))
 ! find the number of occupied states
 nst=0
-do ist=1,maxspst
+do ist=1,maxstsp
   if (occ(ist).lt.epsocc) then
     nst=ist
     exit

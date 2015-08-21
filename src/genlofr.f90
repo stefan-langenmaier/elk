@@ -29,21 +29,20 @@ implicit none
 integer is,ia,ja,ias,jas
 integer nr,ir,ilo,jlo,io,jo
 integer np,nn,j,l,info
-real(8) t1
+real(8) e,t1
 ! automatic arrays
 logical done(natmmax)
-real(8) vr(nrmtmax),fr(nrmtmax),gr(nrmtmax)
+real(8) vr(nrmtmax),fr(nrmtmax)
 real(8) p0(nrmtmax,maxlorbord),p1(nrmtmax)
-real(8) q0(nrmtmax,maxlorbord),q1(nrmtmax,maxlorbord)
-real(8) p0s(nrmtmax,nlomax),q0s(nrmtmax,nlomax),q1s(nrmtmax,nlomax)
-real(8) hp0(nrmtmax)
+real(8) q0(nrmtmax),q1(nrmtmax),ep0(nrmtmax,maxlorbord)
+real(8) p0s(nrmtmax,nlomax),ep0s(nrmtmax,nlomax)
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
 real(8), allocatable :: xa(:),ya(:)
 real(8), allocatable :: a(:,:),b(:),c(:)
 ! external functions
-real(8) polynom
-external polynom
+real(8) fintgt,polynom
+external fintgt,polynom
 ! polynomial order
 np=max(maxlorbord+1,4)
 allocate(ipiv(np))
@@ -60,21 +59,22 @@ do is=1,nspecies
     do ilo=1,nlorb(is)
       l=lorbl(ilo,is)
       do jo=1,lorbord(ilo,is)
+! linearisation energy accounting for energy derivative
+        e=lorbe(jo,ilo,ias)+dble(lorbdm(jo,ilo,is))*deapwlo
 ! integrate the radial Schrodinger equation
-        call rschroddme(solsc,lorbdm(jo,ilo,is),l,0,lorbe(jo,ilo,ias),nr, &
-         spr(:,is),vr,nn,p0(:,jo),p1,q0(:,jo),q1(:,jo))
+        call rschrodint(solsc,l,e,nr,rsp(:,is),vr,nn,p0(:,jo),p1,q0,q1)
+        ep0(1:nr,jo)=e*p0(1:nr,jo)
 ! normalise radial functions
         fr(1:nr)=p0(1:nr,jo)**2
-        call fderiv(-1,nr,spr(:,is),fr,gr)
-        t1=1.d0/sqrt(abs(gr(nr)))
+        t1=fintgt(-1,nr,rsp(:,is),fr)
+        t1=1.d0/sqrt(abs(t1))
         call dscal(nr,t1,p0(:,jo),1)
-        call dscal(nr,t1,q0(:,jo),1)
-        call dscal(nr,t1,q1(:,jo),1)
+        call dscal(nr,t1,ep0(:,jo),1)
 ! set up the matrix of radial derivatives
         do j=1,np
           ir=nr-np+j
-          xa(j)=spr(ir,is)
-          ya(j)=p0(ir,jo)/spr(ir,is)
+          xa(j)=rsp(ir,is)
+          ya(j)=p0(ir,jo)/rsp(ir,is)
         end do
         do io=1,lorbord(ilo,is)
           a(io,jo)=polynom(io-1,np,xa,ya,c,rmt(is))
@@ -87,49 +87,40 @@ do is=1,nspecies
       if (info.ne.0) goto 10
 ! generate linear superposition of radial functions
       p0s(:,ilo)=0.d0
-      q0s(:,ilo)=0.d0
-      q1s(:,ilo)=0.d0
+      ep0s(:,ilo)=0.d0
       do io=1,lorbord(ilo,is)
         t1=b(io)
         call daxpy(nr,t1,p0(:,io),1,p0s(:,ilo),1)
-        call daxpy(nr,t1,q0(:,io),1,q0s(:,ilo),1)
-        call daxpy(nr,t1,q1(:,io),1,q1s(:,ilo),1)
+        call daxpy(nr,t1,ep0(:,io),1,ep0s(:,ilo),1)
       end do
 ! normalise radial functions
       fr(1:nr)=p0s(1:nr,ilo)**2
-      call fderiv(-1,nr,spr(:,is),fr,gr)
-      t1=1.d0/sqrt(abs(gr(nr)))
+      t1=fintgt(-1,nr,rsp(:,is),fr)
+      t1=1.d0/sqrt(abs(t1))
       call dscal(nr,t1,p0s(:,ilo),1)
-      call dscal(nr,t1,q0s(:,ilo),1)
-      call dscal(nr,t1,q1s(:,ilo),1)
+      call dscal(nr,t1,ep0s(:,ilo),1)
 ! subtract linear combination of previous local-orbitals with same l
       do jlo=1,ilo-1
         if (lorbl(jlo,is).eq.l) then
           fr(1:nr)=p0s(1:nr,ilo)*p0s(1:nr,jlo)
-          call fderiv(-1,nr,spr(:,is),fr,gr)
-          t1=-gr(nr)
+          t1=-fintgt(-1,nr,rsp(:,is),fr)
           call daxpy(nr,t1,p0s(:,jlo),1,p0s(:,ilo),1)
-          call daxpy(nr,t1,q0s(:,jlo),1,q0s(:,ilo),1)
-          call daxpy(nr,t1,q1s(:,jlo),1,q1s(:,ilo),1)
+          call daxpy(nr,t1,ep0s(:,jlo),1,ep0s(:,ilo),1)
         end if
       end do
 ! normalise radial functions again
       fr(1:nr)=p0s(1:nr,ilo)**2
-      call fderiv(-1,nr,spr(:,is),fr,gr)
-      t1=abs(gr(nr))
-      if (t1.lt.1.d-14) goto 10
+      t1=fintgt(-1,nr,rsp(:,is),fr)
+      t1=abs(t1)
+      if (t1.lt.1.d-25) goto 10
       t1=1.d0/sqrt(t1)
       call dscal(nr,t1,p0s(:,ilo),1)
-      call dscal(nr,t1,q0s(:,ilo),1)
-      call dscal(nr,t1,q1s(:,ilo),1)
-! apply the scalar relativistic Hamiltonian
-      call rschrodapp(solsc,l,nr,spr(:,is),vr,p0s(:,ilo),q0s(:,ilo), &
-       q1s(:,ilo),hp0)
+      call dscal(nr,t1,ep0s(:,ilo),1)
 ! divide by r and store in global array
       do ir=1,nr
-        t1=1.d0/spr(ir,is)
+        t1=1.d0/rsp(ir,is)
         lofr(ir,1,ilo,ias)=t1*p0s(ir,ilo)
-        lofr(ir,2,ilo,ias)=t1*hp0(ir)
+        lofr(ir,2,ilo,ias)=t1*ep0s(ir,ilo)
       end do
     end do
     done(ia)=.true.

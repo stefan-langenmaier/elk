@@ -25,8 +25,7 @@ implicit none
 ! arguments
 integer, intent(in) :: ik
 real(8), intent(out) :: evalfv(nstfv,nspnfv)
-complex(8), intent(out) :: evecfv(nmatmax,nstfv,nspnfv)
-complex(8), intent(out) :: evecsv(nstsv,nstsv)
+complex(8), intent(out) :: evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv)
 ! local variables
 integer jspn
 ! allocatable arrays

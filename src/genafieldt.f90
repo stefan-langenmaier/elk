@@ -30,7 +30,7 @@ use modtddft
 !BOC
 implicit none
 ! local variables
-integer its,ip
+integer its,i
 real(8) a0(3),t0,d,w,phi,rc
 real(8) gs,ppd,s,t,t1,t2,t3
 ! conversion factor of power density to W/cm^2
@@ -45,7 +45,7 @@ allocate(times(ntimes))
 do its=1,ntimes
   times(its)=dble(its-1)*dtimes
 end do
-open(50,file='PULSE.OUT',action='WRITE',form='FORMATTED')
+open(50,file='TD_INFO.OUT',action='WRITE',form='FORMATTED')
 write(50,*)
 write(50,'("(All units are atomic unless otherwise specified)")')
 write(50,*)
@@ -60,29 +60,30 @@ write(50,*)
 write(50,'("Number of time steps : ",I8)') ntimes
 write(50,*)
 write(50,'("Number of laser pulses : ",I6)') npulse
+write(50,'("Number of ramps : ",I6)') nramp
 ! allocate and zero time-dependent A-field array
 if (allocated(afieldt)) deallocate(afieldt)
 allocate(afieldt(3,ntimes))
 afieldt(:,:)=0.d0
 ! loop over laser pulses
-do ip=1,npulse
+do i=1,npulse
 ! vector amplitude
-  a0(1:3)=pulse(1:3,ip)
+  a0(1:3)=pulse(1:3,i)
 ! frequency
-  w=pulse(4,ip)
+  w=pulse(4,i)
 ! phase
-  phi=pulse(5,ip)
+  phi=pulse(5,i)
 ! chirp rate
-  rc=pulse(6,ip)
+  rc=pulse(6,i)
 ! peak time
-  t0=pulse(7,ip)
+  t0=pulse(7,i)
 ! full-width at half-maximum
-  d=pulse(8,ip)
+  d=pulse(8,i)
 ! sigma
   s=d/(2.d0*sqrt(2.d0*log(2.d0)))
-! write information to PULSE.OUT
+! write information to TD_INFO.OUT
   write(50,*)
-  write(50,'("Pulse : ",I6)') ip
+  write(50,'("Pulse : ",I6)') i
   write(50,'(" vector amplitude : ",3G18.10)') a0(:)
   write(50,'(" laser frequency : ",G18.10)') w
   write(50,'("  in eV          : ",G18.10)') w*ha_ev
@@ -107,6 +108,30 @@ do ip=1,npulse
     afieldt(:,its)=afieldt(:,its)+a0(:)*gs
   end do
 end do
+! loop over ramps
+do i=1,nramp
+! vector amplitude
+  a0(1:3)=ramp(1:3,i)
+! ramp start time
+  t0=ramp(4,i)
+! linear coefficient
+  t1=ramp(5,i)
+! quadratic coefficient
+  t2=ramp(6,i)
+! write information to TD_INFO.OUT
+  write(50,*)
+  write(50,'("Ramp : ",I6)') i
+  write(50,'(" vector amplitude : ",3G18.10)') a0(:)
+  write(50,'(" ramp start time : ",G18.10)') t0
+! loop over time steps
+  do its=1,ntimes
+    t=times(its)
+    if (t.gt.t0) then
+      t3=t1*(t-t0)+t2*(t-t0)**2
+      afieldt(:,its)=afieldt(:,its)+a0(:)*t3
+    end if
+  end do
+end do
 ! write the vector potential to AFIELDT.OUT
 open(50,file='AFIELDT.OUT',action='WRITE',form='FORMATTED')
 write(50,'(I8," : number of time steps")') ntimes
@@ -117,7 +142,7 @@ close(50)
 write(*,*)
 write(*,'("Info(genafieldt):")')
 write(*,'(" Time-dependent A-field written to AFIELDT.OUT")')
-write(*,'(" Laser pulse parameters written to PULSE.OUT")')
+write(*,'(" Laser pulse and ramp parameters written to TD_INFO.OUT")')
 write(*,*)
 write(*,'(" 1 atomic unit of time is ",G18.10," attoseconds")') t_si*1.d18
 write(*,'(" Total simulation time : ",G18.10)') tstime

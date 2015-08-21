@@ -120,9 +120,9 @@ do ik=1,nkptnr
       nrci=nrcmtinr(is)
       do ia=1,natoms(is)
         ias=idxas(ia,is)
-        do ist1=1,spnst(is)
+        do ist1=1,nstsp(is)
           if (spcore(ist1,is)) then
-            do m1=-spk(ist1,is),spk(ist1,is)-1
+            do m1=-ksp(ist1,is),ksp(ist1,is)-1
               jc=jc+1
 ! generate the core wavefunction in spherical coordinates (pass in m-1/2)
               call wavefcr(.false.,lradstp,is,ia,ist1,m1,nrcmtmax,wfcr1)
@@ -169,12 +169,12 @@ do ik=1,nkptnr
           do ia=1,natoms(is)
             ias=idxas(ia,is)
             ic=0
-            do ist1=1,spnst(is)
+            do ist1=1,nstsp(is)
               if (spcore(ist1,is)) then
-                do m1=-spk(ist1,is),spk(ist1,is)-1
+                do m1=-ksp(ist1,is),ksp(ist1,is)-1
                   ic=ic+1
                   jc=jc+1
-                  z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt2(:,:,jc), &
+                  z1=zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),zrhomt2(:,:,jc), &
                    zvclmt(:,:,ias))
                   vclcv(ic,ias,ist2)=vclcv(ic,ias,ist2)-wkptnr*z1
                 end do
@@ -197,9 +197,9 @@ do is=1,nspecies
   nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ist3=1,spnst(is)
+    do ist3=1,nstsp(is)
       if (spcore(ist3,is)) then
-        do m1=-spk(ist3,is),spk(ist3,is)-1
+        do m1=-ksp(ist3,is),ksp(ist3,is)-1
 ! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,ist3,m1,nrcmtmax,wfcr1)
 ! compute the complex overlap densities for the core-valence states
@@ -214,9 +214,9 @@ do is=1,nspecies
           end do
 ! compute the complex overlap densities for the core-core states
           ic=0
-          do ist1=1,spnst(is)
+          do ist1=1,nstsp(is)
             if (spcore(ist1,is)) then
-              do m2=-spk(ist1,is),spk(ist1,is)-1
+              do m2=-ksp(ist1,is),ksp(ist1,is)-1
                 ic=ic+1
                 call wavefcr(.false.,lradstp,is,ia,ist1,m2,nrcmtmax,wfcr2)
                 call genzrmt2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2),wfcr2(:,:,1), &
@@ -234,7 +234,8 @@ do is=1,nspecies
 !-------------------------------------------!
               do ist1=1,nstsv
                 if (evalsv(ist1,ikp).lt.efermi) then
-                  z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt1(:,:,ias,ist1),zvclmt)
+                  z1=zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is), &
+                   zrhomt1(:,:,ias,ist1),zvclmt)
                   vclvv(ist1,ist2)=vclvv(ist1,ist2)-z1
                 end if
               end do
@@ -242,11 +243,12 @@ do is=1,nspecies
 !     core-core-valence contribution     !
 !----------------------------------------!
               ic=0
-              do ist1=1,spnst(is)
+              do ist1=1,nstsp(is)
                 if (spcore(ist1,is)) then
-                  do m2=-spk(ist1,is),spk(ist1,is)-1
+                  do m2=-ksp(ist1,is),ksp(ist1,is)-1
                     ic=ic+1
-                    z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt2(:,:,ic),zvclmt)
+                    z1=zfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is), &
+                     zrhomt2(:,:,ic),zvclmt)
                     vclcv(ic,ias,ist2)=vclcv(ic,ias,ist2)-z1
                   end do
 ! end loop over ist1

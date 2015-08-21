@@ -11,21 +11,27 @@ real(8), intent(in) :: rfmt(lmmaxvr,nrcmtmax,natmtot),rfir(ngtot)
 complex(8), intent(in) :: zfmt(lmmaxvr,nrcmtmax,natmtot),zfir(ngtot)
 ! local variables
 integer ias,is,ir
+complex(8) zsum
 ! external functions
 complex(8) rzfmtinp
 external rzfmtinp
-rzfinp=0.d0
+zsum=0.d0
 ! interstitial contribution
 do ir=1,ngtot
-  rzfinp=rzfinp+(cfunir(ir)*rfir(ir))*zfir(ir)
+  zsum=zsum+(cfunir(ir)*rfir(ir))*zfir(ir)
 end do
-rzfinp=rzfinp*(omega/dble(ngtot))
+zsum=zsum*(omega/dble(ngtot))
 ! muffin-tin contribution
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is) REDUCTION(+:zsum)
+!$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  rzfinp=rzfinp+rzfmtinp(nrcmt(is),nrcmtinr(is),rcmt(:,is),rfmt(:,:,ias), &
-   zfmt(:,:,ias))
+  zsum=zsum+rzfmtinp(nrcmt(is),nrcmtinr(is),rcmt(:,is),r2cmt(:,is), &
+   rfmt(:,:,ias),zfmt(:,:,ias))
 end do
+!$OMP END DO
+!$OMP END PARALLEL
+rzfinp=zsum
 return
 end function
 

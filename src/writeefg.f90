@@ -59,10 +59,10 @@ do is=1,nspecies
       rfmt(2:lmmaxvr,ir)=vclmt(2:lmmaxvr,ir,ias)
     end do
 ! compute the gradient of the Coulomb potential
-    call gradrfmt(nr,nri,spr(:,is),rfmt,nrmtmax,grfmt1)
+    call gradrfmt(nr,nri,rsp(:,is),rfmt,nrmtmax,grfmt1)
     do i=1,3
 ! compute the gradient of the gradient
-      call gradrfmt(nr,nri,spr(:,is),grfmt1(:,:,i),nrmtmax,grfmt2)
+      call gradrfmt(nr,nri,rsp(:,is),grfmt1(:,:,i),nrmtmax,grfmt2)
       do j=1,3
         efg(i,j)=grfmt2(1,1,j)*y00
       end do

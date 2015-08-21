@@ -2,9 +2,9 @@
  'palladium'                                : spname
   -46.0000                                  : spzn
    193991.7925                              : spmass
-  0.294884E-06    2.6000   41.5324   500    : sprmin, rmt, sprmax, nrmt
-  14                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.294884E-06    2.6000   41.5324   500    : rminsp, rmt, rmaxsp, nrmt
+  14                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

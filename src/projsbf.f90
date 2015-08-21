@@ -7,16 +7,15 @@ subroutine projsbf
 use modmain
 implicit none
 ! local variables
-integer is,ias,ir,idm,lm
+integer is,ias,idm
 real(8) t1
 complex(8) zrho0
 ! allocatable arrays
-real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 real(8), allocatable :: rfmt(:,:,:),rfir(:)
 real(8), allocatable :: grfmt(:,:,:,:),grfir(:,:)
 complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
 complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
-allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3),rvfir(ngtot,3))
+!allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3),rvfir(ngtot,3))
 allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3),grfir(ngtot,3))
 allocate(zrhomt(lmmaxvr,nrmtmax,natmtot),zrhoir(ngtot))
@@ -27,34 +26,17 @@ if (.not.spinpol) then
   write(*,*)
   stop
 end if
-if (ncmag) then
-! non-collinear
-  rvfmt(:,:,:,:)=bxcmt(:,:,:,:)
-  rvfir(:,:)=bxcir(:,:)
-else
-! collinear
-  rvfmt(:,:,:,1:2)=0.d0
-  rvfir(:,1:2)=0.d0
-  rvfmt(:,:,:,3)=bxcmt(:,:,:,1)
-  rvfir(:,3)=bxcir(:,1)
-end if
-! compute the divergence of B-field
+! compute the divergence of B_xc
 rfmt(:,:,:)=0.d0
 rfir(:)=0.d0
 do idm=1,3
-  call gradrf(rvfmt(:,:,:,idm),rvfir(:,idm),grfmt,grfir)
+  call gradrf(bxcmt(:,:,:,idm),bxcir(:,idm),grfmt,grfir)
   do ias=1,natmtot
     is=idxis(ias)
-    do ir=1,nrmt(is)
-      rfmt(:,ir,ias)=rfmt(:,ir,ias)+grfmt(:,ir,ias,idm)
-    end do
+    call rfmtadd(nrmt(is),nrmtinr(is),1,grfmt(:,:,ias,idm),rfmt(:,:,ias))
   end do
   rfir(:)=rfir(:)+grfir(:,idm)
 end do
-! divide by -4*pi
-t1=-1.d0/fourpi
-rfmt(:,:,:)=t1*rfmt(:,:,:)
-rfir(:)=t1*rfir(:)
 ! convert real muffin-tin divergence to complex spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
@@ -63,8 +45,8 @@ end do
 ! store real interstitial divergence in a complex array
 zrhoir(:)=rfir(:)
 ! solve the complex Poisson's equation
-call genzvclmt(nrmt,nrmtinr,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
-call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
+call genzvclmt(nrmt,nrmtinr,nrspmax,rsp,nrmtmax,zrhomt,zvclmt)
+call zpotcoul(nrmt,nrmtinr,nrspmax,rsp,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
  zvclmt,zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
 do ias=1,natmtot
@@ -75,26 +57,11 @@ end do
 rfir(:)=dble(zvclir(:))
 ! compute the gradient
 call gradrf(rfmt,rfir,grfmt,grfir)
-! subtract gradient from existing B-field
-if (ncmag) then
-! non-collinear
-  bxcmt(:,:,:,:)=bxcmt(:,:,:,:)-grfmt(:,:,:,:)
-  bxcir(:,:)=bxcir(:,:)-grfir(:,:)
-else
-! collinear
-  bxcmt(:,:,:,1)=bxcmt(:,:,:,1)-grfmt(:,:,:,3)
-  bxcir(:,1)=bxcir(:,1)-grfir(:,3)
-end if
-! remove numerical noise from the muffin-tin B-field
-do idm=1,ndmag
-  do ias=1,natmtot
-    is=idxis(ias)
-    do lm=1,lmmaxvr
-      call fsmooth(10,nrmt(is),lmmaxvr,bxcmt(lm,1,ias,idm))
-    end do
-  end do
-end do
-deallocate(rvfmt,rvfir,rfmt,rfir,grfmt,grfir)
+! add gradient over 4*pi to existing B_xc
+t1=1.d0/fourpi
+bxcmt(:,:,:,:)=bxcmt(:,:,:,:)+t1*grfmt(:,:,:,:)
+bxcir(:,:)=bxcir(:,:)+t1*grfir(:,:)
+deallocate(rfmt,rfir,grfmt,grfir)
 deallocate(zrhomt,zrhoir,zvclmt,zvclir)
 return
 end subroutine

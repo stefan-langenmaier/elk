@@ -35,10 +35,10 @@ do ias=1,natmtot
     do ir=1,nr
 ! add the core density to the muffin-tin density
       rhomt(1,ir,ias)=rhomt(1,ir,ias)+rhocr(ir,ias,ispn)/y00
-      fr(ir)=rhocr(ir,ias,ispn)*spr(ir,is)**2
+      fr(ir)=rhocr(ir,ias,ispn)*r2sp(ir,is)
     end do
 ! compute the core charge inside the muffin-tins
-    call fderiv(-1,nr,spr(:,is),fr,gr)
+    call fderiv(-1,nr,rsp(:,is),fr,gr)
     sum=sum+fourpi*gr(nr)
   end do
 ! core leakage charge
@@ -48,9 +48,9 @@ do ias=1,natmtot
 ! compute the total moment in the muffin-tin
     do idm=1,ndmag
       do ir=1,nr
-        fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
+        fr(ir)=magmt(1,ir,ias,idm)*r2sp(ir,is)
       end do
-      call fderiv(-1,nr,spr(:,is),fr,gr)
+      call fderiv(-1,nr,rsp(:,is),fr,gr)
       v(idm)=fourpi*y00*gr(nr)
     end do
 ! normalise

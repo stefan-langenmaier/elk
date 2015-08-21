@@ -2,9 +2,9 @@
  'tellurium'                                : spname
   -52.0000                                  : spzn
    232600.5707                              : spmass
-  0.277350E-06    2.6000   39.8837   600    : sprmin, rmt, sprmax, nrmt
-  17                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.277350E-06    2.6000   38.8290   600    : rminsp, rmt, rmaxsp, nrmt
+  17                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

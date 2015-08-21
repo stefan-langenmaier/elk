@@ -7,19 +7,19 @@ subroutine dbxcplot
 use modmain
 implicit none
 ! local variables
-integer idm,is,ias,ir
+integer idm,is,ias
 ! allocatable arrays
 real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 real(8), allocatable :: rfmt(:,:,:),rfir(:)
 real(8), allocatable :: grfmt(:,:,:,:),grfir(:,:)
+! initialise universal variables
+call init0
 if (.not.spinpol) then
   write(*,*)
-  write(*,'("Error(dbxcplot): spin-unpolarised field is zero")')
+  write(*,'("Error(dbxcplot): spin-unpolarised magnetic field is zero")')
   write(*,*)
   stop
 end if
-! initialise universal variables
-call init0
 ! read magnetisation from file
 call readstate
 allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3),rvfir(ngtot,3))
@@ -42,9 +42,7 @@ do idm=1,3
   call gradrf(rvfmt(:,:,:,idm),rvfir(:,idm),grfmt,grfir)
   do ias=1,natmtot
     is=idxis(ias)
-    do ir=1,nrmt(is)
-      rfmt(:,ir,ias)=rfmt(:,ir,ias)+grfmt(:,ir,ias,idm)
-    end do
+    call rfmtadd(nrmt(is),nrmtinr(is),1,grfmt(:,:,ias,idm),rfmt(:,:,ias))
   end do
   rfir(:)=rfir(:)+grfir(:,idm)
 end do

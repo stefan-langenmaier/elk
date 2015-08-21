@@ -23,12 +23,12 @@ complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 complex(8), allocatable :: kmat(:,:),pmat(:,:,:)
 ! coupling constant of the external A-field (1/c)
 ca=1.d0/solsc
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 ! get the ground-state eigenvectors from file for input k-point
 call getevecfv('.OUT',vkl(:,ik),vgkl(:,:,:,ik),evecfv)
 call getevecsv('.OUT',vkl(:,ik),evecsv)
 ! find the matching coefficients
+allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! index to all states
 do ist=1,nstsv
@@ -46,6 +46,8 @@ if (spinpol) then
 else
   call genvmatk(vmt,vir,ngk(:,ik),igkig(:,:,ik),wfmt,ngkmax,wfir,h)
 end if
+! add the DFT+U matrix elements if required
+call genvmmtsv(wfmt,h)
 deallocate(wfmt,wfir)
 ! add the kinetic matrix elements in the second-variational basis
 allocate(kmat(nstsv,nstsv))

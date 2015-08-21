@@ -20,10 +20,10 @@ do is=1,nspecies
     ias=idxas(ia,is)
     write(fname,'("WFCORE_S",I2.2,"_A",I4.4,".OUT")') is,ia
     open(50,file=trim(fname),action='WRITE',form='FORMATTED')
-    do ist=1,spnst(is)
+    do ist=1,nstsp(is)
       if (spcore(ist,is)) then
-        do ir=1,spnr(is)
-          write(50,'(2G18.10)') spr(ir,is),rwfcr(ir,1,ist,ias)
+        do ir=1,nrsp(is)
+          write(50,'(2G18.10)') rsp(ir,is),rwfcr(ir,1,ist,ias)
         end do
         write(50,'("     ")')
       end if

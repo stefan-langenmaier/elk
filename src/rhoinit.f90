@@ -23,14 +23,16 @@ implicit none
 ! local variables
 integer, parameter :: lmax=1
 integer is,ia,ias
-integer nr,nrc,ir,irc
-integer l,m,lm,ig,ifg,n
+integer nr,nrc,nro,ir,irc
+integer l,m,lm,ig,ifg
 real(8) x,t1,t2
 complex(8) z1,z2,z3
 ! allocatable arrays
-real(8), allocatable :: jl(:,:),ffg(:)
-real(8), allocatable :: fr(:),gr(:)
+real(8), allocatable :: jl(:,:),ffg(:),fr(:)
 complex(8), allocatable :: zfmt(:,:),zfft(:)
+! external functions
+real(8) fintgt
+external fintgt
 allocate(zfft(ngtot))
 ! zero the charge density and magnetisation arrays
 rhomt(:,:,:)=0.d0
@@ -42,26 +44,26 @@ end if
 ! compute the superposition of all the atomic density tails
 zfft(:)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ffg,fr,gr,nr,n,ig) &
+!$OMP PRIVATE(ffg,fr,nr,nro,ig) &
 !$OMP PRIVATE(ir,x,t1,ia,ias,ifg)
 !$OMP DO
 do is=1,nspecies
-  allocate(ffg(ngvec),fr(spnrmax),gr(spnrmax))
+  allocate(ffg(ngvec),fr(nrspmax))
   nr=nrmt(is)
-  n=spnr(is)-nrmt(is)+1
+  nro=nrsp(is)-nrmt(is)+1
   do ig=1,ngvec
-    do ir=nr,spnr(is)
+    do ir=nr,nrsp(is)
 ! spherical bessel function j_0(x)
-      x=gc(ig)*spr(ir,is)
+      x=gc(ig)*rsp(ir,is)
       if (x.gt.1.d-8) then
         t1=sin(x)/x
       else
         t1=1.d0
       end if
-      fr(ir)=t1*sprho(ir,is)*spr(ir,is)**2
+      fr(ir)=t1*rhosp(ir,is)*r2sp(ir,is)
     end do
-    call fderiv(-1,n,spr(nr,is),fr(nr),gr(nr))
-    ffg(ig)=(fourpi/omega)*gr(spnr(is))
+    t1=fintgt(-1,nro,rsp(nr,is),fr(nr))
+    ffg(ig)=(fourpi/omega)*t1
   end do
   do ia=1,natoms(is)
     ias=idxas(ia,is)
@@ -72,7 +74,7 @@ do is=1,nspecies
     end do
 !$OMP END CRITICAL
   end do
-  deallocate(fr,gr,ffg)
+  deallocate(fr,ffg)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -118,7 +120,7 @@ t1=chgexs/omega
 do ias=1,natmtot
   is=idxis(ias)
   do ir=1,nrmt(is)
-    t2=(t1+sprho(ir,is))/y00
+    t2=(t1+rhosp(ir,is))/y00
     rhomt(1,ir,ias)=rhomt(1,ir,ias)+t2
   end do
 end do

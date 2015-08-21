@@ -22,8 +22,7 @@ complex(8) z1,z2
 ! automatic arrays
 integer idx(nstsv)
 ! allocatable arrays
-complex(8), allocatable :: apwalm(:,:,:,:)
-complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
+complex(8), allocatable :: apwalm(:,:,:,:),evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:),wfcr(:,:,:)
 complex(8), allocatable :: zfmt1(:,:),zvfmt1(:,:,:)
 complex(8), allocatable :: zfmt2(:,:,:),zfir2(:)
@@ -60,9 +59,9 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     ic=0
-    do ist=1,spnst(is)
+    do ist=1,nstsp(is)
       if (spcore(ist,is)) then
-        do m=-spk(ist,is),spk(ist,is)-1
+        do m=-ksp(ist,is),ksp(ist,is)-1
           ic=ic+1
 ! pass in m-1/2 to wavefcr
           call wavefcr(.false.,lradstp,is,ia,ist,m,nrcmtmax,wfcr)
@@ -77,10 +76,10 @@ do is=1,nspecies
                 call genzrmt1(nrc,nrci,wfcr,wfmt(:,:,ias,1,jst),zfmt1)
               end if
               z1=conjg(vclcv(ic,ias,jst,ik))
-              z2=rzfmtinp(nrc,nrci,rcmt(:,is),vxmt(:,:,ias),zfmt1)
+              z2=rzfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),vxmt(:,:,ias),zfmt1)
               z1=z1-conjg(z2)
               do idm=1,ndmag
-                z2=rzfmtinp(nrc,nrci,rcmt(:,is),bxmt(:,:,ias,idm), &
+                z2=rzfmtinp(nrc,nrci,rcmt(:,is),r2cmt(:,is),bxmt(:,:,ias,idm), &
                  zvfmt1(:,:,idm))
                 z1=z1-conjg(z2)
               end do
@@ -130,7 +129,7 @@ do ist=1,nstsv
         z2=rzfinp(vxmt,vxir,zfmt2,zfir2)
         z1=z1-conjg(z2)
         do idm=1,ndmag
-          z2=rzfinp(bxmt,bxir,zvfmt2,zvfir2)
+          z2=rzfinp(bxmt(:,:,:,idm),bxir(:,idm),zvfmt2(:,:,:,idm),zvfir2(:,idm))
           z1=z1-conjg(z2)
         end do
         de=evalsv(ist,ik)-evalsv(jst,ik)

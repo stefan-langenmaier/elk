@@ -52,7 +52,7 @@ do ip=1,np
               call sphcrd(v5,r,tp)
               call genrlm(lmaxvr,tp,rlm)
               do ir=1,nr
-                if (spr(ir,is).ge.r) then
+                if (rsp(ir,is).ge.r) then
                   if (ir.le.2) then
                     ir0=1
                   else if (ir.gt.nrmt(is)-2) then
@@ -60,7 +60,7 @@ do ip=1,np
                   else
                     ir0=ir-2
                   end if
-                  r=max(r,spr(1,is))
+                  r=max(r,rsp(1,is))
                   if (ir0.le.nri) then
                     lmax=lmaxinr
                   else
@@ -74,7 +74,7 @@ do ip=1,np
                         i=ir0+j-1
                         ya(j)=rfmt(lm,i,ias)
                       end do
-                      t2=poly4(spr(ir0,is),ya,r)
+                      t2=poly4(rsp(ir0,is),ya,r)
                       sum=sum+t2*rlm(lm)
                     end do
                   end do

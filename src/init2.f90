@@ -106,9 +106,9 @@ if (xctype(1).lt.0) then
   do is=1,nspecies
     do ia=1,natoms(is)
       ic=0
-      do ist=1,spnst(is)
+      do ist=1,nstsp(is)
         if (spcore(ist,is)) then
-          do m=-spk(ist,is),spk(ist,is)-1
+          do m=-ksp(ist,is),ksp(ist,is)-1
             ic=ic+1
           end do
         end if

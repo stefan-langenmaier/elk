@@ -22,8 +22,7 @@ real(8) rfinp
 external rfinp
 if (iscl.lt.1) return
 ! calculate Coulomb matrix elements
-allocate(vclcv(ncrmax,natmtot,nstsv,nkpt))
-allocate(vclvv(nstsv,nstsv,nkpt))
+allocate(vclcv(ncrmax,natmtot,nstsv,nkpt),vclvv(nstsv,nstsv,nkpt))
 call oepvcl(vclcv,vclvv)
 ! allocate local arrays
 allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot),dvxir(ngtot))
@@ -85,14 +84,15 @@ do it=1,maxitoep
     end if
   end if
 ! convert muffin-tin residuals to spherical harmonics
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,idm)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,nrc,nrci,idm)
 !$OMP DO
   do ias=1,natmtot
     is=idxis(ias)
-    call rfsht(nrcmt(is),nrcmtinr(is),1,dvxmt(:,:,ias),lradstp,rfmt1(:,:,ias))
+    nrc=nrcmt(is)
+    nrci=nrcmtinr(is)
+    call rfsht(nrc,nrci,1,dvxmt(:,:,ias),lradstp,rfmt1(:,:,ias))
     do idm=1,ndmag
-      call rfsht(nrcmt(is),nrcmtinr(is),1,dbxmt(:,:,ias,idm),lradstp, &
-       rvfmt(:,:,ias,idm))
+      call rfsht(nrc,nrci,1,dbxmt(:,:,ias,idm),lradstp,rvfmt(:,:,ias,idm))
     end do
   end do
 !$OMP END DO
@@ -101,9 +101,9 @@ do it=1,maxitoep
   call symrf(lradstp,rfmt1,dvxir)
   if (spinpol) call symrvf(lradstp,rvfmt,dbxir)
 ! magnitude of residuals
-  resoep=sqrt(abs(rfinp(lradstp,rfmt1,rfmt1,dvxir,dvxir)))
+  resoep=sqrt(abs(rfinp(lradstp,rfmt1,dvxir,rfmt1,dvxir)))
   do idm=1,ndmag
-    t1=rfinp(lradstp,rvfmt(:,:,:,idm),rvfmt(:,:,:,idm),dbxir(:,idm), &
+    t1=rfinp(lradstp,rvfmt(:,:,:,idm),dbxir(:,idm),rvfmt(:,:,:,idm), &
      dbxir(:,idm))
     resoep=resoep+sqrt(abs(t1))
   end do
@@ -129,11 +129,11 @@ do it=1,maxitoep
 ! convert residual to spherical coordinates
     call rbsht(nrc,nrci,lradstp,rfmt1(:,:,ias),1,rfmt2)
 ! subtract from exchange potential
-    call rfmtadd(nrc,nrci,-tau,rfmt2,vxmt(:,:,ias))
+    call rfmtaddc(nrc,nrci,-tau,rfmt2,vxmt(:,:,ias))
 ! repeat for exchange magnetic field
     do idm=1,ndmag
       call rbsht(nrc,nrci,lradstp,rvfmt(:,:,ias,idm),1,rfmt2)
-      call rfmtadd(nrc,nrci,-tau,rfmt2,bxmt(:,:,ias,idm))
+      call rfmtaddc(nrc,nrci,-tau,rfmt2,bxmt(:,:,ias,idm))
     end do
     deallocate(rfmt2)
   end do
@@ -170,14 +170,14 @@ do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
   nri=nrmtinr(is)
-  call rfmtadd(nr,nri,1.d0,rfmt1(:,:,ias),vxcmt(:,:,ias))
+  call rfmtadd(nr,nri,1,rfmt1(:,:,ias),vxcmt(:,:,ias))
   do idm=1,ndmag
-    call rfmtadd(nr,nri,1.d0,rvfmt(:,:,ias,idm),bxcmt(:,:,ias,idm))
+    call rfmtadd(nr,nri,1,rvfmt(:,:,ias,idm),bxcmt(:,:,ias,idm))
   end do
 end do
-vxcir(:)=vxcir(:)+dble(vxir(:))
+vxcir(:)=vxcir(:)+vxir(:)
 do idm=1,ndmag
-  bxcir(:,idm)=bxcir(:,idm)+dble(bxir(:,idm))
+  bxcir(:,idm)=bxcir(:,idm)+bxir(:,idm)
 end do
 ! symmetrise the exchange potential and field
 call symrf(1,vxcmt,vxcir)

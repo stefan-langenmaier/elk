@@ -20,7 +20,7 @@ do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
 ! sum of core eigenvalues
-  do ist=1,spnst(is)
+  do ist=1,nstsp(is)
     if (spcore(ist,is)) engykncr=engykncr+occcr(ist,ias)*evalcr(ist,ias)
   end do
 ! core density
@@ -30,7 +30,8 @@ do ias=1,natmtot
   else
     rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
   end if
-  engykncr=engykncr-rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vsmt(:,:,ias))
+  engykncr=engykncr-rfmtinp(nr,nrmtinr(is),1,rsp(:,is),r2sp(:,is),rfmt, &
+   vsmt(:,:,ias))
 end do
 deallocate(rfmt)
 return

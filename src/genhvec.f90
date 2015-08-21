@@ -51,7 +51,7 @@ do i1=inthv(1,1),inthv(2,1)
 end do
 ! sort by vector length
 call sortidx(nhtot,hc0,idx)
-! re-order arrays
+! reorder arrays
 do ih=1,nhtot
   jh=idx(ih)
   ivh(:,ih)=ivh0(:,jh)

@@ -51,8 +51,8 @@ zsum=zsum*(omega/dble(ngtot))
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  zsum=zsum+zfmtinp(nrcmt(is),nrcmtinr(is),rcmt(:,is),zfmt1(:,:,ias), &
-   zfmt2(:,:,ias))
+  zsum=zsum+zfmtinp(nrcmt(is),nrcmtinr(is),rcmt(:,is),r2cmt(:,is), &
+   zfmt1(:,:,ias),zfmt2(:,:,ias))
 end do
 !$OMP END DO
 !$OMP END PARALLEL

@@ -6,6 +6,7 @@
 subroutine tddft
 use modmain
 use modtddft
+use moddftu
 use modmpi
 implicit none
 ! local variables
@@ -31,6 +32,8 @@ call init1
 call readstate
 ! generate the core wavefunctions and densities
 call gencore
+! read Fermi energy from file
+call readfermi
 ! find the linearisation energies
 call linengy
 ! generate the APW radial functions
@@ -42,6 +45,11 @@ do ik=1,nkpt
   call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
   call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
+! DFT+U
+if (dftu.ne.0) then
+  call gendmatmt
+  call genvmatmt
+end if
 ! generate the kinetic matrix elements in the second-variational basis
 call genkmat(.false.,.false.)
 ! write the momentum matrix elements in first- and second-variational basis
@@ -49,10 +57,11 @@ call genpmat(.true.,.true.)
 ! read time-dependent A-field from file
 call readafieldt
 ! write the power density to file
-call writeafpdt
-! copy EVECFV.OUT and EVECSV.OUT to _TD.OUT extension
+if (mp_mpi) call writeafpdt
+! copy OCCSV.OUT, EVECFV.OUT and EVECSV.OUT to _TD.OUT extension
 if (mp_mpi.and.(task.eq.460)) then
   do ik=1,nkpt
+    call putoccsv('_TD.OUT',ik,occsv(:,ik))
     allocate(evecfv(nmatmax,nstfv,nspnfv))
     call getevecfv('.OUT',vkl(:,ik),vgkl(:,:,:,ik),evecfv)
     call putevecfv('_TD.OUT',ik,evecfv)
@@ -79,18 +88,25 @@ do itimes=itimes0+1,ntimes-1
     write(*,'("Info(tddft): time step ",I8," of ",I8,",   t = ",G18.10)') &
      itimes,ntimes,times(itimes)
   end if
-! evolve the wavefunctions across a single time step
-  call timestep
 ! generate the density and magnetisation at current time step
   call rhomag
 ! compute the total current
   call current
+! DFT+U
+  if (dftu.ne.0) then
+    call gendmatmt
+    call genvmatmt
+  end if
 ! compute the time-dependent Kohn-Sham potentials and magnetic fields
   call potkst
+! evolve the wavefunctions across a single time step
+  call timestep
+  if (mp_mpi) then
 ! write TDDFT output
-  call writetddft
+    call writetddft
 ! write the time step to file
-  if (mp_mpi) call writetimes
+    call writetimes
+  end if
 ! synchronise MPI processes
   call mpi_barrier(mpi_comm_kpt,ierror)
 end do

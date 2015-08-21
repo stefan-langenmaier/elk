@@ -20,13 +20,16 @@ complex(8), intent(out) :: dmat(ld,nspinor,ld,nspinor,nstsv)
 integer ist,ispn,jspn,is,ia
 integer nrc,nrci,nro,iro,irc
 integer l,m1,m2,lm1,lm2,i,j
-real(8) t1
+real(8) a,b,t1
 complex(8) zq(2),z1
 ! automatic arrays
 logical done(nstfv,nspnfv)
-real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
+real(8) fr1(nrcmtmax),fr2(nrcmtmax)
 ! allocatable arrays
 complex(8), allocatable :: wfmt1(:,:,:,:),wfmt2(:,:,:)
+! external functions
+real(8) fintgt
+external fintgt
 if (lmin.lt.0) then
   write(*,*)
   write(*,'("Error(gendmat): lmin < 0 : ",I8)') lmin
@@ -100,15 +103,13 @@ do j=1,nstsv
             lm2=idxlm(l,m2)
             if (tlmdg.and.(lm1.ne.lm2)) cycle
             do irc=iro,nrc
-              z1=wfmt2(lm1,irc,ispn)*conjg(wfmt2(lm2,irc,jspn))
-              t1=rcmt(irc,is)**2
-              fr1(irc)=dble(z1)*t1
-              fr2(irc)=aimag(z1)*t1
+              z1=wfmt2(lm1,irc,ispn)*conjg(wfmt2(lm2,irc,jspn))*r2cmt(irc,is)
+              fr1(irc)=dble(z1)
+              fr2(irc)=aimag(z1)
             end do
-            call fderiv(-2,nro,rcmt(iro,is),fr1(iro),gr(iro))
-            t1=gr(nrc)
-            call fderiv(-2,nro,rcmt(iro,is),fr2(iro),gr(iro))
-            dmat(lm1,ispn,lm2,jspn,j)=cmplx(t1,gr(nrc),8)
+            a=fintgt(-2,nro,rcmt(iro,is),fr1(iro))
+            b=fintgt(-2,nro,rcmt(iro,is),fr2(iro))
+            dmat(lm1,ispn,lm2,jspn,j)=cmplx(a,b,8)
           end do
         end do
       end do

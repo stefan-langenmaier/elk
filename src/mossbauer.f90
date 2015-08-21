@@ -41,10 +41,10 @@ do is=1,nspecies
 ! Thomson radius and volume
   rt=abs(spzn(is))/solsc**2
   do ir=1,nrmt(is)-1
-    if (spr(ir,is).gt.rt) exit
+    if (rsp(ir,is).gt.rt) exit
   end do
   nrt=ir
-  rt=spr(nrt,is)
+  rt=rsp(nrt,is)
   vt=(4.d0/3.d0)*pi*rt**3
 ! loop over atoms
   do ia=1,natoms(is)
@@ -53,9 +53,9 @@ do is=1,nspecies
 !     contact charge density     !
 !--------------------------------!
     do ir=1,nrnucl(is)
-      fr(ir)=rhomt(1,ir,ias)*spr(ir,is)**2
+      fr(ir)=rhomt(1,ir,ias)*r2sp(ir,is)
     end do
-    call fderiv(-1,nrnucl(is),spr(:,is),fr,gr)
+    call fderiv(-1,nrnucl(is),rsp(:,is),fr,gr)
     rho0=fourpi*y00*gr(nrnucl(is))/vnucl(is)
     write(50,*)
     write(50,*)
@@ -81,9 +81,9 @@ do is=1,nspecies
 ! collinear
           t1=magmt(1,ir,ias,1)
         end if
-        fr(ir)=t1*spr(ir,is)**2
+        fr(ir)=t1*r2sp(ir,is)
       end do
-      call fderiv(-1,nrt,spr(:,is),fr,gr)
+      call fderiv(-1,nrt,rsp(:,is),fr,gr)
       mc=fourpi*y00*gr(nrt)/vt
       write(50,*)
       write(50,'(" Thomson radius : ",G18.10)') rt

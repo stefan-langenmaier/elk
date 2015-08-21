@@ -27,9 +27,9 @@ do ias=1,natmtot
   ia=idxia(ias)
   nr=nrmt(is)
   nri=nrmtinr(is)
-  do ist=1,spnst(is)
+  do ist=1,nstsp(is)
     if (spcore(ist,is)) then
-      do m=-spk(ist,is),spk(ist,is)-1
+      do m=-ksp(ist,is),ksp(ist,is)-1
 ! generate the core wavefunction in spherical harmonics (pass in m-1/2)
         call wavefcr(.true.,1,is,ia,ist,m,nrmtmax,wfcr)
         do ispn=1,2
@@ -39,7 +39,7 @@ do ias=1,natmtot
             jspn=1
           end if
 ! compute the gradient
-          call gradzfmt(nr,nri,spr(:,is),wfcr(:,:,ispn),nrmtmax,gzfmt)
+          call gradzfmt(nr,nri,rsp(:,is),wfcr(:,:,ispn),nrmtmax,gzfmt)
           do i=1,3
 ! convert gradient to spherical coordinates
             call zbsht(nr,nri,gzfmt(:,:,i),zfmt)

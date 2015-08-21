@@ -48,8 +48,7 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ngp
-real(8), intent(in) :: gpc(ngkmax)
-real(8), intent(in) :: tpgpc(2,ngkmax)
+real(8), intent(in) :: gpc(ngkmax),tpgpc(2,ngkmax)
 complex(8), intent(in) :: sfacgp(ngkmax,natmtot)
 complex(8), intent(out) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 ! local variables
@@ -105,7 +104,7 @@ do is=1,nspecies
 ! set up matrix of derivatives
       do jo=1,apword(l,is)
         do io=1,apword(l,is)
-          a(io,jo)=polynom(io-1,np,spr(ir,is),apwfr(ir,1,jo,l,ias),c,rmt(is))
+          a(io,jo)=polynom(io-1,np,rsp(ir,is),apwfr(ir,1,jo,l,ias),c,rmt(is))
         end do
       end do
 ! set up target vectors

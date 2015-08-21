@@ -2,9 +2,9 @@
  'hafnium'                                  : spname
   -72.0000                                  : spzn
    325367.3656                              : spmass
-  0.235702E-06    2.8000   49.2272   700    : sprmin, rmt, sprmax, nrmt
-  21                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.235702E-06    2.8000   50.3880   700    : rminsp, rmt, rmaxsp, nrmt
+  21                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

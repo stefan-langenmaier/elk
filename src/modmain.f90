@@ -85,49 +85,54 @@ real(8) spze(maxspecies)
 ! species mass
 real(8) spmass(maxspecies)
 ! smallest radial point for each species
-real(8) sprmin(maxspecies)
+real(8) rminsp(maxspecies)
 ! effective infinity for species
-real(8) sprmax(maxspecies)
+real(8) rmaxsp(maxspecies)
 ! number of radial points to effective infinity for each species
-integer spnr(maxspecies)
-! maximum spnr over all the species
-integer spnrmax
+integer nrsp(maxspecies)
+! maximum nrsp over all the species
+integer nrspmax
 ! maximum allowed states for each species
-integer, parameter :: maxspst=40
+integer, parameter :: maxstsp=40
 ! number of states for each species
-integer spnst(maxspecies)
-! maximum spnst over all the species
-integer spnstmax
+integer nstsp(maxspecies)
+! maximum nstsp over all the species
+integer nstspmax
 ! core-valence cut-off energy for species file generation
 real(8) ecvcut
 ! semi-core-valence cut-off energy for species file generation
 real(8) esccut
 ! state principle quantum number for each species
-integer spn(maxspst,maxspecies)
+integer nsp(maxstsp,maxspecies)
 ! state l value for each species
-integer spl(maxspst,maxspecies)
+integer lsp(maxstsp,maxspecies)
 ! state k value for each species
-integer spk(maxspst,maxspecies)
+integer ksp(maxstsp,maxspecies)
 ! spcore is .true. if species state is core
-logical spcore(maxspst,maxspecies)
+logical spcore(maxstsp,maxspecies)
 ! total number of core states
 integer nstcr
 ! state eigenvalue for each species
-real(8) speval(maxspst,maxspecies)
+real(8) evalsp(maxstsp,maxspecies)
 ! state occupancy for each species
-real(8) spocc(maxspst,maxspecies)
+real(8) occsp(maxstsp,maxspecies)
 ! species radial mesh
-real(8), allocatable :: spr(:,:)
+real(8), allocatable :: rsp(:,:)
+! r^2 on radial mesh
+real(8), allocatable :: r2sp(:,:)
 ! species charge density
-real(8), allocatable :: sprho(:,:)
+real(8), allocatable :: rhosp(:,:)
 ! species self-consistent potential
-real(8), allocatable :: spvr(:,:)
+real(8), allocatable :: vrsp(:,:)
+! exchange-correlation type for atomic species (the converged ground-state of
+! the crystal does not depend on this choice)
+integer xctsp(3)
 
 !---------------------------------------------------------------!
 !     muffin-tin radial mesh and angular momentum variables     !
 !---------------------------------------------------------------!
 ! scale factor for number of muffin-tin points
-integer nrmtscf
+real(8) nrmtscf
 ! number of muffin-tin radial points for each species
 integer nrmt(maxspecies)
 ! maximum nrmt over all the species
@@ -146,20 +151,22 @@ integer nrcmt(maxspecies)
 integer nrcmtmax
 ! coarse muffin-tin radial mesh
 real(8), allocatable :: rcmt(:,:)
+! r^2 on coarse radial mesh
+real(8), allocatable :: r2cmt(:,:)
 ! maximum allowable angular momentum for augmented plane waves
 integer, parameter :: maxlapw=50
 ! maximum angular momentum for augmented plane waves
 integer lmaxapw
 ! (lmaxapw+1)^2
 integer lmmaxapw
-! maximum angular momentum for potentials and densities
-integer lmaxvr
-! (lmaxvr+1)^2
-integer lmmaxvr
 ! maximum angular momentum used when evaluating the Hamiltonian matrix elements
 integer lmaxmat
 ! (lmaxmat+1)^2
 integer lmmaxmat
+! maximum angular momentum for potentials and densities
+integer lmaxvr
+! (lmaxvr+1)^2
+integer lmmaxvr
 ! maximum angular momentum in the inner part of the muffin-int
 integer lmaxinr
 ! (lmaxinr+1)^2
@@ -452,6 +459,11 @@ integer ngridkpa(3)
 !-----------------------------------------------------!
 !     spherical harmonic transform (SHT) matrices     !
 !-----------------------------------------------------!
+! trotsht is .true. if the spherical cover used for the SHT is to be rotated
+logical trotsht
+data trotsht / .false. /
+! spherical cover rotation matrix
+real(8) rotsht(3,3)
 ! real backward SHT matrix for lmaxvr
 real(8), allocatable :: rbshtvr(:,:)
 ! real forward SHT matrix for lmaxvr
@@ -525,7 +537,7 @@ real(8), allocatable :: vsmt(:,:,:)
 real(8), allocatable :: vsir(:)
 ! G-space interstitial Kohn-Sham effective potential
 complex(8), allocatable :: vsig(:)
-! trimvg is .true. if vsir should be trimmed for |G| > gmaxvr/2
+! trimvg is .true. if vsig should be trimmed for |G| > gmaxvr/2
 logical trimvg
 ! muffin-tin exchange-correlation magnetic field
 real(8), allocatable :: bxcmt(:,:,:,:)
@@ -608,6 +620,8 @@ real(8) curtot(3)
 !-----------------------------------------!
 !     APW and local-orbital variables     !
 !-----------------------------------------!
+! energy step used for numerical calculation of energy derivatives
+real(8) deapwlo
 ! maximum allowable APW order
 integer, parameter :: maxapword=4
 ! APW order
@@ -671,7 +685,9 @@ logical lorbcnd
 ! conduction state local-orbital order
 integer lorbordc
 ! excess order of the APW and local-orbital functions
-integer nxapwlo
+integer nxoapwlo
+! excess local orbitals
+integer nxlo
 
 !-------------------------------------------!
 !     overlap and Hamiltonian variables     !
@@ -1036,7 +1052,6 @@ real(8), parameter :: y00=0.28209479177387814347d0
 ! complex constants
 complex(8), parameter :: zzero=(0.d0,0.d0)
 complex(8), parameter :: zone=(1.d0,0.d0)
-complex(8), parameter :: ztwo=(2.d0,0.d0)
 complex(8), parameter :: zi=(0.d0,1.d0)
 ! array of i^l and (-i)^l values
 complex(8), allocatable :: zil(:),zilc(:)
@@ -1087,7 +1102,7 @@ real(8), parameter :: amu=amu_si/em_si
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 3,0,4 /
+data version / 3,1,12 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

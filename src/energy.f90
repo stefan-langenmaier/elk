@@ -79,13 +79,13 @@ cb=gfacte/(4.d0*solsc)
 !-----------------------------------------------!
 !     exchange-correlation potential energy     !
 !-----------------------------------------------!
-engyvxc=rfinp(1,rhomt,vxcmt,rhoir,vxcir)
+engyvxc=rfinp(1,rhomt,rhoir,vxcmt,vxcir)
 !-----------------------------------------------------!
 !     exchange-correlation effective field energy     !
 !-----------------------------------------------------!
 engybxc=0.d0
 do idm=1,ndmag
-  engybxc=engybxc+rfinp(1,magmt(:,:,:,idm),bxcmt(:,:,:,idm),magir(:,idm), &
+  engybxc=engybxc+rfinp(1,magmt(:,:,:,idm),magir(:,idm),bxcmt(:,:,:,idm), &
    bxcir(:,idm))
 end do
 !------------------------------------------!
@@ -104,14 +104,14 @@ end do
 !----------------------------------!
 !     Coulomb potential energy     !
 !----------------------------------!
-engyvcl=rfinp(1,rhomt,vclmt,rhoir,vclir)
+engyvcl=rfinp(1,rhomt,rhoir,vclmt,vclir)
 !-----------------------!
 !     Madelung term     !
 !-----------------------!
 engymad=0.d0
 do is=1,nspecies
 ! compute the bare nucleus potential at the origin
-  call potnucl(ptnucl,1,spr(:,is),spzn(is),vn)
+  call potnucl(ptnucl,1,rsp(:,is),spzn(is),vn)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     engymad=engymad+0.5d0*spzn(is)*(vclmt(1,1,ias)*y00-vn)
@@ -139,14 +139,14 @@ if ((xctype(1).lt.0).or.(task.eq.5)) then
 ! mix exact and DFT exchange energies for hybrid functionals
     if (hybrid) then
       engyx=engyx*hybridc
-      engyx=engyx+rfinp(1,rhomt,exmt,rhoir,exir)
+      engyx=engyx+rfinp(1,rhomt,rhoir,exmt,exir)
     end if
   else
     engyx=0.d0
   end if
 else
 ! exchange energy from the density
-  engyx=rfinp(1,rhomt,exmt,rhoir,exir)
+  engyx=rfinp(1,rhomt,rhoir,exmt,exir)
 end if
 !----------------------------!
 !     correlation energy     !
@@ -154,14 +154,14 @@ end if
 if (task.eq.5) then
   if (hybrid) then
 ! fraction of DFT correlation energy for hybrid functionals
-    engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
+    engyc=rfinp(1,rhomt,rhoir,ecmt,ecir)
   else
 ! zero correlation energy for pure Hartree-Fock
     engyc=0.d0
   end if
 else
 ! correlation energy from the density
-  engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
+  engyc=rfinp(1,rhomt,rhoir,ecmt,ecir)
 end if
 !----------------------!
 !     DFT+U energy     !
@@ -182,7 +182,7 @@ end if
 evalsum=0.d0
 do ias=1,natmtot
   is=idxis(ias)
-  do ist=1,spnst(is)
+  do ist=1,nstsp(is)
     if (spcore(ist,is)) evalsum=evalsum+occcr(ist,ias)*evalcr(ist,ias)
   end do
 end do
@@ -226,7 +226,7 @@ else
       call rfsht(nrc,nrci,1,bsmt(:,:,ias,idm),lradstp,rfmt(:,:,ias))
     end do
     call rfmtctof(rfmt)
-    sum=sum+rfinp(1,magmt(:,:,:,idm),rfmt,magir(:,idm),bsir(:,idm))
+    sum=sum+rfinp(1,magmt(:,:,:,idm),magir(:,idm),rfmt,bsir(:,idm))
   end do
 ! remove fixed tensor moment potential matrix contribution
   if (ftmtype.ne.0) then

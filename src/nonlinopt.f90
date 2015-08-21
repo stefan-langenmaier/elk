@@ -110,7 +110,6 @@ do l=1,noptcomp
                 else
                   ekj=ekj-scissor
                 end if
-! rotate the matrix elements from the reduced to non-reduced k-point
                 vkj(:)=pmat(kst,jst,:)
                 vik(:)=pmat(ist,kst,:)
 ! interband terms
@@ -118,7 +117,7 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(1,1)=z1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
                  +conjg(vik(b))*conjg(vkj(c)))*t1
@@ -126,14 +125,14 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(1,2)=0.5d0*z1*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b))*t1
                 t1=eji*(-eki)*ekj*(ekj-eji)
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(1,3)=0.5d0*z1*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a))*t1
 ! intraband terms
@@ -141,15 +140,15 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(2,1)=0.5d0*z1*(eki*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a)) &
                  +ekj*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b)))*t1
-                t1=(eki*(-ekj)*eji**3)/(ekj+eki)
+                t1=((-eji)*eki*(-ekj)*eji**2)/(-ekj-eki)
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(2,3)=z1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
                  +conjg(vik(b))*conjg(vkj(c)))*t1
@@ -158,16 +157,10 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
-                ztm(3,1)=-0.5d0*z1*eki*vkj(a)*(vji(b)*vik(c)+vik(b)*vji(c))*t1
-                t1=ekj*(-eki)*eji**3
-                if (abs(t1).gt.etol) then
-                  t1=1.d0/t1
-                else
-                  t1=t1/etol**2
-                end if
-                ztm(3,2)=0.5d0*z1*ekj*vik(a)*(vkj(b)*vji(c)+vji(b)*vkj(c))*t1
+                ztm(3,1)=0.25d0*z1*(-eki)*vkj(a)*(vji(b)*vik(c)+vik(b)*vji(c))*t1
+                ztm(3,2)=0.25d0*z1*ekj*vik(a)*(vkj(b)*vji(c)+vji(b)*vkj(c))*t1
 !$OMP CRITICAL
                 do iw=1,nwplot
 ! 2w interband
@@ -179,21 +172,20 @@ do l=1,noptcomp
 ! w intraband
                   chiw(iw,2)=chiw(iw,2)+ztm(2,1)/(eji-w(iw)+eta)
 ! w modulation
-                  chiw(iw,3)=chiw(iw,3)+0.5d0*(ztm(3,1)-ztm(3,2)) &
-                   /(eji-w(iw)+eta)
+                  chiw(iw,3)=chiw(iw,3)+(ztm(3,1)-ztm(3,2))/(eji-w(iw)+eta)
                 end do
 !$OMP END CRITICAL
               end if
 ! end loop over kst
             end do
             ztm(2,2)=4.d0*z1*conjg(vji(a))*(dji(b)*vji(c)+vji(b)*dji(c))/eji**4
-            ztm(3,3)=0.5d0*z1*vji(a)*(vji(b)*dji(c)+dji(b)*vji(c))/eji**4
+            ztm(3,3)=0.25d0*z1*vji(a)*(vji(b)*dji(c)+dji(b)*vji(c))/eji**4
 !$OMP CRITICAL
             do iw=1,nwplot
 ! 2w intraband
               chi2w(iw,2)=chi2w(iw,2)+ztm(2,2)/(eji-2.d0*w(iw)+eta)
 ! w modulation
-              chiw(iw,3)=chiw(iw,3)+0.5d0*ztm(3,3)/(eji-w(iw)+eta)
+              chiw(iw,3)=chiw(iw,3)+ztm(3,3)/(eji-w(iw)+eta)
             end do
 !$OMP END CRITICAL
 ! end loop over jst

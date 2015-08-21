@@ -2,9 +2,9 @@
  'curium'                                   : spname
   -96.0000                                  : spzn
    450253.4557                              : spmass
-  0.204124E-06    3.0000   55.3054   800    : sprmin, rmt, sprmax, nrmt
-  28                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.204124E-06    3.0000   55.3054   800    : rminsp, rmt, rmaxsp, nrmt
+  28                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

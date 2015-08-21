@@ -32,7 +32,7 @@ write(50) nrcmtmax
 do is=1,nspecies
   write(50) natoms(is)
   write(50) nrmt(is)
-  write(50) spr(1:nrmt(is),is)
+  write(50) rsp(1:nrmt(is),is)
   write(50) nrcmt(is)
   write(50) rcmt(1:nrcmt(is),is)
 end do

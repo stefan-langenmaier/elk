@@ -185,8 +185,6 @@ if (task.eq.205) then
       end do
     end do
   end do
-  if (allocated(devalsv)) deallocate(devalsv)
-  allocate(devalsv(nstsv,nkptnr))
   if (allocated(doccsv)) deallocate(doccsv)
   allocate(doccsv(nstsv,nkptnr))
 end if

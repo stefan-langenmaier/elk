@@ -32,6 +32,8 @@ allocate(b(0:n-1,0:n-1,0:n-1,nstsv))
 allocate(c(0:n-1,0:n-1,0:n-1))
 ! read density and potentials from file
 call readstate
+! read Fermi energy from file
+call readfermi
 ! find the new linearisation energies
 call linengy
 ! generate the APW radial functions

@@ -112,8 +112,6 @@ complex(8), allocatable :: dhlolo(:,:,:,:)
 real(8), allocatable :: gntyyy(:,:,:)
 ! smallest allowed perturbation theory denominator for eigenvector derivatives
 real(8) epsph
-! second-variational eigenvalue derivatives
-real(8), allocatable :: devalsv(:,:)
 ! Fermi energy derivative
 real(8) defermi
 ! second-variational occupation number derivatives

@@ -2,9 +2,9 @@
  'caesium'                                  : spname
   -55.0000                                  : spzn
    242271.8144                              : spmass
-  0.269680E-06    2.8000   68.3104   700    : sprmin, rmt, sprmax, nrmt
-  18                                        : spnst
-   1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
+  0.269680E-06    2.8000   63.7344   700    : rminsp, rmt, rmaxsp, nrmt
+  18                                        : nstsp
+   1   0   1   2.00000    T                 : nsp, lsp, ksp, occsp, spcore
    2   0   1   2.00000    T
    2   1   1   2.00000    T
    2   1   2   4.00000    T

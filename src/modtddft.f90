@@ -23,6 +23,11 @@ integer npulse
 ! laser pulse parameters: vector amplitude, peak time, full-width at
 ! half-maximum, frequency and phase
 real(8), allocatable :: pulse(:,:)
+! number of A-field ramps
+integer nramp
+! ramp parameters: vector amplitude, ramp start time, linear and quadratic
+! coefficients
+real(8), allocatable :: ramp(:,:)
 ! total simulation time
 real(8) tstime
 ! time step length

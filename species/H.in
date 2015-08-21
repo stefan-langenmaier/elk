@@ -2,9 +2,9 @@
  'hydrogen'                                 : spname
  -1.000000                                  : spzn
    1837.362219                              : spmass
-  0.200000E-05    1.4000   36.6488   200    : sprmin, rmt, sprmax, nrmt
-   1                                        : spnst
-   1   0   1  1.000000    F                 : spn, spl, spk, spocc, spcore
+  0.200000E-05    1.4000   36.6488   200    : rminsp, rmt, rmaxsp, nrmt
+   1                                        : nstsp
+   1   0   1  1.000000    F                 : nsp, lsp, ksp, occsp, spcore
    1                                        : apword
     0.1500   0  F                           : apwe0, apwdm, apwve
    0                                        : nlx

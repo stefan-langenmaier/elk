@@ -131,7 +131,7 @@ do is=1,nspecies
         do ist=1,jst
           do ispn=1,nspinor
             pmat(ist,jst,i)=pmat(ist,jst,i)+zfmtinp(nrc,nrci,rcmt(:,is), &
-             wfmt(:,:,ias,ispn,ist),gwfmt(:,:,i,ispn))
+             r2cmt(:,is),wfmt(:,:,ias,ispn,ist),gwfmt(:,:,i,ispn))
           end do
         end do
       end do

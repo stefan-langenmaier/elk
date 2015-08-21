@@ -30,7 +30,7 @@ integer, intent(in) :: l1
 integer, intent(in) :: k
 ! local variables
 integer, parameter :: nstart=1
-integer ir,nr,ias,io
+integer ir,nr,ias
 integer ir1,ir2,nr1,nr2
 real(8) r2,x
 ! automatic arrays
@@ -40,18 +40,17 @@ real(8) bint(nrmtmax),cint(nrmtmax)
 ! allocatable arrays
 real(8), allocatable :: a(:,:),b(:,:)
 ias=idxas(1,is)
-io=1
 nr=nrmt(is)
 allocate(a(0:k,nr),b(0:k,nr))
 a(:,:)=0.d0
 b(:,:)=0.d0
 ! calculate unscreened Slater parameters
 do ir=1,nr
-  r2=spr(ir,is)**2
-  bint(ir)=fdufr(ir,1,io,l1,ias)*fdufr(ir,1,io,l1,ias)*r2
-  x=spr(ir,is)**k
+  r2=r2sp(ir,is)
+  bint(ir)=fdufr(ir,l1,ias)*fdufr(ir,l1,ias)*r2
+  x=rsp(ir,is)**k
   a(k,ir)=x
-  b(k,ir)=1.d0/(x*spr(ir,is))
+  b(k,ir)=1.d0/(x*rsp(ir,is))
 end do
 do ir=nstart,nr
   nr1=ir-nstart+1
@@ -60,16 +59,16 @@ do ir=nstart,nr
     ir2=ir1+nstart-1
     blow(ir1)=bint(ir2)*a(k,ir2)
   end do
-  call fderiv(-1,nr1,spr(nstart,is),blow,clow)
+  call fderiv(-1,nr1,rsp(nstart,is),blow,clow)
   do ir1=1,nr2
     ir2=ir1+ir-1
     bhigh(ir1)=bint(ir2)*b(k,ir2)
   end do
-  call fderiv(-1,nr2,spr(ir,is),bhigh,chigh)
+  call fderiv(-1,nr2,rsp(ir,is),bhigh,chigh)
   cint(ir-nstart+1)=bint(ir)*(b(k,ir)*clow(nr1)+a(k,ir)*chigh(nr2))
 end do
 nr1=nr-nstart+1
-call fderiv(-1,nr1,spr(nstart,is),cint,fint)
+call fderiv(-1,nr1,rsp(nstart,is),cint,fint)
 fyukawa0=fint(nr1)
 deallocate(a,b)
 return
