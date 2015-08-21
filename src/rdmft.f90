@@ -19,8 +19,6 @@ use modmpi
 !EOP
 !BOC
 implicit none
-! local variables
-integer ik
 ! initialise global variables
 call init0
 call init1
@@ -40,6 +38,8 @@ call genlofr
 call olprad
 ! compute the Hamiltonian radial integrals
 call hmlrad
+! generate the spin-orbit coupling radial functions
+call gensocfr
 ! compute the kinetic energy of the core
 call energykncr
 ! delete any existing non-local matrix elements files
@@ -47,12 +47,12 @@ if (mp_mpi) then
   open(95,file='VNLIJJI.OUT'); close(95,status='DELETE')
   open(95,file='VNLIJJK.OUT'); close(95,status='DELETE')
 end if
+! generate the first- and second-variational eigenvectors and eigenvalues
+call genevfsv
+! find the occupation numbers
+call occupy
 ! generate the kinetic matrix elements in the Cartesian basis
-call genkinmatc
-! read in the occupancies
-do ik=1,nkpt
-  call getoccsv(vkl(:,ik),occsv(:,ik))
-end do
+call genkmatc(.true.)
 ! open information files (MPI master process only)
 if (mp_mpi) then
   open(60,file='RDM_INFO.OUT',action='WRITE',form='FORMATTED')
@@ -82,7 +82,7 @@ do iscl=1,rdmmaxscl
     write(*,'("Info(rdmft): self-consistent loop number : ",I4)') iscl
   end if
 ! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
+  call mpi_barrier(mpi_comm_kpt,ierror)
 ! minimisation over natural orbitals
   call rdmminc
 ! minimisation over occupation number

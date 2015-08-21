@@ -11,16 +11,12 @@ integer nb,i,j,iq,iv
 integer lwork,info
 real(8) gmin,gmax
 ! allocatable arrays
-real(8), allocatable :: wq(:)
-real(8), allocatable :: gq(:,:)
-real(8), allocatable :: gp(:,:)
+real(8), allocatable :: wq(:),gq(:,:),gp(:,:)
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: dynq(:,:,:)
 complex(8), allocatable :: ev(:,:),b(:,:)
-complex(8), allocatable :: gmq(:,:,:)
-complex(8), allocatable :: gmr(:,:,:)
-complex(8), allocatable :: gmp(:,:)
-complex(8), allocatable :: work(:)
+complex(8), allocatable :: gmq(:,:,:),gmr(:,:,:)
+complex(8), allocatable :: gmp(:,:),work(:)
 ! initialise universal variables
 call init0
 call init2
@@ -32,7 +28,7 @@ allocate(rwork(3*nb))
 allocate(dynq(nb,nb,nqpt))
 allocate(ev(nb,nb),b(nb,nb))
 allocate(gmq(nb,nb,nqpt))
-allocate(gmr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(gmr(nb,nb,nqptnr))
 allocate(gmp(nb,nb))
 lwork=2*nb
 allocate(work(lwork))

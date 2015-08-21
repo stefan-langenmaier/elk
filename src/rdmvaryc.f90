@@ -22,11 +22,9 @@ implicit none
 ! local variables
 integer ik,ist,jst
 real(8) t1
-complex(8) zt1
+complex(8) z1
 ! allocatable arrays
-complex(8), allocatable :: dedc(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: zv(:)
+complex(8), allocatable :: dedc(:,:,:),evecsv(:,:),x(:)
 ! external functions
 real(8) dznrm2
 complex(8) zdotc
@@ -34,8 +32,7 @@ external dznrm2,zdotc
 ! compute the derivative w.r.t. evecsv
 allocate(dedc(nstsv,nstsv,nkpt))
 call rdmdedc(dedc)
-allocate(evecsv(nstsv,nstsv))
-allocate(zv(nstsv))
+allocate(evecsv(nstsv,nstsv),x(nstsv))
 do ik=1,nkpt
 ! get the eigenvectors from file
   call getevecsv(vkl(:,ik),evecsv)
@@ -43,20 +40,20 @@ do ik=1,nkpt
   evecsv(:,:)=evecsv(:,:)-taurdmc*dedc(:,:,ik)
 ! othogonalise evecsv (Gram-Schmidt)
   do ist=1,nstsv
-    zv(:)=evecsv(:,ist)
+    x(:)=evecsv(:,ist)
     do jst=1,ist-1
-      zt1=zdotc(nstsv,evecsv(:,jst),1,evecsv(:,ist),1)
-      zv(:)=zv(:)-zt1*evecsv(:,jst)
+      z1=zdotc(nstsv,evecsv(:,jst),1,evecsv(:,ist),1)
+      x(:)=x(:)-z1*evecsv(:,jst)
     end do
-    t1=dznrm2(nstsv,zv,1)
+    t1=dznrm2(nstsv,x,1)
     t1=1.d0/t1
-    evecsv(:,ist)=t1*zv(:)
+    evecsv(:,ist)=t1*x(:)
   end do
 ! write new evecsv to file
   call putevecsv(ik,evecsv)
 ! end loop over k-points
 end do
-deallocate(dedc,evecsv,zv)
+deallocate(dedc,evecsv,x)
 return
 end subroutine
 !EOC

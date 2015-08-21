@@ -9,13 +9,13 @@ implicit none
 ! arguments
 complex(8), intent(in) ::  wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor)
 complex(8), intent(in) ::  wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor)
-complex(8), intent(in) ::  wfir1(ngrtot,nspinor)
-complex(8), intent(in) ::  wfir2(ngrtot,nspinor)
+complex(8), intent(in) ::  wfir1(ngtot,nspinor)
+complex(8), intent(in) ::  wfir2(ngtot,nspinor)
 complex(8), intent(out) :: zmagmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
-complex(8), intent(out) :: zmagir(ngrtot,ndmag)
+complex(8), intent(out) :: zmagir(ngtot,ndmag)
 ! local variables
 integer is,ias,ir
-complex(8) zt1,zt2
+complex(8) z1,z2
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
@@ -35,16 +35,16 @@ end do
 zmagir(:,ndmag)=conjg(wfir1(:,1))*wfir2(:,1)-conjg(wfir1(:,2))*wfir2(:,2)
 ! non-collinear case
 if (ncmag) then
-  do ir=1,ngrtot
+  do ir=1,ngtot
 ! up-dn spin density
-    zt1=conjg(wfir1(ir,1))*wfir2(ir,2)
+    z1=conjg(wfir1(ir,1))*wfir2(ir,2)
 ! dn-up spin density
-    zt2=conjg(wfir1(ir,2))*wfir2(ir,1)
+    z2=conjg(wfir1(ir,2))*wfir2(ir,1)
 ! calculate the x-component: up-dn + dn-up
-    zmagir(ir,1)=zt1+zt2
+    zmagir(ir,1)=z1+z2
 ! calculate the y-component: i*(dn-up - up-dn)
-    zt1=zt2-zt1
-    zmagir(ir,2)=cmplx(-aimag(zt1),dble(zt1),8)
+    z1=z2-z1
+    zmagir(ir,2)=cmplx(-aimag(z1),dble(z1),8)
   end do
 end if
 return

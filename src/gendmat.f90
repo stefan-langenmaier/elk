@@ -24,7 +24,7 @@ integer ispn,jspn,ist
 integer l,m1,m2,lm1,lm2
 integer i,j,n,irc
 real(8) t1,t2
-complex(8) zq(2),zt1
+complex(8) zq(2),z1
 ! automatic arrays
 logical done(nstfv,nspnfv)
 real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
@@ -67,23 +67,19 @@ do j=1,nstsv
     wfmt2(:,:,:)=0.d0
     i=0
     do ispn=1,nspinor
-      if (spinsprl) then
-        jspn=ispn
-      else
-        jspn=1
-      end if
+      jspn=jspnfv(ispn)
       do ist=1,nstfv
         i=i+1
-        zt1=evecsv(i,j)
-        if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
-        if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
+        z1=evecsv(i,j)
+        if (spinsprl.and.ssdph) z1=z1*zq(ispn)
+        if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
           if (.not.done(ist,jspn)) then
             call wavefmt(lradstp,lmax,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
              evecfv(:,ist,jspn),lmmax,wfmt1(:,:,ist,jspn))
             done(ist,jspn)=.true.
           end if
 ! add to spinor wavefunction
-          call zaxpy(n,zt1,wfmt1(:,:,ist,jspn),1,wfmt2(:,:,ispn),1)
+          call zaxpy(n,z1,wfmt1(:,:,ist,jspn),1,wfmt2(:,:,ispn),1)
         end if
       end do
     end do
@@ -101,10 +97,10 @@ do j=1,nstsv
             lm2=idxlm(l,m2)
             if (tlmdg.and.(lm1.ne.lm2)) goto 10
             do irc=1,nrcmt(is)
-              zt1=wfmt2(lm1,irc,ispn)*conjg(wfmt2(lm2,irc,jspn))
+              z1=wfmt2(lm1,irc,ispn)*conjg(wfmt2(lm2,irc,jspn))
               t1=rcmt(irc,is)**2
-              fr1(irc)=dble(zt1)*t1
-              fr2(irc)=aimag(zt1)*t1
+              fr1(irc)=dble(z1)*t1
+              fr2(irc)=aimag(z1)*t1
             end do
             call fderiv(-2,nrcmt(is),rcmt(:,is),fr1,gr)
             t1=gr(nrcmt(is))

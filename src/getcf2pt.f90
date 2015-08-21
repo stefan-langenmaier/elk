@@ -5,24 +5,24 @@
 
 subroutine getcf2pt(fname,vpl,ng,m,cf)
 use modmain
+implicit none
 ! arguments
 character(256), intent(in) :: fname
 real(8), intent(in) :: vpl(3)
-integer, intent(in) :: ng
-integer, intent(in) :: m
+integer, intent(in) :: ng,m
 complex(8), intent(out) :: cf(ng,ng,m)
 ! local variables
 integer isym,iq,i
-integer ig,jg,igm,jgm
+integer igq,jgq,igp,jgp
 integer lspl,ilspl
 integer recl,ng_,m_
 real(8) vql_(3),si(3,3)
 real(8) vgql(3),v(3),t1
+complex(8) z1
 ! allocatable arrays
 integer, allocatable :: map(:)
 real(8), allocatable :: vgpl(:,:)
-complex(8), allocatable :: cf_(:,:,:)
-complex(8), allocatable :: zv(:)
+complex(8), allocatable :: cf_(:,:,:),x(:)
 ! find the equivalent reduced q-point
 call findqpt(vpl,isym,iq)
 ! find the record length
@@ -68,20 +68,21 @@ if (t1.lt.epslat) return
 allocate(map(ng))
 allocate(vgpl(3,ng))
 allocate(cf_(ng,ng,m))
-allocate(zv(ng))
+allocate(x(ng))
 ! perform translation operation and store in temporary array
 if (tvzsymc(isym)) then
 ! translation vector is zero
   cf_(:,:,:)=cf(:,:,:)
 else
 ! non-zero translation vector gives a phase factor
-  do ig=1,ng
-    t1=twopi*dot_product(dble(ivg(:,ig)),vtlsymc(:,isym))
-    zv(ig)=cmplx(cos(t1),sin(t1),8)
+  do igq=1,ng
+    t1=-twopi*dot_product(dble(ivg(:,igq)),vtlsymc(:,isym))
+    x(igq)=cmplx(cos(t1),sin(t1),8)
   end do
-  do ig=1,ng
-    do jg=1,ng
-      cf_(ig,jg,:)=zv(ig)*conjg(zv(jg))*cf(ig,jg,:)
+  do igq=1,ng
+    z1=x(igq)
+    do jgq=1,ng
+      cf_(igq,jgq,:)=z1*conjg(x(jgq))*cf(igq,jgq,:)
     end do
   end do
 end if
@@ -92,35 +93,35 @@ ilspl=isymlat(lspl)
 si(:,:)=dble(symlat(:,:,ilspl))
 ! find the map from {G+q} to {G+p}
 map(:)=0
-do ig=1,ng
-  vgpl(:,ig)=dble(ivg(:,ig))+vpl(:)
+do igp=1,ng
+  vgpl(:,igp)=dble(ivg(:,igp))+vpl(:)
 end do
 i=1
-do ig=1,ng
-  vgql(:)=dble(ivg(:,ig))+vql(:,iq)
+do igq=1,ng
+  vgql(:)=dble(ivg(:,igq))+vql(:,iq)
   call r3mtv(si,vgql,v)
-  do jg=i,ng
-    t1=abs(v(1)-vgpl(1,jg))+abs(v(2)-vgpl(2,jg))+abs(v(3)-vgpl(3,jg))
+  do igp=i,ng
+    t1=abs(v(1)-vgpl(1,igp))+abs(v(2)-vgpl(2,igp))+abs(v(3)-vgpl(3,igp))
     if (t1.lt.epslat) then
-      map(ig)=jg
-      if (jg.eq.i) i=i+1
+      map(igp)=igq
+      if (igp.eq.i) i=i+1
       exit
     end if
   end do
 end do
-! rotate epsilon inverse
-do ig=1,ng
-  igm=map(ig)
-  do jg=1,ng
-    jgm=map(jg)
-    if ((igm.eq.0).or.(jgm.eq.0)) then
-      cf(ig,jg,:)=0.d0
+! rotate correlation function (passive transformation)
+do igp=1,ng
+  igq=map(igp)
+  do jgp=1,ng
+    jgq=map(jgp)
+    if ((igq.eq.0).or.(jgq.eq.0)) then
+      cf(igp,jgp,:)=0.d0
     else
-      cf(ig,jg,:)=cf_(igm,jgm,:)
+      cf(igp,jgp,:)=cf_(igq,jgq,:)
     end if
   end do
 end do
-deallocate(map,vgpl,cf_,zv)
+deallocate(map,vgpl,cf_,x)
 return
 end subroutine
 

@@ -41,7 +41,7 @@ if (msd.lt.2) then
   write(*,*)
   stop
 end if
-if (iscl.le.0) then
+if (iscl.le.1) then
   mu(:,1)=nu(:)
   mu(:,2)=nu(:)
   f(:,1)=0.d0
@@ -52,13 +52,13 @@ if (iscl.le.0) then
   return
 end if
 ! current subspace dimension
-m=min(iscl+1,msd)
+m=min(iscl,msd)
 ! current index modulo m
-jc=mod(iscl,m)+1
+jc=mod(iscl-1,m)+1
 ! previous index modulo 2
-kp=mod(iscl-1,2)+1
+kp=mod(iscl-2,2)+1
 ! current index modulo 2
-kc=mod(iscl,2)+1
+kc=mod(iscl-1,2)+1
 f(:,kc)=nu(:)-mu(:,kp)
 d=sum(f(:,kc)**2)
 d=sqrt(d/dble(n))
@@ -80,9 +80,13 @@ do k=1,m
 end do
 ! invert beta
 call dgetrf(m,m,beta,msd,ipiv,info)
-if (info.ne.0) goto 10
-call dgetri(m,beta,msd,ipiv,work,m,info)
-if (info.ne.0) goto 10
+if (info.eq.0) call dgetri(m,beta,msd,ipiv,work,m,info)
+if (info.ne.0) then
+  write(*,*)
+  write(*,'("Error(mixbroyden): could not invert matrix")')
+  write(*,*)
+  stop
+end if
 do l=1,m
   gamma(l)=0.d0
   do k=1,m
@@ -96,10 +100,5 @@ do l=1,m
 end do
 mu(:,kc)=nu(:)
 return
-10 continue
-write(*,*)
-write(*,'("Error(mixbroyden): could not invert matrix")')
-write(*,*)
-stop
 end subroutine
 

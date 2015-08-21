@@ -12,7 +12,7 @@ use modmain
 ! !DESCRIPTION:
 !   Generates the APW radial functions. This is done by integrating the scalar
 !   relativistic Schr\"{o}dinger equation (or its energy deriatives) at the
-!   current linearisation energies using the spherical part of the effective
+!   current linearisation energies using the spherical part of the Kohn-Sham
 !   potential. The number of radial functions at each $l$-value is given by the
 !   variable {\tt apword} (at the muffin-tin boundary, the APW functions have
 !   continuous derivatives up to order ${\tt apword}-1$). Within each $l$, these
@@ -43,7 +43,7 @@ do is=1,nspecies
     if (done(ia)) cycle
     ias=idxas(ia,is)
 ! use spherical part of potential
-    vr(1:nr)=veffmt(1,1:nr,ias)*y00
+    vr(1:nr)=vsmt(1,1:nr,ias)*y00
     do l=0,lmaxapw
       do io=1,apword(l,is)
 ! integrate the radial Schrodinger equation
@@ -53,25 +53,25 @@ do is=1,nspecies
         fr(1:nr)=p0(1:nr,io)**2
         call fderiv(-1,nr,spr(:,is),fr,gr)
         t1=1.d0/sqrt(abs(gr(nr)))
-        p0(1:nr,io)=t1*p0(1:nr,io)
+        call dscal(nr,t1,p0(:,io),1)
         p1s(io)=t1*p1(nr)
-        q0(1:nr,io)=t1*q0(1:nr,io)
-        q1(1:nr,io)=t1*q1(1:nr,io)
+        call dscal(nr,t1,q0(:,io),1)
+        call dscal(nr,t1,q1(:,io),1)
 ! subtract linear combination of previous vectors
         do jo=1,io-1
           fr(1:nr)=p0(1:nr,io)*p0(1:nr,jo)
           call fderiv(-1,nr,spr(:,is),fr,gr)
-          t1=gr(nr)
-          p0(1:nr,io)=p0(1:nr,io)-t1*p0(1:nr,jo)
-          p1s(io)=p1s(io)-t1*p1s(jo)
-          q0(1:nr,io)=q0(1:nr,io)-t1*q0(1:nr,jo)
-          q1(1:nr,io)=q1(1:nr,io)-t1*q1(1:nr,jo)
+          t1=-gr(nr)
+          call daxpy(nr,t1,p0(:,jo),1,p0(:,io),1)
+          p1s(io)=p1s(io)+t1*p1s(jo)
+          call daxpy(nr,t1,q0(:,jo),1,q0(:,io),1)
+          call daxpy(nr,t1,q1(:,jo),1,q1(:,io),1)
         end do
-! normalise radial functions
+! normalise radial functions again
         fr(1:nr)=p0(1:nr,io)**2
         call fderiv(-1,nr,spr(:,is),fr,gr)
         t1=abs(gr(nr))
-        if (t1.lt.1.d-20) then
+        if (t1.lt.1.d-14) then
           write(*,*)
           write(*,'("Error(genapwfr): degenerate APW radial functions")')
           write(*,'(" for species ",I4)') is
@@ -82,10 +82,10 @@ do is=1,nspecies
           stop
         end if
         t1=1.d0/sqrt(t1)
-        p0(1:nr,io)=t1*p0(1:nr,io)
+        call dscal(nr,t1,p0(:,io),1)
         p1s(io)=t1*p1s(io)
-        q0(1:nr,io)=t1*q0(1:nr,io)
-        q1(1:nr,io)=t1*q1(1:nr,io)
+        call dscal(nr,t1,q0(:,io),1)
+        call dscal(nr,t1,q1(:,io),1)
 ! apply the Hamiltonian
         call rschrodapp(solsc,l,nr,spr(:,is),vr,p0(:,io),q0(:,io),q1(:,io),hp0)
 ! divide by r and store in global array
@@ -105,8 +105,8 @@ do is=1,nspecies
         jas=idxas(ja,is)
         do l=0,lmaxapw
           do io=1,apword(l,is)
-            apwfr(1:nr,1,io,l,jas)=apwfr(1:nr,1,io,l,ias)
-            apwfr(1:nr,2,io,l,jas)=apwfr(1:nr,2,io,l,ias)
+            call dcopy(nr,apwfr(:,1,io,l,ias),1,apwfr(:,1,io,l,jas),1)
+            call dcopy(nr,apwfr(:,2,io,l,ias),1,apwfr(:,2,io,l,jas),1)
             apwdfr(io,l,jas)=apwdfr(io,l,ias)
           end do
         end do

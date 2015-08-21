@@ -3,125 +3,83 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine seceqnhf(ikp,evecsvp)
+subroutine seceqnhf(ikp,vmt,vir,bmt,bir,evecsvp)
 use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ikp
+real(8), intent(in) :: vmt(lmmaxvr,nrcmtmax,natmtot)
+real(8), intent(in) :: vir(ngtot)
+real(8), intent(in) :: bmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
+real(8), intent(in) :: bir(ngtot,ndmag)
 complex(8), intent(inout) :: evecsvp(nstsv,nstsv)
 ! local variables
-integer is,ias,irc,ir,idm
 integer ik,jk,iv(3)
 integer ig,iq,igq0
 integer ist1,ist2,ist3
-integer lwork,info,ld
+integer lwork,info
 real(8) cfq,v(3),t1
-complex(8) zrho01,zrho02,zt1,zt2
+complex(8) zrho01,zrho02,z1,z2
 ! automatic arrays
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
 real(8), allocatable :: vgqc(:,:),gqc(:),tpgqc(:,:)
 real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
-real(8), allocatable :: vmt(:,:,:),vir(:)
-real(8), allocatable :: bmt(:,:,:,:),bir(:,:)
-real(8), allocatable :: rfmt(:,:),rwork(:)
+real(8), allocatable :: rwork(:)
 complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
-complex(8), allocatable :: h(:,:),vmat(:,:)
+complex(8), allocatable :: h(:,:),c(:,:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
 complex(8), allocatable :: zrhomt(:,:,:,:),zrhoir(:,:)
 complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
-complex(8), allocatable :: zfmt(:,:),work(:)
+complex(8), allocatable :: work(:)
 ! external functions
-complex(8) zfinp
-external zfinp
+complex(8) zfinp,zfmtinp
+external zfinp,zfmtinp
 !$OMP CRITICAL
 write(*,'("Info(seceqnhf): ",I6," of ",I6," k-points")') ikp,nkpt
 !$OMP END CRITICAL
 ! allocate local arrays
 allocate(vgqc(3,ngvec),gqc(ngvec),tpgqc(2,ngvec))
-allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
+allocate(jlgqr(0:lnpsd,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
-allocate(h(nstsv,nstsv),vmat(nstsv,nstsv))
+allocate(h(nstsv,nstsv),c(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,nstsv),zrhoir(ngrtot,nstsv))
-allocate(zfmt(lmmaxvr,nrcmtmax))
+allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,nstsv),zrhoir(ngtot,nstsv))
 ! coefficient of long-range term
 cfq=0.5d0*(omega/pi)**2
 ! get the eigenvectors from file for input k-point
 call getevecfv(vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
-! calculate the wavefunctions for all states for the input k-point
-call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
- evecfv,evecsvp,wfmt1,ngrtot,wfir1)
-!---------------------------------!
-!     kinetic matrix elements     !
-!---------------------------------!
-call zgemm('N','N',nstsv,nstsv,nstsv,zone,kinmatc(:,:,ikp),nstsv,evecsvp, &
- nstsv,zzero,vmat,nstsv)
-call zgemm('C','N',nstsv,nstsv,nstsv,zone,evecsvp,nstsv,vmat,nstsv,zzero,h, &
- nstsv)
+! calculate the wavefunctions for all states of the input k-point
+call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),occsv,apwalm, &
+ evecfv,evecsvp,wfmt1,ngtot,wfir1)
 !-----------------------------------------!
 !     local potential matrix elements     !
 !-----------------------------------------!
-allocate(vmt(lmmaxvr,nrcmtmax,natmtot))
-ld=lmmaxvr*lradstp
-if (hybrid) then
-! hybrid functional case
-  allocate(rfmt(lmmaxvr,nrcmtmax))
-  allocate(vir(ngrtot))
-  t1=1.d0-hybmix
-  do ias=1,natmtot
-    is=idxis(ias)
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
-      rfmt(:,irc)=vclmt(:,ir,ias)+t1*vxcmt(:,ir,ias)
-    end do
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt, &
-     lmmaxvr,0.d0,vmt(:,:,ias),lmmaxvr)
-  end do
-  vir(:)=vclir(:)+t1*vxcir(:)
-  call genvmatk(vmt,vir,wfmt1,wfir1,vmat)
-  h(:,:)=h(:,:)+vmat(:,:)
-  deallocate(rfmt,vir)
-  if (spinpol) then
-    allocate(bmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-    allocate(bir(ngrtot,ndmag))
-    do idm=1,ndmag
-      do ias=1,natmtot
-        is=idxis(ias)
-        call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,t1,rbshtvr,lmmaxvr, &
-         bxcmt(:,:,ias,idm),ld,0.d0,bmt(:,:,ias,idm),lmmaxvr)
-      end do
-      bir(:,idm)=t1*bxcir(:,idm)
-    end do
-    call genbmatk(bmt,bir,wfmt1,wfir1,vmat)
-    h(:,:)=h(:,:)+vmat(:,:)
-    deallocate(bmt,bir)
-  end if
-else
-! normal Hartree-Fock
-  do ias=1,natmtot
-    is=idxis(ias)
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-     vclmt(:,:,ias),ld,0.d0,vmt(:,:,ias),lmmaxvr)
-  end do
-  call genvmatk(vmt,vclir,wfmt1,wfir1,vmat)
-  h(:,:)=h(:,:)+vmat(:,:)
+call genvmatk(vmt,vir,wfmt1,wfir1,h)
+! magnetic field matrix elements in hybrid case
+if (hybrid.and.spinpol) then
+  call genbmatk(bmt,bir,wfmt1,wfir1,c)
+  h(:,:)=h(:,:)+c(:,:)
 end if
-deallocate(vmt)
+!---------------------------------!
+!     kinetic matrix elements     !
+!---------------------------------!
+call zgemm('N','N',nstsv,nstsv,nstsv,zone,kmatc(:,:,ikp),nstsv,evecsvp,nstsv, &
+ zzero,c,nstsv)
+call zgemm('C','N',nstsv,nstsv,nstsv,zone,evecsvp,nstsv,c,nstsv,zone,h,nstsv)
 !-------------------------------------------!
-!     non-local Coulomb matrix elements     !
+!     non-local valence-valence-valence     !
 !-------------------------------------------!
-vmat(:,:)=0.d0
+c(:,:)=0.d0
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! find the equivalent reduced k-point
@@ -145,7 +103,7 @@ do ik=1,nkptnr
   call findigp0(ngvec,gqc,igq0)
   sfacgq0(:)=sfacgq(igq0,:)
 ! compute the required spherical Bessel functions
-  call genjlgpr(lnpsd+1,gqc,jlgqr)
+  call genjlgpr(lnpsd,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
@@ -153,51 +111,51 @@ do ik=1,nkptnr
   call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! calculate the wavefunctions for all states
-  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv,apwalm, &
-   evecfv,evecsv,wfmt2,ngrtot,wfir2)
+  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),occsv,apwalm, &
+   evecfv,evecsv,wfmt2,ngtot,wfir2)
   do ist3=1,nstsv
-    if (occsv(ist3,jk).gt.epsocc) then
+    if (abs(occsv(ist3,jk)).lt.epsocc) cycle
 ! calculate the complex overlap densities for all states (T. McQueen)
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
-      do ist1=1,nstsv
-        call genzrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
-         wfir2(:,:,ist3),wfir1(:,:,ist1),zrhomt(:,:,:,ist1),zrhoir(:,ist1))
-      end do
+    do ist1=1,nstsv
+      call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
+       wfir2(:,:,ist3),wfir1(:,:,ist1),zrhomt(:,:,:,ist1),zrhoir(:,ist1))
+    end do
 !$OMP END DO
 !$OMP END PARALLEL
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(zvclmt,zvclir,zrho01,zrho02,ist1,zt1,zt2,t1)
+!$OMP PRIVATE(zvclmt,zvclir,zrho01,zrho02) &
+!$OMP PRIVATE(ist1,z1,z2,t1)
 !$OMP DO
-      do ist2=1,nstsv
-        allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
+    do ist2=1,nstsv
+      allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 ! calculate the Coulomb potential
-        call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist2),zvclmt)
-        call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
-         zrhoir(:,ist2),nrcmtmax,zvclmt,zvclir,zrho02)
-        do ist1=1,ist2
-          zt1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
+      call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist2),zvclmt)
+      call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
+       zrhoir(:,ist2),nrcmtmax,zvclmt,zvclir,zrho02)
+      do ist1=1,ist2
+        z1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
 ! compute the density coefficient of the smallest G+q-vector
-          call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist1), &
-           zrhoir(:,ist1),zrho01)
-          zt2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
-          t1=occsv(ist3,jk)/occmax
+        call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist1), &
+         zrhoir(:,ist1),zrho01)
+        z2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
+        t1=occsv(ist3,jk)/occmax
 !$OMP CRITICAL
-          vmat(ist1,ist2)=vmat(ist1,ist2)-t1*(wkptnr*zt1+zt2)
+        c(ist1,ist2)=c(ist1,ist2)-t1*(wkptnr*z1+z2)
 !$OMP END CRITICAL
-        end do
-        deallocate(zvclmt,zvclir)
       end do
+      deallocate(zvclmt,zvclir)
+    end do
 !$OMP END DO
 !$OMP END PARALLEL
-    end if
   end do
 ! end loop over non-reduced k-point set
 end do
 ! scale the non-local matrix elements in the case of a hybrid functional
-if (hybrid) vmat(:,:)=hybmix*vmat(:,:)
+if (hybrid) c(:,:)=hybridc*c(:,:)
 ! add the non-local matrix elements to Hamiltonian
-h(:,:)=h(:,:)+vmat(:,:)
+h(:,:)=h(:,:)+c(:,:)
 ! diagonalise the Hartree-Fock Hamiltonian (eigenvalues in global array)
 allocate(rwork(3*nstsv))
 lwork=2*nstsv
@@ -219,9 +177,9 @@ call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,h,nstsv,zzero,evecsvp, &
  nstsv)
 deallocate(vgqc,tpgqc,gqc,jlgqr,jlgq0r)
 deallocate(apwalm,evecfv,evecsv)
-deallocate(h,vmat,ylmgq,sfacgq)
+deallocate(h,c,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2)
-deallocate(zrhomt,zrhoir,zfmt)
+deallocate(zrhomt,zrhoir)
 return
 end subroutine
 

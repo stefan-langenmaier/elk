@@ -46,8 +46,7 @@ implicit none
 integer, intent(in) :: lmax
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
-integer, intent(in) :: ld1
-integer, intent(in) :: ld2
+integer, intent(in) :: ld1,ld2
 complex(8), intent(in) :: zfmt(ld1,nr)
 complex(8), intent(out) :: gzfmt(ld1,ld2,3)
 ! local variables
@@ -55,7 +54,7 @@ integer ir,l,m,lm,lm1,i,j
 ! real constant 1/sqrt(2)
 real(8), parameter :: c1=0.7071067811865475244d0
 real(8) t1,t2,t3
-complex(8) zt1
+complex(8) z1
 ! automatic arrays
 real(8) ri(nr),f(nr),g1(nr),g2(nr)
 ! external functions
@@ -109,10 +108,10 @@ end do
 lm1=(lmax+1)**2
 do ir=1,nr
   do lm=1,lm1
-    zt1=gzfmt(lm,ir,1)
-    gzfmt(lm,ir,1)=c1*(zt1-gzfmt(lm,ir,2))
-    zt1=c1*(zt1+gzfmt(lm,ir,2))
-    gzfmt(lm,ir,2)=cmplx(-aimag(zt1),dble(zt1),8)
+    z1=gzfmt(lm,ir,1)
+    gzfmt(lm,ir,1)=c1*(z1-gzfmt(lm,ir,2))
+    z1=c1*(z1+gzfmt(lm,ir,2))
+    gzfmt(lm,ir,2)=cmplx(-aimag(z1),dble(z1),8)
   end do
 end do
 return

@@ -11,6 +11,7 @@ subroutine init0
 use modmain
 use modxcifc
 use modldapu
+use modtest
 ! !DESCRIPTION:
 !   Performs basic consistency checks as well as allocating and initialising
 !   global variables not dependent on the $k$-point set.
@@ -21,8 +22,8 @@ use modldapu
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias
-integer ist,l,m,lm
+integer is,ia,ias,ist
+integer l,m,lm
 real(8) rsum,t1
 real(8) ts0,ts1
 
@@ -57,6 +58,8 @@ if (lmaxmat.gt.lmaxapw) then
   write(*,*)
   stop
 end if
+! check DOS lmax is within range
+lmaxdos=min(lmaxdos,lmaxapw)
 ! index to (l,m) pairs
 if (allocated(idxlm)) deallocate(idxlm)
 allocate(idxlm(0:lmaxapw,-lmaxapw:lmaxapw))
@@ -73,11 +76,13 @@ do l=0,lmaxapw
     idxim(lm)=m
   end do
 end do
-! array of i**l values
+! array of i^l and (-i)^l values
 if (allocated(zil)) deallocate(zil)
-allocate(zil(0:lmaxapw))
+if (allocated(zilc)) deallocate(zilc)
+allocate(zil(0:lmaxapw),zilc(0:lmaxapw))
 do l=0,lmaxapw
   zil(l)=zi**l
+  zilc(l)=conjg(zil(l))
 end do
 
 !------------------------------------!
@@ -128,18 +133,23 @@ else
   nspinor=1
   occmax=2.d0
 end if
-! number of spin-dependent first-variational functions per state
+! number of spin-dependent first-variational functions per state and map from
+! second- to first-variational spin index
 if (spinsprl) then
   nspnfv=2
+  jspnfv(1)=1
+  jspnfv(2)=2
 else
   nspnfv=1
+  jspnfv(1)=1
+  jspnfv(2)=1
 end if
 ! spin-polarised calculations require second-variational eigenvectors
 if (spinpol) tevecsv=.true.
 ! Hartree-Fock/RDMFT requires second-variational eigenvectors
 if ((task.eq.5).or.(task.eq.300)) tevecsv=.true.
 ! get exchange-correlation functional data
-call getxcdata(xctype,xcdescr,xcspin,xcgrad)
+call getxcdata(xctype,xcdescr,xcspin,xcgrad,hybrid,hybridc)
 if ((spinpol).and.(xcspin.eq.0)) then
   write(*,*)
   write(*,'("Error(init0): requested spin-polarised run with &
@@ -148,26 +158,15 @@ if ((spinpol).and.(xcspin.eq.0)) then
   write(*,*)
   stop
 end if
-! set the magnetic fields to the initial values
-bfieldc(:)=bfieldc0(:)
-bfcmt(:,:,:)=bfcmt0(:,:,:)
-! if reducebf < 1 then reduce the external magnetic fields immediately for
-! non-self-consistent calculations or resumptions
-if (reducebf.lt.1.d0-epslat) then
-  if ((task.ge.10).and.(task.ne.200)) then
-    bfieldc(:)=0.d0
-    bfcmt(:,:,:)=0.d0
-  end if
-end if
 ! check for collinearity in the z-direction and set the dimension of the
 ! magnetisation and exchange-correlation vector fields
 if (spinpol) then
   ndmag=1
-  if ((abs(bfieldc(1)).gt.epslat).or.(abs(bfieldc(2)).gt.epslat)) ndmag=3
+  if ((abs(bfieldc0(1)).gt.epslat).or.(abs(bfieldc0(2)).gt.epslat)) ndmag=3
   do is=1,nspecies
     do ia=1,natoms(is)
-      if ((abs(bfcmt(1,ia,is)).gt.epslat).or.(abs(bfcmt(2,ia,is)).gt.epslat)) &
-       ndmag=3
+      if ((abs(bfcmt0(1,ia,is)).gt.epslat).or. &
+          (abs(bfcmt0(2,ia,is)).gt.epslat)) ndmag=3
     end do
   end do
 ! source-free fields and spin-spirals are non-collinear in general
@@ -183,12 +182,44 @@ if (ndmag.eq.3) then
 else
   ncmag=.false.
 end if
+! check for meta-GGA with non-collinearity
+if ((xcgrad.eq.3).and.ncmag) then
+  write(*,*)
+  write(*,'("Error(init0): meta-GGA is not valid for non-collinear magnetism")')
+  write(*,*)
+  stop
+end if
 ! spin-polarised cores
 if (.not.spinpol) spincore=.false.
+if (fixspin.ne.0) then
 ! set fixed spin moment effective field to zero
-bfsmc(:)=0.d0
+  bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero
-bfsmcmt(:,:,:)=0.d0
+  if (allocated(bfsmcmt)) deallocate(bfsmcmt)
+  allocate(bfsmcmt(3,natmtot))
+  bfsmcmt(:,:)=0.d0
+end if
+! number of independent spin components of the f_xc spin tensor
+if (spinpol) then
+  if (ncmag) then
+    nscfxc=10
+  else
+    nscfxc=3
+  end if
+else
+  nscfxc=1
+end if
+! set the magnetic fields to the initial values
+bfieldc(:)=bfieldc0(:)
+bfcmt(:,:,:)=bfcmt0(:,:,:)
+! if reducebf < 1 then reduce the external magnetic fields immediately for
+! non-self-consistent calculations or resumptions
+if (reducebf.lt.1.d0-epslat) then
+  if ((task.ge.10).and.(task.ne.200).and.(task.ne.350).and.(task.ne.351)) then
+    bfieldc(:)=0.d0
+    bfcmt(:,:,:)=0.d0
+  end if
+end if
 
 !----------------------------------!
 !     crystal structure set up     !
@@ -235,7 +266,7 @@ end if
 ! find Bravais lattice symmetries
 call findsymlat
 ! use only the identity if required
-if (nosym) nsymlat=1
+if (symtype.eq.0) nsymlat=1
 ! find the crystal symmetries and shift atomic positions if required
 call findsymcrys
 ! find the site symmetries
@@ -325,11 +356,38 @@ if (nspecies.gt.0) then
 else
   gkmax=rgkmax/2.d0
 end if
+! ensure |G| cut-off is at least twice |G+k| cut-off
 gmaxvr=max(gmaxvr,2.d0*gkmax+epslat)
 ! find the G-vector grid sizes
-call gridsize
+call gridsize(avec,gmaxvr,ngridg,ngtot,intgv)
+! allocate global G-vector arrays
+if (allocated(ivg)) deallocate(ivg)
+allocate(ivg(3,ngtot))
+if (allocated(ivgig)) deallocate(ivgig)
+allocate(ivgig(intgv(1,1):intgv(2,1),intgv(1,2):intgv(2,2), &
+ intgv(1,3):intgv(2,3)))
+if (allocated(igfft)) deallocate(igfft)
+allocate(igfft(ngtot))
+if (allocated(vgc)) deallocate(vgc)
+allocate(vgc(3,ngtot))
+if (allocated(gc)) deallocate(gc)
+allocate(gc(ngtot))
 ! generate the G-vectors
-call gengvec
+call gengvec(ngridg,ngtot,intgv,bvec,gmaxvr,ngvec,ivg,ivgig,igfft,vgc,gc)
+! write number of G-vectors to test file
+call writetest(900,'number of G-vectors',iv=ngvec)
+! Poisson solver pseudocharge density constant
+if (nspecies.gt.0) then
+  t1=0.25d0*gmaxvr*maxval(rmt(1:nspecies))
+else
+  t1=0.25d0*gmaxvr*2.d0
+end if
+npsd=max(nint(t1),1)
+lnpsd=lmaxvr+npsd+1
+! compute the spherical Bessel functions j_l(|G|R_mt)
+if (allocated(jlgr)) deallocate(jlgr)
+allocate(jlgr(0:lnpsd,ngvec,nspecies))
+call genjlgpr(lnpsd,gc,jlgr)
 ! generate the spherical harmonics of the G-vectors
 call genylmg
 ! allocate structure factor array for G-vectors
@@ -338,7 +396,11 @@ allocate(sfacg(ngvec,natmtot))
 ! generate structure factors for G-vectors
 call gensfacgp(ngvec,vgc,ngvec,sfacg)
 ! generate the smooth step function form factors
-call genffacg
+if (allocated(ffacg)) deallocate(ffacg)
+allocate(ffacg(ngtot,nspecies))
+do is=1,nspecies
+  call genffacgp(is,gc,ffacg(:,is))
+end do
 ! generate the characteristic function
 call gencfun
 
@@ -347,13 +409,16 @@ call gencfun
 !-------------------------!
 ! solve the Kohn-Sham-Dirac equations for all atoms
 call allatoms
-! allocate core state eigenvalue array and set to default
+! allocate core state occupancy and eigenvalue arrays and set to default
+if (allocated(occcr)) deallocate(occcr)
+allocate(occcr(spnstmax,natmtot))
 if (allocated(evalcr)) deallocate(evalcr)
 allocate(evalcr(spnstmax,natmtot))
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist=1,spnst(is)
+      occcr(ist,ias)=spocc(ist,is)
       evalcr(ist,ias)=speval(ist,is)
     end do
   end do
@@ -378,55 +443,57 @@ allocate(rhocr(spnrmax,natmtot,nspncr))
 if (allocated(rhomt)) deallocate(rhomt)
 allocate(rhomt(lmmaxvr,nrmtmax,natmtot))
 if (allocated(rhoir)) deallocate(rhoir)
-allocate(rhoir(ngrtot))
+allocate(rhoir(ngtot))
 ! allocate magnetisation arrays
 if (allocated(magmt)) deallocate(magmt)
 if (allocated(magir)) deallocate(magir)
 if (spinpol) then
   allocate(magmt(lmmaxvr,nrmtmax,natmtot,ndmag))
-  allocate(magir(ngrtot,ndmag))
+  allocate(magir(ngtot,ndmag))
 end if
 ! Coulomb potential
 if (allocated(vclmt)) deallocate(vclmt)
 allocate(vclmt(lmmaxvr,nrmtmax,natmtot))
 if (allocated(vclir)) deallocate(vclir)
-allocate(vclir(ngrtot))
+allocate(vclir(ngtot))
+! exchange energy density
+if (allocated(exmt)) deallocate(exmt)
+allocate(exmt(lmmaxvr,nrmtmax,natmtot))
+if (allocated(exir)) deallocate(exir)
+allocate(exir(ngtot))
+! correlation energy density
+if (allocated(ecmt)) deallocate(ecmt)
+allocate(ecmt(lmmaxvr,nrmtmax,natmtot))
+if (allocated(ecir)) deallocate(ecir)
+allocate(ecir(ngtot))
 ! exchange-correlation potential
 if (allocated(vxcmt)) deallocate(vxcmt)
 allocate(vxcmt(lmmaxvr,nrmtmax,natmtot))
 if (allocated(vxcir)) deallocate(vxcir)
-allocate(vxcir(ngrtot))
-! exchange-correlation magnetic and effective fields
+allocate(vxcir(ngtot))
+! effective Kohn-Sham potential
+if (allocated(vsmt)) deallocate(vsmt)
+allocate(vsmt(lmmaxvr,nrmtmax,natmtot))
+if (allocated(vsir)) deallocate(vsir)
+allocate(vsir(ngtot))
+if (allocated(vsig)) deallocate(vsig)
+allocate(vsig(ngvec))
+! exchange-correlation magnetic and Kohn-Sham effective fields
 if (allocated(bxcmt)) deallocate(bxcmt)
 if (allocated(bxcir)) deallocate(bxcir)
-if (allocated(beffmt)) deallocate(beffmt)
+if (allocated(bsmt)) deallocate(bsmt)
+if (allocated(bsir)) deallocate(bsir)
 if (spinpol) then
   allocate(bxcmt(lmmaxvr,nrmtmax,natmtot,ndmag))
-  allocate(bxcir(ngrtot,ndmag))
-  allocate(beffmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
+  allocate(bxcir(ngtot,ndmag))
+  allocate(bsmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
+  allocate(bsir(ngtot,ndmag))
 end if
 ! spin-orbit coupling radial function
 if (allocated(socfr)) deallocate(socfr)
 if (spinorb) then
   allocate(socfr(nrcmtmax,natmtot))
 end if
-! exchange energy density
-if (allocated(exmt)) deallocate(exmt)
-allocate(exmt(lmmaxvr,nrmtmax,natmtot))
-if (allocated(exir)) deallocate(exir)
-allocate(exir(ngrtot))
-! correlation energy density
-if (allocated(ecmt)) deallocate(ecmt)
-allocate(ecmt(lmmaxvr,nrmtmax,natmtot))
-if (allocated(ecir)) deallocate(ecir)
-allocate(ecir(ngrtot))
-! effective potential
-if (allocated(veffmt)) deallocate(veffmt)
-allocate(veffmt(lmmaxvr,nrmtmax,natmtot))
-if (allocated(veffir)) deallocate(veffir)
-allocate(veffir(ngrtot))
-if (allocated(veffig)) deallocate(veffig)
-allocate(veffig(ngvec))
 ! allocate muffin-tin charge and moment arrays
 if (allocated(chgcrlk)) deallocate(chgcrlk)
 allocate(chgcrlk(natmtot))
@@ -440,8 +507,6 @@ allocate(mommt(3,natmtot))
 !-------------------------!
 if (allocated(forcehf)) deallocate(forcehf)
 allocate(forcehf(3,natmtot))
-if (allocated(forcecr)) deallocate(forcecr)
-allocate(forcecr(3,natmtot))
 if (allocated(forceibs)) deallocate(forceibs)
 allocate(forceibs(3,natmtot))
 if (allocated(forcetot)) deallocate(forcetot)
@@ -472,13 +537,8 @@ end if
 !-----------------------!
 !     miscellaneous     !
 !-----------------------!
-! Poisson solver pseudocharge density constant l + n(l)
-if (nspecies.gt.0) then
-  t1=0.5d0*gmaxvr*maxval(rmt(1:nspecies))
-else
-  t1=0.5d0*gmaxvr*2.d0
-end if
-lnpsd=max(nint(t1),lmaxvr+1)
+! determine nuclear radii and volumes
+call nuclei
 ! determine the nuclear-nuclear energy
 call energynn
 ! get smearing function description
@@ -499,8 +559,8 @@ iscl=0
 tlast=.false.
 ! set the Fermi energy to zero
 efermi=0.d0
-! set the Tran-Blaha '09 constant c to zero
-c_tb09=0.d0
+! input q-vector in Cartesian coordinates
+call r3mv(bvec,vecql,vecqc)
 
 call timesec(ts1)
 timeinit=timeinit+ts1-ts0

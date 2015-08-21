@@ -20,8 +20,7 @@ subroutine r3mtm(a,b,c)
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: a(3,3)
-real(8), intent(in) :: b(3,3)
+real(8), intent(in) :: a(3,3),b(3,3)
 real(8), intent(out) :: c(3,3)
 c(1,1)=a(1,1)*b(1,1)+a(2,1)*b(2,1)+a(3,1)*b(3,1)
 c(2,1)=a(1,2)*b(1,1)+a(2,2)*b(2,1)+a(3,2)*b(3,1)

@@ -9,6 +9,7 @@
 subroutine sfacrho
 ! !USES:
 use modmain
+use modpw
 ! !DESCRIPTION:
 !   Outputs X-ray structure factors, i.e. the Fourier transform coefficients of
 !   the total electron density
@@ -26,15 +27,15 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ih
-real(8) v(3),h,a,b,r
+integer ih,iv(3)
+real(8) v(3),a,b,r
 ! allocatable arrays
 complex(8), allocatable :: zrhoh(:)
 ! initialise the structure factor specific variables
 call sfacinit
 ! calculate the density structure factors
 allocate(zrhoh(nhvec))
-call zftrf(rhomt,rhoir,zrhoh)
+call zftrf(nhvec,ivh,vhc,rhomt,rhoir,zrhoh)
 open(50,file='SFACRHO.OUT',action='WRITE',form='FORMATTED')
 write(50,*)
 write(50,'("h k l indices transformed by vhmat matrix:")')
@@ -46,10 +47,6 @@ write(50,'("      h      k      l  multipl.   |H|            Re(F)&
  &            Im(F)           |F|")')
 write(50,*)
 do ih=1,nhvec
-  v(:)=dble(ivh(1,ih))*bvec(:,1) &
-      +dble(ivh(2,ih))*bvec(:,2) &
-      +dble(ivh(3,ih))*bvec(:,3)
-  h=sqrt(v(1)**2+v(2)**2+v(3)**2)
 ! apply transformation matrix
   v(:)=vhmat(:,1)*dble(ivh(1,ih)) &
       +vhmat(:,2)*dble(ivh(2,ih)) &
@@ -59,14 +56,15 @@ do ih=1,nhvec
   a=dble(zrhoh(ih))*omega
   b=-aimag(zrhoh(ih))*omega
   r=abs(zrhoh(ih))*omega
-  if ((abs(v(1)-nint(v(1))).le.epslat).and. &
-      (abs(v(2)-nint(v(2))).le.epslat).and. &
-      (abs(v(3)-nint(v(3))).le.epslat)) then
+  iv(:)=nint(v(:))
+  if ((abs(v(1)-iv(1)).le.epslat).and. &
+      (abs(v(2)-iv(2)).le.epslat).and. &
+      (abs(v(3)-iv(3)).le.epslat)) then
 ! integer hkl
-    write(50,'(4I7,4G16.8)') int(v(:)),mulh(ih),h,a,b,r
+    write(50,'(4I7,4G16.8)') iv(:),mulh(ih),hc(ih),a,b,r
   else
 ! non-integer hkl
-    write(50,'(3F7.2,I7,4G16.8)') v(:),mulh(ih),h,a,b,r
+    write(50,'(3F7.2,I7,4G16.8)') v(:),mulh(ih),hc(ih),a,b,r
   end if
 end do
 deallocate(zrhoh)

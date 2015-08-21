@@ -30,8 +30,7 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: nmatp
-integer, intent(in) :: ngp
+integer, intent(in) :: nmatp,ngp
 integer, intent(in) :: igpig(ngkmax)
 real(8), intent(in) :: vpc(3)
 real(8), intent(in) :: vgpc(3,ngkmax)
@@ -53,20 +52,20 @@ allocate(h(nmatp**2),o(nmatp**2))
 ! Hamiltonian
 h(:)=0.d0
 do ias=1,natmtot
-  call hmlaa(ias,ngp,apwalm,h)
-  call hmlalo(ias,ngp,apwalm,h)
-  call hmllolo(ias,ngp,h)
+  call hmlaa(ias,ngp,apwalm,nmatp,h)
+  call hmlalo(ias,ngp,apwalm,nmatp,h)
+  call hmllolo(ias,ngp,nmatp,h)
 end do
-call hmlistl(ngp,igpig,vgpc,h)
+call hmlistl(ngp,igpig,vgpc,nmatp,h)
 !$OMP SECTION
 ! overlap
 o(:)=0.d0
 do ias=1,natmtot
-  call olpaa(ias,ngp,apwalm,o)
-  call olpalo(ias,ngp,apwalm,o)
-  call olplolo(ias,ngp,o)
+  call olpaa(ias,ngp,apwalm,nmatp,o)
+  call olpalo(ias,ngp,apwalm,nmatp,o)
+  call olplolo(ias,ngp,nmatp,o)
 end do
-call olpistl(ngp,igpig,o)
+call olpistl(ngp,igpig,nmatp,o)
 !$OMP END PARALLEL SECTIONS
 call timesec(ts1)
 !$OMP CRITICAL

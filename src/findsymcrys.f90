@@ -12,19 +12,19 @@ use modmain
 use modtest
 ! !DESCRIPTION:
 !   Finds the complete set of symmetries which leave the crystal structure
-!   (including the magnetic fields) invariant. A crystal symmetry is of the
-!   form $\{\alpha_S|\alpha_R|{\bf t}\}$, where ${\bf t}$ is a translation
-!   vector, $\alpha_R$ is a spatial rotation operation and $\alpha_S$ is a
-!   global spin rotation. Note that the order of operations is important and
-!   defined to be from right to left, i.e. translation followed by spatial
-!   rotation followed by spin rotation. In the case of spin-orbit coupling
-!   $\alpha_S=\alpha_R$. In order to determine the translation vectors, the
-!   entire atomic basis is shifted so that the first atom in the smallest set of
-!   atoms of the same species is at the origin. Then all displacement vectors
-!   between atoms in this set are checked as possible symmetry translations. If
-!   the global variable {\tt tshift} is set to {\tt .false.} then the shift is
-!   not performed. See L. M. Sandratskii and P. G. Guletskii, {\it J. Phys. F:
-!   Met. Phys.} {\bf 16}, L43 (1986) and the routine {\tt findsym}.
+!   (including the magnetic fields) invariant. A crystal symmetry is of the form
+!   $\{\alpha_S|\alpha_R|{\bf t}\}$, where ${\bf t}$ is a translation vector,
+!   $\alpha_R$ is a spatial rotation operation and $\alpha_S$ is a global spin
+!   rotation. Note that the order of operations is important and defined to be
+!   from right to left, i.e. translation followed by spatial rotation followed
+!   by spin rotation. In the case of spin-orbit coupling $\alpha_S=\alpha_R$. In
+!   order to determine the translation vectors, the entire atomic basis is
+!   shifted so that the first atom in the smallest set of atoms of the same
+!   species is at the origin. Then all displacement vectors between atoms in
+!   this set are checked as possible symmetry translations. If the global
+!   variable {\tt tshift} is set to {\tt .false.} then the shift is not
+!   performed. See L. M. Sandratskii and P. G. Guletskii, {\it J. Phys. F: Met.
+!   Phys.} {\bf 16}, L43 (1986) and the routine {\tt findsym}.
 !
 ! !REVISION HISTORY:
 !   Created April 2007 (JKD)
@@ -35,7 +35,7 @@ implicit none
 integer ia,ja,is,js
 integer isym,nsym,i,n
 integer lspl(48),lspn(48),ilspl
-real(8) v1(3),v2(3),t1
+real(8) v0(3),v1(3),v2(3),t1
 real(8) apl(3,maxatoms,maxspecies)
 ! allocatable arrays
 integer, allocatable :: iea(:,:,:)
@@ -47,6 +47,8 @@ if (allocated(ieqatom)) deallocate(ieqatom)
 allocate(ieqatom(natmmax,nspecies,maxsymcrys))
 if (allocated(eqatoms)) deallocate(eqatoms)
 allocate(eqatoms(natmmax,natmmax,nspecies))
+! store position of first atom
+if (natmtot.gt.0) v0(:)=atposl(:,1,1)
 ! find the smallest set of atoms
 is=1
 do js=1,nspecies
@@ -86,8 +88,8 @@ do ia=1,natoms(is)
 10 continue
   end do
 end do
-! no translations required when nosym is .true. (F. Cricchio)
-if (nosym) n=1
+! no translations required when symtype=0,2 (F. Cricchio)
+if (symtype.ne.1) n=1
 eqatoms(:,:,:)=.false.
 nsymcrys=0
 ! loop over all possible translations
@@ -179,8 +181,18 @@ do isym=1,nsymcrys
     tvzsymc(isym)=.false.
   end if
 end do
+! check inversion does not include a translation
 if (tsyminv) then
   if (.not.tvzsymc(2)) tsyminv=.false.
+end if
+if (natmtot.gt.0) then
+  v1(:)=atposl(:,1,1)-v0(:)
+  t1=abs(v1(1))+abs(v1(2))+abs(v1(3))
+  if (t1.gt.epslat) then
+    write(*,'("Info(findsymcrys): atomic basis shift (lattice) :")')
+    write(*,'(3G18.10)') v1(:)
+    write(*,'("See GEOMETRY.OUT for new atomic positions")')
+  end if
 end if
 ! write number of crystal symmetries to test file
 call writetest(705,'number of crystal symmetries',iv=nsymcrys)

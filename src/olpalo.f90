@@ -3,18 +3,18 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine olpalo(ias,ngp,apwalm,o)
+subroutine olpalo(ias,ngp,apwalm,ld,o)
 use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ias
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
+integer, intent(in) :: ld
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ld,is,ilo,io
+integer is,ilo,io
 integer l,m,lm,i,j,k
-ld=ngp+nlotot
 is=idxis(ias)
 do ilo=1,nlorb(is)
   l=lorbl(ilo,is)

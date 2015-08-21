@@ -25,7 +25,7 @@ implicit none
 integer is,ia,ias
 integer nr,ik,ist
 real(8) vn,t1
-complex(8) zt1
+complex(8) z1
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:)
 complex(8), allocatable :: evecsv(:,:)
@@ -58,8 +58,8 @@ do ik=1,nkpt
 ! Coulomb energy from valence states
     engyvcl=engyvcl+t1*dble(vclmat(ist,ist,ik))
 ! kinetic energy from valence states
-    zt1=zdotc(nstsv,evecsv(:,ist),1,dkdc(:,ist,ik),1)
-    engykn=engykn+t1*dble(zt1)
+    z1=zdotc(nstsv,evecsv(:,ist),1,dkdc(:,ist,ik),1)
+    engykn=engykn+t1*dble(z1)
   end do
 end do
 deallocate(evecsv)

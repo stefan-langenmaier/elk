@@ -49,7 +49,7 @@ do is=1,nspecies
 end do
 ! each MPI process should have identical atomic positions
 n=3*maxatoms*maxspecies
-call mpi_bcast(atposc,n,mpi_double_precision,0,mpi_comm_world,ierror)
+call mpi_bcast(atposc,n,mpi_double_precision,0,mpi_comm_kpt,ierror)
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)

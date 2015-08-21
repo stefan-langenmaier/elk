@@ -30,6 +30,16 @@ ierror=0
 return
 end subroutine
 
+subroutine mpi_comm_dup(comm,newcomm,ierror)
+implicit none
+integer, intent(in) :: comm
+integer, intent(out) :: newcomm
+integer, intent(out) :: ierror
+newcomm=comm
+ierror=0
+return
+end subroutine
+
 subroutine mpi_comm_size(comm,size,ierror)
 implicit none
 integer, intent(in) :: comm

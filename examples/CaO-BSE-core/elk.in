@@ -18,11 +18,13 @@
 ! Example by Markus Meinert.
 
 tasks
- 0	! ground-state calculation
- 120	! compute momentum matrix elements
- 121	! compute RPA dielectric function without local field contributions
- 180	! generate RPA dielectric function with local field contributions
- 185	! compute BSE dielectric function
+ 0      ! ground-state calculation
+ 120    ! compute momentum matrix elements
+ 121    ! compute RPA dielectric function without local field contributions
+ 180    ! generate RPA dielectric function with local field contributions
+ 185    ! write the BSE Hamiltonian matrix to file
+ 186    ! diagonalise BSE matrix
+ 187    ! compute BSE dielectric function
 
 ! do not include valence bands right below E_F
 nvbse
@@ -47,7 +49,7 @@ nempty
  50
 
 ! enhanced G-vector cut-off of local contribution to RPA
-gmaxrpa
+gmaxrf
  5.0
 
 ! automatically determine the smallest possible G vector cutoff
@@ -68,7 +70,7 @@ mixtype
 
 ! the energy window for the plot starts at zero by default;
 ! sufficient energy points needed
-dos
+wplot
  5000 100 0
  0.0 14.0
 
@@ -78,11 +80,6 @@ spinorb
 
 ! about 0.27 eV Lorentzian broadening to simulate lifetime effects
 swidth
- 0.01
-
-! use a small step for searching the linearization energy (necessary for the
-! deep semicore state)
-deband
  0.01
 
 sppath

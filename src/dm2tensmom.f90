@@ -37,7 +37,7 @@ integer g,t,x,y,ispn,jspn
 integer m1,m2,lm1,lm2,i,j
 real(8) nk1l,nps,t1
 complex(8), parameter :: zi=(0.d0,1.d0)
-complex(8) zt1,zt2,zt3
+complex(8) z1,z2,z3
 ! automatic arrays
 real(8) w3js(0:1,-1:1,2,2)
 ! external functions
@@ -59,22 +59,22 @@ nk1l=factnm(2*l,1)/sqrt(factnm(2*l-k1,1)*factnm(2*l+k1+1,1))
 nps=1.d0/sqrt(factnm(2+p,1))
 g=k1+p+r
 if (mod(g,2).eq.0) then
-  zt1=cmplx(1.d0/wigner3j(k1,p,r,0,0,0),0.d0,8)
+  z1=cmplx(1.d0/wigner3j(k1,p,r,0,0,0),0.d0,8)
 else
-  zt1=zi**(-g)*cmplx(sqrt(factr(g+1,g-2*k1)/factnm(g-2*p,1)/ &
+  z1=zi**(-g)*cmplx(sqrt(factr(g+1,g-2*k1)/factnm(g-2*p,1)/ &
    factnm(g-2*r,1)),0.d0,8)*cmplx(factnm(g-2*k1,2)* &
    factnm(g-2*p,2)*factnm(g-2*r,2)/factnm(g,2),0.d0,8)
 end if
-zt1=zt1*cmplx((-1)**(k1+p+l),0.d0,8)/cmplx(nk1l*nps,0.d0,8)
+z1=z1*cmplx((-1)**(k1+p+l),0.d0,8)/cmplx(nk1l*nps,0.d0,8)
 do t=-r,r
   tmom(t)=cmplx(0.d0,0.d0,8)
   do x=-k1,k1
     do y=-p,p
-      zt2=cmplx(wigner3j(k1,r,p,-x,t,-y)*(-1)**(x+y),0.d0,8)
+      z2=cmplx(wigner3j(k1,r,p,-x,t,-y)*(-1)**(x+y),0.d0,8)
       do ispn=1,nsp
         do jspn=1,nsp
-          zt3=cmplx(w3js(p,y,jspn,ispn),0.d0,8)
-          if (abs(zt2).gt.1.d-10) then
+          z3=cmplx(w3js(p,y,jspn,ispn),0.d0,8)
+          if (abs(z2).gt.1.d-10) then
             do m1=-l,l
               lm1=m1+l+1
               do m2=-l,l
@@ -82,7 +82,7 @@ do t=-r,r
                 i=lm1+(2*l+1)*(ispn-1)
                 j=lm2+(2*l+1)*(jspn-1)
                 t1=wigner3j(l,k1,l,-m2,x,m1)
-                tmom(t)=tmom(t)+zt1*zt2*zt3 &
+                tmom(t)=tmom(t)+z1*z2*z3 &
                  *cmplx(t1*(-1)**(1+jspn-m2),0.d0,8)*dmcomb(i,j)
               end do
             end do

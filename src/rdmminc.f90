@@ -41,11 +41,11 @@ do it=1,maxitc
 ! write the Coulomb matrix elements to file
   call writevnlijjk
 ! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
+  call mpi_barrier(mpi_comm_kpt,ierror)
 ! update evecsv, orthogonalise and write to file (MPI master process only)
   if (mp_mpi) call rdmvaryc
 ! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
+  call mpi_barrier(mpi_comm_kpt,ierror)
 ! calculate the energy
   call rdmenergy
 ! write energy to file

@@ -16,23 +16,15 @@ tasks
 spinorb
  .true.
 
-! tight convergence for band (linearisation) energies required
-epsband
- 1.e-9
-
-! large initial step-length for band energy search
-deband
- 0.01
-
 ! maximum allowed energy for the initial state in the double differential
 ! cross-section formula
 emaxelnes
  -30.0
 
 ! energy range for ELNES plot
-dos
- 500 200 1    : nwdos, ngrdos, nsmdos
- 33.0 37.5    : wdos (suitable for the Cu L3 edge)
+wplot
+ 500 200 1    : nwplot, ngrkf, nswplot
+ 33.0 37.5    : wplot (suitable for the Cu L3 edge)
 
 vecql
  0.0 0.0 0.1

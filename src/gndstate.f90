@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2010 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
+! Copyright (C) 2002-2013 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -16,7 +16,7 @@ use modldapu
 !   written to the file {\tt INFO.OUT}. First- and second-variational
 !   eigenvalues, eigenvectors and occupancies are written to the unformatted
 !   files {\tt EVALFV.OUT}, {\tt EVALSV.OUT}, {\tt EVECFV.OUT}, {\tt EVECSV.OUT}
-!   and {\tt OCCSV.OUT}. The density, magnetisation, effective potential and
+!   and {\tt OCCSV.OUT}. The density, magnetisation, Kohn-Sham potential and
 !   magnetic field are written to {\tt STATE.OUT}.
 !
 ! !REVISION HISTORY:
@@ -27,14 +27,10 @@ use modldapu
 implicit none
 ! local variables
 logical exist
-integer ik,nwork,lp,n
+integer ik,nwork,n
 real(8) dv,etp,de,timetot
 ! allocatable arrays
-real(8), allocatable :: v(:)
-real(8), allocatable :: work(:)
-real(8), allocatable :: evalfv(:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+real(8), allocatable :: v(:),work(:)
 ! initialise global variables
 call init0
 call init1
@@ -69,8 +65,8 @@ if (mp_mpi) then
    form='FORMATTED')
 ! open GAP.OUT
   open(64,file='GAP'//trim(filext),action='WRITE',form='FORMATTED')
-! open RMSDVEFF.OUT
-  open(65,file='RMSDVEFF'//trim(filext),action='WRITE',form='FORMATTED')
+! open RMSDVS.OUT
+  open(65,file='RMSDVS'//trim(filext),action='WRITE',form='FORMATTED')
 ! open DTOTENERGY.OUT
   open(66,file='DTOTENERGY'//trim(filext),action='WRITE',form='FORMATTED')
 ! open TENSMOM.OUT
@@ -88,24 +84,21 @@ if (trdstate) then
   if (autolinengy) call readfermi
 else
   call rhoinit
-  call poteff
-  call genveffig
+  call potks
+  call genvsig
   if (mp_mpi) write(60,'("Density and potential initialised from atomic data")')
 end if
 if (mp_mpi) call flushifc(60)
 ! size of mixing vector
-n=lmmaxvr*nrmtmax*natmtot+ngrtot
-if (spinpol) n=n+n*ndmag
+n=lmmaxvr*nrmtmax*natmtot+ngtot
+if (spinpol) n=n+ndmag*(lmmaxvr*nrcmtmax*natmtot+ngtot)
 if (ldapu.ne.0) n=n+2*lmmaxlu*lmmaxlu*nspinor*nspinor*natmtot
-! allocate mixing arrays
+! allocate mixing array
 allocate(v(n))
 ! determine the size of the mixer work array
 nwork=-1
-call mixerifc(mixtype,n,v,dv,nwork,v)
-allocate(work(nwork))
-! initialise mixer
-call mixpack(.true.,n,v)
 call mixerifc(mixtype,n,v,dv,nwork,work)
+allocate(work(nwork))
 ! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
@@ -148,38 +141,10 @@ do iscl=1,maxscl
   call olprad
 ! compute the Hamiltonian radial integrals
   call hmlrad
-! generate muffin-tin effective magnetic fields and s.o. coupling functions
-  call genbeffmt
-! begin parallel loop over k-points
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evalfv,evecfv,evecsv)
-!$OMP DO
-  do ik=1,nkpt
-! distribute among MPI processes
-    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-! every thread should allocate its own arrays
-    allocate(evalfv(nstfv,nspnfv))
-    allocate(evecfv(nmatmax,nstfv,nspnfv))
-    allocate(evecsv(nstsv,nstsv))
-! solve the first- and second-variational secular equations
-    call seceqn(ik,evalfv,evecfv,evecsv)
-! write the eigenvalues/vectors to file
-    call putevalfv(ik,evalfv)
-    call putevalsv(ik,evalsv(:,ik))
-    call putevecfv(ik,evecfv)
-    call putevecsv(ik,evecsv)
-    deallocate(evalfv,evecfv,evecsv)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
-! broadcast eigenvalue array to every process
-  do ik=1,nkpt
-    lp=mod(ik-1,np_mpi)
-    call mpi_bcast(evalsv(:,ik),nstsv,mpi_double_precision,lp,mpi_comm_world, &
-     ierror)
-  end do
+! generate the spin-orbit coupling radial functions
+  call gensocfr
+! generate the first- and second-variational eigenvectors and eigenvalues
+  call genevfsv
 ! find the occupation numbers and Fermi energy
   call occupy
   if (autoswidth.and.mp_mpi) then
@@ -196,6 +161,8 @@ do iscl=1,maxscl
 ! write the Fermi energy to file
     call writefermi
   end if
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_kpt,ierror)
 ! generate the density and magnetisation
   call rhomag
 ! LDA+U
@@ -209,28 +176,28 @@ do iscl=1,maxscl
 ! calculate and write tensor moments to file
     if (tmomlu) call tensmom(67)
   end if
-! compute the effective potential
-  call poteff
+! compute the Kohn-Sham potentials and magnetic fields
+  call potks
   if (mp_mpi) then
     if ((xcgrad.eq.3).and.(c_tb09.ne.0.d0)) then
       write(60,*)
       write(60,'("Tran-Blaha ''09 constant c : ",G18.10)') c_tb09
     end if
   end if
-! pack interstitial and muffin-tin effective potential and field into one array
+! pack interstitial and muffin-tin potential and field into one array
   call mixpack(.true.,n,v)
 ! mix in the old potential and field with the new
   call mixerifc(mixtype,n,v,dv,nwork,work)
 ! make sure every MPI process has a numerically identical potential
   if (np_mpi.gt.1) then
-    call mpi_bcast(v,n,mpi_double_precision,0,mpi_comm_world,ierror)
+    call mpi_bcast(v,n,mpi_double_precision,0,mpi_comm_kpt,ierror)
   end if
 ! unpack potential and field
   call mixpack(.false.,n,v)
-! add the fixed spin moment effect field
-  if (fixspin.ne.0) call fsmfield
-! Fourier transform effective potential to G-space
-  call genveffig
+! add the fixed spin moment effective field (after mixing)
+  call fsmfield
+! Fourier transform Kohn-Sham potential to G-space
+  call genvsig
 ! reduce the external magnetic fields if required
   if (reducebf.lt.1.d0) then
     bfieldc(:)=bfieldc(:)*reducebf
@@ -238,13 +205,14 @@ do iscl=1,maxscl
   end if
 ! compute the energy components
   call energy
-! output energy components
   if (mp_mpi) then
+! output energy components
     call writeengy(60)
     write(60,*)
     write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
     write(60,'(" (states/Hartree/unit cell)")')
     write(60,'("Estimated indirect band gap : ",G18.10)') bandgap
+    write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
 ! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)
@@ -287,7 +255,7 @@ do iscl=1,maxscl
   if (iscl.ge.2) then
     if (mp_mpi) then
       write(60,*)
-      write(60,'("RMS change in effective potential (target) : ",G18.10," (",&
+      write(60,'("RMS change in Kohn-Sham potential (target) : ",G18.10," (",&
        &G18.10,")")') dv,epspot
       write(65,'(G18.10)') dv
       call flushifc(65)
@@ -324,7 +292,7 @@ do iscl=1,maxscl
     end if
   end if
 ! broadcast tlast from master process to all other processes
-  call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_world,ierror)
+  call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_kpt,ierror)
 ! output the current total CPU time
   timetot=timeinit+timemat+timefv+timesv+timerho+timepot+timefor
   if (mp_mpi) then
@@ -335,7 +303,7 @@ do iscl=1,maxscl
 end do
 10 continue
 ! synchronise MPI processes
-call mpi_barrier(mpi_comm_world,ierror)
+call mpi_barrier(mpi_comm_kpt,ierror)
 if (mp_mpi) then
   write(60,*)
   write(60,'("+------------------------------+")')
@@ -386,7 +354,7 @@ if (mp_mpi) then
   if (spinpol) close(63)
 ! close the GAP.OUT file
   close(64)
-! close the RMSDVEFF.OUT file
+! close the RMSDVS.OUT file
   close(65)
 ! close the DTOTENERGY.OUT file
   close(66)

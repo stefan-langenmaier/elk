@@ -14,10 +14,6 @@ tasks
 tseqit
  .true.
 
-! small step size required for convergence
-tauseq
- 0.05
-
 ! molecule calculation (atomic positions are in Cartesian coordinates)
 molecule
  .true.

@@ -16,8 +16,8 @@ real(8) sdelta,stheta
 external sdelta,stheta
 open(50,file='SDELTA.OUT',action='WRITE',form='FORMATTED')
 open(51,file='STHETA.OUT',action='WRITE',form='FORMATTED')
-dw=(2.d0*swf*swidth)/dble(nwdos-1)
-do iw=1,nwdos
+dw=(2.d0*swf*swidth)/dble(nwplot-1)
+do iw=1,nwplot
   w=-swf*swidth+dw*dble(iw-1)
   x=w/swidth
   write(50,'(2G18.10)') w,sdelta(stype,x)/swidth

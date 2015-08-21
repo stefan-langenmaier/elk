@@ -15,8 +15,8 @@ use modmain
 !           (in,real(lmmaxvr,nrmtmax,natmtot))
 !   rfmt2 : second function in real spherical harmonics for all muffin-tins
 !           (in,real(lmmaxvr,nrmtmax,natmtot))
-!   rfir1 : first real interstitial function in real-space (in,real(ngrtot))
-!   rfir2 : second real interstitial function in real-space (in,real(ngrtot))
+!   rfir1 : first real interstitial function in real-space (in,real(ngtot))
+!   rfir2 : second real interstitial function in real-space (in,real(ngtot))
 ! !DESCRIPTION:
 !   Calculates the inner product of two real fuctions over the entire unit cell.
 !   The input muffin-tin functions should have angular momentum cut-off
@@ -34,28 +34,27 @@ implicit none
 integer, intent(in) :: lrstp
 real(8), intent(in) :: rfmt1(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: rfmt2(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(in) :: rfir1(ngrtot)
-real(8), intent(in) :: rfir2(ngrtot)
+real(8), intent(in) :: rfir1(ngtot)
+real(8), intent(in) :: rfir2(ngtot)
 ! local variables
 integer is,ias,ir
-real(8) sum,t1
+real(8) sum
 ! external functions
 real(8) rfmtinp
 external rfmtinp
 sum=0.d0
 ! interstitial contribution
-do ir=1,ngrtot
+do ir=1,ngtot
   sum=sum+rfir1(ir)*rfir2(ir)*cfunir(ir)
 end do
-sum=sum*omega/dble(ngrtot)
+sum=sum*omega/dble(ngtot)
 ! muffin-tin contribution
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,t1) REDUCTION(+:sum)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is) REDUCTION(+:sum)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  t1=rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
+  sum=sum+rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
    rfmt2(:,:,ias))
-  sum=sum+t1
 end do
 !$OMP END DO
 !$OMP END PARALLEL

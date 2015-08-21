@@ -9,7 +9,7 @@ implicit none
 ! arguments
 integer, intent(in) :: fnum
 ! local variables
-integer is,ia
+integer is,ia,ias
 if (fixspin.eq.0) return
 write(fnum,*)
 if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
@@ -20,7 +20,8 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
   do is=1,nspecies
     write(fnum,'(" species : ",I4," (",A,")")') is,trim(spsymb(is))
     do ia=1,natoms(is)
-      write(fnum,'("  atom ",I4,T30,": ",3G18.10)') ia,bfsmcmt(1:ndmag,ia,is)
+      ias=idxas(ia,is)
+      write(fnum,'("  atom ",I4,T30,": ",3G18.10)') ia,bfsmcmt(1:ndmag,ias)
     end do
   end do
 end if

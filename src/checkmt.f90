@@ -9,6 +9,7 @@
 subroutine checkmt
 ! !USES:
 use modmain
+use modmpi
 ! !DESCRIPTION:
 !   Checks for muffin-tins which are too close together. If any such muffin-tins
 !   are found then the radii of their associated atomic species are adjusted so
@@ -47,10 +48,11 @@ do is=1,nspecies
     stop
   end if
   if (rmt(is).lt.rmt0(is)) then
-    write(*,*)
-    write(*,'("Info(checkmt): muffin-tin radius reduced from ",G18.10," to ",&
-     &G18.10)') rmt0(is),rmt(is)
-    write(*,'(" for species ",I4," (",A,")")') is,trim(spsymb(is))
+    if (mp_mpi) then
+      write(*,'("Info(checkmt): muffin-tin radius reduced from ",G18.10," to ",&
+       &G18.10)') rmt0(is),rmt(is)
+      write(*,'(" for species ",I4," (",A,")")') is,trim(spsymb(is))
+    end if
   end if
 end do
 return

@@ -10,8 +10,8 @@ implicit none
 ! local variables
 integer ik,jk,ikq,ist,jst
 integer isym,n,nsk(3),iw
-real(8) vecqc(3),qc,vkql(3)
-real(8) v(3),wd,dw,w,t1
+real(8) vkql(3),v(3)
+real(8) qc,wd,dw,w,t1
 ! allocatable arrays
 real(8), allocatable :: e(:,:,:)
 real(8), allocatable :: f(:,:,:)
@@ -35,7 +35,7 @@ end if
 ! allocate local arrays
 allocate(e(nstsv,nstsv,nkptnr))
 allocate(f(nstsv,nstsv,nkptnr))
-allocate(ddcs(nwdos))
+allocate(ddcs(nwplot))
 allocate(expmt(lmmaxvr,nrcmtmax,natmtot))
 ! read in the density and potentials from file
 call readstate
@@ -52,8 +52,6 @@ do ik=1,nkpt
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
-! q-vector in Cartesian coordinates
-call r3mv(bvec,vecql,vecqc)
 ! generate the phase factor function exp(iq.r) in the muffin-tins
 call genexpmt(vecqc,expmt)
 e(:,:,:)=0.d0
@@ -74,7 +72,7 @@ do ik=1,nkptnr
   vkql(:)=vkl(:,ik)+vecql(:)
 ! index to k+q-vector
   call findkpt(vkql,isym,ikq)
-! compute < i,k+G+q | exp(iq.r) | j,k > matrix elements
+! compute < i,k+q | exp(iq.r) | j,k > matrix elements
   call genexpmat(vkl(:,ik),expmt,emat)
 ! add to the double differential scattering cross-section
   do jst=1,nstsv
@@ -91,19 +89,19 @@ end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! number of subdivisions used for interpolation
-nsk(:)=max(ngrdos/ngridk(:),1)
+nsk(:)=max(ngrkf/ngridk(:),1)
 n=nstsv*nstsv
 ! integrate over the Brillouin zone
-call brzint(nsmdos,ngridk,nsk,ikmapnr,nwdos,wdos,n,n,e,f,ddcs)
+call brzint(nswplot,ngridk,nsk,ikmapnr,nwplot,wplot,n,n,e,f,ddcs)
 qc=sqrt(vecqc(1)**2+vecqc(2)**2+vecqc(3)**2)
 t1=2.d0/(omega*occmax)
 if (qc.gt.epslat) t1=t1/qc**4
 ddcs(:)=t1*ddcs(:)
 open(50,file='ELNES.OUT',action='WRITE',form='FORMATTED')
-wd=wdos(2)-wdos(1)
-dw=wd/dble(nwdos)
-do iw=1,nwdos
-  w=dw*dble(iw-1)+wdos(1)
+wd=wplot(2)-wplot(1)
+dw=wd/dble(nwplot)
+do iw=1,nwplot
+  w=dw*dble(iw-1)+wplot(1)
   write(50,'(2G18.10)') w,ddcs(iw)
 end do
 close(50)
@@ -111,7 +109,7 @@ write(*,*)
 write(*,'("Info(elnes):")')
 write(*,'(" ELNES double differential cross-section written to ELNES.OUT")')
 ! write ELNES distribution to test file
-call writetest(140,'ELNES cross-section',nv=nwdos,tol=1.d-2,rva=ddcs)
+call writetest(140,'ELNES cross-section',nv=nwplot,tol=1.d-2,rva=ddcs)
 deallocate(e,f,ddcs,expmt)
 return
 end subroutine

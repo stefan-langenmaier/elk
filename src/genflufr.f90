@@ -35,7 +35,7 @@ do is=1,nspecies
   nr=nrmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    vr(1:nr)=veffmt(1,1:nr,ias)*y00
+    vr(1:nr)=vsmt(1,1:nr,ias)*y00
 ! integrate the radial Schrodinger equation
     call rschroddme(solsc,0,l,0,flue(io,l,ias),nprad,nr,spr(1,is),vr,nn, &
      p0(1,io),p1,q0(1,io),q1(1,io))

@@ -9,12 +9,12 @@ implicit none
 ! arguments
 integer, intent(in) :: ikp
 ! local variables
-integer is,ia,ias,nrc
+integer is,ia,ias
 integer jkp,ik,jk,iv(3)
-integer ig,iq,igq0
+integer ig,iq,igq0,nrc
 integer ist,jst,m
 real(8) cfq,v(3),t1
-complex(8) zrho0,zt1
+complex(8) zrho0,z1
 ! allocatable arrays
 real(8), allocatable :: vgqc(:,:),gqc(:),tpgqc(:,:),jlgqr(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
@@ -30,16 +30,16 @@ complex(8) zfinp,zfmtinp
 external zfinp,zfmtinp
 ! allocate local arrays
 allocate(vgqc(3,ngvec),gqc(ngvec),tpgqc(2,ngvec))
-allocate(jlgqr(0:lnpsd+1,ngvec,nspecies))
+allocate(jlgqr(0:lnpsd,ngvec,nspecies))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
+allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
 allocate(wfcr(lmmaxvr,nrcmtmax,2),zfmt(lmmaxvr,nrcmtmax))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngrtot))
-allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
+allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 ! coefficient for long-range term
 cfq=0.5d0*(omega/pi)**2
 ! get the eigenvectors from file for input k-point
@@ -49,9 +49,9 @@ call getevecsv(vkl(:,ikp),evecsv)
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! equivalent reduced input k-point
 jkp=ikmap(ivk(1,ikp),ivk(2,ikp),ivk(3,ikp))
-! calculate the wavefunctions for occupied states for the input k-point
-call genwfsv(.false.,.false.,.true.,ngk(1,ikp),igkig(:,1,ikp),evalsv(:,jkp), &
- apwalm,evecfv,evecsv,wfmt1,ngrtot,wfir1)
+! calculate the wavefunctions for occupied states of the input k-point
+call genwfsv(.false.,.false.,.true.,ngk(1,ikp),igkig(:,1,ikp),occsv(:,jkp), &
+ apwalm,evecfv,evecsv,wfmt1,ngtot,wfir1)
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! equivalent reduced k-point
@@ -62,7 +62,7 @@ do ik=1,nkptnr
   iq=iqmap(iv(1),iv(2),iv(3))
   v(:)=vkc(:,ikp)-vkc(:,ik)
   do ig=1,ngvec
-! determine G+q-vectors
+! determine the G+q-vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
 ! G+q-vector length and (theta, phi) coordinates
     call sphcrd(vgqc(:,ig),gqc(ig),tpgqc(:,ig))
@@ -74,15 +74,15 @@ do ik=1,nkptnr
 ! find the shortest G+q-vector
   call findigp0(ngvec,gqc,igq0)
 ! compute the required spherical Bessel functions
-  call genjlgpr(lnpsd+1,gqc,jlgqr)
+  call genjlgpr(lnpsd,gqc,jlgqr)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! get the eigenvectors from file for non-reduced k-points
   call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! calculate the wavefunctions for occupied states
-  call genwfsv(.false.,.false.,.true.,ngk(1,ik),igkig(:,1,ik),evalsv(:,jk), &
-   apwalm,evecfv,evecsv,wfmt2,ngrtot,wfir2)
+  call genwfsv(.false.,.false.,.true.,ngk(1,ik),igkig(:,1,ik),occsv(:,jk), &
+   apwalm,evecfv,evecsv,wfmt2,ngtot,wfir2)
 !--------------------------------------------!
 !    valence-valence-valence contribution    !
 !--------------------------------------------!
@@ -91,16 +91,16 @@ do ik=1,nkptnr
       do ist=1,nstsv
         if (evalsv(ist,jkp).lt.efermi) then
 ! calculate the complex overlap density
-          call genzrho(.true.,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
+          call genzrho(.true.,spinpol,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
            wfir2(:,:,jst),wfir1(:,:,ist),zrhomt,zrhoir)
 ! calculate the Coulomb potential
           call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
           call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
            zrhoir,nrcmtmax,zvclmt,zvclir,zrho0)
-          zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
+          z1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
           t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
 !$OMP CRITICAL
-          engyx=engyx-0.5d0*occmax*wkpt(ikp)*(wkptnr*dble(zt1)+t1)
+          engyx=engyx-0.5d0*occmax*wkpt(ikp)*(wkptnr*dble(z1)+t1)
 !$OMP END CRITICAL
 ! end loop over ist
         end if
@@ -136,10 +136,10 @@ do is=1,nspecies
 ! calculate the Coulomb potential
               call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ias), &
                zvclmt(:,:,ias))
-              zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+              z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                zrhomt(:,:,ias),zvclmt(:,:,ias))
 !$OMP CRITICAL
-              engyx=engyx-occmax*wkpt(ikp)*dble(zt1)
+              engyx=engyx-occmax*wkpt(ikp)*dble(z1)
 !$OMP END CRITICAL
 ! end loop over ist
             end if

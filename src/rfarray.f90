@@ -10,7 +10,7 @@ implicit none
 integer, intent(in) :: lmax
 integer, intent(in) :: ld
 real(8), intent(in) :: rfmt(ld,nrmtmax,natmtot)
-real(8), intent(in) :: rfir(ngrtot)
+real(8), intent(in) :: rfir(ngtot)
 integer, intent(in) :: np
 real(8), intent(in) :: vpl(3,np)
 real(8), intent(out) :: fp(np)
@@ -29,11 +29,11 @@ complex(8), allocatable :: zfft(:)
 real(8) polynom
 external polynom
 allocate(rlm((lmax+1)**2))
-allocate(zfft(ngrtot))
+allocate(zfft(ngtot))
 np2=nprad/2
 ! Fourier transform rfir to G-space
 zfft(:)=rfir(:)
-call zfftifc(3,ngrid,-1,zfft)
+call zfftifc(3,ngridg,-1,zfft)
 ! begin loop over all points
 do ip=1,np
   v2(:)=vpl(:,ip)

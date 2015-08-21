@@ -43,9 +43,9 @@ integer ispn,jspn,ist
 integer is,ia,ias,itp
 integer nr,nrc,ir,irc
 integer igk,ifg,i,j,n
-real(8) wo,t1,t2,t3
+real(8) t0,t1,t2,t3,t4
 real(8) ts0,ts1
-complex(8) zq(2),zt1,zt2,zt3
+complex(8) zq(2),z1,z2
 ! automatic arrays
 logical done(nstfv,nspnfv)
 ! allocatable arrays
@@ -81,89 +81,85 @@ do is=1,nspecies
     end if
     done(:,:)=.false.
     do j=1,nstsv
-      wo=wkpt(ik)*occsv(j,ik)
-      if (abs(wo).gt.epsocc) then
-        if (tevecsv) then
+      if (abs(occsv(j,ik)).lt.epsocc) cycle
+      t0=wkpt(ik)*occsv(j,ik)
+      t4=2.d0*t0
+      if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
-          wfmt3(:,:,:)=0.d0
-          i=0
-          do ispn=1,nspinor
-            if (spinsprl) then
-              jspn=ispn
-            else
-              jspn=1
-            end if
-            do ist=1,nstfv
-              i=i+1
-              zt1=evecsv(i,j)
-              if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
-              if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
-                if (.not.done(ist,jspn)) then
-                  call wavefmt(lradstp,lmaxvr,ias,ngk(jspn,ik), &
-                   apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt1)
+        wfmt3(:,:,:)=0.d0
+        i=0
+        do ispn=1,nspinor
+          jspn=jspnfv(ispn)
+          do ist=1,nstfv
+            i=i+1
+            z1=evecsv(i,j)
+            if (spinsprl.and.ssdph) z1=z1*zq(ispn)
+            if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
+              if (.not.done(ist,jspn)) then
+                call wavefmt(lradstp,lmaxvr,ias,ngk(jspn,ik), &
+                 apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt1)
 ! convert from spherical harmonics to spherical coordinates
-                  call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-                   wfmt1,lmmaxvr,zzero,wfmt2(:,:,ist,jspn),lmmaxvr)
-                  done(ist,jspn)=.true.
-                end if
-! add to spinor wavefunction
-                call zaxpy(n,zt1,wfmt2(:,:,ist,jspn),1,wfmt3(:,:,ispn),1)
+                call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
+                 wfmt1,lmmaxvr,zzero,wfmt2(:,:,ist,jspn),lmmaxvr)
+                done(ist,jspn)=.true.
               end if
-            end do
+! add to spinor wavefunction
+              call zaxpy(n,z1,wfmt2(:,:,ist,jspn),1,wfmt3(:,:,ispn),1)
+            end if
           end do
-        else
+        end do
+      else
 ! spin-unpolarised wavefunction
-          call wavefmt(lradstp,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1), &
-           lmmaxvr,wfmt1)
+        call wavefmt(lradstp,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1), &
+         lmmaxvr,wfmt1)
 ! convert from spherical harmonics to spherical coordinates
-          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt1, &
-           lmmaxvr,zzero,wfmt3,lmmaxvr)
-        end if
+        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt1, &
+         lmmaxvr,zzero,wfmt3,lmmaxvr)
+      end if
 ! add to density and magnetisation
 !$OMP CRITICAL
-        if (spinpol) then
+      if (spinpol) then
 ! spin-polarised
-          if (ncmag) then
+        if (ncmag) then
 ! non-collinear
-            irc=0
-            do ir=1,nr,lradstp
-              irc=irc+1
-              do itp=1,lmmaxvr
-                zt1=wfmt3(itp,irc,1)
-                zt2=wfmt3(itp,irc,2)
-                zt3=zt1*conjg(zt2)
-                t1=dble(zt1)**2+aimag(zt1)**2
-                t2=dble(zt2)**2+aimag(zt2)**2
-                rhomt(itp,ir,ias)=rhomt(itp,ir,ias)+wo*(t1+t2)
-                magmt(itp,ir,ias,1)=magmt(itp,ir,ias,1)+2.d0*wo*dble(zt3)
-                magmt(itp,ir,ias,2)=magmt(itp,ir,ias,2)-2.d0*wo*aimag(zt3)
-                magmt(itp,ir,ias,3)=magmt(itp,ir,ias,3)+wo*(t1-t2)
-              end do
-            end do
-          else
-! collinear
-            irc=0
-            do ir=1,nr,lradstp
-              irc=irc+1
-              do itp=1,lmmaxvr
-                t1=dble(wfmt3(itp,irc,1))**2+aimag(wfmt3(itp,irc,1))**2
-                t2=dble(wfmt3(itp,irc,2))**2+aimag(wfmt3(itp,irc,2))**2
-                rhomt(itp,ir,ias)=rhomt(itp,ir,ias)+wo*(t1+t2)
-                magmt(itp,ir,ias,1)=magmt(itp,ir,ias,1)+wo*(t1-t2)
-              end do
-            end do
-          end if
-        else
-! spin-unpolarised
           irc=0
           do ir=1,nr,lradstp
             irc=irc+1
-            rhomt(:,ir,ias)=rhomt(:,ir,ias) &
-             +wo*(dble(wfmt3(:,irc,1))**2+aimag(wfmt3(:,irc,1))**2)
+            do itp=1,lmmaxvr
+              z1=wfmt3(itp,irc,1)
+              z2=wfmt3(itp,irc,2)
+              t1=dble(z1)**2+aimag(z1)**2
+              t2=dble(z2)**2+aimag(z2)**2
+              z1=conjg(z1)*z2
+              rhomt(itp,ir,ias)=rhomt(itp,ir,ias)+t0*(t1+t2)
+              magmt(itp,ir,ias,1)=magmt(itp,ir,ias,1)+t4*dble(z1)
+              magmt(itp,ir,ias,2)=magmt(itp,ir,ias,2)+t4*aimag(z1)
+              magmt(itp,ir,ias,3)=magmt(itp,ir,ias,3)+t0*(t1-t2)
+            end do
+          end do
+        else
+! collinear
+          irc=0
+          do ir=1,nr,lradstp
+            irc=irc+1
+            do itp=1,lmmaxvr
+              t1=dble(wfmt3(itp,irc,1))**2+aimag(wfmt3(itp,irc,1))**2
+              t2=dble(wfmt3(itp,irc,2))**2+aimag(wfmt3(itp,irc,2))**2
+              rhomt(itp,ir,ias)=rhomt(itp,ir,ias)+t0*(t1+t2)
+              magmt(itp,ir,ias,1)=magmt(itp,ir,ias,1)+t0*(t1-t2)
+            end do
           end do
         end if
-!$OMP END CRITICAL
+      else
+! spin-unpolarised
+        irc=0
+        do ir=1,nr,lradstp
+          irc=irc+1
+          rhomt(:,ir,ias)=rhomt(:,ir,ias) &
+           +t0*(dble(wfmt3(:,irc,1))**2+aimag(wfmt3(:,irc,1))**2)
+        end do
       end if
+!$OMP END CRITICAL
     end do
   end do
 end do
@@ -172,75 +168,71 @@ if (tevecsv) deallocate(wfmt2)
 !------------------------------------------------!
 !     interstitial density and magnetisation     !
 !------------------------------------------------!
-allocate(wfir(ngrtot,nspinor))
+allocate(wfir(ngtot,nspinor))
 do j=1,nstsv
-  wo=wkpt(ik)*occsv(j,ik)
-  if (abs(wo).gt.epsocc) then
-    t3=wo/omega
-    wfir(:,:)=0.d0
-    if (tevecsv) then
+  if (abs(occsv(j,ik)).lt.epsocc) cycle
+  t0=wkpt(ik)*occsv(j,ik)
+  t3=t0/omega
+  t4=2.d0*t3
+  wfir(:,:)=0.d0
+  if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
-      i=0
-      do ispn=1,nspinor
-        if (spinsprl) then
-          jspn=ispn
-        else
-          jspn=1
-        end if
-        do ist=1,nstfv
-          i=i+1
-          zt1=evecsv(i,j)
-          if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
-            do igk=1,ngk(jspn,ik)
-              ifg=igfft(igkig(igk,jspn,ik))
-              wfir(ifg,ispn)=wfir(ifg,ispn)+zt1*evecfv(igk,ist,jspn)
-            end do
-          end if
-        end do
-      end do
-    else
-! spin-unpolarised wavefunction
-      do igk=1,ngk(1,ik)
-        ifg=igfft(igkig(igk,1,ik))
-        wfir(ifg,1)=evecfv(igk,j,1)
-      end do
-    end if
-! Fourier transform wavefunction to real-space
+    i=0
     do ispn=1,nspinor
-      call zfftifc(3,ngrid,1,wfir(:,ispn))
+      jspn=jspnfv(ispn)
+      do ist=1,nstfv
+        i=i+1
+        z1=evecsv(i,j)
+        if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
+          do igk=1,ngk(jspn,ik)
+            ifg=igfft(igkig(igk,jspn,ik))
+            wfir(ifg,ispn)=wfir(ifg,ispn)+z1*evecfv(igk,ist,jspn)
+          end do
+        end if
+      end do
     end do
+  else
+! spin-unpolarised wavefunction
+    do igk=1,ngk(1,ik)
+      ifg=igfft(igkig(igk,1,ik))
+      wfir(ifg,1)=evecfv(igk,j,1)
+    end do
+  end if
+! Fourier transform wavefunction to real-space
+  do ispn=1,nspinor
+    call zfftifc(3,ngridg,1,wfir(:,ispn))
+  end do
 ! add to density and magnetisation
 !$OMP CRITICAL
-    if (spinpol) then
+  if (spinpol) then
 ! spin-polarised
-      if (ncmag) then
+    if (ncmag) then
 ! non-collinear
-        do ir=1,ngrtot
-          zt1=wfir(ir,1)
-          zt2=wfir(ir,2)
-          zt3=zt1*conjg(zt2)
-          t1=dble(zt1)**2+aimag(zt1)**2
-          t2=dble(zt2)**2+aimag(zt2)**2
-          rhoir(ir)=rhoir(ir)+t3*(t1+t2)
-          magir(ir,1)=magir(ir,1)+2.d0*t3*dble(zt3)
-          magir(ir,2)=magir(ir,2)-2.d0*t3*aimag(zt3)
-          magir(ir,3)=magir(ir,3)+t3*(t1-t2)
-        end do
-      else
-! collinear
-        do ir=1,ngrtot
-          t1=dble(wfir(ir,1))**2+aimag(wfir(ir,1))**2
-          t2=dble(wfir(ir,2))**2+aimag(wfir(ir,2))**2
-          rhoir(ir)=rhoir(ir)+t3*(t1+t2)
-          magir(ir,1)=magir(ir,1)+t3*(t1-t2)
-        end do
-      end if
+      do ir=1,ngtot
+        z1=wfir(ir,1)
+        z2=wfir(ir,2)
+        t1=dble(z1)**2+aimag(z1)**2
+        t2=dble(z2)**2+aimag(z2)**2
+        z1=conjg(z1)*z2
+        rhoir(ir)=rhoir(ir)+t3*(t1+t2)
+        magir(ir,1)=magir(ir,1)+t4*dble(z1)
+        magir(ir,2)=magir(ir,2)+t4*aimag(z1)
+        magir(ir,3)=magir(ir,3)+t3*(t1-t2)
+      end do
     else
-! spin-unpolarised
-      rhoir(:)=rhoir(:)+t3*(dble(wfir(:,1))**2+aimag(wfir(:,1))**2)
+! collinear
+      do ir=1,ngtot
+        t1=dble(wfir(ir,1))**2+aimag(wfir(ir,1))**2
+        t2=dble(wfir(ir,2))**2+aimag(wfir(ir,2))**2
+        rhoir(ir)=rhoir(ir)+t3*(t1+t2)
+        magir(ir,1)=magir(ir,1)+t3*(t1-t2)
+      end do
     end if
-!$OMP END CRITICAL
+  else
+! spin-unpolarised
+    rhoir(:)=rhoir(:)+t3*(dble(wfir(:,1))**2+aimag(wfir(:,1))**2)
   end if
+!$OMP END CRITICAL
 end do
 deallocate(wfir)
 call timesec(ts1)

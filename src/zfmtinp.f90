@@ -6,10 +6,10 @@
 !BOP
 ! !ROUTINE: zfmtinp
 ! !INTERFACE:
-complex(8) function zfmtinp(tsh,lmax,nr,r,ld,zfmt1,zfmt2)
+complex(8) function zfmtinp(tsh,lmmax,nr,r,ld,zfmt1,zfmt2)
 ! !INPUT/OUTPUT PARAMETERS:
 !   tsh   : .true. if the functions are in spherical harmonics (in,logical)
-!   lmax  : maximum angular momentum
+!   lmmax : number of (l,m) pairs, equal to (lmax+1)^2 (in,integer)
 !   nr    : number of radial mesh points (in,integer)
 !   r     : radial mesh (in,real(nr))
 !   ld    : leading dimension (in,integer)
@@ -36,27 +36,25 @@ complex(8) function zfmtinp(tsh,lmax,nr,r,ld,zfmt1,zfmt2)
 implicit none
 ! arguments
 logical, intent(in) :: tsh
-integer, intent(in) :: lmax
+integer, intent(in) :: lmmax
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 integer, intent(in) :: ld
-complex(8), intent(in) :: zfmt1(ld,nr)
-complex(8), intent(in) :: zfmt2(ld,nr)
+complex(8), intent(in) :: zfmt1(ld,nr),zfmt2(ld,nr)
 ! local variables
-integer lmmax,ir
+integer ir
 real(8), parameter :: fourpi=12.566370614359172954d0
 real(8) t1,t2
-complex(8) zt1
+complex(8) z1
 ! automatic arrays
 real(8) fr1(nr),fr2(nr),gr(nr)
 ! external functions
 complex(8) zdotc
 external zdotc
-lmmax=(lmax+1)**2
 do ir=1,nr
-  zt1=zdotc(lmmax,zfmt1(:,ir),1,zfmt2(:,ir),1)*(r(ir)**2)
-  fr1(ir)=dble(zt1)
-  fr2(ir)=aimag(zt1)
+  z1=zdotc(lmmax,zfmt1(:,ir),1,zfmt2(:,ir),1)*(r(ir)**2)
+  fr1(ir)=dble(z1)
+  fr2(ir)=aimag(z1)
 end do
 call fderiv(-1,nr,r,fr1,gr)
 t1=gr(nr)

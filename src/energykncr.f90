@@ -23,7 +23,7 @@ do is=1,nspecies
     ias=idxas(ia,is)
 ! sum of core eigenvalues
     do ist=1,spnst(is)
-      if (spcore(ist,is)) engykncr=engykncr+spocc(ist,is)*evalcr(ist,ias)
+      if (spcore(ist,is)) engykncr=engykncr+occcr(ist,ias)*evalcr(ist,ias)
     end do
 ! core density
     if (spincore) then
@@ -31,7 +31,7 @@ do is=1,nspecies
     else
       rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
     end if
-    engykncr=engykncr-rfmtinp(1,0,nr,spr(:,is),lmmaxvr,rfmt,veffmt(:,:,ias))
+    engykncr=engykncr-rfmtinp(1,0,nr,spr(:,is),lmmaxvr,rfmt,vsmt(:,:,ias))
   end do
 end do
 deallocate(rfmt)

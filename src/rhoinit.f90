@@ -26,14 +26,13 @@ integer is,ia,ias,nr,n
 integer lmmax,l,m,lm
 integer ir,irc,ig,ifg
 real(8) x,t1,t2
-complex(8) zt1,zt2,zt3
+complex(8) z1,z2,z3
 ! allocatable arrays
-real(8), allocatable :: jlgr(:,:),ffg(:)
+real(8), allocatable :: jl(:,:),ffg(:)
 real(8), allocatable :: fr(:),gr(:)
-complex(8), allocatable :: zfmt(:,:)
-complex(8), allocatable :: zfft(:)
+complex(8), allocatable :: zfmt(:,:),zfft(:)
 lmmax=(lmax+1)**2
-allocate(zfft(ngrtot))
+allocate(zfft(ngtot))
 ! zero the charge density and magnetisation arrays
 rhomt(:,:,:)=0.d0
 rhoir(:)=0.d0
@@ -80,12 +79,12 @@ end do
 !$OMP END PARALLEL
 ! compute the tails in each muffin-tin
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(jlgr,zfmt,is,ig,ifg) &
-!$OMP PRIVATE(irc,x,zt1,zt2,zt3) &
+!$OMP PRIVATE(jl,zfmt,is,ig,ifg) &
+!$OMP PRIVATE(irc,x,z1,z2,z3) &
 !$OMP PRIVATE(lm,l,m,ir)
 !$OMP DO
 do ias=1,natmtot
-  allocate(jlgr(0:lmax,nrcmtmax))
+  allocate(jl(0:lmax,nrcmtmax))
   allocate(zfmt(lmmax,nrcmtmax))
   is=idxis(ias)
   zfmt(:,:)=0.d0
@@ -93,17 +92,17 @@ do ias=1,natmtot
     ifg=igfft(ig)
     do irc=1,nrcmt(is)
       x=gc(ig)*rcmt(irc,is)
-      call sbessel(lmax,x,jlgr(:,irc))
+      call sbessel(lmax,x,jl(:,irc))
     end do
-    zt1=fourpi*zfft(ifg)*sfacg(ig,ias)
+    z1=fourpi*zfft(ifg)*sfacg(ig,ias)
     lm=0
     do l=0,lmax
-      zt2=zt1*zil(l)
+      z2=z1*zil(l)
       do m=-l,l
         lm=lm+1
-        zt3=zt2*conjg(ylmg(lm,ig))
+        z3=z2*conjg(ylmg(lm,ig))
         do irc=1,nrcmt(is)
-          zfmt(lm,irc)=zfmt(lm,irc)+jlgr(l,irc)*zt3
+          zfmt(lm,irc)=zfmt(lm,irc)+jl(l,irc)*z3
         end do
       end do
     end do
@@ -113,7 +112,7 @@ do ias=1,natmtot
     irc=irc+1
     call ztorflm(lmax,zfmt(:,irc),rhomt(:,ir,ias))
   end do
-  deallocate(jlgr,zfmt)
+  deallocate(jl,zfmt)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -129,8 +128,8 @@ do ias=1,natmtot
   end do
 end do
 ! interstitial density determined from the atomic tails and excess charge
-call zfftifc(3,ngrid,1,zfft)
-do ir=1,ngrtot
+call zfftifc(3,ngridg,1,zfft)
+do ir=1,ngtot
   rhoir(ir)=dble(zfft(ir))+t1
 end do
 deallocate(zfft)

@@ -54,9 +54,9 @@ complex(8), intent(in) :: evecfv(nmatmax)
 integer, intent(in) :: ld
 real(8), intent(out) :: wfmt(2,ld,*)
 ! local variables
-integer is,l,m,lm,ld2
-integer ir,nr,io,ilo
-complex(8) zt1
+integer is,nrc,ir,ld2
+integer l,m,lm,io,ilo
+complex(8) z1
 ! external functions
 complex(8) zdotu
 external zdotu
@@ -66,26 +66,27 @@ if (lmax.gt.lmaxapw) then
   write(*,*)
   stop
 end if
+ld2=ld*2
 ! species number
 is=idxis(ias)
 ! zero the wavefunction
-nr=0
+nrc=0
 do ir=1,nrmt(is),lrstp
-  nr=nr+1
-  wfmt(:,:,nr)=0.d0
+  nrc=nrc+1
+  wfmt(:,:,nrc)=0.d0
 end do
-ld2=ld*2
 ! APW functions
+lm=0
 do l=0,lmax
   do m=-l,l
-    lm=idxlm(l,m)
+    lm=lm+1
     do io=1,apword(l,is)
-      zt1=zdotu(ngp,evecfv,1,apwalm(:,io,lm,ias),1)
-      if (abs(dble(zt1)).gt.1.d-14) then
-        call daxpy(nr,dble(zt1),apwfr(:,1,io,l,ias),lrstp,wfmt(1,lm,1),ld2)
+      z1=zdotu(ngp,evecfv,1,apwalm(:,io,lm,ias),1)
+      if (abs(dble(z1)).gt.1.d-14) then
+        call daxpy(nrc,dble(z1),apwfr(:,1,io,l,ias),lrstp,wfmt(1,lm,1),ld2)
       end if
-      if (abs(aimag(zt1)).gt.1.d-14) then
-        call daxpy(nr,aimag(zt1),apwfr(:,1,io,l,ias),lrstp,wfmt(2,lm,1),ld2)
+      if (abs(aimag(z1)).gt.1.d-14) then
+        call daxpy(nrc,aimag(z1),apwfr(:,1,io,l,ias),lrstp,wfmt(2,lm,1),ld2)
       end if
     end do
   end do
@@ -96,12 +97,12 @@ do ilo=1,nlorb(is)
   if (l.le.lmax) then
     do m=-l,l
       lm=idxlm(l,m)
-      zt1=evecfv(ngp+idxlo(lm,ilo,ias))
-      if (abs(dble(zt1)).gt.1.d-14) then
-        call daxpy(nr,dble(zt1),lofr(:,1,ilo,ias),lrstp,wfmt(1,lm,1),ld2)
+      z1=evecfv(ngp+idxlo(lm,ilo,ias))
+      if (abs(dble(z1)).gt.1.d-14) then
+        call daxpy(nrc,dble(z1),lofr(:,1,ilo,ias),lrstp,wfmt(1,lm,1),ld2)
       end if
-      if (abs(aimag(zt1)).gt.1.d-14) then
-        call daxpy(nr,aimag(zt1),lofr(:,1,ilo,ias),lrstp,wfmt(2,lm,1),ld2)
+      if (abs(aimag(z1)).gt.1.d-14) then
+        call daxpy(nrc,aimag(z1),lofr(:,1,ilo,ias),lrstp,wfmt(2,lm,1),ld2)
       end if
     end do
   end if

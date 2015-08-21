@@ -10,7 +10,7 @@ subroutine genvnlijji(ikp,vnlijji)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   ikp     : k-point from non-reduced k-point set (in,integer)
+!   ikp     : k-point from non-reduced set (in,integer)
 !   vnlijji : non-local Coulomb matrix elements (out,real(nstsv,nstsv,nkpt))
 ! !DESCRIPTION:
 !   Calculates the non-local Coulomb matrix elements of the type $(i-jj-i)$.
@@ -28,7 +28,7 @@ integer ik,iv(3)
 integer ig,iq,igq0
 integer ist1,ist2
 real(8) cfq,v(3),t1
-complex(8) zrho0,zt1
+complex(8) zrho0,z1
 ! allocatable arrays
 real(8), allocatable :: vgqc(:,:),tpgqc(:,:),gqc(:),jlgqr(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
@@ -43,15 +43,15 @@ complex(8) zfinp
 external zfinp
 ! allocate local arrays
 allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
-allocate(jlgqr(0:lnpsd+1,ngvec,nspecies))
+allocate(jlgqr(0:lnpsd,ngvec,nspecies))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngrtot))
-allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
+allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
+allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
 ! find the matching coefficients
@@ -59,9 +59,9 @@ call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! get the eigenvectors from file for non-reduced k-point ikp
 call getevecfv(vkl(:,ikp),vgkl(:,:,1,ikp),evecfv)
 call getevecsv(vkl(:,ikp),evecsv)
-! calculate the wavefunctions for all states for passed non-reduced k-point ikp
-call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
- evecfv,evecsv,wfmt2,ngrtot,wfir2)
+! calculate the wavefunctions for all states of passed non-reduced k-point ikp
+call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),occsv,apwalm, &
+ evecfv,evecsv,wfmt2,ngtot,wfir2)
 ! start loop over reduced k-point set
 do ik=1,nkpt
 ! get the eigenvectors from file
@@ -69,9 +69,9 @@ do ik=1,nkpt
   call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
-! calculate the wavefunctions for all states for the reduced k-point
-  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv,apwalm, &
-   evecfv,evecsv,wfmt1,ngrtot,wfir1)
+! calculate the wavefunctions for all states of the reduced k-point
+  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),occsv,apwalm, &
+   evecfv,evecsv,wfmt1,ngtot,wfir1)
 ! determine q-vector
   iv(:)=ivk(:,ik)-ivk(:,ikp)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -90,22 +90,22 @@ do ik=1,nkpt
 ! find the shortest G+q-vector
   call findigp0(ngvec,gqc,igq0)
 ! compute the required spherical Bessel functions
-  call genjlgpr(lnpsd+1,gqc,jlgqr)
+  call genjlgpr(lnpsd,gqc,jlgqr)
 !----------------------------------------------!
 !     valence-valence-valence contribution     !
 !----------------------------------------------!
   do ist1=1,nstsv
     do ist2=1,nstsv
 ! calculate the complex overlap density
-      call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
+      call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
        wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
 ! compute the potential and G=0 coefficient of the density
       call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
       call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq,zrhoir, &
        nrcmtmax,zvclmt,zvclir,zrho0)
-      zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
+      z1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
-      vnlijji(ist1,ist2,ik)=wkptnr*dble(zt1)+t1
+      vnlijji(ist1,ist2,ik)=wkptnr*dble(z1)+t1
 ! end loop over ist2
     end do
 ! end loop over ist1

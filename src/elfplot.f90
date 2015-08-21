@@ -55,12 +55,12 @@ call init1
 ! allocate local arrays
 allocate(rftp1(lmmaxvr),rftp2(lmmaxvr),rftp3(lmmaxvr))
 allocate(grfmt(lmmaxvr,nrmtmax,3))
-allocate(grfir(ngrtot))
+allocate(grfir(ngtot))
 allocate(gwf2mt(lmmaxvr,nrmtmax,natmtot))
-allocate(gwf2ir(ngrtot))
+allocate(gwf2ir(ngtot))
 allocate(elfmt(lmmaxvr,nrmtmax,natmtot))
-allocate(elfir(ngrtot))
-allocate(zfft1(ngrtot),zfft2(ngrtot))
+allocate(elfir(ngtot))
+allocate(zfft1(ngtot),zfft2(ngtot))
 ! allocate first-variational eigenvector array
 allocate(evecfv(nmatmax,nstfv))
 ! allocate second-variational eigenvector array
@@ -132,7 +132,7 @@ end do
 !--------------------------!
 ! Fourier transform density to G-space
 zfft1(:)=rhoir(:)
-call zfftifc(3,ngrid,-1,zfft1)
+call zfftifc(3,ngridg,-1,zfft1)
 grfir(:)=0.d0
 do i=1,3
   zfft2(:)=0.d0
@@ -142,12 +142,12 @@ do i=1,3
     zfft2(ifg)=zi*vgc(i,ig)*zfft1(ifg)
   end do
 ! Fourier transform gradient to real-space
-  call zfftifc(3,ngrid,1,zfft2)
-  do ir=1,ngrtot
+  call zfftifc(3,ngridg,1,zfft2)
+  do ir=1,ngtot
     grfir(ir)=grfir(ir)+dble(zfft2(ir))**2
   end do
 end do
-do ir=1,ngrtot
+do ir=1,ngtot
 ! D for inhomogeneous density
   t1=(1.d0/2.d0)*(gwf2ir(ir)-(1.d0/4.d0)*grfir(ir)/rhoir(ir))
 ! D0 for homogeneous electron gas

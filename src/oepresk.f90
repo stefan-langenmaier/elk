@@ -11,40 +11,34 @@ integer, intent(in) :: ik
 complex(8), intent(in) :: vnlcv(ncrmax,natmtot,nstsv,nkpt)
 complex(8), intent(in) :: vnlvv(nstsv,nstsv,nkpt)
 real(8), intent(inout) :: dvxmt(lmmaxvr,nrcmtmax,natmtot)
-real(8), intent(inout) :: dvxir(ngrtot)
+real(8), intent(inout) :: dvxir(ngtot)
 real(8), intent(inout) :: dbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
-real(8), intent(inout) :: dbxir(ngrtot,ndmag)
+real(8), intent(inout) :: dbxir(ngtot,ndmag)
 ! local variables
 integer is,ia,ias,ist,jst
 integer nrc,ic,m,idm
 real(8) de
-complex(8) zt1
+complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:)
-complex(8), allocatable :: evecfv(:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: wfmt(:,:,:,:,:)
-complex(8), allocatable :: wfir(:,:,:)
-complex(8), allocatable :: wfcr(:,:,:)
-complex(8), allocatable :: zrhomt(:,:,:)
-complex(8), allocatable :: zrhoir(:)
-complex(8), allocatable :: zmagmt(:,:,:,:)
-complex(8), allocatable :: zmagir(:,:)
+complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
+complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:),wfcr(:,:,:)
+complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
+complex(8), allocatable :: zmagmt(:,:,:,:),zmagir(:,:)
 complex(8), allocatable :: zvfmt(:,:,:)
 ! external functions
 complex(8) zfinp,zfmtinp
 external zfinp,zfmtinp
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
+allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir(ngrtot,nspinor,nstsv))
+allocate(wfir(ngtot,nspinor,nstsv))
 allocate(wfcr(lmmaxvr,nrcmtmax,2))
 allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot))
-allocate(zrhoir(ngrtot))
+allocate(zrhoir(ngtot))
 if (spinpol) then
   allocate(zmagmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-  allocate(zmagir(ngrtot,ndmag))
+  allocate(zmagir(ngtot,ndmag))
   allocate(zvfmt(lmmaxvr,nrcmtmax,ndmag))
 end if
 ! get the eigenvalues/vectors from file for input k-point
@@ -54,8 +48,8 @@ call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! calculate the wavefunctions for all states
-call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik), &
- apwalm,evecfv,evecsv,wfmt,ngrtot,wfir)
+call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),occsv,apwalm, &
+ evecfv,evecsv,wfmt,ngtot,wfir)
 !-----------------------------------------------------------!
 !     core-conduction overlap density and magnetisation     !
 !-----------------------------------------------------------!
@@ -78,8 +72,8 @@ do is=1,nspecies
                 zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias) &
                  +conjg(wfcr(:,1:nrc,2))*wfmt(:,1:nrc,ias,2,jst)
               end if
-              zt1=conjg(vnlcv(ic,ias,jst,ik))
-              zt1=zt1-zfmtinp(.false.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+              z1=conjg(vnlcv(ic,ias,jst,ik))
+              z1=z1-zfmtinp(.false.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                zrhomt(:,:,ias),zvxmt(:,:,ias))
 ! spin-polarised case
               if (spinpol) then
@@ -87,20 +81,19 @@ do is=1,nspecies
                  wfmt(:,:,ias,2,jst),1,zvfmt)
 ! integral of magnetisation dot exchange field
                 do idm=1,ndmag
-                  zt1=zt1-zfmtinp(.false.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+                  z1=z1-zfmtinp(.false.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                    zvfmt(:,:,idm),zbxmt(:,:,ias,idm))
                 end do
 ! end spin-polarised case
               end if
               de=evalcr(ist,ias)-evalsv(jst,ik)
-              zt1=zt1*occmax*wkpt(ik)/(de+zi*swidth)
+              z1=z1*occmax*wkpt(ik)/(de+zi*swidth)
 ! residuals for exchange potential and field
 !$OMP CRITICAL
-              dvxmt(:,1:nrc,ias)=dvxmt(:,1:nrc,ias) &
-               +dble(zt1*zrhomt(:,1:nrc,ias))
+              dvxmt(:,1:nrc,ias)=dvxmt(:,1:nrc,ias)+dble(z1*zrhomt(:,1:nrc,ias))
               do idm=1,ndmag
                 dbxmt(:,1:nrc,ias,idm)=dbxmt(:,1:nrc,ias,idm) &
-                 +dble(zt1*zvfmt(:,1:nrc,idm))
+                 +dble(z1*zvfmt(:,1:nrc,idm))
               end do
 !$OMP END CRITICAL
 ! end loop over jst
@@ -121,38 +114,38 @@ do ist=1,nstsv
     do jst=1,nstsv
       if (evalsv(jst,ik).gt.efermi) then
 ! calculate the overlap density
-        call genzrho(.false.,wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst), &
+        call genzrho(.false.,spinpol,wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst), &
          wfir(:,:,ist),wfir(:,:,jst),zrhomt,zrhoir)
-        zt1=conjg(vnlvv(ist,jst,ik))
-        zt1=zt1-zfinp(.false.,zrhomt,zvxmt,zrhoir,zvxir)
+        z1=conjg(vnlvv(ist,jst,ik))
+        z1=z1-zfinp(.false.,zrhomt,zvxmt,zrhoir,zvxir)
 ! spin-polarised case
         if (spinpol) then
           call genzmag(wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst),wfir(:,:,ist), &
            wfir(:,:,jst),zmagmt,zmagir)
 ! integral of magnetisation dot exchange field
           do idm=1,ndmag
-            zt1=zt1-zfinp(.false.,zmagmt(:,:,:,idm),zbxmt(:,:,:,idm), &
+            z1=z1-zfinp(.false.,zmagmt(:,:,:,idm),zbxmt(:,:,:,idm), &
              zmagir(:,idm),zbxir(:,idm))
           end do
         end if
         de=evalsv(ist,ik)-evalsv(jst,ik)
-        zt1=zt1*occmax*wkpt(ik)/(de+zi*swidth)
+        z1=z1*occmax*wkpt(ik)/(de+zi*swidth)
 ! residuals for exchange potential and field
 !$OMP CRITICAL
         do is=1,nspecies
           nrc=nrcmt(is)
           do ia=1,natoms(is)
             ias=idxas(ia,is)
-            dvxmt(:,1:nrc,ias)=dvxmt(:,1:nrc,ias)+dble(zt1*zrhomt(:,1:nrc,ias))
+            dvxmt(:,1:nrc,ias)=dvxmt(:,1:nrc,ias)+dble(z1*zrhomt(:,1:nrc,ias))
             do idm=1,ndmag
               dbxmt(:,1:nrc,ias,idm)=dbxmt(:,1:nrc,ias,idm) &
-               +dble(zt1*zmagmt(:,1:nrc,ias,idm))
+               +dble(z1*zmagmt(:,1:nrc,ias,idm))
             end do
           end do
         end do
-        dvxir(:)=dvxir(:)+dble(zt1*zrhoir(:))
+        dvxir(:)=dvxir(:)+dble(z1*zrhoir(:))
         do idm=1,ndmag
-          dbxir(:,idm)=dbxir(:,idm)+dble(zt1*zmagir(:,idm))
+          dbxir(:,idm)=dbxir(:,idm)+dble(z1*zmagir(:,idm))
         end do
 !$OMP END CRITICAL
 ! end loop over jst

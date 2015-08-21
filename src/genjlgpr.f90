@@ -12,13 +12,13 @@ real(8), intent(in) :: gpc(ngvec)
 real(8), intent(out) :: jlgpr(0:lmax,ngvec,nspecies)
 ! local variables
 integer is,ig
-real(8) x
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ig,x)
+real(8) t1
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ig,t1)
 !$OMP DO
 do is=1,nspecies
   do ig=1,ngvec
-    x=gpc(ig)*rmt(is)
-    call sbessel(lmax,x,jlgpr(:,ig,is))
+    t1=gpc(ig)*rmt(is)
+    call sbessel(lmax,t1,jlgpr(:,ig,is))
   end do
 end do
 !$OMP END DO

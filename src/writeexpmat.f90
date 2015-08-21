@@ -8,7 +8,7 @@ use modmain
 implicit none
 ! local variables
 integer nk,ik,jk,i,j
-real(8) vecqc(3),a,b
+real(8) a,b
 ! allocatable arrays
 complex(8), allocatable :: expmt(:,:,:)
 complex(8), allocatable :: emat(:,:)
@@ -26,8 +26,6 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
-! q-vector in Cartesian coordinates
-call r3mv(bvec,vecql,vecqc)
 ! generate the phase factor function exp(iq.r) in the muffin-tins
 call genexpmt(vecqc,expmt)
 ! number of k-points to write out

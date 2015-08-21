@@ -10,34 +10,34 @@ implicit none
 integer ig,iw
 real(8) w1,w2,t1,t2
 
-!--------------------------------------------------------!
-!     many-body perturbation theory (MBPT) variables     !
-!--------------------------------------------------------!
-! G-vectors for 2-point correlators
-ngrpa=1
+!-------------------------------------------------------------!
+!     response function and perturbation theory variables     !
+!-------------------------------------------------------------!
+! G-vectors for response functions
+ngrf=1
 do ig=ngvec,1,-1
-  if (gc(ig).lt.gmaxrpa) then
-    ngrpa=ig
+  if (gc(ig).lt.gmaxrf) then
+    ngrf=ig
     exit
   end if
 end do
-! frequencies for bosonic 2-point correlators
-nwrpa=1
-if (allocated(wrpa)) deallocate(wrpa)
-if (task.eq.188) then
-  nwrpa=nwdos
-  allocate(wrpa(nwrpa))
-  w1=max(wdos(1),0.d0)
-  w2=max(wdos(2),w1)
-  t1=(w2-w1)/dble(nwdos)
-  do iw=1,nwdos
+! frequencies for reponse functions
+nwrf=1
+if (allocated(wrf)) deallocate(wrf)
+if ((task.eq.188).or.(task.eq.320).or.(task.eq.330)) then
+  nwrf=nwplot
+  allocate(wrf(nwrf))
+  w1=wplot(1)
+  w2=max(wplot(2),w1)
+  t1=(w2-w1)/dble(nwplot)
+  do iw=1,nwplot
     t2=w1+t1*dble(iw-1)
-    wrpa(iw)=cmplx(t2,swidth,8)
+    wrf(iw)=cmplx(t2,swidth,8)
   end do
 else
-  nwrpa=1
-  allocate(wrpa(nwrpa))
-  wrpa(1)=cmplx(0.d0,swidth,8)
+  nwrf=1
+  allocate(wrf(nwrf))
+  wrf(1)=cmplx(0.d0,swidth,8)
 end if
 
 return

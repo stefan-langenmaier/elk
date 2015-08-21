@@ -1,46 +1,47 @@
 
-! Copyright (C) 2010 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
+! Copyright (C) 2012 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genwfpw(twfpwh,vpl,ngp,igpig,vgpl,gpc,tpgpc,sfacgp,wfpw,wfpwh)
+subroutine genwfpw(vpl,ngp,igpig,vgpl,vgpc,gpc,tpgpc,sfacgp,nhp,vhpc,hpc, &
+ tphpc,sfachp,wfpw)
 use modmain
+use modpw
 implicit none
 ! arguments
-logical, intent(in) :: twfpwh
 real(8), intent(in) :: vpl(3)
 integer, intent(in) :: ngp(nspnfv)
 integer, intent(in) :: igpig(ngkmax,nspnfv)
 real(8), intent(in) :: vgpl(3,ngkmax,nspnfv)
+real(8), intent(in) :: vgpc(3,ngkmax,nspnfv)
 real(8), intent(in) :: gpc(ngkmax,nspnfv)
 real(8), intent(in) :: tpgpc(2,ngkmax,nspnfv)
 complex(8), intent(in) :: sfacgp(ngkmax,natmtot,nspnfv)
-complex(8), intent(out) :: wfpw(ngkmax,nspinor,nstsv)
-complex(8), intent(out) :: wfpwh(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
+integer, intent(in) :: nhp(nspnfv)
+real(8), intent(in) :: vhpc(3,nhkmax,nspnfv)
+real(8), intent(in) :: hpc(nhkmax,nspnfv)
+real(8), intent(in) :: tphpc(2,nhkmax,nspnfv)
+complex(8), intent(in) :: sfachp(nhkmax,natmtot,nspnfv)
+complex(8), intent(out) :: wfpw(nhkmax,nspinor,nstsv)
 ! local variables
-integer ispn,jspn,jspn0,jspn1
-integer ist,igp,ifg,nrc,irc
-integer is,ia,ias,l,m,lm
-real(8) x,t1,t2,t3
-complex(8) zsum1,zsum2,zt1,zt2,zt3
+integer ispn0,ispn1,ispn,jspn
+integer is,ia,ias,l,m,lm,i
+integer ist,igp,ihp,nrc,irc
+real(8) t0,t1,t2
+complex(8) zsum1,zsum2
+complex(8) z1,z2,z3,z4
 ! automatic arrays
 real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 complex(8) ylm(lmmaxvr)
 ! allocatable arrays
 real(8), allocatable :: jl(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: wfmt(:,:,:,:,:)
-complex(8), allocatable :: wfir(:,:,:)
-complex(8), allocatable :: zfft(:)
-allocate(jl(0:lmaxvr,nrcmtmax))
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
+complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-allocate(evecfv(nmatmax,nstfv,nspnfv))
-allocate(evecsv(nstsv,nstsv))
+allocate(evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv))
 allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir(ngrtot,nspinor,nstsv))
-allocate(zfft(ngrtot))
+allocate(wfir(ngkmax,nspinor,nstsv))
 ! get the eigenvectors from file
 call getevecfv(vpl,vgpl,evecfv)
 call getevecsv(vpl,evecsv)
@@ -50,117 +51,140 @@ do ispn=1,nspnfv
    apwalm(:,:,:,:,ispn))
 end do
 ! calculate the second-variational wavefunctions for all states
-call genwfsv(.true.,.false.,.false.,ngp,igpig,evalsv,apwalm,evecfv,evecsv, &
- wfmt,ngrtot,wfir)
-!-----------------------------------!
-!     interstitial contribution     !
-!-----------------------------------!
-t1=sqrt(omega)
-do ist=1,nstsv
-  do ispn=1,nspinor
-    if (spinsprl) then
-      jspn=ispn
-    else
-      jspn=1
-    end if
-! multiply wavefunction by characteristic function
-    zfft(:)=wfir(:,ispn,ist)*cfunir(:)
-! Fourier transform to G-space
-    call zfftifc(3,ngrid,-1,zfft)
-    do igp=1,ngp(jspn)
-      ifg=igfft(igpig(igp,jspn))
-      wfpw(igp,ispn,ist)=t1*zfft(ifg)
+call genwfsv(.true.,.true.,.false.,ngp,igpig,occsv,apwalm,evecfv,evecsv,wfmt, &
+ ngkmax,wfir)
+deallocate(apwalm,evecfv,evecsv)
+! zero the plane wave coefficients
+wfpw(:,:,:)=0.d0
+!---------------------------!
+!     interstitial part     !
+!---------------------------!
+do jspn=1,nspnfv
+  if (spinsprl) then
+    ispn0=jspn; ispn1=jspn
+  else
+    ispn0=1; ispn1=nspinor
+  end if
+  i=1
+  do ihp=1,nhp(jspn)
+    do igp=i,ngp(jspn)
+      t1=abs(vhpc(1,ihp,jspn)-vgpc(1,igp,jspn)) &
+        +abs(vhpc(2,ihp,jspn)-vgpc(2,igp,jspn)) &
+        +abs(vhpc(3,ihp,jspn)-vgpc(3,igp,jspn))
+      if (t1.lt.epslat) then
+        do ist=1,nstsv
+          do ispn=ispn0,ispn1
+            wfpw(ihp,ispn,ist)=wfir(igp,ispn,ist)
+          end do
+        end do
+        if (igp.eq.i) i=i+1
+        exit
+      end if
     end do
   end do
 end do
-!---------------------------------!
-!     muffin-tin contribution     !
-!---------------------------------!
-! initialise the high G+p wavefunction if required
-if (twfpwh) then
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      wfpwh(:,1:nrcmt(is),ias,:,:)=wfmt(:,1:nrcmt(is),ias,:,:)
-    end do
-  end do
-end if
-t1=fourpi/sqrt(omega)
-! loop over first-variational spin components
-do ispn=1,nspnfv
+!-------------------------!
+!     muffin-tin part     !
+!-------------------------!
+allocate(jl(0:lmaxvr,nrcmtmax))
+t0=fourpi/sqrt(omega)
+! remove continuation of interstitial function into muffin-tin
+do jspn=1,nspnfv
   if (spinsprl) then
-    jspn0=ispn; jspn1=ispn
+    ispn0=jspn; ispn1=jspn
   else
-    jspn0=1; jspn1=nspinor
+    ispn0=1; ispn1=nspinor
   end if
 ! loop over G+p-vectors
-  do igp=1,ngp(ispn)
-! generate the spherical harmonics Y_lm(G+p)
-    call genylm(lmaxvr,tpgpc(:,igp,ispn),ylm)
+  do igp=1,ngp(jspn)
+! generate the conjugate spherical harmonics Y_lm*(G+p)
+    call genylm(lmaxvr,tpgpc(:,igp,jspn),ylm)
+    ylm(:)=conjg(ylm(:))
 ! loop over species
     do is=1,nspecies
       nrc=nrcmt(is)
 ! generate spherical Bessel functions
       do irc=1,nrc
-        x=gpc(igp,ispn)*rcmt(irc,is)
-        call sbessel(lmaxvr,x,jl(:,irc))
+        t1=gpc(igp,jspn)*rcmt(irc,is)
+        call sbessel(lmaxvr,t1,jl(:,irc))
       end do
 ! loop over atoms
       do ia=1,natoms(is)
         ias=idxas(ia,is)
-        zt1=conjg(sfacgp(igp,ias,ispn))
+        z1=t0*sfacgp(igp,ias,jspn)
+        do ist=1,nstsv
+          do ispn=ispn0,ispn1
+            z2=z1*wfir(igp,ispn,ist)
+            lm=0
+            do l=0,lmaxvr
+              z3=z2*zil(l)
+              do m=-l,l
+                lm=lm+1
+                z4=z3*ylm(lm)
+                wfmt(lm,1:nrc,ias,ispn,ist)=wfmt(lm,1:nrc,ias,ispn,ist) &
+                 -z4*jl(l,1:nrc)
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+  end do
+end do
+! Fourier transform the muffin-tin wavefunctions
+do jspn=1,nspnfv
+  if (spinsprl) then
+    ispn0=jspn; ispn1=jspn
+  else
+    ispn0=1; ispn1=nspinor
+  end if
+! loop over H+p-vectors
+  do ihp=1,nhp(jspn)
+! generate the spherical harmonics Y_lm(H+p)
+    call genylm(lmaxvr,tphpc(:,ihp,jspn),ylm)
+    do is=1,nspecies
+      nrc=nrcmt(is)
+! generate spherical Bessel functions
+      do irc=1,nrc
+        t1=hpc(ihp,jspn)*rcmt(irc,is)
+        call sbessel(lmaxvr,t1,jl(:,irc))
+      end do
+      do ia=1,natoms(is)
+        ias=idxas(ia,is)
+! conjugate structure factor
+        z1=t0*conjg(sfachp(ihp,ias,jspn))
 ! loop over states
         do ist=1,nstsv
-          do jspn=jspn0,jspn1
+          do ispn=ispn0,ispn1
             do irc=1,nrc
-              zsum1=0.d0
-              lm=0
-              do l=0,lmaxvr
-                zsum2=0.d0
-                do m=-l,l
+              zsum1=jl(0,irc)*wfmt(1,irc,ias,ispn,ist)*ylm(1)
+              lm=1
+              do l=1,lmaxvr
+                lm=lm+1
+                zsum2=wfmt(lm,irc,ias,ispn,ist)*ylm(lm)
+                do m=1-l,l
                   lm=lm+1
-                  zsum2=zsum2+wfmt(lm,irc,ias,jspn,ist)*ylm(lm)
+                  zsum2=zsum2+wfmt(lm,irc,ias,ispn,ist)*ylm(lm)
                 end do
-                zsum1=zsum1+jl(l,irc)*conjg(zil(l))*zsum2
+                zsum1=zsum1+jl(l,irc)*zilc(l)*zsum2
               end do
               zsum1=zsum1*rcmt(irc,is)**2
               fr1(irc)=dble(zsum1)
               fr2(irc)=aimag(zsum1)
             end do
             call fderiv(-1,nrc,rcmt(:,is),fr1,gr)
-            t2=gr(nrc)
+            t1=gr(nrc)
             call fderiv(-1,nrc,rcmt(:,is),fr2,gr)
-            t3=gr(nrc)
-            zt2=t1*cmplx(t2,t3,8)
-! low G+p wavefunction
-            wfpw(igp,jspn,ist)=wfpw(igp,jspn,ist)+zt1*zt2
-! high G+p wavefunction if required
-            if (twfpwh) then
-              do irc=1,nrc
-                lm=0
-                do l=0,lmaxvr
-                  zt3=t1*jl(l,irc)*zt2*zil(l)
-                  do m=-l,l
-                    lm=lm+1
-                    wfpwh(lm,irc,ias,jspn,ist)=wfpwh(lm,irc,ias,jspn,ist) &
-                     -zt3*conjg(ylm(lm))
-                  end do
-                end do
-              end do
-            end if
+            t2=gr(nrc)
+! add to the H+p wavefunction
+            wfpw(ihp,ispn,ist)=wfpw(ihp,ispn,ist)+z1*cmplx(t1,t2,8)
           end do
-! end loop over states
         end do
-! end loop over atoms
       end do
-! end loop over species
     end do
-! end loop over G+p-vectors
   end do
-! end loop over first-variational spin components
 end do
-deallocate(jl,apwalm,evecfv,evecsv)
-deallocate(wfmt,wfir,zfft)
+deallocate(jl,wfmt,wfir)
 return
 end subroutine
 

@@ -2,7 +2,7 @@
  'chlorine'                                 : spname
   -17.0000                                  : spzn
    64626.86543                              : spmass
-  0.485071E-06    1.6500   26.6007   400    : sprmin, rmt, sprmax, nrmt
+  0.485071E-06    2.2000   21.8891   400    : sprmin, rmt, sprmax, nrmt
    7                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

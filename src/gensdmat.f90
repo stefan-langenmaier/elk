@@ -25,15 +25,15 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv)
 complex(8), intent(out) :: sdmat(nspinor,nspinor,nstsv)
 ! local variables
 integer ispn,jspn,ist,j
-complex(8) zt1,zt2
+complex(8) z1,z2
 sdmat(:,:,:)=0.d0
 do j=1,nstsv
   do ispn=1,nspinor
     do jspn=1,nspinor
       do ist=1,nstfv
-        zt1=evecsv(ist+nstfv*(ispn-1),j)
-        zt2=evecsv(ist+nstfv*(jspn-1),j)
-        sdmat(ispn,jspn,j)=sdmat(ispn,jspn,j)+zt1*conjg(zt2)
+        z1=evecsv(ist+nstfv*(ispn-1),j)
+        z2=evecsv(ist+nstfv*(jspn-1),j)
+        sdmat(ispn,jspn,j)=sdmat(ispn,jspn,j)+z1*conjg(z2)
       end do
     end do
   end do

@@ -11,21 +11,21 @@ tasks
   0         ! ground-state calculation
   120       ! compute momentum matrix elements
   121       ! compute RPA dielectric function with no local field contributions
-  188       ! compute TDDFT dielectric function with local field contributions
+  320       ! compute TDDFT dielectric function with local field contributions
 
 ! scissor shift
 scissor
- 0.192
+  0.192
 
 xctype
- 3
+  3
 
 ! bootstrap kernel
 fxctype
-  2
+  210
 
 ! G-vector cut-off of exchange-correlation kernel and response function
-gmaxrpa
+gmaxrf
   0.0
 
 nempty
@@ -34,9 +34,9 @@ nempty
 lradstp
   2
 
-dos
-  800 100 0 : nwdos, ngrdos, nsmdos
-  0.0 1.5   : wdos
+wplot
+  800 100 0 : nwplot, ngrkf, nswplot
+  0.0 1.5   : wplot
 
 avec
   3.80402   3.80402   0.00000

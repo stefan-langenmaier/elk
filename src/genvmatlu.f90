@@ -70,7 +70,7 @@ integer lm1,lm2,lm3,lm4
 real(8) u,j,n,n0
 real(8) mg(3),mg0(3),mg2
 real(8) edc,sum1,sum2
-complex(8) zt1,zt2
+complex(8) z1,z2
 ! automatic arrays
 real(8) vee(-lmaxlu:lmaxlu,-lmaxlu:lmaxlu,-lmaxlu:lmaxlu,-lmaxlu:lmaxlu)
 complex(8) dm(lmmaxlu,lmmaxlu,nspinor,nspinor)
@@ -178,9 +178,9 @@ do is=1,nspecies
             lm4=idxlm(l,m4)
             do ispn=1,nspinor
               do jspn=1,nspinor
-                zt1=dm(lm2,lm1,ispn,ispn)*dm(lm4,lm3,jspn,jspn)
-                zt2=dm(lm4,lm1,jspn,ispn)*dm(lm2,lm3,ispn,jspn)
-                engyalu(ias)=engyalu(ias)+dble(zt1-zt2)*vee(m1,m3,m2,m4)
+                z1=dm(lm2,lm1,ispn,ispn)*dm(lm4,lm3,jspn,jspn)
+                z2=dm(lm4,lm1,jspn,ispn)*dm(lm2,lm3,ispn,jspn)
+                engyalu(ias)=engyalu(ias)+dble(z1-z2)*vee(m1,m3,m2,m4)
                 vmatlu(lm1,lm2,ispn,ispn,ias)=vmatlu(lm1,lm2,ispn,ispn,ias) &
                  +dm(lm4,lm3,jspn,jspn)*vee(m1,m3,m2,m4)
                 vmatlu(lm1,lm4,ispn,jspn,ias)=vmatlu(lm1,lm4,ispn,jspn,ias) &

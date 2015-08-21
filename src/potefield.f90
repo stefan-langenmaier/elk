@@ -39,13 +39,13 @@ do is=1,nspecies
   end do
 end do
 ! interstitial potential
-ir=0.d0
-do i3=0,ngrid(3)-1
-  v1(3)=dble(i3)/dble(ngrid(3))
-  do i2=0,ngrid(2)-1
-    v1(2)=dble(i2)/dble(ngrid(2))
-    do i1=0,ngrid(1)-1
-      v1(1)=dble(i1)/dble(ngrid(1))
+ir=0
+do i3=0,ngridg(3)-1
+  v1(3)=dble(i3)/dble(ngridg(3))
+  do i2=0,ngridg(2)-1
+    v1(2)=dble(i2)/dble(ngridg(2))
+    do i1=0,ngridg(1)-1
+      v1(1)=dble(i1)/dble(ngridg(1))
       ir=ir+1
       call r3mv(avec,v1,v2)
       vclir(ir)=vclir(ir)-dot_product(efieldc(:),v2(:))+v0

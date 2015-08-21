@@ -13,16 +13,11 @@ integer ir,irc,idm
 integer ld,it,n
 real(8) tau,resp,t1
 ! allocatable arrays
-real(8), allocatable :: rfmt(:,:,:)
-real(8), allocatable :: rfir(:)
-real(8), allocatable :: rvfmt(:,:,:,:)
-real(8), allocatable :: rvfir(:,:)
-real(8), allocatable :: dvxmt(:,:,:)
-real(8), allocatable :: dvxir(:)
-real(8), allocatable :: dbxmt(:,:,:,:)
-real(8), allocatable :: dbxir(:,:)
-complex(8), allocatable :: vnlcv(:,:,:,:)
-complex(8), allocatable :: vnlvv(:,:,:)
+real(8), allocatable :: rfmt(:,:,:),rfir(:)
+real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
+real(8), allocatable :: dvxmt(:,:,:),dvxir(:)
+real(8), allocatable :: dbxmt(:,:,:,:),dbxir(:,:)
+complex(8), allocatable :: vnlcv(:,:,:,:),vnlvv(:,:,:)
 ! external functions
 real(8) rfinp
 external rfinp
@@ -33,15 +28,13 @@ allocate(vnlcv(ncrmax,natmtot,nstsv,nkpt))
 allocate(vnlvv(nstsv,nstsv,nkpt))
 call oepvnl(vnlcv,vnlvv)
 ! allocate local arrays
-allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
-allocate(rfir(ngrtot))
-allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot))
-allocate(dvxir(ngrtot))
+allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
+allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot),dvxir(ngtot))
 if (spinpol) then
   allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag))
-  allocate(rvfir(ngrtot,ndmag))
+  allocate(rvfir(ngtot,ndmag))
   allocate(dbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-  allocate(dbxir(ngrtot,ndmag))
+  allocate(dbxir(ngtot,ndmag))
 end if
 ! set the exchange potential to zero
 zvxmt(:,:,:)=0.d0
@@ -81,16 +74,16 @@ do it=1,maxitoep
   if (np_mpi.gt.1) then
     n=lmmaxvr*nrcmtmax*natmtot
     call mpi_allreduce(mpi_in_place,dvxmt,n,mpi_double_precision,mpi_sum, &
-     mpi_comm_world,ierror)
-    call mpi_allreduce(mpi_in_place,dvxir,ngrtot,mpi_double_precision, &
-     mpi_sum,mpi_comm_world,ierror)
+     mpi_comm_kpt,ierror)
+    call mpi_allreduce(mpi_in_place,dvxir,ngtot,mpi_double_precision, &
+     mpi_sum,mpi_comm_kpt,ierror)
     if (spinpol) then
       n=n*ndmag
       call mpi_allreduce(mpi_in_place,dbxmt,n,mpi_double_precision,mpi_sum, &
-       mpi_comm_world,ierror)
-      n=ngrtot*ndmag
+       mpi_comm_kpt,ierror)
+      n=ngtot*ndmag
       call mpi_allreduce(mpi_in_place,dbxir,n,mpi_double_precision,mpi_sum, &
-       mpi_comm_world,ierror)
+       mpi_comm_kpt,ierror)
     end if
   end if
 ! convert muffin-tin residuals to spherical harmonics

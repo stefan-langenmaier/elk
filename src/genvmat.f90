@@ -9,19 +9,18 @@ use modmain
 use modmpi
 implicit none
 ! arguments
-real(8), intent(in) :: vmt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(in) :: vir(ngrtot)
+real(8), intent(in) :: vmt(lmmaxvr,nrmtmax,natmtot),vir(ngtot)
 complex(8), intent(out) :: vmat(nstsv,nstsv,nkpt)
 ! local variables
 integer ld,is,ias
 integer ik,ispn,n,lp
 ! local arrays
-real(8), allocatable :: rfmt(:,:,:)
+real(8), allocatable :: vmtc(:,:,:),virc(:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 ! allocate local arrays
-allocate(rfmt(lmmaxvr,nrcmtmax,natmtot))
+allocate(vmtc(lmmaxvr,nrcmtmax,natmtot),virc(ngtot))
 ! convert muffin-tin potential to spherical coordinates
 ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
@@ -29,10 +28,12 @@ ld=lmmaxvr*lradstp
 do ias=1,natmtot
   is=idxis(ias)
   call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-   vmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
+   vmt(:,:,ias),ld,0.d0,vmtc(:,:,ias),lmmaxvr)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
+! multiply potential by characteristic function
+virc(:)=vir(:)*cfunir(:)
 ! loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(apwalm,evecfv,evecsv) &
@@ -44,7 +45,7 @@ do ik=1,nkpt
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
   allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-  allocate(wfir(ngrtot,nspinor,nstsv))
+  allocate(wfir(ngtot,nspinor,nstsv))
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -53,10 +54,10 @@ do ik=1,nkpt
 ! get the eigenvectors from file
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
-! calculate the second-variational wavefunctions for all states
-  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik), &
-   apwalm,evecfv,evecsv,wfmt,ngrtot,wfir)
-  call genvmatk(rfmt,vir,wfmt,wfir,vmat(:,:,ik))
+! calculate the wavefunctions for all states of the input k-point
+  call genwfsv(.false.,.false.,.false.,ngk(:,ik),igkig(:,:,ik),occsv,apwalm, &
+   evecfv,evecsv,wfmt,ngtot,wfir)
+  call genvmatk(vmtc,virc,wfmt,wfir,vmat(:,:,ik))
   deallocate(apwalm,evecfv,evecsv,wfmt,wfir)
 end do
 !$OMP END DO
@@ -66,10 +67,10 @@ if (np_mpi.gt.1) then
   n=nstsv*nstsv
   do ik=1,nkpt
     lp=mod(ik-1,np_mpi)
-    call mpi_bcast(vmat(:,:,ik),n,mpi_double_complex,lp,mpi_comm_world,ierror)
+    call mpi_bcast(vmat(:,:,ik),n,mpi_double_complex,lp,mpi_comm_kpt,ierror)
   end do
 end if
-deallocate(rfmt)
+deallocate(vmtc,virc)
 return
 end subroutine
 

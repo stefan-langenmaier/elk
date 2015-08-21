@@ -17,7 +17,7 @@ integer ig,iq,igq0
 integer ist1,ist2,ist3
 integer ic,jc,m1,m2,n
 real(8) v(3),cfq
-complex(8) zrho01,zrho02,zt1,zt2
+complex(8) zrho01,zrho02,z1,z2
 ! automatic arrays
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
@@ -36,18 +36,18 @@ complex(8) zfinp,zfmtinp
 external zfinp,zfmtinp
 ! allocate local arrays
 allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
-allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
+allocate(jlgqr(0:lnpsd,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
+allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
 allocate(wfcr1(lmmaxvr,nrcmtmax,2),wfcr2(lmmaxvr,nrcmtmax,2))
 allocate(zrhomt1(lmmaxvr,nrcmtmax,natmtot,nstsv))
 allocate(zrhomt2(lmmaxvr,nrcmtmax,nstcr))
-allocate(zrhoir1(ngrtot,nstsv))
-allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
+allocate(zrhoir1(ngtot,nstsv))
+allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 allocate(zfmt(lmmaxvr,nrcmtmax))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
@@ -59,9 +59,9 @@ call getevecfv(vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
 call getevecsv(vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
-! calculate the wavefunctions for all states for the input k-point
-call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
- evecfv,evecsv,wfmt1,ngrtot,wfir1)
+! calculate the wavefunctions for all states of the input k-point
+call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),occsv,apwalm, &
+ evecfv,evecsv,wfmt1,ngtot,wfir1)
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! equivalent reduced k-point
@@ -85,7 +85,7 @@ do ik=1,nkptnr
   call findigp0(ngvec,gqc,igq0)
   sfacgq0(:)=sfacgq(igq0,:)
 ! compute the required spherical Bessel functions
-  call genjlgpr(lnpsd+1,gqc,jlgqr)
+  call genjlgpr(lnpsd,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
@@ -93,13 +93,13 @@ do ik=1,nkptnr
   call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! calculate the wavefunctions for occupied states
-  call genwfsv(.false.,.false.,.true.,ngk(1,ik),igkig(:,1,ik),evalsv(:,jk), &
-   apwalm,evecfv,evecsv,wfmt2,ngrtot,wfir2)
+  call genwfsv(.false.,.false.,.true.,ngk(1,ik),igkig(:,1,ik),occsv(:,jk), &
+   apwalm,evecfv,evecsv,wfmt2,ngtot,wfir2)
   do ist3=1,nstsv
     if (evalsv(ist3,jk).lt.efermi) then
 ! compute the complex overlap densities for all valence-valence states
       do ist1=1,nstsv
-        call genzrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
+        call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
          wfir2(:,:,ist3),wfir1(:,:,ist1),zrhomt1(:,:,:,ist1),zrhoir1(:,ist1))
       end do
 ! compute the complex overlap densities for all valence-core states
@@ -141,13 +141,12 @@ do ik=1,nkptnr
 !----------------------------------------------!
           do ist1=1,nstsv
             if (evalsv(ist1,ikp).lt.efermi) then
-              zt1=zfinp(.true.,zrhomt1(:,:,:,ist1),zvclmt,zrhoir1(:,ist1), &
-               zvclir)
+              z1=zfinp(.true.,zrhomt1(:,:,:,ist1),zvclmt,zrhoir1(:,ist1),zvclir)
 ! compute the density coefficient of the smallest G+q-vector
               call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt1(:,:,:,ist1), &
                zrhoir1(:,ist1),zrho01)
-              zt2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
-              vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-(wkptnr*zt1+zt2)
+              z2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
+              vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-(wkptnr*z1+z2)
             end if
           end do
 !-------------------------------------------!
@@ -164,9 +163,9 @@ do ik=1,nkptnr
                   do m1=-spk(ist1,is),spk(ist1,is)-1
                     ic=ic+1
                     jc=jc+1
-                    zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+                    z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                      zrhomt2(:,:,jc),zvclmt(:,:,ias))
-                    vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-wkptnr*zt1
+                    vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-wkptnr*z1
                   end do
 ! end loop over ist1
                 end if
@@ -228,9 +227,9 @@ do is=1,nspecies
 !-------------------------------------------!
               do ist1=1,nstsv
                 if (evalsv(ist1,ikp).lt.efermi) then
-                  zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+                  z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                    zrhomt1(:,:,ias,ist1),zvclmt)
-                  vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-zt1
+                  vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-z1
                 end if
               end do
 !----------------------------------------!
@@ -241,9 +240,9 @@ do is=1,nspecies
                 if (spcore(ist1,is)) then
                   do m2=-spk(ist1,is),spk(ist1,is)-1
                     ic=ic+1
-                    zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+                    z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                      zrhomt2(:,:,ic),zvclmt)
-                    vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-zt1
+                    vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-z1
                   end do
 ! end loop over ist1
                 end if
@@ -264,6 +263,27 @@ deallocate(wfmt1,wfmt2,wfir1,wfir2,wfcr1,wfcr2)
 deallocate(zrhomt1,zrhomt2,zrhoir1)
 deallocate(zvclmt,zvclir,zfmt)
 return
+
+contains
+
+subroutine zvmul1(n,x,y,z)
+implicit none
+integer, intent(in) :: n
+complex(8), intent(in) :: x(n),y(n)
+complex(8), intent(out) :: z(n)
+z(:)=conjg(x(:))*y(:)
+return
+end subroutine
+
+subroutine zvmul2(n,x1,y1,x2,y2,z)
+implicit none
+integer, intent(in) :: n
+complex(8), intent(in) :: x1(n),y1(n),x2(n),y2(n)
+complex(8), intent(out) :: z(n)
+z(:)=conjg(x1(:))*y1(:)+conjg(x2(:))*y2(:)
+return
+end subroutine
+
 end subroutine
 !EOC
 

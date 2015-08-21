@@ -12,7 +12,11 @@ use modmain
 use modldapu
 use modrdm
 use modphonon
+use modmpi
 use modtest
+use modrandom
+use modscdft
+use modpw
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
 !   values for the input parameters.
@@ -23,10 +27,11 @@ use modtest
 !BOC
 implicit none
 ! local variables
+logical nosym,highq
 integer is,js,ia,ias
-integer i,l,k,iv,iostat
+integer i,j,k,l,iv,iostat
 real(8) sc,sc1,sc2,sc3
-real(8) solscf,v(3)
+real(8) solscf,v(3),t1
 character(256) block,str
 
 !------------------------!
@@ -48,7 +53,7 @@ tshift=.true.
 ngridk(:)=1
 vkloff(:)=0.d0
 autokpt=.false.
-radkpt=42.0
+radkpt=40.d0
 reducek=1
 ngridq(:)=1
 reduceq=1
@@ -57,27 +62,28 @@ gmaxvr=12.d0
 lmaxapw=8
 lmaxvr=7
 lmaxmat=5
-lmaxinr=2
-fracinr=0.25d0
+lmaxinr=3
+fracinr=0.15d0
 trhonorm=.true.
 xctype(1)=3
 xctype(2)=0
 xctype(3)=0
-stype=0
-swidth=0.01d0
+stype=3
+swidth=0.001d0
 autoswidth=.false.
 mstar=10.d0
 epsocc=1.d-8
 epschg=1.d-3
-nempty=5
+nempty0=4
 maxscl=200
 mixtype=1
 beta0=0.05d0
 betamax=1.d0
 mixsdp=3
+! Broyden parameters recommended by M. Meinert
 mixsdb=5
-broydpm(1)=0.25d0
-broydpm(2)=0.01d0
+broydpm(1)=0.4d0
+broydpm(2)=0.15d0
 epspot=1.d-6
 epsengy=1.d-4
 epsforce=5.d-4
@@ -104,11 +110,11 @@ vclp3d(1,2)=1.d0
 vclp3d(2,3)=1.d0
 vclp3d(3,4)=1.d0
 np3d(:)=20
-nwdos=500
-ngrdos=100
-nsmdos=1
-wdos(1)=-0.5d0
-wdos(2)=0.5d0
+nwplot=500
+ngrkf=100
+nswplot=1
+wplot(1)=-0.5d0
+wplot(2)=0.5d0
 dosocc=.false.
 dosmsum=.false.
 dosssum=.false.
@@ -117,18 +123,16 @@ spinpol=.false.
 spinorb=.false.
 maxgeostp=200
 tau0atm=0.2d0
-nstfsp=6
 lradstp=4
 chgexs=0.d0
 nprad=4
 scissor=0.d0
 noptcomp=1
 optcomp(:,1)=1
-usegdft=.false.
 intraband=.false.
 evaltol=-1.d0
-deband=0.0025d0
 epsband=1.d-12
+demaxbnd=2.d0
 autolinengy=.false.
 dlefe=-0.1d0
 bfieldc0(:)=0.d0
@@ -140,7 +144,7 @@ mommtfix(:,:,:)=0.d0
 taufsm=0.01d0
 rmtdelta=0.05d0
 isgkmax=-1
-nosym=.false.
+symtype=1
 deltaph=0.03d0
 nphwrt=1
 if (allocated(vqlwrt)) deallocate(vqlwrt)
@@ -164,8 +168,6 @@ ssdph=.true.
 vqlss(:)=0.d0
 nwrite=0
 tevecsv=.false.
-
-! LDA+U defaults
 ldapu=0
 inptypelu=1
 llu(:)=-1
@@ -177,8 +179,6 @@ ulufix(:)=0.d0
 lambdalu0(:)=0.d0
 tmomlu=.false.
 readalu=.false.
-
-! reduced density matrix functional theory (RMDFT) defaults
 rdmxctype=2
 rdmmaxscl=2
 maxitn=200
@@ -188,13 +188,11 @@ taurdmc=0.25d0
 rdmalpha=0.565d0
 rdmbeta=0.25d0
 rdmtemp=0.d0
-
 reducebf=1.d0
 ptnucl=.true.
 tseqr=.true.
 tseqit=.false.
-nseqit=40
-tauseq=0.1d0
+nseqit=30
 vecql(:)=0.d0
 mustar=0.15d0
 sqados(1:2)=0.d0
@@ -204,7 +202,6 @@ frozencr=.false.
 spincore=.false.
 solscf=1.d0
 emaxelnes=-1.2d0
-hmax=6.d0
 wsfac(1)=-1.d6; wsfac(2)=1.d6
 vhmat(:,:)=0.d0
 vhmat(1,1)=1.d0
@@ -212,14 +209,14 @@ vhmat(2,2)=1.d0
 vhmat(3,3)=1.d0
 reduceh=.true.
 hybrid=.false.
-hybmix=1.d0
+hybridc=1.d0
 ecvcut=-3.5d0
 esccut=-0.4d0
-gmaxrpa=3.d0
+gmaxrf=3.d0
+emaxrf=1.d6
 ntemp=20
 trimvg=.false.
-
-! BSE defaults
+taubdg=0.1d0
 nvbse0=2
 ncbse0=3
 nvxbse=0
@@ -227,11 +224,23 @@ ncxbse=0
 bsefull=.false.
 hxbse=.true.
 hdbse=.true.
-
-! TDDFT defaults
-fxctype=1
+fxctype=-1
 fxclrc(1)=0.d0
 fxclrc(2)=0.d0
+rndatposc=0.d0
+rndbfcmt=0.d0
+rndavec=0.d0
+ewbdg=0.5d0
+c_tb09=0.d0
+tc_tb09=.false.
+rndachi=0.1d0
+hmaxvr=20.d0
+hkmax=12.d0
+lorbcnd=.false.
+lorbordc=3
+nrmtscf=1
+etaph=4.d0
+lmaxdos=3
 
 !--------------------------!
 !     read from elk.in     !
@@ -275,7 +284,9 @@ case('tasks')
   write(*,*)
   stop
 case('species')
-  call genspecies(50)
+  if (mp_mpi) call genspecies(50)
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
 case('avec')
   read(50,*,err=20) avec(:,1)
   read(50,*,err=20) avec(:,2)
@@ -431,10 +442,10 @@ case('epschg')
     stop
   end if
 case('nempty')
-  read(50,*,err=20) nempty
-  if (nempty.le.0) then
+  read(50,*,err=20) nempty0
+  if (nempty0.le.0) then
     write(*,*)
-    write(*,'("Error(readinput): nempty <= 0 : ",I8)') nempty
+    write(*,'("Error(readinput): nempty <= 0 : ",I8)') nempty0
     write(*,*)
     stop
   end if
@@ -585,30 +596,30 @@ case('plot3d')
     write(*,*)
     stop
   end if
-case('dos')
-  read(50,*,err=20) nwdos,ngrdos,nsmdos
-  if (nwdos.lt.2) then
+case('wplot','dos')
+  read(50,*,err=20) nwplot,ngrkf,nswplot
+  if (nwplot.lt.2) then
     write(*,*)
-    write(*,'("Error(readinput): nwdos < 2 : ",I8)') nwdos
-    write(*,*)
-    stop
-  end if
-  if (ngrdos.lt.1) then
-    write(*,*)
-    write(*,'("Error(readinput): ngrdos < 1 : ",I8)') ngrdos
+    write(*,'("Error(readinput): nwplot < 2 : ",I8)') nwplot
     write(*,*)
     stop
   end if
-  if (nsmdos.lt.0) then
+  if (ngrkf.lt.1) then
     write(*,*)
-    write(*,'("Error(readinput): nsmdos < 0 : ",I8)') nsmdos
+    write(*,'("Error(readinput): ngrkf < 1 : ",I8)') ngrkf
     write(*,*)
     stop
   end if
-  read(50,*,err=20) wdos(:)
-  if (wdos(1).gt.wdos(2)) then
+  if (nswplot.lt.0) then
     write(*,*)
-    write(*,'("Error(readinput): wdos(1) > wdos(2) : ",2G18.10)') wdos
+    write(*,'("Error(readinput): nswplot < 0 : ",I8)') nswplot
+    write(*,*)
+    stop
+  end if
+  read(50,*,err=20) wplot(:)
+  if (wplot(1).gt.wplot(2)) then
+    write(*,*)
+    write(*,'("Error(readinput): wplot(1) > wplot(2) : ",2G18.10)') wplot
     write(*,*)
     stop
   end if
@@ -631,13 +642,9 @@ case('maxgeostp')
 case('tau0atm')
   read(50,*,err=20) tau0atm
 case('nstfsp')
-  read(50,*,err=20) nstfsp
-  if (nstfsp.le.0) then
-    write(*,*)
-    write(*,'("Error(readinput): nstfsp <= 0 : ",I8)') nstfsp
-    write(*,*)
-    stop
-  end if
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''nstfsp'' is no longer used")')
 case('lradstp')
   read(50,*,err=20) lradstp
   if (lradstp.le.0) then
@@ -693,25 +700,27 @@ case('optcomp')
   write(*,'("Error(readinput): optical component list too long")')
   write(*,*)
   stop
-case('usegdft')
-  read(50,*,err=20) usegdft
 case('intraband')
   read(50,*,err=20) intraband
 case('evaltol')
   read(50,*,err=20) evaltol
 case('deband')
-  read(50,*,err=20) deband
-  if (deband.lt.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): deband < 0 : ",G18.10)') deband
-    write(*,*)
-    stop
-  end if
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''deband'' is no longer used")')
 case('epsband')
   read(50,*,err=20) epsband
   if (epsband.le.0.d0) then
     write(*,*)
     write(*,'("Error(readinput): epsband <= 0 : ",G18.10)') epsband
+    write(*,*)
+    stop
+  end if
+case('demaxbnd')
+  read(50,*,err=20) demaxbnd
+  if (demaxbnd.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): demaxbnd <= 0 : ",G18.10)') demaxbnd
     write(*,*)
     stop
   end if
@@ -767,8 +776,23 @@ case('isgkmax')
   read(50,*,err=20) isgkmax
 case('nosym')
   read(50,*,err=20) nosym
+  if (nosym) symtype=0
+case('symtype')
+  read(50,*,err=20) symtype
+  if ((symtype.lt.0).or.(symtype.gt.2)) then
+    write(*,*)
+    write(*,'("Error(readinput): symtype not defined : ",I8)') symtype
+    write(*,*)
+    stop
+  end if
 case('deltaph')
   read(50,*,err=20) deltaph
+  if (deltaph.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): deltaph < 0 : ",G18.10)') deltaph
+    write(*,*)
+    stop
+  end if
 case('phwrite')
   read(50,*,err=20) nphwrt
   if (nphwrt.le.0) then
@@ -988,13 +1012,9 @@ case('nseqit')
     stop
   end if
 case('tauseq')
-  read(50,*,err=20) tauseq
-  if (tauseq.lt.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): tauseq < 0 : ",G18.10)') tauseq
-    write(*,*)
-    stop
-  end if
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''tauseq'' is no longer used")')
 case('vecql')
   read(50,*,err=20) vecql(:)
 case('mustar')
@@ -1017,14 +1037,6 @@ case('solscf')
   end if
 case('emaxelnes')
   read(50,*,err=20) emaxelnes
-case('hmax')
-  read(50,*,err=20) hmax
-  if (hmax.lt.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): hmax < 0 : ",G18.10)') hmax
-    write(*,*)
-    stop
-  end if
 case('wsfac')
   read(50,*,err=20) wsfac(:)
 case('vhmat')
@@ -1035,11 +1047,11 @@ case('reduceh')
   read(50,*,err=20) reduceh
 case('hybrid')
   read(50,*,err=20) hybrid
-case('hybmix')
-  read(50,*,err=20) hybmix
-  if ((hybmix.lt.0.d0).or.(hybmix.gt.1.d0)) then
+case('hybridc','hybmix')
+  read(50,*,err=20) hybridc
+  if ((hybridc.lt.0.d0).or.(hybridc.gt.1.d0)) then
     write(*,*)
-    write(*,'("Error(readinput): invalid hybmix : ",G18.10)') hybmix
+    write(*,'("Error(readinput): invalid hybridc : ",G18.10)') hybridc
     write(*,*)
     stop
   end if
@@ -1121,16 +1133,26 @@ case('hxbse')
   read(50,*,err=20) hxbse
 case('hdbse')
   read(50,*,err=20) hdbse
-case('gmaxrpa')
-  read(50,*,err=20) gmaxrpa
-  if (gmaxrpa.lt.0.d0) then
+case('gmaxrf','gmaxrpa')
+  read(50,*,err=20) gmaxrf
+  if (gmaxrf.lt.0.d0) then
     write(*,*)
-    write(*,'("Error(readinput): gmaxrpa < 0 : ",G18.10)') gmaxrpa
+    write(*,'("Error(readinput): gmaxrf < 0 : ",G18.10)') gmaxrf
+    write(*,*)
+    stop
+  end if
+case('emaxrf')
+  read(50,*,err=20) emaxrf
+  if (emaxrf.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): emaxrf < 0 : ",G18.10)') emaxrf
     write(*,*)
     stop
   end if
 case('fxctype')
-  read(50,*,err=20) fxctype
+  read(50,'(A256)',err=20) str
+  str=trim(str)//' 0 0'
+  read(str,*,err=20) fxctype
 case('fxclrc')
   read(50,'(A256)',err=20) str
   str=trim(str)//' 0.0'
@@ -1145,6 +1167,109 @@ case('ntemp')
   end if
 case('trimvg')
   read(50,*,err=20) trimvg
+case('rndseed')
+  read(50,*,err=20) i
+! set random number generator state with seed
+  rndstate(0)=abs(i)
+case('taubdg')
+  read(50,*,err=20) taubdg
+case('rndatposc')
+  read(50,*,err=20) rndatposc
+case('rndbfcmt')
+  read(50,*,err=20) rndbfcmt
+case('rndavec')
+  read(50,*,err=20) rndavec
+case('ewbdg')
+  read(50,*,err=20) ewbdg
+  if (ewbdg.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): ewbdg <= 0 : ",G18.10)') ewbdg
+    write(*,*)
+    stop
+  end if
+case('c_tb09')
+  read(50,*,err=20) c_tb09
+! set flag to indicate Tran-Blaha constant has been read in
+  tc_tb09=.true.
+case('rndachi')
+  read(50,*,err=20) rndachi
+case('highq')
+  read(50,*,err=20) highq
+! parameter set for high-quality calculation
+  if (highq) then
+    rgkmax=7.5d0
+    gmaxvr=16.d0
+    lmaxapw=10
+    lmaxvr=8
+    lmaxmat=7
+    autoswidth=.true.
+    radkpt=60.d0
+    autokpt=.true.
+    vkloff(:)=0.d0
+    nempty0=10
+    lradstp=2
+    epspot=1.d-7
+    epsengy=1.d-5
+    epsforce=1.d-4
+    lorbcnd=.true.
+  end if
+case('hmaxvr')
+  read(50,*,err=20) hmaxvr
+  if (hmaxvr.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): hmaxvr < 0 : ",G18.10)') hmaxvr
+    write(*,*)
+    stop
+  end if
+case('hkmax')
+  read(50,*,err=20) hkmax
+  if (hkmax.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): hkmax <= 0 : ",G18.10)') hkmax
+    write(*,*)
+    stop
+  end if
+case('lorbcnd')
+  read(50,*,err=20) lorbcnd
+case('lorbordc')
+  read(50,*,err=20) lorbordc
+  if (lorbordc.lt.2) then
+    write(*,*)
+    write(*,'("Error(readinput): lorbordc < 2 : ",I8)') lorbordc
+    write(*,*)
+    stop
+  end if
+  if (lorbordc.gt.maxlorbord) then
+    write(*,*)
+    write(*,'("Error(readinput): lorbordc too large : ",I8)') lorbordc
+    write(*,'("Adjust maxlorbord in modmain and recompile code")')
+    write(*,*)
+    stop
+  end if
+case('nrmtscf')
+  read(50,*,err=20) nrmtscf
+  if (nrmtscf.lt.1) then
+    write(*,*)
+    write(*,'("Error(readinput): nrmtscf < 1 : ",I8)') nrmtscf
+    write(*,*)
+    stop
+  end if
+case('etaph')
+  read(50,*,err=20) etaph
+  if (etaph.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): etaph <= 0 : ",G18.10)') etaph
+    write(*,*)
+    stop
+  end if
+case('lmaxdos')
+  read(50,*,err=20) lmaxdos
+  if (lmaxdos.lt.0) then
+    write(*,*)
+    write(*,'("Error(readinput): lmaxdos < 0 : ",I8)') lmaxdos
+    write(*,*)
+    stop
+  end if
 case('')
   goto 10
 case default
@@ -1170,6 +1295,15 @@ avec(:,1)=sc1*avec(:,1)
 avec(:,2)=sc2*avec(:,2)
 avec(:,3)=sc3*avec(:,3)
 avec(:,:)=sc*avec(:,:)
+! randomise lattice vectors if required
+if (rndavec.gt.0.d0) then
+  do i=1,3
+    do j=1,3
+      t1=rndavec*(randomu()-0.5d0)
+      avec(i,j)=avec(i,j)+t1
+    end do
+  end do
+end if
 ! case of isolated molecule
 if (molecule) then
 ! convert atomic positions from Cartesian to lattice coordinates
@@ -1181,8 +1315,37 @@ if (molecule) then
     end do
   end do
 end if
+! randomise atomic positions if required
+if (rndatposc.gt.0.d0) then
+  call r3minv(avec,ainv)
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      call r3mv(avec,atposl(:,ia,is),v)
+      do i=1,3
+        t1=rndatposc*(randomu()-0.5d0)
+        v(i)=v(i)+t1
+      end do
+      call r3mv(ainv,v,atposl(:,ia,is))
+    end do
+  end do
+end if
+! randomise the muffin-tin magnetic fields if required
+if (rndbfcmt.gt.0.d0) then
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      do i=1,3
+        t1=rndbfcmt*(randomu()-0.5d0)
+        bfcmt0(i,ia,is)=bfcmt0(i,ia,is)+t1
+      end do
+    end do
+  end do
+end if
+! set fxctype to fxctype if required
+if (fxctype(1).eq.-1) then
+  fxctype(:)=xctype(:)
+end if
 ! find primitive cell if required
-if (primcell) call findprim
+if (primcell) call findprimcell
 ! read in atomic species data
 call readspecies
 return

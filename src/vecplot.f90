@@ -45,7 +45,7 @@ end if
 ! read magnetisation from file
 call readstate
 allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(rvfir(ngrtot,3))
+allocate(rvfir(ngtot,3))
 select case(task)
 case(72,73)
 ! magnetisation
@@ -61,7 +61,7 @@ case(72,73)
     rvfir(:,3)=magir(:,1)
   end if
 case(82,83)
-! effective magnetic field
+! exchange-correlation magnetic field
   if (ncmag) then
 ! non-collinear
     rvfmt(:,:,:,:)=bxcmt(:,:,:,:)
@@ -118,7 +118,7 @@ case(72,82,142,152)
       end do
     end do
   end do
-  do ir=1,ngrtot
+  do ir=1,ngtot
     vc4(:)=rvfir(ir,:)
     rvfir(ir,1)=dot_product(vc4(:),vc1(:))
     rvfir(ir,2)=dot_product(vc4(:),vc2(:))

@@ -21,12 +21,9 @@ spinorb
 vecql
  0.0 0.0 0.5
 
-dos
+wplot
  50 100 3
  18.5 19.0
-
-deband
- 0.01
 
 emaxelnes
  -10.0

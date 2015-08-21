@@ -53,7 +53,7 @@ real(8), intent(out) :: d
 integer i
 real(8) t1
 if (n.le.0) return
-if (iscl.le.0) then
+if (iscl.le.1) then
   mu(:)=nu(:)
   f(:)=0.d0
   beta(:)=beta0

@@ -14,16 +14,16 @@ use modtest
 ! !DESCRIPTION:
 !   Computes the total energy and its individual contributions. The kinetic
 !   energy is given by
-!   $$ T_{\rm s}=\sum_i n_i\epsilon_i-\int\rho({\bf r})[v_{\rm C}({\bf r})
+!   $$ T_s=\sum_i n_i\epsilon_i-\int\rho({\bf r})[v_{\rm C}({\bf r})
 !    +v_{\rm xc}({\bf r})]d{\bf r}-\int {\bf m}({\bf r})\cdot
 !    ({\bf B}_{\rm xc}({\bf r})+{\bf B}_{\rm ext}({\bf r}))d{\bf r}, $$
 !   where $n_i$ are the occupancies and $\epsilon_i$ are the eigenvalues of both
 !   the core and valence states; $\rho$ is the density; ${\bf m}$ is the
 !   magnetisation density; $v_{\rm C}$ is the Coulomb potential; $v_{\rm xc}$
-!   and ${\bf B}_{\rm xc}$ are the exchange-correlation potential and effective
-!   magnetic field, respectively; and ${\bf B}_{\rm ext}$ is the external
-!   magnetic field. The Hartree, electron-nuclear and nuclear-nuclear
-!   electrostatic energies are combined into the Coulomb energy:
+!   and ${\bf B}_{\rm xc}$ are the exchange-correlation potential and magnetic
+!   field, respectively; and ${\bf B}_{\rm ext}$ is the external magnetic field.
+!   The Hartree, electron-nuclear and nuclear-nuclear electrostatic energies are
+!   combined into the Coulomb energy:
 !   \begin{align*}
 !    E_{\rm C}&=E_{\rm H}+E_{\rm en}+E_{\rm nn} \\
 !             &=\frac{1}{2}V_{\rm C}+E_{\rm Mad},
@@ -44,7 +44,7 @@ use modtest
 !   and
 !   $$ E_{\rm H}=\frac{1}{2}(E_{\rm C}-E_{\rm en}). $$
 !   Finally, the total energy is
-!   $$ E=T_{\rm s}+E_{\rm C}+E_{\rm xc}, $$
+!   $$ E=T_s+E_{\rm C}+E_{\rm xc}, $$
 !   where $E_{\rm xc}$ is obtained either by integrating the
 !   exchange-correlation energy density, or in the case of exact exchange, the
 !   explicit calculation of the Fock exchange integral. The energy from the
@@ -65,8 +65,8 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer ik,ist,idm,jdm
-real(8) cb,vn,sum,f,t1
-complex(8) zt1
+real(8) cb,vn,sum,f
+complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:),c(:,:)
 ! external functions
@@ -139,31 +139,36 @@ engycl=engynn+engyen+engyhar
 !-------------------------!
 !     exchange energy     !
 !-------------------------!
-! exchange energy from the density
-engyx=rfinp(1,rhomt,exmt,rhoir,exir)
 if ((xctype(1).lt.0).or.(task.eq.5)) then
 ! exact exchange for OEP-EXX or Hartree-Fock on last self-consistent loop
-  if (tlast) call exxengy
+  if (tlast) then
+    call exxengy
 ! mix exact and DFT exchange energies for hybrid functionals
-  if (hybrid) then
-    t1=rfinp(1,rhomt,exmt,rhoir,exir)
-    engyx=hybmix*engyx+(1.d0-hybmix)*t1
+    if (hybrid) then
+      engyx=engyx*hybridc
+      engyx=engyx+rfinp(1,rhomt,exmt,rhoir,exir)
+    end if
+  else
+    engyx=0.d0
   end if
+else
+! exchange energy from the density
+  engyx=rfinp(1,rhomt,exmt,rhoir,exir)
 end if
 !----------------------------!
 !     correlation energy     !
 !----------------------------!
-! correlation energy from the density
-engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
 if (task.eq.5) then
   if (hybrid) then
 ! fraction of DFT correlation energy for hybrid functionals
-    t1=rfinp(1,rhomt,ecmt,rhoir,ecir)
-    engyc=(1.d0-hybmix)*t1
+    engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
   else
 ! zero correlation energy for pure Hartree-Fock
     engyc=0.d0
   end if
+else
+! correlation energy from the density
+  engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
 end if
 !----------------------!
 !     LDA+U energy     !
@@ -183,7 +188,7 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist=1,spnst(is)
-      if (spcore(ist,is)) evalsum=evalsum+spocc(ist,is)*evalcr(ist,ias)
+      if (spcore(ist,is)) evalsum=evalsum+occcr(ist,ias)*evalcr(ist,ias)
     end do
   end do
 end do
@@ -207,11 +212,11 @@ if (task.eq.5) then
   allocate(c(nstsv,nstsv))
   do ik=1,nkpt
     call getevecsv(vkl(:,ik),evecsv)
-    call zgemm('N','N',nstsv,nstsv,nstsv,zone,kinmatc(:,:,ik),nstsv,evecsv, &
+    call zgemm('N','N',nstsv,nstsv,nstsv,zone,kmatc(:,:,ik),nstsv,evecsv, &
      nstsv,zzero,c,nstsv)
     do ist=1,nstsv
-      zt1=zdotc(nstsv,evecsv(:,ist),1,c(:,ist),1)
-      engykn=engykn+wkpt(ik)*occsv(ist,ik)*dble(zt1)
+      z1=zdotc(nstsv,evecsv(:,ist),1,c(:,ist),1)
+      engykn=engykn+wkpt(ik)*occsv(ist,ik)*dble(z1)
     end do
   end do
   deallocate(evecsv,c)

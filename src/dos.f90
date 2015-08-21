@@ -35,7 +35,7 @@ use modtest
 implicit none
 ! local variables
 logical tsqaz
-integer lmax,lmmax,l0,l1,l,m,lm
+integer lmmax,l0,l1,l,m,lm
 integer is,ia,ias,nsd,ispn,jspn
 integer nsk(3),ik,jk,ist,iw
 real(8) dw,th,sps(2),vl(3),vc(3)
@@ -58,15 +58,14 @@ tevecsv=.true.
 ! initialise universal variables
 call init0
 call init1
-lmax=min(3,lmaxapw)
-lmmax=(lmax+1)**2
+lmmax=(lmaxdos+1)**2
 if (dosssum) then
   nsd=1
 else
   nsd=nspinor
 end if
 if (dosmsum) then
-  l0=0; l1=lmax
+  l0=0; l1=lmaxdos
 else
   l0=1; l1=lmmax
 end if
@@ -93,7 +92,7 @@ do ik=1,nkpt
 end do
 ! generate unitary matrices which convert the (l,m) basis into the irreducible
 ! representation basis of the symmetry group at each atomic site
-if (lmirep) call genlmirep(lmax,lmmax,elm,ulm)
+if (lmirep) call genlmirep(lmaxdos,lmmax,elm,ulm)
 ! compute the SU(2) operator used for rotating the density matrix to the
 ! desired spin-quantisation axis
 v1(:)=sqados(:)
@@ -157,8 +156,8 @@ do ik=1,nkptnr
     do ia=1,natoms(is)
       ias=idxas(ia,is)
 ! generate the density matrix
-      call gendmat(.false.,.false.,0,lmax,ias,ngk(:,ik),apwalm,evecfv,evecsv, &
-       lmmax,dmat)
+      call gendmat(.false.,.false.,0,lmaxdos,ias,ngk(:,ik),apwalm,evecfv, &
+       evecsv,lmmax,dmat)
 ! convert (l,m) part to an irreducible representation if required
       if (lmirep) then
         do ist=1,nstsv
@@ -213,24 +212,24 @@ do ik=1,nkptnr
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-allocate(w(nwdos))
+allocate(w(nwplot))
 allocate(e(nstsv,nkptnr,nspinor))
-allocate(dt(nwdos,nsd))
-allocate(dp(nwdos,l0:l1,nsd))
+allocate(dt(nwplot,nsd))
+allocate(dp(nwplot,l0:l1,nsd))
 ! generate energy grid
-dw=(wdos(2)-wdos(1))/dble(nwdos)
-do iw=1,nwdos
-  w(iw)=dw*dble(iw-1)+wdos(1)
+dw=(wplot(2)-wplot(1))/dble(nwplot)
+do iw=1,nwplot
+  w(iw)=dw*dble(iw-1)+wplot(1)
 end do
-! number of subdivisions used for interpolation
-nsk(:)=max(ngrdos/ngridk(:),1)
+! number of subdivisions used for interpolation in the Brillouin zone
+nsk(:)=max(ngrkf/ngridk(:),1)
 ! sign for spin in DOS
 sps(1)=1.d0
 sps(2)=-1.d0
 !-------------------!
 !     total DOS     !
 !-------------------!
-allocate(f(nstsv,nkptnr),g(nwdos))
+allocate(f(nstsv,nkptnr),g(nwplot))
 dt(:,:)=0.d0
 do ispn=1,nspinor
   do ik=1,nkptnr
@@ -248,7 +247,8 @@ do ispn=1,nspinor
     end do
   end do
 ! integrate over the Brillouin zone
-  call brzint(nsmdos,ngridk,nsk,ikmapnr,nwdos,wdos,nstsv,nstsv,e(:,:,ispn),f,g)
+  call brzint(nswplot,ngridk,nsk,ikmapnr,nwplot,wplot,nstsv,nstsv,e(:,:,ispn), &
+   f,g)
   if (dosssum) then
     dt(:,1)=dt(:,1)+g(:)
   else
@@ -259,7 +259,7 @@ deallocate(f,g)
 ! output to file
 open(50,file='TDOS.OUT',action='WRITE',form='FORMATTED')
 do ispn=1,nsd
-  do iw=1,nwdos
+  do iw=1,nwplot
     write(50,'(2G18.10)') w(iw),dt(iw,ispn)*sps(ispn)
   end do
   write(50,'("     ")')
@@ -277,7 +277,7 @@ do is=1,nspecies
 !$OMP PRIVATE(f,g,l,ik,jk,ist)
 !$OMP DO
       do lm=1,lmmax
-        allocate(f(nstsv,nkptnr),g(nwdos))
+        allocate(f(nstsv,nkptnr),g(nwplot))
         l=idxil(lm)
         do ik=1,nkptnr
           jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
@@ -290,7 +290,7 @@ do is=1,nspecies
             end if
           end do
         end do
-        call brzint(nsmdos,ngridk,nsk,ikmapnr,nwdos,wdos,nstsv,nstsv, &
+        call brzint(nswplot,ngridk,nsk,ikmapnr,nwplot,wplot,nstsv,nstsv, &
          e(:,:,ispn),f,g)
         if (dosmsum) then
           if (dosssum) then
@@ -321,7 +321,7 @@ do is=1,nspecies
     open(50,file=trim(fname),action='WRITE',form='FORMATTED')
     do ispn=1,nsd
       do l=l0,l1
-        do iw=1,nwdos
+        do iw=1,nwplot
           write(50,'(2G18.10)') w(iw),dp(iw,l,ispn)*sps(ispn)
         end do
         write(50,'("     ")')
@@ -341,7 +341,7 @@ if (lmirep) then
       write(50,*)
       write(50,'("Species : ",I4," (",A,"), atom : ",I4)') is, &
        trim(spsymb(is)),ia
-      do l=0,lmax
+      do l=0,lmaxdos
         do m=-l,l
           lm=idxlm(l,m)
           write(50,'(" l = ",I2,", m = ",I2,", lm= ",I3," : ",G18.10)') l,m, &
@@ -357,7 +357,7 @@ end if
 !--------------------------!
 open(50,file='IDOS.OUT',action='WRITE',form='FORMATTED')
 do ispn=1,nsd
-  do iw=1,nwdos
+  do iw=1,nwplot
     write(50,'(2G18.10)') w(iw),dt(iw,ispn)*sps(ispn)
   end do
   write(50,'("     ")')
@@ -393,7 +393,7 @@ write(*,'(" Fermi energy is at zero in plot")')
 write(*,*)
 write(*,'(" DOS units are states/Hartree/unit cell")')
 ! write the total DOS to test file
-call writetest(10,'total DOS',nv=nwdos*nsd,tol=2.d-2,rva=dt)
+call writetest(10,'total DOS',nv=nwplot*nsd,tol=2.d-2,rva=dt)
 deallocate(bc,sc,w,e,dt,dp)
 if (lmirep) deallocate(elm,ulm)
 return

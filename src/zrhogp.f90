@@ -11,7 +11,7 @@ real(8), intent(in) :: jlgpr(0:lmaxvr,nrcmtmax,nspecies)
 complex(8), intent(in) :: ylmgp(lmmaxvr)
 complex(8), intent(in) :: sfacgp(natmtot)
 complex(8), intent(in) :: zrhomt(lmmaxvr,nrcmtmax,natmtot)
-complex(8), intent(in) :: zrhoir(ngrtot)
+complex(8), intent(in) :: zrhoir(ngtot)
 complex(8), intent(out) :: zrho0
 ! local variables
 integer is,ia,ias
@@ -25,10 +25,10 @@ real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 !-----------------------------------!
 ! (note that the phase exp(ip.r) is implicit)
 zrho0=0.d0
-do ir=1,ngrtot
+do ir=1,ngtot
   zrho0=zrho0+cfunir(ir)*zrhoir(ir)
 end do
-zrho0=zrho0/dble(ngrtot)
+zrho0=zrho0/dble(ngtot)
 !---------------------------------!
 !     muffin-tin contribution     !
 !---------------------------------!
@@ -47,7 +47,7 @@ do is=1,nspecies
           lm=lm+1
           zsum2=zsum2+zrhomt(lm,ir,ias)*ylmgp(lm)
         end do
-        zsum1=zsum1+jlgpr(l,ir,is)*conjg(zil(l))*zsum2
+        zsum1=zsum1+jlgpr(l,ir,is)*zilc(l)*zsum2
       end do
       t1=rcmt(ir,is)**2
       fr1(ir)=dble(zsum1)*t1

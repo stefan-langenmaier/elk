@@ -11,16 +11,15 @@ subroutine olprad
 use modmain
 ! !DESCRIPTION:
 !   Calculates the radial overlap integrals of the APW and local-orbital basis
-!   functions. In other words, for spin $\sigma$ and atom $j$ of species $i$, it
-!   computes integrals of the form
-!   $$ o^{\sigma;ij}_{qp}=\int_0^{R_i}u^{\sigma;ij}_{q;l_p}(r)v^{\sigma;ij}_p(r)
-!    r^2dr $$
+!   functions. In other words, for atom $\alpha$, it computes integrals of the
+!   form
+!   $$ o^{\alpha}_{qp}=\int_0^{R_i}u^{\alpha}_{q;l_p}(r)v^{\alpha}_p(r)r^2dr $$
 !   and
-!   $$ o^{\sigma;ij}_{pp'}=\int_0^{R_i}v^{\sigma;ij}_p(r)v^{\sigma;ij}_{p'}(r)
-!    r^2dr,\quad l_p=l_{p'} $$
-!   where $u^{\sigma;ij}_{q;l}$ is the $q$th APW radial function for angular
-!   momentum $l$; and $v^{\sigma;ij}_p$ is the $p$th local-orbital radial
-!   function and has angular momentum $l_p$.
+!   $$ o^{\alpha}_{pp'}=\int_0^{R_i}v^{\alpha}_p(r)v^{\alpha}_{p'}(r)r^2dr,
+!    \quad l_p=l_{p'} $$
+!   where $u^{\alpha}_{q;l}$ is the $q$th APW radial function for angular
+!   momentum $l$; and $v^{\alpha}_p$ is the $p$th local-orbital radial function
+!   and has angular momentum $l_p$.
 !
 ! !REVISION HISTORY:
 !   Created November 2003 (JKD)

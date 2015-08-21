@@ -9,6 +9,7 @@
 subroutine sfacmag
 ! !USES:
 use modmain
+use modpw
 ! !DESCRIPTION:
 !   Outputs magnetic structure factors, i.e. the Fourier transform coefficients
 !   of each component $j$ of magnetization ${\bf m}({\bf r})$,
@@ -24,8 +25,8 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer idm,ih
-real(8) v(3),h,a,b,r
+integer idm,ih,iv(3)
+real(8) v(3),a,b,r
 character(256) fname
 ! allocatable arrays
 complex(8), allocatable :: zmagh(:)
@@ -35,7 +36,7 @@ call sfacinit
 ! generate the magnetic structure factors
 allocate(zmagh(nhvec))
 do idm=1,ndmag
-  call zftrf(magmt(:,:,:,idm),magir(:,idm),zmagh)
+  call zftrf(nhvec,ivh,vhc,magmt(:,:,:,idm),magir(:,idm),zmagh)
   write(fname,'("SFACMAG_",I1.1,".OUT")') idm
   open(50,file=trim(fname),action='WRITE',form='FORMATTED')
   write(50,*)
@@ -48,10 +49,6 @@ do idm=1,ndmag
    &            Im(F)           |F|")')
   write(50,*)
   do ih=1,nhvec
-    v(:)=dble(ivh(1,ih))*bvec(:,1) &
-        +dble(ivh(2,ih))*bvec(:,2) &
-        +dble(ivh(3,ih))*bvec(:,3)
-    h=sqrt(v(1)**2+v(2)**2+v(3)**2)
 ! apply transformation matrix
     v(:)=vhmat(:,1)*dble(ivh(1,ih)) &
         +vhmat(:,2)*dble(ivh(2,ih)) &
@@ -61,14 +58,15 @@ do idm=1,ndmag
     a=dble(zmagh(ih))*omega
     b=-aimag(zmagh(ih))*omega
     r=abs(zmagh(ih))*omega
-    if ((abs(v(1)-nint(v(1))).le.epslat).and. &
-        (abs(v(2)-nint(v(2))).le.epslat).and. &
-        (abs(v(3)-nint(v(3))).le.epslat)) then
+    iv(:)=nint(v(:))
+    if ((abs(v(1)-iv(1)).le.epslat).and. &
+        (abs(v(2)-iv(2)).le.epslat).and. &
+        (abs(v(3)-iv(3)).le.epslat)) then
 ! integer hkl
-      write(50,'(4I7,4G16.8)') int(v(:)),mulh(ih),h,a,b,r
+      write(50,'(4I7,4G16.8)') iv(:),mulh(ih),hc(ih),a,b,r
     else
 ! non-integer hkl
-      write(50,'(3F7.2,I7,4G16.8)') v(:),mulh(ih),h,a,b,r
+      write(50,'(3F7.2,I7,4G16.8)') v(:),mulh(ih),hc(ih),a,b,r
     end if
   end do
   close(50)

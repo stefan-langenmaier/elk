@@ -5,6 +5,8 @@ tasks
   121
   180
   185
+  186
+  187
   500
 
 test
@@ -34,7 +36,7 @@ swidth
 nempty
   8
 
-dos
+wplot
   50 100 2
   0.0 0.1
 

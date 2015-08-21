@@ -41,7 +41,7 @@ GETSYS ()
     read F77_OPTS
   elif [ "$SYS" = 1 ] ; then
     F90="ifort"
-    F90_OPTS="-O3 -ip -unroll -no-prec-div -parallel -openmp"
+    F90_OPTS="-O3 -ip -unroll -no-prec-div -openmp"
     F77=$F90
     F77_OPTS=$F90_OPTS
   elif [ "$SYS" = 2 ] ; then

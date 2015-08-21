@@ -54,6 +54,9 @@ do is=1,nspecies
     write(*,*)
     stop
   end if
+! multiply nrmt by the scale factor
+  nrmt(is)=nrmt(is)*nrmtscf
+  sprmin(is)=sprmin(is)/dble(nrmtscf)
   read(50,*) spnst(is)
   if ((spnst(is).le.0).or.(spnst(is).gt.maxspst)) then
     write(*,*)
@@ -257,6 +260,8 @@ do is=1,nspecies
   end do
   close(50)
 end do
+! add conduction state local-orbitals if required
+call addlorbcnd
 return
 end subroutine
 

@@ -5,16 +5,17 @@
 
 subroutine writewfpw
 use modmain
+use modpw
 use modmpi
 implicit none
 ! local variables
 integer ik,recl
-complex(8) wfpwh
 ! allocatable arrays
 complex(8), allocatable :: wfpw(:,:,:)
 ! initialise global variables
 call init0
 call init1
+call init4
 ! read density and potentials from file
 call readstate
 ! find the new linearisation energies
@@ -29,10 +30,10 @@ if (mp_mpi) then
   close(50,status='DELETE')
 end if
 ! synchronise MPI processes
-call mpi_barrier(mpi_comm_world,ierror)
+call mpi_barrier(mpi_comm_kpt,ierror)
 ! determine the record length and open WFPW.OUT
-allocate(wfpw(ngkmax,nspinor,nstsv))
-inquire(iolength=recl) vkl(:,1),ngkmax,nspinor,nstsv,wfpw
+allocate(wfpw(nhkmax,nspinor,nstsv))
+inquire(iolength=recl) vkl(:,1),nhkmax,nspinor,nstsv,wfpw
 deallocate(wfpw)
 open(50,file='WFPW.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  recl=recl)
@@ -42,15 +43,16 @@ open(50,file='WFPW.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
 do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  allocate(wfpw(ngkmax,nspinor,nstsv))
+  allocate(wfpw(nhkmax,nspinor,nstsv))
 !$OMP CRITICAL
   write(*,'("Info(writewfpw): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL
 ! generate the plane wave wavefunctions
-  call genwfpw(.false.,vkl(:,ik),ngk(1,ik),igkig(:,1,ik),vgkl(:,:,1,ik), &
-   gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),wfpw,wfpwh)
+  call genwfpw(vkl(:,ik),ngk(:,ik),igkig(:,:,ik),vgkl(:,:,:,ik), &
+   vgkc(:,:,:,ik),gkc(:,:,ik),tpgkc(:,:,:,ik),sfacgk(:,:,:,ik),nhk(:,ik), &
+   vhkc(:,:,:,ik),hkc(:,:,ik),tphkc(:,:,:,ik),sfachk(:,:,:,ik),wfpw)
 !$OMP CRITICAL
-  write(50,rec=ik) vkl(:,ik),ngkmax,nspinor,nstsv,wfpw
+  write(50,rec=ik) vkl(:,ik),nhkmax,nspinor,nstsv,wfpw
 !$OMP END CRITICAL
   deallocate(wfpw)
 end do
@@ -58,10 +60,11 @@ end do
 !$OMP END PARALLEL
 close(50)
 ! synchronise MPI processes
-call mpi_barrier(mpi_comm_world,ierror)
+call mpi_barrier(mpi_comm_kpt,ierror)
 if (mp_mpi) then
   write(*,*)
   write(*,'("Info(writewfpw): plane wave wavefunctions written to WFPW.OUT")')
+  write(*,'(" for all H+k-vectors up to |H+k| < hkmax")')
 end if
 return
 end subroutine

@@ -6,17 +6,17 @@
 !BOP
 ! !ROUTINE: mixpack
 ! !INTERFACE:
-subroutine mixpack(tpack,n,nu)
+subroutine mixpack(tpack,n,v)
 ! !USES:
 use modmain
 use modldapu
 ! !INPUT/OUTPUT PARAMETERS:
 !   tpack : .true. for packing, .false. for unpacking (in,logical)
 !   n     : total number of real values stored (out,integer)
-!   nu    : packed potential (inout,real(*))
+!   v     : packed potential (inout,real(*))
 ! !DESCRIPTION:
-!   Packs/unpacks the muffin-tin and interstitial parts of the effective
-!   potential and magnetic field into/from the single array {\tt nu}. This array
+!   Packs/unpacks the muffin-tin and interstitial parts of the Kohn-Sham
+!   potential and magnetic field into/from the single array {\tt v}. This array
 !   can then be passed directly to the mixing routine. See routine {\tt rfpack}.
 !
 ! !REVISION HISTORY:
@@ -27,14 +27,14 @@ implicit none
 ! arguments
 logical, intent(in) :: tpack
 integer, intent(out) :: n
-real(8), intent(inout) :: nu(*)
+real(8), intent(inout) :: v(*)
 ! local variables
 integer idm,ias,lm1,lm2
 integer ispn,jspn
 n=0
-call rfpack(tpack,n,1,veffmt,veffir,nu)
+call rfpack(tpack,n,nrmt,nrmtmax,vsmt,vsir,v)
 do idm=1,ndmag
-  call rfpack(tpack,n,1,bxcmt(:,:,:,idm),bxcir(:,idm),nu)
+  call rfpack(tpack,n,nrcmt,nrcmtmax,bsmt(:,:,:,idm),bsir(:,idm),v)
 end do
 ! pack the LDA+U potential if required
 if (ldapu.ne.0) then
@@ -45,11 +45,11 @@ if (ldapu.ne.0) then
           do lm2=1,lmmaxlu
             n=n+1
             if (tpack) then
-              nu(n)=dble(vmatlu(lm1,lm2,ispn,jspn,ias))
+              v(n)=dble(vmatlu(lm1,lm2,ispn,jspn,ias))
               n=n+1
-              nu(n)=aimag(vmatlu(lm1,lm2,ispn,jspn,ias))
+              v(n)=aimag(vmatlu(lm1,lm2,ispn,jspn,ias))
             else
-              vmatlu(lm1,lm2,ispn,jspn,ias)=cmplx(nu(n),nu(n+1),8)
+              vmatlu(lm1,lm2,ispn,jspn,ias)=cmplx(v(n),v(n+1),8)
               n=n+1
             end if
           end do

@@ -12,7 +12,7 @@ use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   lrstp : radial step length (in,integer)
 !   rfmt  : real muffin-tin function (inout,real(lmmaxvr,nrmtmax,natmtot))
-!   rfir  : real intersitial function (inout,real(ngrtot))
+!   rfir  : real intersitial function (inout,real(ngtot))
 ! !DESCRIPTION:
 !   Symmetrises a real scalar function defined over the entire unit cell using
 !   the full set of crystal symmetries. In the muffin-tin of a particular atom
@@ -20,7 +20,7 @@ use modmain
 !   averaged. The interstitial part of the function is first Fourier transformed
 !   to $G$-space, and then averaged over each symmetry by rotating the Fourier
 !   coefficients and multiplying them by a phase factor corresponding to the
-!   symmetry translation. See routines {\tt symrfmt} and {\tt symrfir}.
+!   symmetry translation.
 !
 ! !REVISION HISTORY:
 !   Created May 2007 (JKD)
@@ -30,9 +30,10 @@ implicit none
 ! arguments
 integer, intent(in) :: lrstp
 real(8), intent(inout) :: rfmt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(inout) :: rfir(ngrtot)
+real(8), intent(inout) :: rfir(ngtot)
 ! local variables
-integer is,ia,ja,ias,jas,ir
+integer is,ia,ja,ias,jas
+integer nrc,ld,ir
 integer isym,lspl,ilspl
 real(8) t1
 ! automatic arrays
@@ -46,6 +47,8 @@ allocate(rfmt1(lmmaxvr,nrmtmax,natmmax))
 allocate(rfmt2(lmmaxvr,nrmtmax))
 t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
+  ld=lmmaxvr*lrstp
+  nrc=(nrmt(is)-1)/lrstp+1
 ! make a copy of the input function
   do ia=1,natoms(is)
     ias=idxas(ia,is)
@@ -68,7 +71,7 @@ do is=1,nspecies
 ! equivalent atom index (symmetry rotates atom ja into atom ia)
       ja=ieqatom(ia,is,isym)
 ! apply the rotation to the muffin-tin function
-      call symrfmt(lrstp,is,symlatc(:,:,lspl),rfmt1(:,:,ja),rfmt2)
+      call rotrflm(symlatc(:,:,lspl),lmaxvr,nrc,ld,rfmt1(:,:,ja),rfmt2)
 ! accumulate in original function array
       do ir=1,nrmt(is),lrstp
         rfmt(:,ir,ias)=rfmt(:,ir,ias)+rfmt2(:,ir)
@@ -88,7 +91,8 @@ do is=1,nspecies
 ! inverse symmetry (which rotates atom ia into atom ja)
         ilspl=isymlat(lspl)
 ! rotate symmetrised function into equivalent muffin-tin
-        call symrfmt(lrstp,is,symlatc(:,:,ilspl),rfmt(:,:,ias),rfmt(:,:,jas))
+        call rotrflm(symlatc(:,:,ilspl),lmaxvr,nrc,ld,rfmt(:,:,ias), &
+         rfmt(:,:,jas))
         done(ja)=.true.
       end if
     end do

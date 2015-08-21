@@ -33,14 +33,14 @@ nr=nrmt(is)
 call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rhomt(:,:,ias),rfmt)
 call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt,lmmaxvr,0.d0, &
  g2rho,lmmaxvr)
-! compute grad rho and (grad rho)^2 in spherical coordinates
+! compute grad rho in spherical coordinates
 call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rhomt(:,:,ias),grfmt)
-grho2(:,1:nr)=0.d0
 do i=1,3
   call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
    lmmaxvr,0.d0,gvrho(:,:,i),lmmaxvr)
-  grho2(:,1:nr)=grho2(:,1:nr)+gvrho(:,1:nr,i)**2
 end do
+! (grad rho)^2
+grho2(:,1:nr)=gvrho(:,1:nr,1)**2+gvrho(:,1:nr,2)**2+gvrho(:,1:nr,3)**2
 deallocate(rfmt,grfmt)
 return
 end subroutine

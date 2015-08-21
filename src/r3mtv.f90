@@ -20,8 +20,7 @@ subroutine r3mtv(a,x,y)
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: a(3,3)
-real(8), intent(in) :: x(3)
+real(8), intent(in) :: a(3,3),x(3)
 real(8), intent(out) :: y(3)
 y(1)=a(1,1)*x(1)+a(2,1)*x(2)+a(3,1)*x(3)
 y(2)=a(1,2)*x(1)+a(2,2)*x(2)+a(3,2)*x(3)

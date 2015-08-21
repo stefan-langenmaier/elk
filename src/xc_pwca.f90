@@ -71,7 +71,7 @@ do i=1,n
   rup=rhoup(i); rdn=rhodn(i)
 ! total density
   r=rup+rdn
-  if ((rup.lt.0.d0).or.(rdn.lt.0.d0).or.(r.lt.1.d-12)) then
+  if ((rup.lt.0.d0).or.(rdn.lt.0.d0).or.(r.lt.1.d-20)) then
     ex(i)=0.d0
     ec(i)=0.d0
     vxup(i)=0.d0

@@ -53,7 +53,7 @@ write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
 write(fnum,*)
 select case(task)
-case(0,1,8,200)
+case(0,1,8,200,201,350,351)
   if (trdstate) then
     write(fnum,'("+------------------------------------------+")')
     write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
@@ -82,6 +82,7 @@ case(300)
   write(fnum,'("| Reduced density matrix functional theory run |")')
   write(fnum,'("+----------------------------------------------+")')
 case default
+  write(*,*)
   write(*,'("Error(writeinfo): task not defined : ",I8)') task
   write(*,*)
   stop
@@ -216,11 +217,11 @@ end if
 write(fnum,'("Maximum |G+k| for APW functions       : ",G18.10)') gkmax
 write(fnum,'("Maximum (1/2)|G+k|^2                  : ",G18.10)') 0.5d0*gkmax**2
 write(fnum,'("Maximum |G| for potential and density : ",G18.10)') gmaxvr
-write(fnum,'("Constant for pseudocharge density : ",I4)') lnpsd
+write(fnum,'("Constant for pseudocharge density : ",I4)') npsd
 write(fnum,'("Radial integration step length : ",I4)') lradstp
 write(fnum,*)
-write(fnum,'("G-vector grid sizes : ",3I6)') ngrid(1),ngrid(2),ngrid(3)
-write(fnum,'("Total number of G-vectors : ",I8)') ngvec
+write(fnum,'("G-vector grid sizes : ",3I6)') ngridg(:)
+write(fnum,'("Number of G-vectors : ",I8)') ngvec
 write(fnum,*)
 write(fnum,'("Maximum angular momentum used for")')
 write(fnum,'(" APW functions                      : ",I4)') lmaxapw
@@ -250,7 +251,7 @@ write(fnum,*)
 if (task.eq.5) then
   write(fnum,'("Hartree-Fock calculation using Kohn-Sham states")')
   if (hybrid) then
-    write(fnum,'(" hybrid functional, mixing parameter : ",G18.10)') hybmix
+    write(fnum,'(" hybrid functional, coefficient : ",G18.10)') hybridc
   end if
 end if
 if (xctype(1).lt.0) then

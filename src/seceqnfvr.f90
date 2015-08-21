@@ -47,7 +47,7 @@ integer ilo,s2,s3
 integer lwork,info
 real(8) v(3),vl,vu,t1
 real(8) ts0,ts1
-complex(8) h1,h2,o1,o2,zt1
+complex(8) h1,h2,o1,o2,z1
 ! allocatable arrays
 logical, allocatable :: tr(:),tp(:)
 integer, allocatable :: idx(:),s(:),map(:,:)
@@ -70,7 +70,7 @@ do is=1,nspecies
 ! residual phase factor
     v(:)=atposc(:,ia,is)+atposc(:,ja,is)
     t1=0.5d0*dot_product(vpc(:),v(:))
-    zt1=cmplx(cos(t1),sin(t1),8)
+    z1=cmplx(cos(t1),sin(t1),8)
     do ilo=1,nlorb(is)
       l=lorbl(ilo,is)
       do m=-l,l
@@ -113,7 +113,7 @@ do is=1,nspecies
         end if
 ! phase factors if required
         if (abs(t1).gt.1.d-8) then
-          zp(i)=zt1
+          zp(i)=z1
           tp(i)=.true.
         end if
       end do
@@ -206,8 +206,8 @@ if (info.ne.0) then
     write(*,'(" The leading minor of the overlap matrix of order ",I8)') i
     write(*,'("  is not positive definite")')
     write(*,'(" Order of overlap matrix : ",I8)') nmatp
-    write(*,*)
   end if
+  write(*,*)
   stop
 end if
 evalfv(1:nstfv)=w(1:nstfv)

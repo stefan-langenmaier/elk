@@ -12,7 +12,7 @@ test
 maxscl
   2
 
-dos
+wplot
  50 100 4
  0.0 0.5
 

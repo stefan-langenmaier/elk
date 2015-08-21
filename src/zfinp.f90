@@ -17,9 +17,9 @@ use modmain
 !   zfmt2 : second complex function in spherical harmonics/coordinates for all
 !           muffin-tins (in,complex(lmmaxvr,nrcmtmax,natmtot))
 !   zfir1 : first complex interstitial function in real-space
-!           (in,complex(ngrtot))
+!           (in,complex(ngtot))
 !   zfir2 : second complex interstitial function in real-space
-!           (in,complex(ngrtot))
+!           (in,complex(ngtot))
 ! !DESCRIPTION:
 !   Calculates the inner product of two complex fuctions over the entire unit
 !   cell. The muffin-tin functions should be stored on the coarse radial grid
@@ -37,8 +37,7 @@ implicit none
 logical, intent(in) :: tsh
 complex(8), intent(in) :: zfmt1(lmmaxvr,nrcmtmax,natmtot)
 complex(8), intent(in) :: zfmt2(lmmaxvr,nrcmtmax,natmtot)
-complex(8), intent(in) :: zfir1(ngrtot)
-complex(8), intent(in) :: zfir2(ngrtot)
+complex(8), intent(in) :: zfir1(ngtot),zfir2(ngtot)
 ! local variables
 integer ias,is,ir
 ! external functions
@@ -46,14 +45,14 @@ complex(8) zfmtinp
 external zfmtinp
 zfinp=0.d0
 ! interstitial contribution
-do ir=1,ngrtot
+do ir=1,ngtot
   zfinp=zfinp+cfunir(ir)*conjg(zfir1(ir))*zfir2(ir)
 end do
-zfinp=zfinp*omega/dble(ngrtot)
+zfinp=zfinp*omega/dble(ngtot)
 ! muffin-tin contribution
 do ias=1,natmtot
   is=idxis(ias)
-  zfinp=zfinp+zfmtinp(tsh,lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,zfmt1(:,:,ias), &
+  zfinp=zfinp+zfmtinp(tsh,lmmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,zfmt1(:,:,ias), &
    zfmt2(:,:,ias))
 end do
 return

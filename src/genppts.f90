@@ -11,9 +11,9 @@ subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipmap, &
 ! !INPUT/OUTPUT PARAMETERS:
 !   tfbz    : .true. if vpl and vpc should be mapped to the first Brillouin zone
 !             (in,logical)
-!   nsym    : number of point group symmetries used for reduction, set to 0 for
+!   nsym    : number of point group symmetries used for reduction, set to 1 for
 !             no reduction (in,integer)
-!   sym     : symmetry matrices (in,integer(3,3,*))
+!   sym     : symmetry matrices in lattice coordinates (in,integer(3,3,*))
 !   ngridp  : p-point grid sizes (in,integer(3))
 !   npptnr  : number of non-reduced p-points: ngridp(1)*ngridp(2)*ngridp(3)
 !             (in,integer)

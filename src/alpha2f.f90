@@ -18,8 +18,8 @@ real(8) v(3),t1
 ! allocatable arrays
 real(8), allocatable :: wq(:,:),wp(:),gq(:,:),a2fp(:)
 real(8), allocatable :: w(:),a2f(:),rwork(:)
-complex(8), allocatable :: dynq(:,:,:),dynp(:,:),dynr(:,:,:)
-complex(8), allocatable :: ev(:,:),b(:,:)
+complex(8), allocatable :: dynq(:,:,:),dynr(:,:,:)
+complex(8), allocatable :: dynp(:,:),ev(:,:),b(:,:)
 complex(8), allocatable :: a2fmq(:,:,:),a2fmr(:,:,:),a2fmp(:,:)
 complex(8), allocatable :: work(:)
 ! initialise universal variables
@@ -28,12 +28,13 @@ call init1
 call init2
 nb=3*natmtot
 allocate(wq(nb,nqpt),wp(nb),gq(nb,nqpt),a2fp(nb))
-allocate(w(nwdos),a2f(nwdos),rwork(3*nb))
-allocate(dynq(nb,nb,nqpt),dynp(nb,nb))
-allocate(dynr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(w(nwplot),a2f(nwplot),rwork(3*nb))
+allocate(dynq(nb,nb,nqpt))
+allocate(dynr(nb,nb,nqptnr))
+allocate(dynp(nb,nb))
 allocate(ev(nb,nb),b(nb,nb))
 allocate(a2fmq(nb,nb,nqpt))
-allocate(a2fmr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(a2fmr(nb,nb,nqptnr))
 allocate(a2fmp(nb,nb))
 lwork=2*nb
 allocate(work(lwork))
@@ -83,18 +84,18 @@ wmax=wmax+(wmax-wmin)*0.1d0
 wmin=wmin-(wmax-wmin)*0.1d0
 wd=wmax-wmin
 if (wd.lt.1.d-8) wd=1.d0
-dw=wd/dble(nwdos)
+dw=wd/dble(nwplot)
 ! generate energy grid
-do iw=1,nwdos
+do iw=1,nwplot
   w(iw)=dw*dble(iw-1)+wmin
 end do
 a2f(:)=0.d0
-do i1=0,ngrdos-1
-  v(1)=dble(i1)/dble(ngrdos)
-  do i2=0,ngrdos-1
-    v(2)=dble(i2)/dble(ngrdos)
-    do i3=0,ngrdos-1
-      v(3)=dble(i3)/dble(ngrdos)
+do i1=0,ngrkf-1
+  v(1)=dble(i1)/dble(ngrkf)
+  do i2=0,ngrkf-1
+    v(2)=dble(i2)/dble(ngrkf)
+    do i3=0,ngrkf-1
+      v(3)=dble(i3)/dble(ngrkf)
 ! compute the dynamical matrix at this particular q-point
       call dynrtoq(v,dynr,dynp)
 ! find the phonon frequencies
@@ -108,14 +109,14 @@ do i1=0,ngrdos-1
       do i=1,nb
         t1=(wp(i)-wmin)/dw+1.d0
         iw=nint(t1)
-        if ((iw.ge.1).and.(iw.le.nwdos)) then
+        if ((iw.ge.1).and.(iw.le.nwplot)) then
           a2f(iw)=a2f(iw)+a2fp(i)
         end if
       end do
     end do
   end do
 end do
-t1=twopi*(fermidos/2.d0)*dw*dble(ngrdos)**3
+t1=twopi*(fermidos/2.d0)*dw*dble(ngrkf)**3
 if (t1.gt.1.d-8) then
   t1=1.d0/t1
 else
@@ -123,10 +124,10 @@ else
 end if
 a2f(:)=t1*a2f(:)
 ! smooth Eliashberg function if required
-if (nsmdos.gt.0) call fsmooth(nsmdos,nwdos,1,a2f)
+if (nswplot.gt.0) call fsmooth(nswplot,nwplot,1,a2f)
 ! write Eliashberg function to file
 open(50,file='ALPHA2F.OUT',action='WRITE',form='FORMATTED')
-do iw=1,nwdos
+do iw=1,nwplot
   write(50,'(2G18.10)') w(iw),a2f(iw)
 end do
 close(50)
@@ -160,7 +161,7 @@ write(*,'(" written to MCMILLAN.OUT")')
 call writetest(251,'Electron-phonon coupling constant, lambda',tol=5.d-2, &
  rv=lambda)
 deallocate(wq,wp,gq,a2fp,w,a2f)
-deallocate(rwork,dynq,dynp,dynr,ev,b)
+deallocate(rwork,dynq,dynr,dynp,ev,b)
 deallocate(a2fmq,a2fmr,a2fmp,work)
 return
 end subroutine

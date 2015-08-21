@@ -30,13 +30,12 @@ write(50,'("PRIMCOORD")')
 write(50,'(2I8)') natmtot,1
 do is=1,nspecies
   do ia=1,natoms(is)
-    call r3mv(avec,atposl(:,ia,is),v1)
-    write(50,'(A,3G18.10)') trim(spsymb(is)),v1(:)*au_to_ang
+    write(50,'(A,3G18.10)') trim(spsymb(is)),atposc(:,ia,is)*au_to_ang
   end do
 end do
 close(50)
 write(*,*)
-write(*,'("Info(writexsf):")')
+write(*,'("Info(geomplot):")')
 write(*,'(" XCrysDen file written to crystal.xsf")')
 !-----------------------------------------------!
 !     write the V_Sim file to crystal.ascii     !
@@ -73,7 +72,7 @@ do is=1,nspecies
 end do
 close(50)
 write(*,*)
-write(*,'("Info(writevsim):")')
+write(*,'("Info(geomplot):")')
 write(*,'(" V_Sim file written to crystal.ascii")')
 return
 end subroutine

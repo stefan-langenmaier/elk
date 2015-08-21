@@ -39,9 +39,10 @@ else
     end if
   end do
 end if
-! OEP, Hartree-Fock, RPA epsilon, BSE or RDMFT
+! OEP, Hartree-Fock, RPA epsilon, TDDFT, BSE or RDMFT
 if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.105).or.(task.eq.180).or. &
- (task.eq.185).or.(task.eq.188).or.(task.eq.300)) then
+ (task.eq.185).or.(task.eq.188).or.(task.eq.300).or.(task.eq.320).or. &
+ (task.eq.330)) then
   ngridq(:)=ngridk(:)
 end if
 ! allocate the q-point arrays
@@ -61,8 +62,8 @@ allocate(wqpt(nqptnr))
 ! setup the q-point box (offset should always be zero)
 boxl(:,:)=0.d0
 boxl(1,2)=1.d0; boxl(2,3)=1.d0; boxl(3,4)=1.d0;
-! generate the q-point set, note that the vectors vql and vqc are mapped to the
-! first Brillouin zone
+! generate the q-point set
+! (note that the vectors vql and vqc are in the first Brillouin zone)
 call genppts(.true.,nsymqpt,symqpt,ngridq,nqptnr,epslat,bvec,boxl,nqpt,iqmap, &
  iqmapnr,ivq,vql,vqc,wqpt,wqptnr)
 ! write the q-points to QPOINTS.OUT
@@ -81,7 +82,8 @@ stop
 !----------------------------------------------------!
 !     OEP, Hartree-Fock, RDMFT and BSE variables     !
 !----------------------------------------------------!
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.185).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.185).or.(task.eq.300).or. &
+ (task.eq.330)) then
 ! determine the 1/q^2 integral weights if required
   call genwiq2
 ! output the 1/q^2 integrals to WIQ2.OUT
@@ -110,14 +112,14 @@ if (xctype(1).lt.0) then
   allocate(zvxmt(lmmaxvr,nrcmtmax,natmtot))
   zvxmt(:,:,:)=0.d0
   if (allocated(zvxir)) deallocate(zvxir)
-  allocate(zvxir(ngrtot))
+  allocate(zvxir(ngtot))
   zvxir(:)=0.d0
   if (spinpol) then
     if (allocated(zbxmt)) deallocate(zbxmt)
     allocate(zbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
     zbxmt(:,:,:,:)=0.d0
     if (allocated(zbxir)) deallocate(zbxir)
-    allocate(zbxir(ngrtot,ndmag))
+    allocate(zbxir(ngtot,ndmag))
     zbxir(:,:)=0.d0
   end if
 end if

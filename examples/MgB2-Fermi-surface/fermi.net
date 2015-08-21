@@ -1,7 +1,7 @@
 //
-// time: Fri Jun  6 19:22:54 2008
+// time: Mon Sep  3 18:12:53 2012
 //
-// version: 3.2.0 (format), 4.4.0 (DX)
+// version: 3.2.0 (format), 4.4.4 (DX)
 //
 //
 // MODULE main
@@ -26,7 +26,7 @@ main_Import_1_out_1 =
     ) [instance: 1, cache: 1];
     // 
     // node Select[1]: x = 240, y = 119, inputs = 3, label = Select
-    // input[2]: defaulting = 0, visible = 1, type = 1, value = 1
+    // input[2]: defaulting = 0, visible = 1, type = 1, value = 0
     //
 main_Select_1_out_1 = 
     Select(
@@ -61,7 +61,7 @@ main_Color_1_out_1 =
     ) [instance: 1, cache: 1];
     // 
     // node Select[2]: x = 319, y = 120, inputs = 3, label = Select
-    // input[2]: defaulting = 0, visible = 1, type = 1, value = 2
+    // input[2]: defaulting = 0, visible = 1, type = 1, value = 1
     //
 main_Select_2_out_1 = 
     Select(
@@ -95,8 +95,8 @@ main_Color_2_out_1 =
     main_Color_2_in_5
     ) [instance: 2, cache: 1];
     // 
-    // node Select[3]: x = 406, y = 122, inputs = 3, label = Select
-    // input[2]: defaulting = 0, visible = 1, type = 1, value = 3
+    // node Select[3]: x = 409, y = 122, inputs = 3, label = Select
+    // input[2]: defaulting = 0, visible = 1, type = 1, value = 2
     //
 main_Select_3_out_1 = 
     Select(
@@ -169,7 +169,7 @@ main_Render_1_out_1 =
     // 
     // node Display[1]: x = 451, y = 520, inputs = 8, label = Display
     // depth: value = 24
-    // window: position = (0.0086,0.0234), size = 0.6359x0.6270
+    // window: position = (0.0089,0.0231), size = 0.4240x0.5944, screen = 0
     //
 main_Display_1_out_1[cache: 2] = 
     Display(
@@ -191,7 +191,7 @@ main_Import_1_in_4 = NULL;
 main_Import_1_in_5 = NULL;
 main_Import_1_in_6 = NULL;
 main_Import_1_out_1 = NULL;
-main_Select_1_in_2 = 1;
+main_Select_1_in_2 = 0;
 main_Select_1_in_3 = NULL;
 main_Select_1_out_1 = NULL;
 main_Isosurface_1_in_2 = 0.0;
@@ -205,7 +205,7 @@ main_Color_1_in_3 = NULL;
 main_Color_1_in_4 = NULL;
 main_Color_1_in_5 = NULL;
 main_Color_1_out_1 = NULL;
-main_Select_2_in_2 = 2;
+main_Select_2_in_2 = 1;
 main_Select_2_in_3 = NULL;
 main_Select_2_out_1 = NULL;
 main_Isosurface_2_in_2 = 0.0;
@@ -219,7 +219,7 @@ main_Color_2_in_3 = NULL;
 main_Color_2_in_4 = NULL;
 main_Color_2_in_5 = NULL;
 main_Color_2_out_1 = NULL;
-main_Select_3_in_2 = 3;
+main_Select_3_in_2 = 2;
 main_Select_3_in_3 = NULL;
 main_Select_3_out_1 = NULL;
 main_Isosurface_3_in_2 = 0.0;
@@ -252,6 +252,6 @@ main_Display_1_in_5 = NULL;
 main_Display_1_in_6 = NULL;
 main_Display_1_in_7 = NULL;
 main_Display_1_in_8 = NULL;
-Executive("product version 4 4 0");
+Executive("product version 4 4 4");
 $sync
 main();

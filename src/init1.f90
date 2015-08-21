@@ -113,7 +113,8 @@ else if (task.eq.25) then
 else
 ! determine the k-point grid automatically from radkpt if required
   if (autokpt) then
-    ngridk(:)=int(radkpt/sqrt(avec(1,:)**2+avec(2,:)**2+avec(3,:)**2))+1
+    t1=radkpt/twopi
+    ngridk(:)=int(t1*sqrt(bvec(1,:)**2+bvec(2,:)**2+bvec(3,:)**2))+1
   end if
 ! setup the default k-point box
   kptboxl(:,1)=vkloff(:)/dble(ngridk(:))
@@ -153,13 +154,14 @@ call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
 !---------------------!
 !     G+k-vectors     !
 !---------------------!
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.10).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.10).or.(task.eq.205).or. &
+ (task.eq.300)) then
   nppt=nkptnr
 else
   nppt=nkpt
 end if
 ! find the maximum number of G+k-vectors
-call getngkmax
+call findngkmax(nkpt,vkc,nspnfv,vqcss,ngvec,vgc,gkmax,ngkmax)
 ! allocate the G+k-vector arrays
 if (allocated(ngk)) deallocate(ngk)
 allocate(ngk(nspnfv,nppt))
@@ -190,8 +192,8 @@ do ik=1,nppt
       end if
     end if
 ! generate the G+k-vectors
-    call gengpvec(vl,vc,ngk(ispn,ik),igkig(:,ispn,ik),vgkl(:,:,ispn,ik), &
-     vgkc(:,:,ispn,ik))
+    call gengkvec(ngvec,ivg,vgc,vl,vc,gkmax,ngkmax,ngk(ispn,ik), &
+     igkig(:,ispn,ik),vgkl(:,:,ispn,ik),vgkc(:,:,ispn,ik))
 ! generate the spherical coordinates of the G+k-vectors
     do igk=1,ngk(ispn,ik)
       call sphcrd(vgkc(:,igk,ispn,ik),gkc(igk,ispn,ik),tpgkc(:,igk,ispn,ik))
@@ -265,6 +267,8 @@ end if
 !------------------------------------!
 !     secular equation variables     !
 !------------------------------------!
+! total number of empty states (M. Meinert)
+nempty=nempty0*natmtot*nspinor
 ! number of first-variational states
 nstfv=int(chgval/2.d0)+nempty+1
 ! overlap and Hamiltonian matrix sizes

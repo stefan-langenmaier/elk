@@ -14,9 +14,6 @@ tseqit
 maxscl
   2
 
-tauseq
- 0.05
-
 molecule
  .true.
 

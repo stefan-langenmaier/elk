@@ -20,8 +20,7 @@ integer function gcd(x,y)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: x
-integer, intent(in) :: y
+integer, intent(in) :: x,y
 ! local variables
 integer a,b,c
 if (x.le.0) then

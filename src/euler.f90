@@ -42,6 +42,7 @@ subroutine euler(rot,ang)
 !
 ! !REVISION HISTORY:
 !   Created May 2003 (JKD)
+!   Fixed problem thanks to Frank Wagner, June 2013 (JKD)
 !EOP
 !BOC
 implicit none
@@ -49,9 +50,8 @@ implicit none
 real(8), intent(in) :: rot(3,3)
 real(8), intent(out) :: ang(3)
 ! local variables
-real(8), parameter :: eps=1.d-10
+real(8), parameter :: eps=1.d-8
 real(8), parameter :: pi=3.1415926535897932385d0
-real(8), parameter :: twopi=6.2831853071795864769d0
 real(8) det
 ! find the determinant
 det=rot(1,2)*rot(2,3)*rot(3,1)-rot(1,3)*rot(2,2)*rot(3,1) &
@@ -66,17 +66,14 @@ if ((det.lt.1.d0-eps).or.(det.gt.1.d0+eps)) then
 end if
 if ((abs(rot(3,1)).gt.eps).or.(abs(rot(3,2)).gt.eps)) then
   ang(1)=atan2(rot(3,2),rot(3,1))
-  if (ang(1).lt.0.d0) ang(1)=ang(1)+twopi
   if (abs(rot(3,1)).gt.abs(rot(3,2))) then
     ang(2)=atan2(rot(3,1)/cos(ang(1)),rot(3,3))
   else
     ang(2)=atan2(rot(3,2)/sin(ang(1)),rot(3,3))
   end if
   ang(3)=atan2(rot(2,3),-rot(1,3))
-  if (ang(3).lt.0.d0) ang(3)=ang(3)+twopi
 else
   ang(1)=atan2(rot(1,2),rot(1,1))
-  if (ang(1).lt.0.d0) ang(1)=ang(1)+twopi
   if (rot(3,3).gt.0.d0) then
     ang(2)=0.d0
     ang(3)=0.d0

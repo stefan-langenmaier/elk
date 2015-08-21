@@ -13,7 +13,7 @@ complex(8), intent(out) :: evecsv(nstsv,nstsv)
 integer isym,lspn,ik,ist,i
 integer recl,nstsv_
 real(8) vkl_(3),det,v(3),th,t1
-complex(8) su2(2,2),zt1,zt2
+complex(8) su2(2,2),z1,z2
 ! find the k-point number
 call findkpt(vpl,isym,ik)
 ! find the record length
@@ -41,22 +41,22 @@ if (nstsv.ne.nstsv_) then
   write(*,*)
   stop
 end if
+! if eigenvectors are spin-unpolarised return
+if (.not.spinpol) return
 ! index to global spin rotation in lattice point group
 lspn=lspnsymc(isym)
 ! if symmetry element is the identity return
 if (lspn.eq.1) return
-! if eigenvectors are spin-unpolarised return
-if (.not.spinpol) return
 ! find the SU(2) representation of the spin rotation matrix
 call rotaxang(epslat,symlatc(:,:,lspn),det,v,th)
 call axangsu2(v,th,su2)
 ! apply SU(2) matrix to second-variational states (active transformation)
 do i=1,nstsv
   do ist=1,nstfv
-    zt1=evecsv(ist,i)
-    zt2=evecsv(ist+nstfv,i)
-    evecsv(ist,i)=su2(1,1)*zt1+su2(1,2)*zt2
-    evecsv(ist+nstfv,i)=su2(2,1)*zt1+su2(2,2)*zt2
+    z1=evecsv(ist,i)
+    z2=evecsv(ist+nstfv,i)
+    evecsv(ist,i)=su2(1,1)*z1+su2(1,2)*z2
+    evecsv(ist+nstfv,i)=su2(2,1)*z1+su2(2,2)*z2
   end do
 end do
 return

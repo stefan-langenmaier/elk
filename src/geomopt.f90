@@ -36,6 +36,7 @@ open(73,file='GEOMETRY_OPT.OUT',action='WRITE',form='FORMATTED')
 open(74,file='IADIST_OPT.OUT',action='WRITE',form='FORMATTED')
 ! open FORCES_OPT.OUT
 open(75,file='FORCES_OPT.OUT',action='WRITE',form='FORMATTED')
+if (mp_mpi) write(*,*)
 do istp=1,maxgeostp
   if (mp_mpi) write(*,'("Info(geomopt): geometry optimisation step : ",I6)') &
    istp

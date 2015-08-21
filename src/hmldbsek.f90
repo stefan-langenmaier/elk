@@ -9,48 +9,44 @@ implicit none
 ! arguments
 integer, intent(in) :: ik2
 ! local variables
-integer ik1,iv(3),iq,ig,jg
-integer is,ias,irc,n
+integer ik1,iv(3),iq,igq0,ig,jg
 integer i1,i2,j1,j2,a1,a2,b1,b2
-integer ist1,ist2,jst1,jst2
-real(8) vl(3),vc(3),qc
-real(8) vgqc(3),gqc,t0,t1,t2
+integer ist1,ist2,jst1,jst2,n
+real(8) vl(3),vc(3),t0,t1,t2
 complex(8) zsum
 character(256) fname
 ! automatic arrays
-real(8) vcl(ngrpa)
+real(8) vcl(ngrf)
 ! allocatable arrays
+real(8), allocatable :: vgqc(:,:),gqc(:)
+complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
-complex(8), allocatable :: expqmt(:,:,:),expgqmt(:,:,:)
 complex(8), allocatable :: zrhomt(:,:,:,:),zrhoir(:,:)
 complex(8), allocatable :: zvv(:,:,:),zcc(:,:,:)
 complex(8), allocatable :: zvc(:,:,:),zcv(:,:,:)
 complex(8), allocatable :: epsinv(:,:,:)
-! external functions
-complex(8) zfinp
-external zfinp
+allocate(vgqc(3,ngvec),gqc(ngvec))
+allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
-allocate(expqmt(lmmaxvr,nrcmtmax,natmtot))
-allocate(expgqmt(lmmaxvr,nrcmtmax,natmtot))
+allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
 n=max(nvbse,ncbse)
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,n),zrhoir(ngrtot,n))
-allocate(zvv(ngrpa,nvbse,nvbse),zcc(ngrpa,ncbse,ncbse))
-allocate(epsinv(ngrpa,ngrpa,nwrpa))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,n),zrhoir(ngtot,n))
+allocate(zvv(ngrf,nvbse,nvbse),zcc(ngrf,ncbse,ncbse))
+allocate(epsinv(ngrf,ngrf,nwrf))
 if (bsefull) then
-  allocate(zvc(ngrpa,nvbse,ncbse))
-  allocate(zcv(ngrpa,ncbse,nvbse))
+  allocate(zvc(ngrf,nvbse,ncbse))
+  allocate(zcv(ngrf,ncbse,nvbse))
 end if
-! generate the wavefunctions at k-point ik2
-call genwfsvp(.false.,.false.,vkl(:,ik2),wfmt2,ngrtot,wfir2)
+! generate the wavefunctions for all states of k-point ik2
+call genwfsvp(.false.,.false.,.false.,vkl(:,ik2),wfmt2,ngtot,wfir2)
 ! filename for inverse dielectric function
 fname='EPSINV_RPA.OUT'
 ! begin loop over ik1
 do ik1=1,nkptnr
-! generate the wavefunctions at k-point ik1
-  call genwfsvp(.false.,.false.,vkl(:,ik1),wfmt1,ngrtot,wfir1)
+! generate the wavefunctions for all states of k-point ik1
+  call genwfsvp(.false.,.false.,.false.,vkl(:,ik1),wfmt1,ngtot,wfir1)
 ! determine equivalent q-vector in first Brillouin zone
   iv(:)=ivk(:,ik1)-ivk(:,ik2)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -58,104 +54,82 @@ do ik1=1,nkptnr
 ! q-vector in lattice and Cartesian coordinates
   vl(:)=vkl(:,ik1)-vkl(:,ik2)
   vc(:)=vkc(:,ik1)-vkc(:,ik2)
-! length of q-vector in FBZ
-  qc=sqrt(vqc(1,iq)**2+vqc(2,iq)**2+vqc(3,iq)**2)
-! generate the function exp(iq.r) in the muffin-tins
-  call genexpmt(vc,expqmt)
-! loop over G-vectors
-  do ig=1,ngrpa
-! G+q-vector in Cartesian coordinates
-    vgqc(:)=vgc(:,ig)+vc(:)
-! length of G+q-vector
-    gqc=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
+! generate the G+q-vectors and related quantities
+  call gengqrf(vc,igq0,vgqc,gqc,ylmgq,sfacgq)
 ! compute the regularised Coulomb interaction
-    t1=abs(gqc-qc)
-    if (t1.gt.epslat) then
-! G+q-vector is outside FBZ so use symmetrised 4 pi/(G+q)^2 interaction
-      vcl(ig)=sqrt(fourpi)/gqc
-    else
+  do ig=1,ngrf
+    if (ig.eq.igq0) then
 ! volume of small parallelepiped around q-point (see genwiq2)
       t2=omegabz*wkptnr
 ! average symmetrised interaction over volume
       vcl(ig)=sqrt(fourpi*wiq2(iq)/t2)
+    else
+! G+q-vector is outside FBZ so use symmetrised 4 pi/(G+q)^2 interaction
+      vcl(ig)=sqrt(fourpi)/gqc(ig)
     end if
-! compute the function exp(i(G+q).r) in the muffin-tins
-    do ias=1,natmtot
-      is=idxis(ias)
-      do irc=1,nrcmt(is)
-        expgqmt(:,irc,ias)=expgmt(:,irc,ias,ig)*expqmt(:,irc,ias)
-      end do
-    end do
-! compute the <v|exp(i(G+q).r)|v'> matrix elements
+  end do
+! compute the <v|exp(-i(G+q).r)|v'> matrix elements
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ist1,ist2,i2)
 !$OMP DO
-    do i1=1,nvbse
-      ist1=istbse(i1,ik1)
-      do i2=1,nvbse
-        ist2=istbse(i2,ik2)
-! note that the complex conjugate of the density is found because zfinp
-! conjugates the first function
-        call genzrho(.false.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
-         wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt(:,:,:,i1),zrhoir(:,i1))
-        zvv(ig,i1,i2)=zfinp(.false.,zrhomt(:,:,:,i1),expgqmt,zrhoir(:,i1), &
-         expgir(:,ig))
-      end do
+  do i1=1,nvbse
+    ist1=istbse(i1,ik1)
+    do i2=1,nvbse
+      ist2=istbse(i2,ik2)
+      call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
+       wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
+      call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zvv(:,i1,i2))
     end do
+  end do
 !$OMP END DO
 !$OMP END PARALLEL
-! compute the <c|exp(i(G+q).r)|c'> matrix elements
+! compute the <c|exp(-i(G+q).r)|c'> matrix elements
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(jst1,jst2,j2)
 !$OMP DO
-    do j1=1,ncbse
-      jst1=jstbse(j1,ik1)
-      do j2=1,ncbse
-        jst2=jstbse(j2,ik2)
-        call genzrho(.false.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,jst1), &
-         wfir2(:,:,jst2),wfir1(:,:,jst1),zrhomt(:,:,:,j1),zrhoir(:,j1))
-        zcc(ig,j1,j2)=zfinp(.false.,zrhomt(:,:,:,j1),expgqmt,zrhoir(:,j1), &
-         expgir(:,ig))
-      end do
+  do j1=1,ncbse
+    jst1=jstbse(j1,ik1)
+    do j2=1,ncbse
+      jst2=jstbse(j2,ik2)
+      call genzrho(.true.,.true.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,jst1), &
+       wfir2(:,:,jst2),wfir1(:,:,jst1),zrhomt,zrhoir)
+      call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zcc(:,j1,j2))
     end do
+  end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! matrix elements for full BSE kernel if required
-    if (bsefull) then
-! compute the <v|exp(i(G+q).r)|c'> matrix elements
+  if (bsefull) then
+! compute the <v|exp(-i(G+q).r)|c'> matrix elements
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ist1,jst2,j2)
 !$OMP DO
-      do i1=1,nvbse
-        ist1=istbse(i1,ik1)
-        do j2=1,ncbse
-          jst2=jstbse(j2,ik2)
-          call genzrho(.false.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,ist1), &
-           wfir2(:,:,jst2),wfir1(:,:,ist1),zrhomt(:,:,:,i1),zrhoir(:,i1))
-          zvc(ig,i1,j2)=zfinp(.false.,zrhomt(:,:,:,i1),expgqmt,zrhoir(:,i1), &
-           expgir(:,ig))
-        end do
+    do i1=1,nvbse
+      ist1=istbse(i1,ik1)
+      do j2=1,ncbse
+        jst2=jstbse(j2,ik2)
+        call genzrho(.true.,.true.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,ist1), &
+         wfir2(:,:,jst2),wfir1(:,:,ist1),zrhomt,zrhoir)
+        call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zvc(:,i1,j2))
       end do
+    end do
 !$OMP END DO
 !$OMP END PARALLEL
-! compute the <c|exp(i(G+q).r)|v'> matrix elements
+! compute the <c|exp(-i(G+q).r)|v'> matrix elements
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(jst1,ist2,i2)
 !$OMP DO
-      do j1=1,ncbse
-        jst1=jstbse(j1,ik1)
-        do i2=1,nvbse
-          ist2=istbse(i2,ik2)
-          call genzrho(.false.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,jst1), &
-           wfir2(:,:,ist2),wfir1(:,:,jst1),zrhomt(:,:,:,j1),zrhoir(:,j1))
-          zcv(ig,j1,i2)=zfinp(.false.,zrhomt(:,:,:,j1),expgqmt,zrhoir(:,j1), &
-           expgir(:,ig))
-        end do
+    do j1=1,ncbse
+      jst1=jstbse(j1,ik1)
+      do i2=1,nvbse
+        ist2=istbse(i2,ik2)
+        call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,jst1), &
+         wfir2(:,:,ist2),wfir1(:,:,jst1),zrhomt,zrhoir)
+        call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zcv(:,j1,i2))
       end do
+    end do
 !$OMP END DO
 !$OMP END PARALLEL
-    end if
-! end loop over G-vectors
-  end do
+  end if
 ! get RPA inverse epsilon from file
-  call getcf2pt(fname,vl,ngrpa,nwrpa,epsinv)
-  t0=wkptnr/omega
+  call getcf2pt(fname,vl,ngrf,nwrf,epsinv)
+  t0=wkptnr*omega
   do i1=1,nvbse
     do j1=1,ncbse
       a1=ijkbse(i1,j1,ik1)
@@ -163,11 +137,11 @@ do ik1=1,nkptnr
         do j2=1,ncbse
           a2=ijkbse(i2,j2,ik2)
           zsum=0.d0
-          do ig=1,ngrpa
+          do ig=1,ngrf
             t1=t0*vcl(ig)
-            do jg=1,ngrpa
+            do jg=1,ngrf
               t2=t1*vcl(jg)
-              zsum=zsum+t2*epsinv(ig,jg,1)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
+              zsum=zsum+t2*epsinv(ig,jg,1)*conjg(zcc(ig,j1,j2))*zvv(jg,i1,i2)
             end do
           end do
           hmlbse(a1,a2)=hmlbse(a1,a2)-zsum
@@ -177,11 +151,11 @@ do ik1=1,nkptnr
             b2=a2+nbbse
             hmlbse(b1,b2)=hmlbse(b1,b2)+conjg(zsum)
             zsum=0.d0
-            do ig=1,ngrpa
+            do ig=1,ngrf
               t1=t0*vcl(ig)
-              do jg=1,ngrpa
+              do jg=1,ngrf
                 t2=t1*vcl(jg)
-                zsum=zsum+t2*epsinv(ig,jg,1)*zcv(ig,j1,i2)*conjg(zvc(jg,i1,j2))
+                zsum=zsum+t2*epsinv(ig,jg,1)*conjg(zcv(ig,j1,i2))*zvc(jg,i1,j2)
               end do
             end do
             hmlbse(a1,b2)=hmlbse(a1,b2)-zsum
@@ -195,7 +169,8 @@ do ik1=1,nkptnr
   end do
 ! end loop over ik1
 end do
-deallocate(wfmt1,wfmt2,wfir1,wfir2,expqmt,expgqmt)
+deallocate(vgqc,gqc,ylmgq,sfacgq)
+deallocate(wfmt1,wfmt2,wfir1,wfir2)
 deallocate(zrhomt,zrhoir,zvv,zcc,epsinv)
 if (bsefull) deallocate(zvc,zcv)
 return

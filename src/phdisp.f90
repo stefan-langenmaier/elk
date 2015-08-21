@@ -11,19 +11,17 @@ integer nb,iq,i,iv
 real(8) wmin,wmax
 ! allocatable arrays
 real(8), allocatable :: wp(:,:)
-complex(8), allocatable :: ev(:,:)
-complex(8), allocatable :: dynq(:,:,:)
-complex(8), allocatable :: dynp(:,:)
-complex(8), allocatable :: dynr(:,:,:)
+complex(8), allocatable :: dynq(:,:,:),dynr(:,:,:)
+complex(8), allocatable :: dynp(:,:),ev(:,:)
 ! initialise universal variables
 call init0
 call init2
 nb=3*natmtot
 allocate(wp(nb,npp1d))
-allocate(ev(nb,nb))
 allocate(dynq(nb,nb,nqpt))
+allocate(dynr(nb,nb,nqptnr))
 allocate(dynp(nb,nb))
-allocate(dynr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(ev(nb,nb))
 ! read in the dynamical matrices
 call readdyn(dynq)
 ! apply the acoustic sum rule
@@ -66,7 +64,7 @@ write(*,*)
 write(*,'("Info(phdisp):")')
 write(*,'(" phonon dispersion written to PHDISP.OUT")')
 write(*,'(" vertex location lines written to PHDLINES.OUT")')
-deallocate(wp,ev,dynq,dynp,dynr)
+deallocate(wp,dynq,dynr,dynp,ev)
 return
 end subroutine
 

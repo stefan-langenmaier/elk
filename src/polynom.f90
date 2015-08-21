@@ -36,7 +36,7 @@ real(8), intent(in) :: x
 integer i,j,k
 real(8) x0,x1,x2,x3,y0,y1,y2,y3
 real(8) t0,t1,t2,t3,t4,t5,t6
-real(8) c2,c3,c4,sum
+real(8) c1,c2,c3,sum
 ! fast evaluations for small np
 select case(np)
 case(1)
@@ -50,15 +50,15 @@ case(1)
   end select
   return
 case(2)
-  c2=(ya(2)-ya(1))/(xa(2)-xa(1))
+  c1=(ya(2)-ya(1))/(xa(2)-xa(1))
   t1=x-xa(1)
   select case(m)
   case(:-1)
-    polynom=t1*(ya(1)+0.5d0*c2*t1)
+    polynom=t1*(ya(1)+0.5d0*c1*t1)
   case(0)
-    polynom=c2*t1+ya(1)
+    polynom=c1*t1+ya(1)
   case(1)
-    polynom=c2
+    polynom=c1
   case default
     polynom=0.d0
   end select
@@ -73,18 +73,18 @@ case(3)
   t0=1.d0/(x1*x2*(x2-x1))
   t1=x1*y2
   t2=x2*y1
-  c2=x2*t2-x1*t1
-  c3=t1-t2
+  c1=x2*t2-x1*t1
+  c2=t1-t2
   t1=x-x0
   select case(m)
   case(:-1)
-    polynom=t1*(y0+t0*t1*(0.5d0*c2+0.3333333333333333333d0*c3*t1))
+    polynom=t1*(y0+t0*t1*(0.5d0*c1+0.3333333333333333333d0*c2*t1))
   case(0)
-    polynom=y0+t0*t1*(c2+c3*t1)
+    polynom=y0+t0*t1*(c1+c2*t1)
   case(1)
-    polynom=t0*(2.d0*c3*t1+c2)
+    polynom=t0*(2.d0*c2*t1+c1)
   case(2)
-    polynom=t0*2.d0*c3
+    polynom=t0*2.d0*c2
   case default
     polynom=0.d0
   end select
@@ -102,25 +102,25 @@ case(4)
   t1=x1*x2*y3
   t2=x2*x3*y1
   t3=x3*x1*y2
-  t4=x1**2
-  t5=x2**2
+  c3=t1*(x1-x2)+t2*(x2-x3)+t3*(x3-x1)
   t6=x3**2
-  c2=t2*(x3*t5-x2*t6)+t3*(x1*t6-x3*t4)+t1*(x2*t4-x1*t5)
-  c3=t2*(t6-t5)+t3*(t4-t6)+t1*(t5-t4)
-  c4=t2*(x2-x3)+t3*(x3-x1)+t1*(x1-x2)
+  t5=x2**2
+  t4=x1**2
+  c2=t1*(t5-t4)+t2*(t6-t5)+t3*(t4-t6)
+  c1=t1*(x2*t4-x1*t5)+t2*(x3*t5-x2*t6)+t3*(x1*t6-x3*t4)
   t1=x-x0
   select case(m)
   case(:-1)
-    polynom=t1*(y0+t0*t1*(0.5d0*c2+t1*(0.3333333333333333333d0*c3 &
-     +0.25d0*c4*t1)))
+    polynom=t1*(y0+t0*t1*(0.5d0*c1+t1*(0.3333333333333333333d0*c2 &
+     +0.25d0*c3*t1)))
   case(0)
-    polynom=y0+t0*t1*(c2+t1*(c3+c4*t1))
+    polynom=y0+t0*t1*(c1+t1*(c2+c3*t1))
   case(1)
-    polynom=t0*(c2+t1*(2.d0*c3+3.d0*c4*t1))
+    polynom=t0*(c1+t1*(2.d0*c2+3.d0*c3*t1))
   case(2)
-    polynom=t0*(6.d0*c4*t1+2.d0*c3)
+    polynom=t0*(6.d0*c3*t1+2.d0*c2)
   case(3)
-    polynom=t0*6.d0*c4
+    polynom=t0*6.d0*c3
   case default
     polynom=0.d0
   end select

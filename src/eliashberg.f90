@@ -42,10 +42,10 @@ complex(8), allocatable :: zin(:),uin(:),zout(:),uout(:)
 ! initialise universal variables
 call init0
 call init1
-allocate(w(nwdos),a2f(nwdos))
+allocate(w(nwplot),a2f(nwplot))
 ! read in the Eliashberg function
 call readalpha2f(w,a2f)
-dw=(w(nwdos)-w(1))/dble(nwdos)
+dw=(w(nwplot)-w(1))/dble(nwplot)
 ! compute the McMillan parameters
 call mcmillan(w,a2f,lambda,wlog,wrms,tc)
 ! Matsubara frequency cut-off
@@ -66,7 +66,7 @@ allocate(z0(0:nwf),z(0:nwf))
 allocate(r(0:nwf))
 allocate(zin(0:nwf),uin(0:nwf))
 ! generate output points for continuation on the real axis
-nout=4*nwdos
+nout=4*nwplot
 allocate(zout(nout),uout(nout))
 do i=1,nout
   zout(i)=cmplx(2.d0*dble(i-1)*dw,0.d0,8)
@@ -117,7 +117,7 @@ do itemp=1,ntemp
   do m=-2*nwf,2*nwf
     t1=(t0*dble(2*m))**2
     sum=0.d0
-    do i=1,nwdos
+    do i=1,nwplot
       sum=sum+w(i)*a2f(i)/(w(i)**2+t1)
     end do
     l(m)=2.d0*sum*dw

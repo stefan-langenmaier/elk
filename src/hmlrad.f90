@@ -11,15 +11,15 @@ subroutine hmlrad
 use modmain
 ! !DESCRIPTION:
 !   Calculates the radial Hamiltonian integrals of the APW and local-orbital
-!   basis functions. In other words, for spin $\sigma$ and atom $j$ of species
-!   $i$, it computes integrals of the form
-!   $$ h^{\sigma;ij}_{qq';ll'l''m''}=\begin{cases}
-!    \int_0^{R_i}u^{\sigma;ij}_{q;l}(r)Hu^{\sigma;ij}_{q';l'}(r)r^2dr & l''=0 \\
-!    \int_0^{R_i}u^{\sigma;ij}_{q;l}(r)V^{\sigma;ij}_{l''m''}(r)
-!    u^{\sigma;ij}_{q';l'}(r)r^2dr & l''>0 \end{cases}, $$
-!   where $u^{\sigma;ij}_{q;l}$ is the $q$th APW radial function for angular
+!   basis functions. In other words, for atom $\alpha$, it computes integrals of
+!   the form
+!   $$ h^{\alpha}_{qq';ll'l''m''}=\begin{cases}
+!    \int_0^{R_i}u^{\alpha}_{q;l}(r)H u^{\alpha}_{q';l'}(r)r^2dr & l''=0 \\
+!    \int_0^{R_i}u^{\alpha}_{q;l}(r)V^{\alpha}_{l''m''}(r)
+!    u^{\alpha}_{q';l'}(r)r^2dr & l''>0 \end{cases}, $$
+!   where $u^{\alpha}_{q;l}$ is the $q$th APW radial function for angular
 !   momentum $l$; $H$ is the Hamiltonian of the radial Schr\"{o}dinger equation;
-!   and $V^{\sigma;ij}_{l''m''}$ is the effective muffin-tin potential. Similar
+!   and $V^{\alpha}_{l''m''}$ is the muffin-tin Kohn-Sham potential. Similar
 !   integrals are calculated for APW-local-orbital and
 !   local-orbital-local-orbital contributions.
 !
@@ -72,10 +72,11 @@ do is=1,nspecies
                   lm2=lm2+1
                   do ir=1,nr
                     t1=apwfr(ir,1,io,l1,ias)*apwfr(ir,1,jo,l3,ias)*r2(ir)
-                    fr(ir)=t1*veffmt(lm2,ir,ias)
+                    fr(ir)=t1*vsmt(lm2,ir,ias)
                   end do
                   call fderiv(-1,nr,spr(:,is),fr,gr)
                   haa(lm2,jo,l3,io,l1,ias)=gr(nr)
+                  haa(lm2,io,l1,jo,l3,ias)=gr(nr)
                 end do
               end do
             end if
@@ -99,12 +100,13 @@ do is=1,nspecies
           else
             hloa(1,io,l3,ilo,ias)=0.d0
           end if
+          lm2=1
           do l2=1,lmaxvr
             do m2=-l2,l2
-              lm2=idxlm(l2,m2)
+              lm2=lm2+1
               do ir=1,nr
                 t1=lofr(ir,1,ilo,ias)*apwfr(ir,1,io,l3,ias)*r2(ir)
-                fr(ir)=t1*veffmt(lm2,ir,ias)
+                fr(ir)=t1*vsmt(lm2,ir,ias)
               end do
               call fderiv(-1,nr,spr(:,is),fr,gr)
               hloa(lm2,io,l3,ilo,ias)=gr(nr)
@@ -129,12 +131,13 @@ do is=1,nspecies
         else
           hlolo(1,jlo,ilo,ias)=0.d0
         end if
+        lm2=1
         do l2=1,lmaxvr
           do m2=-l2,l2
-            lm2=idxlm(l2,m2)
+            lm2=lm2+1
             do ir=1,nr
               t1=lofr(ir,1,ilo,ias)*lofr(ir,1,jlo,ias)*r2(ir)
-              fr(ir)=t1*veffmt(lm2,ir,ias)
+              fr(ir)=t1*vsmt(lm2,ir,ias)
             end do
             call fderiv(-1,nr,spr(:,is),fr,gr)
             hlolo(lm2,jlo,ilo,ias)=gr(nr)

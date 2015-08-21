@@ -63,12 +63,10 @@ do it=1,maxit
   else
     e1=efermi
   end if
-  if ((e1-e0).lt.epsocc) goto 10
+  if ((e1-e0).lt.1.d-12) goto 10
 end do
 write(*,*)
-write(*,'("Error(occupy): could not find Fermi energy")')
-write(*,*)
-stop
+write(*,'("Warning(occupy): could not find Fermi energy")')
 10 continue
 ! find the density of states at the Fermi surface in units of
 ! states/Hartree/unit cell
@@ -78,7 +76,7 @@ do ik=1,nkpt
     x=(evalsv(ist,ik)-efermi)*t1
     fermidos=fermidos+wkpt(ik)*sdelta(stype,x)*t1
   end do
-  if (occsv(nstsv,ik).gt.epsocc) then
+  if (abs(occsv(nstsv,ik)).gt.epsocc) then
     write(*,*)
     write(*,'("Warning(occupy): not enough empty states for k-point ",I6)') ik
     write(*,'(" and s.c. loop ",I5)') iscl
@@ -90,13 +88,21 @@ call writetest(500,'DOS at Fermi energy',tol=1.d-3,rv=fermidos)
 ! estimate the band gap (FC)
 e0=-1.d8
 e1=1.d8
+ikgap(1)=1
+ikgap(2)=1
 do ik=1,nkpt
   do ist=1,nstsv
     e=evalsv(ist,ik)
     if (e.lt.efermi) then
-      if (e.gt.e0) e0=e
+      if (e.gt.e0) then
+        e0=e
+        ikgap(1)=ik
+      end if
     else
-      if (e.lt.e1) e1=e
+      if (e.lt.e1) then
+        e1=e
+        ikgap(2)=ik
+      end if
     end if
   end do
 end do

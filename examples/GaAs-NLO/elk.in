@@ -24,9 +24,9 @@ swidth
 optcomp
  1 2 3
 
-dos
- 400 100 0 : nwdos, ngrdos, nsmdos
- 0.0 0.3   : wdos
+wplot
+ 400 100 0 : nwplot, ngrkf, nswplot
+ 0.0 0.3   : wplot
 
 mixtype
  2

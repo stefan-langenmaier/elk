@@ -3,147 +3,128 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-!BOP
-! !ROUTINE: gentau
-! !INTERFACE:
 subroutine gentau(taumt,tauir)
-! !USES:
 use modmain
-! !INPUT/OUTPUT PARAMETERS:
-!   taumt : muffin-tin kinetic energy density (in,real(lmmaxvr,nrmtmax,natmtot))
-!   tauir : interstitial kinetic energy density (in,real(ngrtot))
-! !DESCRIPTION:
-!   Computes the kinetic energy density
-!   $$ \tau({\bf r})=\sum_{i{\bf k}}n_{i{\bf k}}\nabla\psi_{i{\bf k}}^*({\bf r})
-!    \cdot\nabla\psi_{i{\bf k}}({\bf r}), $$
-!   which includes a contraction over spinor components. Note that this is
-!   \underline{twice} the value of the usual definition of the kinetic energy
-!   density. Actually implimented is the equivalent but more efficient formula
-!   $$ \tau({\bf r})=\sum_{i{\bf k}}n_{i{\bf k}}\varepsilon_{i{\bf k}}
-!    |\psi_{i{\bf k}}({\bf r})|^2-V_{\rm eff}({\bf r})\rho({\bf r})
-!    +\tfrac{1}{4}\nabla^2\rho({\bf r}). $$
-!   See {\it J. Phys.: Condens. Matter} {\bf 19}, 196208 (2007).
-!
-! !REVISION HISTORY:
-!   Created October 2011 (JKD)
-!EOP
-!BOC
+use modmpi
 implicit none
 ! arguments
-real(8), intent(out) :: taumt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(out) :: tauir(ngrtot)
+real(8), intent(out) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
+real(8), intent(out) :: tauir(ngtot,nspinor)
 ! local variables
-integer ik,ld,is,ias
-integer ir,irc,ig,ifg
+integer ik,ispn,ld,n
+integer is,ias,ir,itp
 ! allocatable arrays
-real(8), allocatable :: rfmt1(:,:),rfmt2(:,:)
-complex(8), allocatable :: zfft(:)
-! zero the kinetic energy density
-taumt(:,:,:)=0.d0
-tauir(:)=0.d0
+real(8), allocatable :: rfmt(:,:,:),rfir(:)
+real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
+! set the kinetic energy density to zero
+taumt(:,:,:,:)=0.d0
+tauir(:,:)=0.d0
 ! if wavefunctions do not exist tau cannot be computed
-if ((iscl.le.1).and.(.not.trdstate)) return
-! add contributions from each k-point
+if (iscl.le.1) return
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
 do ik=1,nkpt
+! distribute among MPI processes
+  if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
   call gentauk(ik,taumt,tauir)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-! add the core kinetic energy density
-call gentaucr(taumt)
+allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
+! convert taumt to spherical harmonics
 ld=lmmaxvr*lradstp
-! convert muffin-tin kinetic energy density to spherical harmonics
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(rfmt1,is,irc,ir)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,ispn,ir)
 !$OMP DO
 do ias=1,natmtot
-  allocate(rfmt1(lmmaxvr,nrcmtmax))
   is=idxis(ias)
-  irc=0
-  do ir=1,nrmt(is),lradstp
-    irc=irc+1
-    rfmt1(:,irc)=taumt(:,ir,ias)
+  do ispn=1,nspinor
+    do ir=1,nrmt(is),lradstp
+      rfmt(:,ir,ias)=taumt(:,ir,ias,ispn)
+    end do
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+     rfmt(:,:,ias),ld,0.d0,taumt(:,:,ias,ispn),ld)
   end do
-  call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr,rfmt1, &
-   lmmaxvr,0.d0,taumt(:,:,ias),ld)
-  deallocate(rfmt1)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-! symmetrise the kinetic energy density
-call symrf(lradstp,taumt,tauir)
-! convert from a coarse to a fine radial mesh
-call rfmtctof(taumt)
-! add density Laplacian term
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(rfmt1,is,ir)
+! symmetrise tau
+if (spinpol) then
+! spin-polarised case: convert to scalar-vector form
+  allocate(rfir(ngtot))
+  allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag))
+  allocate(rvfir(ngtot,ndmag))
+  rvfmt(:,:,:,1:ndmag-1)=0.d0
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ir=1,nrmt(is),lradstp
+      rfmt(:,ir,ias)=taumt(:,ir,ias,1)+taumt(:,ir,ias,2)
+      rvfmt(:,ir,ias,ndmag)=taumt(:,ir,ias,1)-taumt(:,ir,ias,2)
+    end do
+  end do
+  rfir(:)=tauir(:,1)+tauir(:,2)
+  rvfir(:,1:ndmag-1)=0.d0
+  rvfir(:,ndmag)=tauir(:,1)-tauir(:,2)
+  call symrf(lradstp,rfmt,rfir)
+  call symrvf(lradstp,rvfmt,rvfir)
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ir=1,nrmt(is),lradstp
+      taumt(:,ir,ias,1)=0.5d0*(rfmt(:,ir,ias)+rvfmt(:,ir,ias,ndmag))
+      taumt(:,ir,ias,2)=0.5d0*(rfmt(:,ir,ias)-rvfmt(:,ir,ias,ndmag))
+    end do
+  end do
+  tauir(:,1)=0.5d0*(rfir(:)+rvfir(:,ndmag))
+  tauir(:,2)=0.5d0*(rfir(:)-rvfir(:,ndmag))
+  deallocate(rfir,rvfmt,rvfir)
+else
+! spin-unpolarised case
+  call symrf(lradstp,taumt,tauir)
+end if
+! convert taumt to spherical coordinates
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,ispn,ir)
 !$OMP DO
 do ias=1,natmtot
-  allocate(rfmt1(lmmaxvr,nrmtmax))
   is=idxis(ias)
-  call grad2rfmt(lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rhomt(:,:,ias),rfmt1)
-  do ir=1,nrmt(is)
-    taumt(:,ir,ias)=taumt(:,ir,ias)+0.25d0*rfmt1(:,ir)
+  do ispn=1,nspinor
+    do ir=1,nrmt(is),lradstp
+      rfmt(:,ir,ias)=taumt(:,ir,ias,ispn)
+    end do
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+     rfmt(:,:,ias),ld,0.d0,taumt(:,:,ias,ispn),ld)
   end do
-  deallocate(rfmt1)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-! Fourier transform interstitial density to G-space
-allocate(zfft(ngrtot))
-zfft(:)=rhoir(:)
-call zfftifc(3,ngrid,-1,zfft)
-! apply laplacian
-do ig=1,ngrtot
-  ifg=igfft(ig)
-  zfft(ifg)=-zfft(ifg)*gc(ig)**2
+! convert taumt from a coarse to a fine radial mesh
+do ispn=1,nspinor
+  call rfmtctof(taumt(:,:,:,ispn))
 end do
-! Fourier transform back to real-space
-call zfftifc(3,ngrid,1,zfft)
-tauir(:)=tauir(:)+0.25d0*dble(zfft(:))
-deallocate(zfft)
-! convert back to spherical coordinates
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(rfmt1,is,ir)
-!$OMP DO
-do ias=1,natmtot
-  allocate(rfmt1(lmmaxvr,nrmtmax))
-  is=idxis(ias)
-  do ir=1,nrmt(is)
-    rfmt1(:,ir)=taumt(:,ir,ias)
+! add tau from each process and redistribute
+if (np_mpi.gt.1) then
+  n=lmmaxvr*nrmtmax*natmtot*nspinor
+  call mpi_allreduce(mpi_in_place,taumt,n,mpi_double_precision,mpi_sum, &
+   mpi_comm_kpt,ierror)
+  n=ngtot*nspinor
+  call mpi_allreduce(mpi_in_place,tauir,n,mpi_double_precision,mpi_sum, &
+   mpi_comm_kpt,ierror)
+end if
+! add the core contribution
+call gentaucr(taumt)
+! make sure tau is positive everywhere
+do ispn=1,nspinor
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ir=1,nrmt(is)
+      do itp=1,lmmaxvr
+        if (taumt(itp,ir,ias,ispn).lt.0.d0) taumt(itp,ir,ias,ispn)=0.d0
+      end do
+    end do
   end do
-  call dgemm('N','N',lmmaxvr,nrmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt1, &
-   lmmaxvr,0.d0,taumt(:,:,ias),lmmaxvr)
-  deallocate(rfmt1)
-end do
-!$OMP END DO
-!$OMP END PARALLEL
-! subtract the density-potential term
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(rfmt1,rfmt2,is,ir)
-!$OMP DO
-do ias=1,natmtot
-  allocate(rfmt1(lmmaxvr,nrmtmax),rfmt2(lmmaxvr,nrmtmax))
-  is=idxis(ias)
-  call dgemm('N','N',lmmaxvr,nrmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-   rhomt(:,:,ias),lmmaxvr,0.d0,rfmt1,lmmaxvr)
-  call dgemm('N','N',lmmaxvr,nrmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-   veffmt(:,:,ias),lmmaxvr,0.d0,rfmt2,lmmaxvr)
-  do ir=1,nrmt(is)
-    taumt(:,ir,ias)=taumt(:,ir,ias)-rfmt1(:,ir)*rfmt2(:,ir)
-  end do
-  deallocate(rfmt1,rfmt2)
-end do
-!$OMP END DO
-!$OMP END PARALLEL
-tauir(:)=tauir(:)-rhoir(:)*veffir(:)
-! multiply tau by 2 to conform to definition and make sure it is positive
-do ias=1,natmtot
-  is=idxis(ias)
-  do ir=1,nrmt(is)
-    taumt(:,ir,ias)=2.d0*abs(taumt(:,ir,ias))
+  do ir=1,ngtot
+    if (tauir(ir,ispn).lt.0.d0) tauir(ir,ispn)=0.d0
   end do
 end do
-tauir(:)=2.d0*abs(tauir(:))
+deallocate(rfmt)
 return
 end subroutine
-!EOC
 

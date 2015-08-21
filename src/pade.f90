@@ -35,7 +35,7 @@ complex(8), intent(out) :: uout(nout)
 ! local variables
 integer i,j
 real(8) t1
-complex(8) a0,a1,b0,b1,zt1,zt2
+complex(8) a0,a1,b0,b1,z1,z2
 ! allocatable arrays
 complex(8), allocatable :: g(:,:)
 if ((nin.le.0).or.(nout.le.0)) then
@@ -61,13 +61,13 @@ do i=1,nout
   b0=1.d0
   b1=1.d0
   do j=2,nin
-    zt1=(zout(i)-zin(j-1))*g(j,j)
-    zt2=a1+zt1*a0
+    z1=(zout(i)-zin(j-1))*g(j,j)
+    z2=a1+z1*a0
     a0=a1
-    a1=zt2
-    zt2=b1+zt1*b0
+    a1=z2
+    z2=b1+z1*b0
     b0=b1
-    b1=zt2
+    b1=z2
 ! check for overflow and rescale
     if ((abs(dble(a1)).gt.1.d100).or.(abs(aimag(a1)).gt.1.d100)) then
       t1=1.d0/abs(a1)

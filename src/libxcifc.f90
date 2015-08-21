@@ -13,8 +13,8 @@ contains
 ! !ROUTINE: xcifc_libxc
 ! !INTERFACE:
 subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
- gup2,gdn2,gupdn,tau,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2,dxdgd2, &
- dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
+ gup2,gdn2,gupdn,tau,tauup,taudn,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2, &
+ dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
 ! !INPUT/OUTPUT PARAMETERS:
 !   xctype : type of exchange-correlation functional (in,integer(3))
 !   n      : number of density points (in,integer)
@@ -30,6 +30,8 @@ subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
 !   gdn2   : |grad rhodn|^2 (in,real(n),optional)
 !   gupdn  : (grad rhoup).(grad rhodn) (in,real(n),optional)
 !   tau    : kinetic energy density (in,real(n),optional)
+!   tauup  : spin-up kinetic energy density (in,real(n),optional)
+!   taudn  : spin-down kinetic energy density (in,real(n),optional)
 !   ex     : exchange energy density (out,real(n),optional)
 !   ec     : correlation energy density (out,real(n),optional)
 !   vx     : spin-unpolarised exchange potential (out,real(n),optional)
@@ -60,37 +62,17 @@ subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
 !BOC
 implicit none
 ! mandatory arguments
-integer, intent(in) :: xctype(3)
-integer, intent(in) :: n
+integer, intent(in) :: xctype(3),n
 ! optional arguments
 real(8), optional, intent(in) :: c_tb09
-real(8), optional, intent(in) :: rho(n)
-real(8), optional, intent(in) :: rhoup(n)
-real(8), optional, intent(in) :: rhodn(n)
-real(8), optional, intent(in) :: g2rho(n)
-real(8), optional, intent(in) :: g2up(n)
-real(8), optional, intent(in) :: g2dn(n)
-real(8), optional, intent(in) :: grho2(n)
-real(8), optional, intent(in) :: gup2(n)
-real(8), optional, intent(in) :: gdn2(n)
-real(8), optional, intent(in) :: gupdn(n)
-real(8), optional, intent(in) :: tau(n)
-real(8), optional, intent(out) :: ex(n)
-real(8), optional, intent(out) :: ec(n)
-real(8), optional, intent(out) :: vx(n)
-real(8), optional, intent(out) :: vc(n)
-real(8), optional, intent(out) :: vxup(n)
-real(8), optional, intent(out) :: vxdn(n)
-real(8), optional, intent(out) :: vcup(n)
-real(8), optional, intent(out) :: vcdn(n)
-real(8), optional, intent(out) :: dxdg2(n)
-real(8), optional, intent(out) :: dxdgu2(n)
-real(8), optional, intent(out) :: dxdgd2(n)
-real(8), optional, intent(out) :: dxdgud(n)
-real(8), optional, intent(out) :: dcdg2(n)
-real(8), optional, intent(out) :: dcdgu2(n)
-real(8), optional, intent(out) :: dcdgd2(n)
-real(8), optional, intent(out) :: dcdgud(n)
+real(8), optional, intent(in) :: rho(n),rhoup(n),rhodn(n)
+real(8), optional, intent(in) :: g2rho(n),g2up(n),g2dn(n)
+real(8), optional, intent(in) :: grho2(n),gup2(n),gdn2(n),gupdn(n)
+real(8), optional, intent(in) :: tau(n),tauup(n),taudn(n)
+real(8), optional, intent(out) :: ex(n),ec(n),vx(n),vc(n)
+real(8), optional, intent(out) :: vxup(n),vxdn(n),vcup(n),vcdn(n)
+real(8), optional, intent(out) :: dxdg2(n),dxdgu2(n),dxdgd2(n),dxdgud(n)
+real(8), optional, intent(out) :: dcdg2(n),dcdgu2(n),dcdgd2(n),dcdgud(n)
 ! local variables
 integer nspin,xcf,id,k
 type(xc_f90_pointer_t) p,info
@@ -107,17 +89,28 @@ else
   write(*,*)
   stop
 end if
+if (xctype(2).ne.0) then
+  if (xctype(2).eq.xctype(3)) then
+    write(*,*)
+    write(*,'("Error(xcifc_libxc): libxc exchange and correlation &
+     &functionals")')
+    write(*,'(" are the same : ",2I8)') xctype(2:3)
+    write(*,*)
+    stop
+  end if
+end if
 ! loop over functional kinds (exchange or correlation)
 do k=2,3
   id=xctype(k)
   if (id.gt.0) then
     xcf=xc_f90_family_from_id(id)
+! initialise functional
+    call xc_f90_func_init(p,info,id,nspin)
     select case(xcf)
     case(XC_FAMILY_LDA)
 !-------------------------!
 !     LDA functionals     !
 !-------------------------!
-      call xc_f90_func_init(p,info,id,nspin)
       if (k.eq.2) then
 ! exchange
         if (present(rho)) then
@@ -141,13 +134,10 @@ do k=2,3
           deallocate(r,vrho)
         end if
       end if
-! destroy functional
-      call xc_f90_func_end(p)
-    case(XC_FAMILY_GGA)
+    case(XC_FAMILY_GGA,XC_FAMILY_HYB_GGA)
 !-------------------------!
 !     GGA functionals     !
 !-------------------------!
-      call xc_f90_func_init(p,info,id,nspin)
       if (k.eq.2) then
 ! exchange
         if (present(rho)) then
@@ -177,15 +167,14 @@ do k=2,3
           deallocate(r,sigma,vrho,vsigma)
         end if
       end if
-! destroy functional
-      call xc_f90_func_end(p)
     case(XC_FAMILY_MGGA)
 !------------------------------!
 !     meta-GGA functionals     !
 !------------------------------!
-      call xc_f90_func_init(p,info,id,nspin)
 ! set Tran-Blaha '09 constant if required
-      if (present(c_tb09)) call xc_f90_mgga_x_tb09_set_par(p,c_tb09)
+      if (id.eq.XC_MGGA_X_TB09) then
+        if (present(c_tb09)) call xc_f90_mgga_x_tb09_set_par(p,c_tb09)
+      end if
       if (k.eq.2) then
 ! exchange
         if (present(rho)) then
@@ -199,7 +188,7 @@ do k=2,3
           r(1,:)=rhoup(:); r(2,:)=rhodn(:)
           sigma(1,:)=gup2(:); sigma(2,:)=gupdn(:); sigma(3,:)=gdn2(:)
           lapl(1,:)=g2up(:); lapl(2,:)=g2dn(:)
-          t(1,:)=0.5d0*tau(:); t(2,:)=t(1,:)
+          t(1,:)=tauup(:); t(2,:)=taudn(:)
           call xc_f90_mgga_vxc(p,n,r(1,1),sigma(1,1),lapl(1,1),t(1,1), &
            vrho(1,1),vsigma(1,1),vlapl(1,1),vtau(1,1))
           vxup(:)=vrho(1,:); vxdn(:)=vrho(2,:)
@@ -219,7 +208,7 @@ do k=2,3
           r(1,:)=rhoup(:); r(2,:)=rhodn(:)
           sigma(1,:)=gup2(:); sigma(2,:)=gupdn(:); sigma(3,:)=gdn2(:)
           lapl(1,:)=g2up(:); lapl(2,:)=g2dn(:)
-          t(1,:)=0.5d0*tau(:); t(2,:)=t(1,:)
+          t(1,:)=tauup(:); t(2,:)=taudn(:)
           call xc_f90_mgga_vxc(p,n,r(1,1),sigma(1,1),lapl(1,1),t(1,1), &
            vrho(1,1),vsigma(1,1),vlapl(1,1),vtau(1,1))
           vcup(:)=vrho(1,:); vcdn(:)=vrho(2,:)
@@ -227,8 +216,6 @@ do k=2,3
           deallocate(vrho,vsigma,vlapl,vtau)
         end if
       end if
-! destroy functional
-      call xc_f90_func_end(p)
     case default
       write(*,*)
       write(*,'("Error(xcifc_libxc): unsupported libxc functional family : ",&
@@ -236,6 +223,8 @@ do k=2,3
       write(*,*)
       stop
     end select
+! destroy functional
+    call xc_f90_func_end(p)
   else
 ! case when id=0
     if (k.eq.2) then
@@ -262,39 +251,128 @@ end do
 return
 end subroutine
 
-subroutine xcdata_libxc(xctype,xcdescr,xcspin,xcgrad)
+subroutine fxcifc_libxc(fxctype,n,rho,rhoup,rhodn,fxc,fxcuu,fxcud,fxcdd)
+implicit none
+! mandatory arguments
+integer, intent(in) :: fxctype(3),n
+! optional arguments
+real(8), optional, intent(in) :: rho(n),rhoup(n),rhodn(n)
+real(8), optional, intent(out) :: fxc(n),fxcuu(n),fxcud(n),fxcdd(n)
+! local variables
+integer nspin,xcf,id,k
+type(xc_f90_pointer_t) p,info
+! allocatable arrays
+real(8), allocatable :: r(:,:),f(:,:)
+if (present(rho)) then
+  nspin=XC_UNPOLARIZED
+else if (present(rhoup).and.present(rhodn)) then
+  nspin=XC_POLARIZED
+else
+  write(*,*)
+  write(*,'("Error(fxcifc_libxc): missing arguments")')
+  write(*,*)
+  stop
+end if
+! zero the kernel
+if (present(fxc)) fxc(:)=0.d0
+if (present(fxcuu)) fxcuu(:)=0.d0
+if (present(fxcud)) fxcud(:)=0.d0
+if (present(fxcdd)) fxcdd(:)=0.d0
+! loop over functional kinds (exchange or correlation)
+do k=2,3
+  id=fxctype(k)
+  if (id.le.0) cycle
+  xcf=xc_f90_family_from_id(id)
+! initialise functional
+  call xc_f90_func_init(p,info,id,nspin)
+  select case(xcf)
+  case(XC_FAMILY_LDA)
+!-------------------------!
+!     LDA functionals     !
+!-------------------------!
+    if (present(rho)) then
+      allocate(f(1,n))
+      call xc_f90_lda_fxc(p,n,rho(1),f(1,1))
+      fxc(:)=fxc(:)+f(1,:)
+      deallocate(f)
+    else
+      allocate(r(2,n),f(3,n))
+      r(1,:)=rhoup(:); r(2,:)=rhodn(:)
+      call xc_f90_lda_fxc(p,n,r(1,1),f(1,1))
+      fxcuu(:)=fxcuu(:)+f(1,:)
+      fxcud(:)=fxcud(:)+f(2,:)
+      fxcdd(:)=fxcdd(:)+f(3,:)
+      deallocate(r,f)
+    end if
+  case default
+    write(*,*)
+    write(*,'("Error(fxcifc_libxc): unsupported libxc functional family : ",&
+     &I8)') xcf
+    write(*,*)
+    stop
+  end select
+end do
+return
+end subroutine
+
+subroutine xcdata_libxc(xctype,xcdescr,xcspin,xcgrad,hybrid,hybridc)
 implicit none
 ! arguments
 integer, intent(in) :: xctype(3)
 character(512), intent(out) :: xcdescr
 integer, intent(out) :: xcspin
 integer, intent(out) :: xcgrad
+logical, intent(inout) :: hybrid
+real(8), intent(inout) :: hybridc
 ! local variables
-integer k,id
+integer j,k,id
 integer fmly,flg
 character(256) name
 type(xc_f90_pointer_t) p,info
+! check version is compatible
+call xc_f90_version(j,k)
+if (j.ne.2) then
+  write(*,*)
+  write(*,'("Error(xcdata_libxc): incompatible libxc version : ",I2.2,".",&
+   &I3.3)') j,k
+  write(*,*)
+  stop
+end if
 ! unknown spin polarisation
 xcspin=-1
 ! no gradients by default
 xcgrad=0
+! not hybrid by default
+hybrid=.false.
 do k=2,3
   id=xctype(k)
   if (id.gt.0) then
     call xc_f90_func_init(p,info,id,XC_UNPOLARIZED)
     call xc_f90_info_name(info,name)
-    call xc_f90_func_end(p)
-! functional family
     fmly=xc_f90_family_from_id(id)
+    if (fmly.eq.XC_FAMILY_HYB_GGA) then
+      call xc_f90_hyb_exx_coef(p,hybridc)
+      hybrid=.true.
+    end if
+    call xc_f90_func_end(p)
+! hybrids should have only correlation part to avoid double-scaling with hybridc
+    if ((fmly.eq.XC_FAMILY_HYB_GGA).and.(k.eq.2)) then
+      write(*,*)
+      write(*,'("Error(xcdata_libxc): set only correlation part of xctype for &
+       &libxc hybrids")')
+      write(*,*)
+      stop
+    end if
+! functional family
     if ((fmly.ne.XC_FAMILY_LDA).and.(fmly.ne.XC_FAMILY_GGA).and. &
-     (fmly.ne.XC_FAMILY_MGGA)) then
+     (fmly.ne.XC_FAMILY_HYB_GGA).and.(fmly.ne.XC_FAMILY_MGGA)) then
       write(*,*)
       write(*,'("Error(xcdata_libxc): unsupported libxc family : ",I8)') fmly
       write(*,*)
       stop
     end if
 ! post-processed gradients required for GGA functionals
-    if (fmly.eq.XC_FAMILY_GGA) xcgrad=2
+    if (fmly.eq.XC_FAMILY_GGA.or.fmly.eq.XC_FAMILY_HYB_GGA) xcgrad=2
 ! kinetic energy density required for meta-GGA functionals
     if (fmly.eq.XC_FAMILY_MGGA) then
 ! potential-only functional

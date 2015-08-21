@@ -17,11 +17,13 @@ real(8), allocatable :: rfmt1(:,:),rfmt2(:,:,:)
 ! external functions
 real(8) rfint
 external rfint
+! if Tran-Blaha constant has been read in return
+if (tc_tb09) return
 ! compute the gradient of the density
 allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(grfir(ngrtot,3))
+allocate(grfir(ngtot,3))
 call gradrf(rhomt,rhoir,grfmt,grfir)
-allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngrtot))
+allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(rfmt1,rfmt2,is,nr) &
 !$OMP PRIVATE(i,ir,itp,t1)
@@ -53,7 +55,7 @@ end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! integrand in interstitial
-do ir=1,ngrtot
+do ir=1,ngtot
   t1=sqrt(grfir(ir,1)**2+grfir(ir,2)**2+grfir(ir,3)**2)
   rfir(ir)=t1/rhoir(ir)
 end do

@@ -10,22 +10,14 @@ tasks
 spinorb
  .true.
 
-! tight convergence for band (linearisation) energies required
-epsband
- 1.e-8
-
-! large initial step-length for band energy search
-deband
- 0.01
-
 ! maximum allowed energy for the initial state in the double differential
 ! cross-section formula
 emaxelnes
  -20.0
 
-dos
- 300 100 6    : nwdos, ngrdos, nsmdos
- 28.0 32.0    : wdos
+wplot
+ 300 100 6    : nwplot, ngrkf, nswplot
+ 28.0 32.0    : wplot
 
 nempty
  40

@@ -3,19 +3,19 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine hmllolo(ias,ngp,h)
+subroutine hmllolo(ias,ngp,ld,h)
 use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ias
 integer, intent(in) :: ngp
-complex(8), intent(inout) :: h(*)
+integer, intent(in) :: ld
+complex(8), intent(inout) :: h(ld,*)
 ! local variables
-integer ld,is,ilo,jlo
+integer is,ilo,jlo
 integer l1,l2,l3,m1,m2,m3
-integer lm1,lm2,lm3,i,j,k
+integer lm1,lm2,lm3,i,j
 complex(8) zsum
-ld=ngp+nlotot
 is=idxis(ias)
 do ilo=1,nlorb(is)
   l1=lorbl(ilo,is)
@@ -37,8 +37,7 @@ do ilo=1,nlorb(is)
               end do
             end if
           end do
-          k=i+(j-1)*ld
-          h(k)=h(k)+zsum
+          h(i,j)=h(i,j)+zsum
         end if
       end do
     end do

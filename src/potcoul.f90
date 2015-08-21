@@ -21,22 +21,16 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir
+integer is,ia,ias,nr,ir
 real(8) t1
 complex(8) zrho0
 ! automatic arrays
 real(8) vn(nrmtmax)
 ! allocatable arrays
-real(8), allocatable :: jlgr(:,:,:)
-complex(8), allocatable :: zrhomt(:,:,:)
-complex(8), allocatable :: zrhoir(:)
-complex(8), allocatable :: zvclmt(:,:,:)
-complex(8), allocatable :: zvclir(:)
-allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
+complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
+complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
 allocate(zrhomt(lmmaxvr,nrmtmax,natmtot))
-allocate(zrhoir(ngrtot))
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
-allocate(zvclir(ngrtot))
 ! convert real muffin-tin charge density to complex spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
@@ -44,24 +38,26 @@ do ias=1,natmtot
     call rtozflm(lmaxvr,rhomt(:,ir,ias),zrhomt(:,ir,ias))
   end do
 end do
-! store real interstitial charge density in complex array
-zrhoir(:)=rhoir(:)
-! compute the required spherical Bessel functions
-call genjlgpr(lnpsd+1,gc,jlgr)
 ! solve the complex Poisson's equation in the muffin-tins
 call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
+deallocate(zrhomt)
 ! add the nuclear monopole potentials
 t1=1.d0/y00
 do is=1,nspecies
-  call potnucl(ptnucl,nrmt(is),spr(:,is),spzn(is),vn)
+  nr=nrmt(is)
+  call potnucl(ptnucl,nr,spr(:,is),spzn(is),vn)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ir=1,nrmt(is)
+    do ir=1,nr
       zvclmt(1,ir,ias)=zvclmt(1,ir,ias)+t1*vn(ir)
     end do
   end do
 end do
+! store real interstitial charge density in complex array
+allocate(zrhoir(ngtot))
+zrhoir(:)=rhoir(:)
 ! solve Poisson's equation in the entire unit cell
+allocate(zvclir(ngtot))
 call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
  zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
@@ -73,9 +69,9 @@ do ias=1,natmtot
 end do
 ! store complex interstitial potential in real array
 vclir(:)=dble(zvclir(:))
+deallocate(zrhoir,zvclmt,zvclir)
 ! apply constant electric field if required
 if (efieldpol) call potefield
-deallocate(jlgr,zrhomt,zrhoir,zvclmt,zvclir)
 return
 end subroutine
 !EOC

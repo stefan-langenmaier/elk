@@ -22,29 +22,29 @@ implicit none
 ! local variables
 logical spinpol_
 integer iostat
-integer is,ia,ias,lmmax,lm,ir,jr
-integer idm,ngm,i1,i2,i3,j1,j2,j3
-integer version_(3),nspecies_,lmmaxvr_
-integer natoms_,nrmt_(maxspecies),nrmtmax_
-integer ngrid_(3),ngrtot_,ngvec_,ndmag_
-integer nspinor_,ldapu_,lmmaxlu_
+integer is,ias,lmmax,lm,ir,jr
+integer idm0,idm1,idm,jdm,mapidm(3)
+integer ngm,i1,i2,i3,j1,j2,j3
+integer version_(3)
+integer nspecies_,natoms_,lmmaxvr_
+integer nrmt_(maxspecies),nrmtmax_
+integer nrcmt_(maxspecies),nrcmtmax_
+integer ngridg_(3),ngtot_,ngvec_
+integer ndmag_,nspinor_,fixspin_
+integer ldapu_,lmmaxlu_
 real(8) t1
 ! allocatable arrays
 integer, allocatable :: mapir(:)
-real(8), allocatable :: spr_(:,:)
-real(8), allocatable :: rhomt_(:,:,:)
-real(8), allocatable :: rhoir_(:)
-real(8), allocatable :: vclmt_(:,:,:)
-real(8), allocatable :: vclir_(:)
-real(8), allocatable :: vxcmt_(:,:,:)
-real(8), allocatable :: vxcir_(:)
-real(8), allocatable :: veffmt_(:,:,:)
-real(8), allocatable :: veffir_(:)
-real(8), allocatable :: magmt_(:,:,:,:)
-real(8), allocatable :: magir_(:,:)
-real(8), allocatable :: bxcmt_(:,:,:,:)
-real(8), allocatable :: bxcir_(:,:)
-complex(8), allocatable :: veffig_(:)
+real(8), allocatable :: spr_(:,:),rcmt_(:,:)
+real(8), allocatable :: rhomt_(:,:,:),rhoir_(:)
+real(8), allocatable :: vclmt_(:,:,:),vclir_(:)
+real(8), allocatable :: vxcmt_(:,:,:),vxcir_(:)
+real(8), allocatable :: vsmt_(:,:,:),vsir_(:)
+real(8), allocatable :: magmt_(:,:,:,:),magir_(:,:)
+real(8), allocatable :: bxcmt_(:,:,:,:),bxcir_(:,:)
+real(8), allocatable :: bsmt_(:,:,:,:),bsir_(:,:)
+real(8), allocatable :: bfsmcmt_(:,:)
+complex(8), allocatable :: vsig_(:)
 complex(8), allocatable :: vmatlu_(:,:,:,:,:)
 open(50,file='STATE'//trim(filext),action='READ',form='UNFORMATTED', &
  status='OLD',iostat=iostat)
@@ -55,8 +55,15 @@ if (iostat.ne.0) then
   stop
 end if
 read(50) version_
-if ((version(1).ne.version_(1)).or.(version(2).ne.version_(2)) &
- .or.(version(3).ne.version_(3))) then
+if (version_(1).lt.2) then
+  write(*,*)
+  write(*,'("Error(readstate): unable to read STATE.OUT from versions earlier &
+   &than 2.0.0")')
+  write(*,*)
+  stop
+end if
+if ((version(1).ne.version_(1)).or.(version(2).ne.version_(2)).or. &
+    (version(3).ne.version_(3))) then
   write(*,*)
   write(*,'("Warning(readstate): different versions")')
   write(*,'(" current   : ",I3.3,".",I3.3,".",I3.3)') version
@@ -74,7 +81,9 @@ if (nspecies.ne.nspecies_) then
 end if
 read(50) lmmaxvr_
 read(50) nrmtmax_
+read(50) nrcmtmax_
 allocate(spr_(nrmtmax_,nspecies))
+allocate(rcmt_(nrcmtmax_,nspecies))
 do is=1,nspecies
   read(50) natoms_
   if (natoms(is).ne.natoms_) then
@@ -87,8 +96,10 @@ do is=1,nspecies
   end if
   read(50) nrmt_(is)
   read(50) spr_(1:nrmt_(is),is)
+  read(50) nrcmt_(is)
+  read(50) rcmt_(1:nrcmt_(is),is)
 end do
-read(50) ngrid_
+read(50) ngridg_
 read(50) ngvec_
 read(50) ndmag_
 if ((spinpol_).and.(ndmag_.ne.1).and.(ndmag_.ne.3)) then
@@ -97,41 +108,48 @@ if ((spinpol_).and.(ndmag_.ne.1).and.(ndmag_.ne.3)) then
   write(*,*)
   stop
 end if
-! versions > 0.9.131
-if ((version_(1).gt.0).or.(version_(2).gt.9).or.(version_(3).gt.131)) then
-  read(50) nspinor_
-  read(50) ldapu_
-  read(50) lmmaxlu_
-else
-  ldapu_=0
-end if
-ngrtot_=ngrid_(1)*ngrid_(2)*ngrid_(3)
-allocate(mapir(ngrtot))
+read(50) nspinor_
+read(50) fixspin_
+read(50) ldapu_
+read(50) lmmaxlu_
+ngtot_=ngridg_(1)*ngridg_(2)*ngridg_(3)
+allocate(mapir(ngtot))
 allocate(rhomt_(lmmaxvr_,nrmtmax_,natmtot))
-allocate(rhoir_(ngrtot_))
+allocate(rhoir_(ngtot_))
 allocate(vclmt_(lmmaxvr_,nrmtmax_,natmtot))
-allocate(vclir_(ngrtot_))
+allocate(vclir_(ngtot_))
 allocate(vxcmt_(lmmaxvr_,nrmtmax_,natmtot))
-allocate(vxcir_(ngrtot_))
-allocate(veffmt_(lmmaxvr_,nrmtmax_,natmtot))
-allocate(veffir_(ngrtot_))
-allocate(veffig_(ngvec_))
-! read muffin-tin density
+allocate(vxcir_(ngtot_))
+allocate(vsmt_(lmmaxvr_,nrmtmax_,natmtot))
+allocate(vsir_(ngtot_))
+allocate(vsig_(ngvec_))
+! read the muffin-tin density
 read(50) rhomt_,rhoir_
-! read Coulomb potential (spin independent)
+! read the Coulomb potential (spin independent)
 read(50) vclmt_,vclir_
-! read exchange-correlation potential
+! read the exchange-correlation potential
 read(50) vxcmt_,vxcir_
-! read effective potential
-read(50) veffmt_,veffir_,veffig_
-! read magnetisation and effective field
+! read the Kohn-Sham effective potential
+read(50) vsmt_,vsir_,vsig_
+! read the magnetisation, exchange-correlation and effective magnetic fields
 if (spinpol_) then
   allocate(magmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
-  allocate(magir_(ngrtot_,ndmag_))
+  allocate(magir_(ngtot_,ndmag_))
   allocate(bxcmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
-  allocate(bxcir_(ngrtot_,ndmag_))
+  allocate(bxcir_(ngtot_,ndmag_))
+  allocate(bsmt_(lmmaxvr_,nrcmtmax_,natmtot,ndmag_))
+  allocate(bsir_(ngtot_,ndmag_))
   read(50) magmt_,magir_
   read(50) bxcmt_,bxcir_
+  read(50) bsmt_,bsir_
+! read fixed spin moment effective fields
+  if (fixspin_.ne.0) then
+    allocate(bfsmcmt_(3,natmtot))
+    read(50) bfsmc
+    read(50) bfsmcmt_
+    if (fixspin.ne.0) bfsmcmt(:,:)=bfsmcmt_(:,:)
+    deallocate(bfsmcmt_)
+  end if
 end if
 ! read LDA+U potential matrix elements
 if ((ldapu.ne.0).and.(ldapu_.ne.0)) then
@@ -151,105 +169,131 @@ if ((ldapu.ne.0).and.(ldapu_.ne.0)) then
   deallocate(vmatlu_)
 end if
 close(50)
+! component map for spin-polarised case
+if (spinpol) then
+  if (ndmag.eq.ndmag_) then
+    idm0=1; idm1=ndmag
+    do idm=1,ndmag
+      mapidm(idm)=idm
+    end do
+  else
+    idm0=ndmag; idm1=ndmag
+    mapidm(ndmag)=ndmag_
+  end if
+end if
 !---------------------------!
 !     muffin-tin arrays     !
 !---------------------------!
 rhomt(:,:,:)=0.d0
 vclmt(:,:,:)=0.d0
 vxcmt(:,:,:)=0.d0
-veffmt(:,:,:)=0.d0
+vsmt(:,:,:)=0.d0
 if (spinpol) then
   magmt(:,:,:,:)=0.d0
   bxcmt(:,:,:,:)=0.d0
+  bsmt(:,:,:,:)=0.d0
 end if
 lmmax=min(lmmaxvr,lmmaxvr_)
 ! interpolate the old arrays on the new radial mesh
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do lm=1,lmmax
-      call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,rhomt_(lm,1,ias),nrmt(is), &
-       spr(:,is),lmmaxvr,rhomt(lm,1,ias))
-      call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vclmt_(lm,1,ias),nrmt(is), &
-       spr(:,is),lmmaxvr,vclmt(lm,1,ias))
-      call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vxcmt_(lm,1,ias),nrmt(is), &
-       spr(:,is),lmmaxvr,vxcmt(lm,1,ias))
-      call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,veffmt_(lm,1,ias),nrmt(is), &
-       spr(:,is),lmmaxvr,veffmt(lm,1,ias))
-    end do
-    if ((spinpol).and.(spinpol_)) then
-      if (ndmag.eq.ndmag_) then
-        do idm=1,ndmag
-          do lm=1,lmmax
-            call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,magmt_(lm,1,ias,idm), &
-             nrmt(is),spr(:,is),lmmaxvr,magmt(lm,1,ias,idm))
-            call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,bxcmt_(lm,1,ias,idm), &
-             nrmt(is),spr(:,is),lmmaxvr,bxcmt(lm,1,ias,idm))
-          end do
-        end do
-      else
-        do lm=1,lmmax
-          call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,magmt_(lm,1,ias,ndmag_), &
-           nrmt(is),spr(:,is),lmmaxvr,magmt(lm,1,ias,ndmag))
-          call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,bxcmt_(lm,1,ias,ndmag_), &
-           nrmt(is),spr(:,is),lmmaxvr,bxcmt(lm,1,ias,ndmag))
-        end do
-      end if
-    end if
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,lm,idm,jdm)
+!$OMP DO
+do ias=1,natmtot
+  is=idxis(ias)
+  do lm=1,lmmax
+    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,rhomt_(lm,1,ias),nrmt(is), &
+     spr(:,is),lmmaxvr,rhomt(lm,1,ias))
   end do
+  do lm=1,lmmax
+    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vclmt_(lm,1,ias),nrmt(is), &
+     spr(:,is),lmmaxvr,vclmt(lm,1,ias))
+  end do
+  do lm=1,lmmax
+    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vxcmt_(lm,1,ias),nrmt(is), &
+     spr(:,is),lmmaxvr,vxcmt(lm,1,ias))
+  end do
+  do lm=1,lmmax
+    call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,vsmt_(lm,1,ias),nrmt(is), &
+     spr(:,is),lmmaxvr,vsmt(lm,1,ias))
+  end do
+  if ((spinpol).and.(spinpol_)) then
+    do idm=idm0,idm1
+      jdm=mapidm(idm)
+      do lm=1,lmmax
+        call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,magmt_(lm,1,ias,jdm), &
+         nrmt(is),spr(:,is),lmmaxvr,magmt(lm,1,ias,idm))
+      end do
+      do lm=1,lmmax
+        call rfinterp(nrmt_(is),spr_(:,is),lmmaxvr_,bxcmt_(lm,1,ias,jdm), &
+         nrmt(is),spr(:,is),lmmaxvr,bxcmt(lm,1,ias,idm))
+      end do
+      do lm=1,lmmax
+        call rfinterp(nrcmt_(is),rcmt_(:,is),lmmaxvr_,bsmt_(lm,1,ias,jdm), &
+         nrcmt(is),rcmt(:,is),lmmaxvr,bsmt(lm,1,ias,idm))
+      end do
+    end do
+  end if
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 !-----------------------------!
 !     interstitial arrays     !
 !-----------------------------!
 rhoir(:)=0.d0
 vclir(:)=0.d0
 vxcir(:)=0.d0
-veffir(:)=0.d0
-veffig(:)=0.d0
+vsir(:)=0.d0
+vsig(:)=0.d0
 if (spinpol) then
   magir(:,:)=0.d0
   bxcir(:,:)=0.d0
+  bsir(:,:)=0.d0
 end if
 ! map from new grid to old
-do i3=0,ngrid(3)-1
-  t1=dble(i3*ngrid_(3))/dble(ngrid(3))
-  j3=modulo(nint(t1),ngrid_(3))
-  do i2=0,ngrid(2)-1
-    t1=dble(i2*ngrid_(2))/dble(ngrid(2))
-    j2=modulo(nint(t1),ngrid_(2))
-    do i1=0,ngrid(1)-1
-      t1=dble(i1*ngrid_(1))/dble(ngrid(1))
-      j1=modulo(nint(t1),ngrid_(1))
-      ir=i3*ngrid(2)*ngrid(1)+i2*ngrid(1)+i1+1
-      jr=j3*ngrid_(2)*ngrid_(1)+j2*ngrid_(1)+j1+1
+ir=0
+do i3=0,ngridg(3)-1
+  t1=dble(i3*ngridg_(3))/dble(ngridg(3))
+  j3=modulo(nint(t1),ngridg_(3))
+  do i2=0,ngridg(2)-1
+    t1=dble(i2*ngridg_(2))/dble(ngridg(2))
+    j2=modulo(nint(t1),ngridg_(2))
+    do i1=0,ngridg(1)-1
+      t1=dble(i1*ngridg_(1))/dble(ngridg(1))
+      j1=modulo(nint(t1),ngridg_(1))
+      ir=ir+1
+      jr=j3*ngridg_(2)*ngridg_(1)+j2*ngridg_(1)+j1+1
       mapir(ir)=jr
     end do
   end do
 end do
-do ir=1,ngrtot
+do ir=1,ngtot
   jr=mapir(ir)
   rhoir(ir)=rhoir_(jr)
   vclir(ir)=vclir_(jr)
   vxcir(ir)=vxcir_(jr)
-  veffir(ir)=veffir_(jr)
+  vsir(ir)=vsir_(jr)
 end do
 ngm=min(ngvec,ngvec_)
-veffig(1:ngm)=veffig_(1:ngm)
+vsig(1:ngm)=vsig_(1:ngm)
 if ((spinpol).and.(spinpol_)) then
-  do ir=1,ngrtot
-    jr=mapir(ir)
-    if (ndmag.eq.ndmag_) then
-      magir(ir,:)=magir_(jr,:)
-      bxcir(ir,:)=bxcir_(jr,:)
-    else
-      magir(ir,ndmag)=magir_(jr,ndmag_)
-      bxcir(ir,ndmag)=bxcir_(jr,ndmag_)
-    end if
+  do idm=idm0,idm1
+    jdm=mapidm(idm)
+    do ir=1,ngtot
+      jr=mapir(ir)
+      magir(ir,idm)=magir_(jr,jdm)
+    end do
+    do ir=1,ngtot
+      jr=mapir(ir)
+      bxcir(ir,idm)=bxcir_(jr,jdm)
+    end do
+    do ir=1,ngtot
+      jr=mapir(ir)
+      bsir(ir,idm)=bsir_(jr,jdm)
+    end do
   end do
 end if
-deallocate(mapir,spr_,rhomt_,rhoir_,vclmt_,vclir_)
-deallocate(vxcmt_,vxcir_,veffmt_,veffir_,veffig_)
-if (spinpol_) deallocate(magmt_,magir_,bxcmt_,bxcir_)
+deallocate(mapir,spr_,rcmt_,rhomt_,rhoir_,vclmt_,vclir_)
+deallocate(vxcmt_,vxcir_,vsmt_,vsir_,vsig_)
+if (spinpol_) deallocate(magmt_,magir_,bxcmt_,bxcir_,bsmt_,bsir_)
 return
 end subroutine
 !EOC

@@ -29,9 +29,8 @@ ncv=ncrmax*natmtot*nstsv
 nvv=nstsv*nstsv
 do ik=1,nkpt
   lp=mod(ik-1,np_mpi)
-  call mpi_bcast(vnlcv(:,:,:,ik),ncv,mpi_double_complex,lp,mpi_comm_world, &
-   ierror)
-  call mpi_bcast(vnlvv(:,:,ik),nvv,mpi_double_complex,lp,mpi_comm_world,ierror)
+  call mpi_bcast(vnlcv(:,:,:,ik),ncv,mpi_double_complex,lp,mpi_comm_kpt,ierror)
+  call mpi_bcast(vnlvv(:,:,ik),nvv,mpi_double_complex,lp,mpi_comm_kpt,ierror)
 end do
 return
 end subroutine

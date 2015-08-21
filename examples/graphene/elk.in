@@ -9,7 +9,7 @@ tasks
 nempty
   10
 
-dos
+wplot
   200 150 1
  -0.5 0.5
 

@@ -21,10 +21,10 @@ n=0
 dyns(:,:)=0.d0
 ! use the symmetries which leave vpl invariant
 do isym=1,nsymcrys
+  if (.not.tvzsymc(isym)) cycle
   lspl=lsplsymc(isym)
   s(:,:)=dble(symlat(:,:,lspl))
   call r3mtv(s,v1,v2)
-  call vecfbz(epslat,bvec,v2)
   t1=abs(v1(1)-v2(1))+abs(v1(2)-v2(2))+abs(v1(3)-v2(3))
   if (t1.lt.epslat) then
     call dynsymapp(isym,v1,dynp,dyns)

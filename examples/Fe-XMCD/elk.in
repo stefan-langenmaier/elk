@@ -23,7 +23,7 @@ tasks
 sppath
   './'
 
-dos
+wplot
   400 200 0
   25.0 26.5
 
@@ -56,11 +56,6 @@ reducebf
 ! large number of empty states necessary for "continuum" absorption
 nempty
   40
-
-! small step length for determination of linearization energy needed for
-! low-lying local orbital
-deband
-  0.01
 
 ! a Lorentzian broadening is applied to the spectrum
 swidth

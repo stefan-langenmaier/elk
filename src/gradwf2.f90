@@ -11,31 +11,27 @@ integer, intent(in) :: ik
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv)
 real(8), intent(inout) :: gwf2mt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(inout) :: gwf2ir(ngrtot)
+real(8), intent(inout) :: gwf2ir(ngtot)
 ! local variables
 integer ispn,jspn,ist
 integer is,ia,ias,i,j,n
-integer nr,ir,itp,igk,ifg
-real(8) wo,t1
-complex(8) zq(2),zt1
+integer nr,ir,igk,ifg
+real(8) t0,t1
+complex(8) zq(2),z1
 ! automatic arrays
 logical done(nstfv,nspnfv)
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: wfmt1(:,:,:,:)
-complex(8), allocatable :: wfmt2(:,:,:)
-complex(8), allocatable :: gwfmt(:,:,:)
-complex(8), allocatable :: zfmt(:,:)
-complex(8), allocatable :: zfft1(:,:)
-complex(8), allocatable :: zfft2(:)
+complex(8), allocatable :: wfmt1(:,:,:,:),wfmt2(:,:,:)
+complex(8), allocatable :: gwfmt(:,:,:),zfmt(:,:)
+complex(8), allocatable :: zfft1(:,:),zfft2(:)
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
 allocate(wfmt1(lmmaxvr,nrmtmax,nstfv,nspnfv))
 allocate(wfmt2(lmmaxvr,nrmtmax,nspinor))
-allocate(gwfmt(lmmaxvr,nrmtmax,3))
-allocate(zfmt(lmmaxvr,nrmtmax))
+allocate(gwfmt(lmmaxvr,nrmtmax,3),zfmt(lmmaxvr,nrmtmax))
 ! find the matching coefficients
 do ispn=1,nspnfv
   call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -54,55 +50,46 @@ do is=1,nspecies
     end if
     done(:,:)=.false.
     do j=1,nstsv
-      wo=wkpt(ik)*occsv(j,ik)
-      if (abs(wo).gt.epsocc) then
-        if (tevecsv) then
+      if (abs(occsv(j,ik)).lt.epsocc) cycle
+      t0=wkpt(ik)*occsv(j,ik)
+      if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
-          wfmt2(:,:,:)=0.d0
-          i=0
-          do ispn=1,nspinor
-            if (spinsprl) then
-              jspn=ispn
-            else
-              jspn=1
-            end if
-            do ist=1,nstfv
-              i=i+1
-              zt1=evecsv(i,j)
-              if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
-              if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
-                if (.not.done(ist,jspn)) then
-                  call wavefmt(1,lmaxvr,ias,ngk(jspn,ik),apwalm(:,:,:,:,jspn), &
-                   evecfv(:,ist,jspn),lmmaxvr,wfmt1(:,:,ist,jspn))
-                  done(ist,jspn)=.true.
-                end if
-! add to spinor wavefunction
-                call zaxpy(n,zt1,wfmt1(:,:,ist,jspn),1,wfmt2(:,:,ispn),1)
-              end if
-            end do
-          end do
-        else
-! spin-unpolarised wavefunction
-          call wavefmt(1,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1),lmmaxvr, &
-           wfmt2)
-        end if
-! compute the gradient of the wavefunction
+        wfmt2(:,:,:)=0.d0
+        i=0
         do ispn=1,nspinor
-          call gradzfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,wfmt2(:,:,ispn), &
-           gwfmt)
-! convert gradient from spherical harmonics to spherical coordinates
-          do i=1,3
-            call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-             gwfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
-            do ir=1,nr
-              do itp=1,lmmaxvr
-                t1=wo*(dble(zfmt(itp,ir))**2+aimag(zfmt(itp,ir))**2)
-                gwf2mt(itp,ir,ias)=gwf2mt(itp,ir,ias)+t1
-              end do
-            end do
+          jspn=jspnfv(ispn)
+          do ist=1,nstfv
+            i=i+1
+            z1=evecsv(i,j)
+            if (spinsprl.and.ssdph) z1=z1*zq(ispn)
+            if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
+              if (.not.done(ist,jspn)) then
+                call wavefmt(1,lmaxvr,ias,ngk(jspn,ik),apwalm(:,:,:,:,jspn), &
+                 evecfv(:,ist,jspn),lmmaxvr,wfmt1(:,:,ist,jspn))
+                done(ist,jspn)=.true.
+              end if
+! add to spinor wavefunction
+              call zaxpy(n,z1,wfmt1(:,:,ist,jspn),1,wfmt2(:,:,ispn),1)
+            end if
           end do
         end do
+      else
+! spin-unpolarised wavefunction
+        call wavefmt(1,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1),lmmaxvr,wfmt2)
       end if
+! compute the gradient of the wavefunction
+      do ispn=1,nspinor
+        call gradzfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,wfmt2(:,:,ispn),gwfmt)
+! convert gradient from spherical harmonics to spherical coordinates
+        do i=1,3
+          call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
+           gwfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
+          do ir=1,nr
+            gwf2mt(:,ir,ias)=gwf2mt(:,ir,ias) &
+             +t0*(dble(zfmt(:,ir))**2+aimag(zfmt(:,ir))**2)
+          end do
+        end do
+      end do
     end do
   end do
 end do
@@ -110,61 +97,50 @@ deallocate(apwalm,wfmt1,wfmt2,gwfmt,zfmt)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
-allocate(zfft1(ngrtot,nspinor))
-allocate(zfft2(ngrtot))
+allocate(zfft1(ngtot,nspinor),zfft2(ngtot))
 do j=1,nstsv
-  wo=wkpt(ik)*occsv(j,ik)
-  if (abs(wo).gt.epsocc) then
-    t1=wo/omega
-    zfft1(:,:)=0.d0
-    if (tevecsv) then
+  if (abs(occsv(j,ik)).lt.epsocc) cycle
+  t0=wkpt(ik)*occsv(j,ik)/omega
+  zfft1(:,:)=0.d0
+  if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
-      i=0
-      do ispn=1,nspinor
-        if (spinsprl) then
-          jspn=ispn
-        else
-          jspn=1
-        end if
-        do ist=1,nstfv
-          i=i+1
-          zt1=evecsv(i,j)
-          if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
-            do igk=1,ngk(jspn,ik)
-              ifg=igfft(igkig(igk,jspn,ik))
-              zfft1(ifg,ispn)=zfft1(ifg,ispn)+zt1*evecfv(igk,ist,jspn)
-            end do
-          end if
-        end do
-      end do
-    else
-! spin-unpolarised wavefunction
-      do igk=1,ngk(1,ik)
-        ifg=igfft(igkig(igk,1,ik))
-        zfft1(ifg,1)=evecfv(igk,j,1)
-      end do
-    end if
-! compute gradient of wavefunction
+    i=0
     do ispn=1,nspinor
-      if (spinsprl) then
-        jspn=ispn
-      else
-        jspn=1
-      end if
-      do i=1,3
-        zfft2(:)=0.d0
-        do igk=1,ngk(jspn,ik)
-          ifg=igfft(igkig(igk,jspn,ik))
-          zfft2(ifg)=zi*vgkc(i,igk,jspn,ik)*zfft1(ifg,ispn)
-        end do
-! Fourier transform gradient to real-space
-        call zfftifc(3,ngrid,1,zfft2)
-        do ir=1,ngrtot
-          gwf2ir(ir)=gwf2ir(ir)+t1*(dble(zfft2(ir))**2+aimag(zfft2(ir))**2)
-        end do
+      jspn=jspnfv(ispn)
+      do ist=1,nstfv
+        i=i+1
+        z1=evecsv(i,j)
+        if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
+          do igk=1,ngk(jspn,ik)
+            ifg=igfft(igkig(igk,jspn,ik))
+            zfft1(ifg,ispn)=zfft1(ifg,ispn)+z1*evecfv(igk,ist,jspn)
+          end do
+        end if
       end do
     end do
+  else
+! spin-unpolarised wavefunction
+    do igk=1,ngk(1,ik)
+      ifg=igfft(igkig(igk,1,ik))
+      zfft1(ifg,1)=evecfv(igk,j,1)
+    end do
   end if
+! compute gradient of wavefunction
+  do ispn=1,nspinor
+    jspn=jspnfv(ispn)
+    do i=1,3
+      zfft2(:)=0.d0
+      do igk=1,ngk(jspn,ik)
+        ifg=igfft(igkig(igk,jspn,ik))
+        zfft2(ifg)=zi*vgkc(i,igk,jspn,ik)*zfft1(ifg,ispn)
+      end do
+! Fourier transform gradient to real-space
+      call zfftifc(3,ngridg,1,zfft2)
+      do ir=1,ngtot
+        gwf2ir(ir)=gwf2ir(ir)+t0*(dble(zfft2(ir))**2+aimag(zfft2(ir))**2)
+      end do
+    end do
+  end do
 end do
 deallocate(zfft1,zfft2)
 return

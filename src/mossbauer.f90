@@ -25,15 +25,10 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias
-integer ir,nrn,nrt
-real(8) rn,rt,vn,vt
-real(8) rho0,mc,bc,t1
+integer is,ia,ias,ir,nrt
+real(8) rt,vt,rho0,mc,bc,t1
 ! allocatable arrays
 real(8), allocatable :: fr(:),gr(:)
-! external functions
-real(8) radnucl
-external radnucl
 ! initialise universal variables
 call init0
 ! read density and potentials from file
@@ -41,44 +36,36 @@ call readstate
 ! allocate local arrays
 allocate(fr(nrmtmax),gr(nrmtmax))
 open(50,file='MOSSBAUER.OUT',action='WRITE',form='FORMATTED')
+! loop over species
 do is=1,nspecies
-! approximate nuclear radius and volume
-  rn=radnucl(spzn(is))
-  do ir=1,nrmt(is)-1
-    if (spr(ir,is).gt.rn) goto 10
-  end do
-10 continue
-  nrn=ir
-  rn=spr(nrn,is)
-  vn=(4.d0/3.d0)*pi*rn**3
 ! Thomson radius and volume
   rt=abs(spzn(is))/solsc**2
   do ir=1,nrmt(is)-1
-    if (spr(ir,is).gt.rt) goto 20
+    if (spr(ir,is).gt.rt) exit
   end do
-20 continue
   nrt=ir
   rt=spr(nrt,is)
   vt=(4.d0/3.d0)*pi*rt**3
+! loop over atoms
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 !--------------------------------!
 !     contact charge density     !
 !--------------------------------!
-    do ir=1,nrn
-      fr(ir)=(fourpi*spr(ir,is)**2)*rhomt(1,ir,ias)*y00
+    do ir=1,nrnucl(is)
+      fr(ir)=rhomt(1,ir,ias)*spr(ir,is)**2
     end do
-    call fderiv(-1,nrn,spr(:,is),fr,gr)
-    rho0=gr(nrn)/vn
+    call fderiv(-1,nrnucl(is),spr(:,is),fr,gr)
+    rho0=fourpi*y00*gr(nrnucl(is))/vnucl(is)
     write(50,*)
     write(50,*)
     write(50,'("Species : ",I4," (",A,"), atom : ",I4)') is,trim(spsymb(is)),ia
     write(50,*)
-    write(50,'(" approximate nuclear radius : ",G18.10)') rn
-    write(50,'(" number of mesh points to nuclear radius : ",I6)') nrn
+    write(50,'(" approximate nuclear radius : ",G18.10)') rnucl(is)
+    write(50,'(" number of mesh points to nuclear radius : ",I6)') nrnucl(is)
     write(50,'(" density at nuclear center      : ",G18.10)') rhomt(1,1,ias)*y00
     write(50,'(" density at nuclear surface     : ",G18.10)') &
-     rhomt(1,nrn,ias)*y00
+     rhomt(1,nrnucl(is),ias)*y00
     write(50,'(" average contact charge density : ",G18.10)') rho0
 !------------------------------------------!
 !     contact magnetic hyperfine field     !
@@ -94,10 +81,10 @@ do is=1,nspecies
 ! collinear
           t1=magmt(1,ir,ias,1)
         end if
-        fr(ir)=(fourpi*spr(ir,is)**2)*y00*t1
+        fr(ir)=t1*spr(ir,is)**2
       end do
       call fderiv(-1,nrt,spr(:,is),fr,gr)
-      mc=gr(nrt)/vt
+      mc=fourpi*y00*gr(nrt)/vt
       write(50,*)
       write(50,'(" Thomson radius : ",G18.10)') rt
       write(50,'(" number of mesh points to Thomson radius : ",I6)') nrt

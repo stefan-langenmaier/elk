@@ -3,18 +3,17 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genwfsvp(tsh,tgp,vpl,wfmt,ld,wfir)
+subroutine genwfsvp(tsh,tgp,tocc,vpl,wfmt,ld,wfir)
 use modmain
 implicit none
 ! arguments
-logical, intent(in) :: tsh
-logical, intent(in) :: tgp
+logical, intent(in) :: tsh,tgp,tocc
 real(8), intent(in) :: vpl(3)
 complex(8), intent(out) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
 integer, intent(in) :: ld
 complex(8), intent(out) :: wfir(ld,nspinor,nstsv)
 ! local variables
-integer ispn,igp
+integer ispn,igp,isym,ik
 real(8) vl(3),vc(3)
 ! automatic arrays
 integer ngp(nspnfv)
@@ -43,7 +42,8 @@ do ispn=1,nspnfv
     end if
   end if
 ! generate the G+p-vectors
-  call gengpvec(vl,vc,ngp(ispn),igpig(:,ispn),vgpl(:,:,ispn),vgpc)
+  call gengkvec(ngvec,ivg,vgc,vl,vc,gkmax,ngkmax,ngp(ispn),igpig(:,ispn), &
+   vgpl(:,:,ispn),vgpc)
 ! generate the spherical coordinates of the G+p-vectors
   do igp=1,ngp(ispn)
     call sphcrd(vgpc(:,igp),gpc(igp),tpgpc(:,igp))
@@ -56,12 +56,19 @@ end do
 deallocate(vgpc,gpc,sfacgp)
 ! get the first- and second-variational eigenvectors from file
 allocate(evecfv(nmatmax,nstfv,nspnfv))
-allocate(evecsv(nstsv,nstsv))
 call getevecfv(vpl,vgpl,evecfv)
-call getevecsv(vpl,evecsv)
 deallocate(vgpl)
-! calculate the second-variational wavefunctions for all states
-call genwfsv(tsh,tgp,.false.,ngp,igpig,evalsv,apwalm,evecfv,evecsv,wfmt,ld,wfir)
+allocate(evecsv(nstsv,nstsv))
+call getevecsv(vpl,evecsv)
+! find the equivalent reduced k-point if required
+if (tocc) then
+  call findkpt(vpl,isym,ik)
+else
+  ik=1
+end if
+! calculate the second-variational wavefunctions
+call genwfsv(tsh,tgp,tocc,ngp,igpig,occsv(:,ik),apwalm,evecfv,evecsv,wfmt,ld, &
+ wfir)
 deallocate(igpig,apwalm,evecfv,evecsv)
 return
 end subroutine

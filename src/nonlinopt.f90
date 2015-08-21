@@ -29,7 +29,7 @@ integer recl,iostat
 real(8), parameter :: etol=1.d-4
 real(8) eji,eki,ekj,t1
 complex(8) pii(3),dji(3),vji(3),vik(3),vkj(3)
-complex(8) eta,ztm(3,3),zt1
+complex(8) eta,ztm(3,3),z1
 character(256) fname
 ! allocatable arrays
 real(8), allocatable :: w(:)
@@ -47,9 +47,9 @@ do ik=1,nkpt
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
 ! generate energy grid (starting from zero)
-allocate(w(nwdos))
-t1=wdos(2)/dble(nwdos)
-do iw=1,nwdos
+allocate(w(nwplot))
+t1=wplot(2)/dble(nwplot)
+do iw=1,nwplot
   w(iw)=t1*dble(iw-1)
 end do
 ! find the record length for momentum matrix element file
@@ -65,8 +65,8 @@ if (iostat.ne.0) then
   stop
 end if
 ! allocate response function arrays
-allocate(chiw(nwdos,3))
-allocate(chi2w(nwdos,2))
+allocate(chiw(nwplot,3))
+allocate(chi2w(nwplot,2))
 ! i divided by the complex relaxation time
 eta=cmplx(0.d0,swidth,8)
 ! begin loop over components
@@ -79,7 +79,7 @@ do l=1,noptcomp
 ! parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(pmat,jk,ist,jst,kst) &
-!$OMP PRIVATE(eji,eki,ekj,t1,zt1) &
+!$OMP PRIVATE(eji,eki,ekj,t1,z1) &
 !$OMP PRIVATE(pii,dji,vji,vik,vkj,ztm)
 !$OMP DO
   do ik=1,nkptnr
@@ -101,7 +101,7 @@ do l=1,noptcomp
         end do
       end if
     end do
-    zt1=(wkptnr*occmax/omega)*zi
+    z1=(wkptnr*occmax/omega)*zi
 ! loop over valence states
     do ist=1,nstsv
       if (evalsv(ist,jk).lt.efermi) then
@@ -132,7 +132,7 @@ do l=1,noptcomp
                 else
                   t1=t1/etol**2
                 end if
-                ztm(1,1)=zt1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
+                ztm(1,1)=z1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
                  +conjg(vik(b))*conjg(vkj(c)))*t1
                 t1=eji*(-eki)*ekj*(-eki-eji)
                 if (abs(t1).gt.etol) then
@@ -140,14 +140,14 @@ do l=1,noptcomp
                 else
                   t1=t1/etol**2
                 end if
-                ztm(1,2)=0.5d0*zt1*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b))*t1
+                ztm(1,2)=0.5d0*z1*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b))*t1
                 t1=eji*(-eki)*ekj*(ekj-eji)
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
                   t1=t1/etol**2
                 end if
-                ztm(1,3)=0.5d0*zt1*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a))*t1
+                ztm(1,3)=0.5d0*z1*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a))*t1
 ! intraband terms
                 t1=(-eki)*ekj*eji**3
                 if (abs(t1).gt.etol) then
@@ -155,7 +155,7 @@ do l=1,noptcomp
                 else
                   t1=t1/etol**2
                 end if
-                ztm(2,1)=0.5d0*zt1*(eki*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a)) &
+                ztm(2,1)=0.5d0*z1*(eki*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a)) &
                  +ekj*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b)))*t1
                 t1=(eki*(-ekj)*eji**3)/(ekj+eki)
                 if (abs(t1).gt.etol) then
@@ -163,7 +163,7 @@ do l=1,noptcomp
                 else
                   t1=t1/etol**2
                 end if
-                ztm(2,3)=zt1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
+                ztm(2,3)=z1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
                  +conjg(vik(b))*conjg(vkj(c)))*t1
 ! modulation terms
                 t1=ekj*(-eki)*eji**3
@@ -172,16 +172,16 @@ do l=1,noptcomp
                 else
                   t1=t1/etol**2
                 end if
-                ztm(3,1)=-0.5d0*zt1*eki*vkj(a)*(vji(b)*vik(c)+vik(b)*vji(c))*t1
+                ztm(3,1)=-0.5d0*z1*eki*vkj(a)*(vji(b)*vik(c)+vik(b)*vji(c))*t1
                 t1=ekj*(-eki)*eji**3
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
                   t1=t1/etol**2
                 end if
-                ztm(3,2)=0.5d0*zt1*ekj*vik(a)*(vkj(b)*vji(c)+vji(b)*vkj(c))*t1
+                ztm(3,2)=0.5d0*z1*ekj*vik(a)*(vkj(b)*vji(c)+vji(b)*vkj(c))*t1
 !$OMP CRITICAL
-                do iw=1,nwdos
+                do iw=1,nwplot
 ! 2w interband
                   chi2w(iw,1)=chi2w(iw,1)+ztm(1,1)/(eji-2.d0*w(iw)+eta)
 ! 2w intraband
@@ -198,10 +198,10 @@ do l=1,noptcomp
               end if
 ! end loop over kst
             end do
-            ztm(2,2)=4.d0*zt1*conjg(vji(a))*(dji(b)*vji(c)+vji(b)*dji(c))/eji**4
-            ztm(3,3)=0.5d0*zt1*vji(a)*(vji(b)*dji(c)+dji(b)*vji(c))/eji**4
+            ztm(2,2)=4.d0*z1*conjg(vji(a))*(dji(b)*vji(c)+vji(b)*dji(c))/eji**4
+            ztm(3,3)=0.5d0*z1*vji(a)*(vji(b)*dji(c)+dji(b)*vji(c))/eji**4
 !$OMP CRITICAL
-            do iw=1,nwdos
+            do iw=1,nwplot
 ! 2w intraband
               chi2w(iw,2)=chi2w(iw,2)+ztm(2,2)/(eji-2.d0*w(iw)+eta)
 ! w modulation
@@ -230,26 +230,26 @@ do l=1,noptcomp
   open(54,file=trim(fname),action='WRITE',form='FORMATTED')
   write(fname,'("CHI_",3I1,".OUT")') a,b,c
   open(55,file=trim(fname),action='WRITE',form='FORMATTED')
-  do iw=1,nwdos
-    write(51,'(3G18.10)') w(iw),dble(chi2w(iw,1))
-    write(52,'(3G18.10)') w(iw),dble(chi2w(iw,2))
-    write(53,'(3G18.10)') w(iw),dble(chiw(iw,1))
-    write(54,'(3G18.10)') w(iw),dble(chiw(iw,2))
+  do iw=1,nwplot
+    write(51,'(2G18.10)') w(iw),dble(chi2w(iw,1))
+    write(52,'(2G18.10)') w(iw),dble(chi2w(iw,2))
+    write(53,'(2G18.10)') w(iw),dble(chiw(iw,1))
+    write(54,'(2G18.10)') w(iw),dble(chiw(iw,2))
     t1=dble(chi2w(iw,1)+chi2w(iw,2)+chiw(iw,1)+chiw(iw,2)+chiw(iw,3))
-    write(55,'(3G18.10)') w(iw),t1
+    write(55,'(2G18.10)') w(iw),t1
   end do
   write(51,'("     ")')
   write(52,'("     ")')
   write(53,'("     ")')
   write(54,'("     ")')
   write(55,'("     ")')
-  do iw=1,nwdos
-    write(51,'(3G18.10)') w(iw),aimag(chi2w(iw,1))
-    write(52,'(3G18.10)') w(iw),aimag(chi2w(iw,2))
-    write(53,'(3G18.10)') w(iw),aimag(chiw(iw,1))
-    write(54,'(3G18.10)') w(iw),aimag(chiw(iw,2))
+  do iw=1,nwplot
+    write(51,'(2G18.10)') w(iw),aimag(chi2w(iw,1))
+    write(52,'(2G18.10)') w(iw),aimag(chi2w(iw,2))
+    write(53,'(2G18.10)') w(iw),aimag(chiw(iw,1))
+    write(54,'(2G18.10)') w(iw),aimag(chiw(iw,2))
     t1=aimag(chi2w(iw,1)+chi2w(iw,2)+chiw(iw,1)+chiw(iw,2)+chiw(iw,3))
-    write(55,'(3G18.10)') w(iw),t1
+    write(55,'(2G18.10)') w(iw),t1
   end do
   close(51); close(52); close(53); close(54); close(55)
 ! end loop over components

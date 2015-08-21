@@ -56,15 +56,12 @@ complex(8), intent(out) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 integer np,is,ia,ias,omax
 integer l,m,lm,io,jo
 integer i,ir,igp,info
-real(8) fpso,t1
-complex(8) zt1,zt2
+real(8) t0,t1
+complex(8) z1,z2
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
-real(8), allocatable :: c(:)
-real(8), allocatable :: djl(:,:,:)
-complex(8), allocatable :: ylmgp(:,:)
-complex(8), allocatable :: zd(:,:)
-complex(8), allocatable :: zb(:,:)
+real(8), allocatable :: c(:),djl(:,:,:)
+complex(8), allocatable :: ylmgp(:,:),a(:,:),b(:,:)
 ! external functions
 real(8) polynom
 external polynom
@@ -74,14 +71,14 @@ allocate(ipiv(np))
 allocate(c(np))
 allocate(djl(0:lmaxapw,apwordmax,ngp))
 allocate(ylmgp(lmmaxapw,ngp))
-allocate(zd(apwordmax,apwordmax))
-allocate(zb(apwordmax,ngp*(2*lmaxapw+1)))
+allocate(a(apwordmax,apwordmax))
+allocate(b(apwordmax,ngp*(2*lmaxapw+1)))
 ! compute the spherical harmonics of the G+p-vectors
 do igp=1,ngp
   call genylm(lmaxapw,tpgpc(:,igp),ylmgp(:,igp))
 end do
-fpso=fourpi/sqrt(omega)
-! begin loops over atoms and species
+t0=fourpi/sqrt(omega)
+! loop over species
 do is=1,nspecies
 ! maximum APW order for this species
   omax=maxval(apword(1:lmaxapw,is))
@@ -99,31 +96,32 @@ do is=1,nspecies
       djl(:,io,igp)=t1*djl(:,io,igp)
     end do
   end do
+! loop over atoms
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! begin loop over l
     do l=0,lmaxapw
-      zt1=fpso*zil(l)
+      z1=t0*zil(l)
 ! set up matrix of derivatives
       do jo=1,apword(l,is)
         do io=1,apword(l,is)
-          zd(io,jo)=polynom(io-1,np,spr(ir,is),apwfr(ir,1,jo,l,ias),c,rmt(is))
+          a(io,jo)=polynom(io-1,np,spr(ir,is),apwfr(ir,1,jo,l,ias),c,rmt(is))
         end do
       end do
 ! set up target vectors
       i=0
       do igp=1,ngp
-        zt2=zt1*sfacgp(igp,ias)
+        z2=z1*sfacgp(igp,ias)
         do m=-l,l
           lm=idxlm(l,m)
           i=i+1
           do io=1,apword(l,is)
-            zb(io,i)=djl(l,io,igp)*zt2*conjg(ylmgp(lm,igp))
+            b(io,i)=djl(l,io,igp)*z2*conjg(ylmgp(lm,igp))
           end do
         end do
       end do
 ! solve the general complex linear systems
-      call zgesv(apword(l,is),i,zd,apwordmax,ipiv,zb,apwordmax,info)
+      call zgesv(apword(l,is),i,a,apwordmax,ipiv,b,apwordmax,info)
       if (info.ne.0) then
         write(*,*)
         write(*,'("Error(match): could not find APW matching coefficients")')
@@ -139,7 +137,7 @@ do is=1,nspecies
           lm=idxlm(l,m)
           i=i+1
           do io=1,apword(l,is)
-            apwalm(igp,io,lm,ias)=zb(io,i)
+            apwalm(igp,io,lm,ias)=b(io,i)
           end do
         end do
       end do
@@ -148,7 +146,7 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
-deallocate(ipiv,c,djl,ylmgp,zd,zb)
+deallocate(ipiv,c,djl,ylmgp,a,b)
 return
 end subroutine
 !EOC

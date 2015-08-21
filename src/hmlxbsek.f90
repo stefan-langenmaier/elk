@@ -3,19 +3,18 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine hmlxbsek(ik2,jlgr)
+subroutine hmlxbsek(ik2)
 use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ik2
-real(8), intent(in) :: jlgr(0:lnpsd+1,ngvec,nspecies)
 ! local variables
 integer i1,i2,j1,j2
 integer a1,a2,b1,b2
 integer ik1,is,ias,l,irc
 integer ist1,ist2,jst1,jst2
 real(8) t0
-complex(8) zrho0,zt1
+complex(8) zrho0,z1
 ! automatic arrays
 complex(8) zflm(lmmaxvr)
 ! allocatable arrays
@@ -30,12 +29,12 @@ external zfinp
 ! allocate local arrays
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngrtot))
-allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot,nvcbse),zvclir(ngrtot,nvcbse))
+allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
+allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot,nvcbse),zvclir(ngtot,nvcbse))
 allocate(zfmt(lmmaxvr,nrcmtmax))
-! calculate the wavefunctions for all states for k-point ik2
-call genwfsvp(.false.,.false.,vkl(:,ik2),wfmt2,ngrtot,wfir2)
+! calculate the wavefunctions for all states of k-point ik2
+call genwfsvp(.false.,.false.,.false.,vkl(:,ik2),wfmt2,ngtot,wfir2)
 l=0
 do i2=1,nvbse
   ist2=istbse(i2,ik2)
@@ -44,7 +43,7 @@ do i2=1,nvbse
     a2=ijkbse(i2,j2,ik2)
     l=l+1
 ! calculate the complex overlap density
-    call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
+    call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
      wfir2(:,:,ist2),wfir2(:,:,jst2),zrhomt,zrhoir)
 ! compute the Coulomb potential
     call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt(:,:,:,l))
@@ -59,7 +58,7 @@ do ik1=1,nkptnr
     wfmt1(:,:,:,:,:)=wfmt2(:,:,:,:,:)
     wfir1(:,:,:)=wfir2(:,:,:)
   else
-    call genwfsvp(.false.,.false.,vkl(:,ik1),wfmt1,ngrtot,wfir1)
+    call genwfsvp(.false.,.false.,.false.,vkl(:,ik1),wfmt1,ngtot,wfir1)
   end if
   do i1=1,nvbse
     ist1=istbse(i1,ik1)
@@ -67,7 +66,7 @@ do ik1=1,nkptnr
       jst1=jstbse(j1,ik1)
       a1=ijkbse(i1,j1,ik1)
 ! calculate the complex overlap density
-      call genzrho(.true.,wfmt1(:,:,:,:,ist1),wfmt1(:,:,:,:,jst1), &
+      call genzrho(.true.,spinpol,wfmt1(:,:,:,:,ist1),wfmt1(:,:,:,:,jst1), &
        wfir1(:,:,ist1),wfir1(:,:,jst1),zrhomt,zrhoir)
       l=0
       do i2=1,nvbse
@@ -77,13 +76,13 @@ do ik1=1,nkptnr
           a2=ijkbse(i2,j2,ik2)
           l=l+1
 ! compute the matrix element
-          zt1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
-          hmlbse(a1,a2)=hmlbse(a1,a2)+zt1
+          z1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
+          hmlbse(a1,a2)=hmlbse(a1,a2)+z1
 ! compute off-diagonal blocks if required
           if (bsefull) then
             b1=a1+nbbse
             b2=a2+nbbse
-            hmlbse(b1,b2)=hmlbse(b1,b2)-conjg(zt1)
+            hmlbse(b1,b2)=hmlbse(b1,b2)-conjg(z1)
 ! conjugate the potential
             do ias=1,natmtot
               is=idxis(ias)
@@ -93,9 +92,9 @@ do ik1=1,nkptnr
               end do
             end do
             zvclir(:,l)=conjg(zvclir(:,l))
-            zt1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
-            hmlbse(a1,b2)=hmlbse(a1,b2)+zt1
-            hmlbse(b1,a2)=hmlbse(b1,a2)-conjg(zt1)
+            z1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
+            hmlbse(a1,b2)=hmlbse(a1,b2)+z1
+            hmlbse(b1,a2)=hmlbse(b1,a2)-conjg(z1)
           end if
         end do
       end do

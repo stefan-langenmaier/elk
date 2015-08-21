@@ -26,7 +26,7 @@ complex(8), allocatable :: apwalm1(:,:,:,:),apwalm2(:,:,:,:)
 complex(8), allocatable :: evecfv1(:,:),evecfv2(:,:)
 complex(8), allocatable :: evecsv1(:,:),evecsv2(:,:)
 complex(8), allocatable :: wfmt1(:,:),wfmt2(:,:,:)
-complex(8), allocatable :: zfir(:),zv(:),em(:,:)
+complex(8), allocatable :: zfir(:),x(:),em(:,:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
@@ -51,11 +51,11 @@ if (tevecsv) then
   allocate(evecsv1(nstsv,nstsv),evecsv2(nstsv,nstsv))
 end if
 allocate(wfmt1(lmmaxvr,nrcmtmax),wfmt2(lmmaxvr,nrcmtmax,nstfv))
-allocate(zfir(ngrtot),zv(ngkmax),em(nstfv,nstfv))
+allocate(zfir(ngtot),x(ngkmax),em(nstfv,nstfv))
 ! p-vector in Cartesian coordinates
 call r3mv(bvec,vpl,vpc)
 ! generate the G+p-vectors
-call gengpvec(vpl,vpc,ngp,igpig,vgpl,vgpc)
+call gengkvec(ngvec,ivg,vgc,vpl,vpc,gkmax,ngkmax,ngp,igpig,vgpl,vgpc)
 ! generate the spherical coordinates of the G+p-vectors
 do igp=1,ngp
   call sphcrd(vgpc(:,igp),gpc(igp),tpgpc(:,igp))
@@ -71,7 +71,7 @@ vpql(:)=vpl(:)+vecql(:)
 ! p+q-vector in Cartesian coordinates
 call r3mv(bvec,vpql,vpqc)
 ! generate the G+p+q-vectors
-call gengpvec(vpql,vpqc,ngpq,igpqig,vgpql,vgpqc)
+call gengkvec(ngvec,ivg,vgc,vpql,vpqc,gkmax,ngkmax,ngpq,igpqig,vgpql,vgpqc)
 ! generate the spherical coordinates of the G+p+q-vectors
 do igp=1,ngpq
   call sphcrd(vgpqc(:,igp),gpqc(igp),tpgpqc(:,igp))
@@ -107,7 +107,7 @@ do is=1,nspecies
 ! calculate the wavefunction for k-point p
       call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm1,evecfv1(:,jst),lmmaxvr,wfmt1)
       do ist=1,nstfv
-        em(ist,jst)=em(ist,jst)+zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
+        em(ist,jst)=em(ist,jst)+zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
          wfmt2(:,:,ist),wfmt1)
       end do
     end do
@@ -125,19 +125,19 @@ do jst=1,nstfv
     zfir(ifg)=evecfv1(igp,jst)
   end do
 ! Fourier transform wavefunction to real-space
-  call zfftifc(3,ngrid,1,zfir)
+  call zfftifc(3,ngridg,1,zfir)
 ! multiply with the characteristic function
   zfir(:)=zfir(:)*cfunir(:)
 ! Fourier transform back to G-space
-  call zfftifc(3,ngrid,-1,zfir)
+  call zfftifc(3,ngridg,-1,zfir)
 ! store as wavefunction with G+p+q index
   do igp=1,ngpq
     ifg=igfft(igpqig(igp))
-    zv(igp)=zfir(ifg)
+    x(igp)=zfir(ifg)
   end do
 ! add to the first-variational matrix elements
   do ist=1,nstfv
-    em(ist,jst)=em(ist,jst)+zdotc(ngpq,evecfv2(:,ist),1,zv,1)
+    em(ist,jst)=em(ist,jst)+zdotc(ngpq,evecfv2(:,ist),1,x,1)
   end do
 end do
 !-------------------------------------------!
@@ -171,7 +171,7 @@ deallocate(igpig,igpqig,vgpl,vgpc,gpc,tpgpc)
 deallocate(vgpql,vgpqc,gpqc,tpgpqc,sfacgp,sfacgpq)
 deallocate(apwalm1,apwalm2,evecfv1,evecfv2)
 if (tevecsv) deallocate(evecsv1,evecsv2)
-deallocate(wfmt1,wfmt2,zfir,zv,em)
+deallocate(wfmt1,wfmt2,zfir,x,em)
 return
 end subroutine
 

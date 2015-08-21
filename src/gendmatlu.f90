@@ -64,7 +64,7 @@ call symdmat(lmaxlu,lmmaxlu,dmatlu)
 if (np_mpi.gt.1) then
   n=lmmaxlu*lmmaxlu*nspinor*nspinor*natmtot
   call mpi_allreduce(mpi_in_place,dmatlu,n,mpi_double_complex,mpi_sum, &
-   mpi_comm_world,ierror)
+   mpi_comm_kpt,ierror)
 end if
 return
 end subroutine

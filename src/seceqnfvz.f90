@@ -17,8 +17,7 @@ real(8) vl,vu
 real(8) ts0,ts1
 ! allocatable arrays
 integer, allocatable :: iwork(:),ifail(:)
-real(8), allocatable :: w(:)
-real(8), allocatable :: rwork(:)
+real(8), allocatable :: w(:),rwork(:)
 complex(8), allocatable :: work(:)
 call timesec(ts0)
 allocate(iwork(5*nmatp),ifail(nmatp))
@@ -29,15 +28,15 @@ call zhegvx(1,'V','I','U',nmatp,h,nmatp,o,nmatp,vl,vu,1,nstfv,evaltol,m,w, &
  evecfv,nmatmax,work,lwork,rwork,iwork,ifail,info)
 if (info.ne.0) then
   write(*,*)
-  write(*,'("Error(seceqnfv): diagonalisation failed")')
+  write(*,'("Error(seceqnfvz): diagonalisation failed")')
   write(*,'(" ZHEGVX returned INFO = ",I8)') info
   if (info.gt.nmatp) then
     i=info-nmatp
     write(*,'(" The leading minor of the overlap matrix of order ",I8)') i
     write(*,'("  is not positive definite")')
     write(*,'(" Order of overlap matrix : ",I8)') nmatp
-    write(*,*)
   end if
+  write(*,*)
   stop
 end if
 evalfv(1:nstfv)=w(1:nstfv)

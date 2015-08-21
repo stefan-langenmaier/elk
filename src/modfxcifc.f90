@@ -9,19 +9,13 @@ use libxcifc
 
 contains
 
-subroutine fxcifc(xctype,n,rho,rhoup,rhodn,fxc,fxcuu,fxcud,fxcdd)
+subroutine fxcifc(fxctype,n,rho,rhoup,rhodn,fxc,fxcuu,fxcud,fxcdd)
 implicit none
 ! mandatory arguments
-integer, intent(in) :: xctype(3)
-integer, intent(in) :: n
+integer, intent(in) :: fxctype(3),n
 ! optional arguments
-real(8), optional, intent(in) :: rho(n)
-real(8), optional, intent(in) :: rhoup(n)
-real(8), optional, intent(in) :: rhodn(n)
-real(8), optional, intent(out) :: fxc(n)
-real(8), optional, intent(out) :: fxcuu(n)
-real(8), optional, intent(out) :: fxcud(n)
-real(8), optional, intent(out) :: fxcdd(n)
+real(8), optional, intent(in) :: rho(n),rhoup(n),rhodn(n)
+real(8), optional, intent(out) :: fxc(n),fxcuu(n),fxcud(n),fxcdd(n)
 ! allocatable arrays
 real(8), allocatable :: ra(:,:)
 if (n.le.0) then
@@ -30,7 +24,18 @@ if (n.le.0) then
   write(*,*)
   stop
 end if
-select case(abs(xctype(1)))
+select case(abs(fxctype(1)))
+case(0,1)
+! f_xc = 0
+  if (present(fxcuu).and.present(fxcud).and.present(fxcdd)) then
+    fxcuu(:)=0.d0
+    fxcud(:)=0.d0
+    fxcdd(:)=0.d0
+  else if (present(fxc)) then
+    fxc(:)=0.d0
+  else
+    goto 10
+  end if
 case(3)
 ! Perdew-Wang-Ceperley-Alder
   if (present(rhoup).and.present(rhodn).and.present(fxcuu).and.present(fxcud) &
@@ -39,18 +44,31 @@ case(3)
     call fxc_pwca(n,rhoup,rhodn,fxcuu,fxcud,fxcdd)
   else if (present(rho).and.present(fxc)) then
 ! divide spin-unpolarised density into up and down
-    allocate(ra(n,3))
+    allocate(ra(n,4))
     ra(:,1)=0.5d0*rho(:)
-    call fxc_pwca(n,ra(:,1),ra(:,1),ra(:,2),ra(:,3),ra(:,2))
+    call fxc_pwca(n,ra(:,1),ra(:,1),ra(:,2),ra(:,3),ra(:,4))
     fxc(:)=0.5d0*(ra(:,2)+ra(:,3))
     deallocate(ra)
   else
     goto 10
   end if
+case(100)
+! libxc library functionals
+  if (present(rhoup).and.present(rhodn).and.present(fxcuu).and.present(fxcud) &
+   .and.present(fxcdd)) then
+! LSDA
+    call fxcifc_libxc(fxctype,n,rhoup=rhoup,rhodn=rhodn,fxcuu=fxcuu, &
+     fxcud=fxcud,fxcdd=fxcdd)
+  else if (present(rho).and.present(fxc)) then
+! LDA
+    call fxcifc_libxc(fxctype,n,rho=rho,fxc=fxc)
+  else
+    goto 10
+  end if
 case default
   write(*,*)
-  write(*,'("Error(fxcifc): response function unavailable for xctype ",I8)') &
-   xctype
+  write(*,'("Error(fxcifc): response function unavailable for fxctype ",3I8)') &
+   fxctype
   write(*,*)
   stop
 end select
@@ -58,7 +76,7 @@ return
 10 continue
 write(*,*)
 write(*,'("Error(fxcifc): missing arguments for exchange-correlation type ",&
- &3I6)') xctype(:)
+ &3I6)') fxctype(:)
 write(*,*)
 stop
 end subroutine

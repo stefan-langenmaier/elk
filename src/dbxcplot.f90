@@ -9,12 +9,9 @@ implicit none
 ! local variables
 integer idm,is,ia,ias,ir
 ! allocatable arrays
-real(8), allocatable :: rvfmt(:,:,:,:)
-real(8), allocatable :: rvfir(:,:)
-real(8), allocatable :: rfmt(:,:,:)
-real(8), allocatable :: rfir(:)
-real(8), allocatable :: grfmt(:,:,:,:)
-real(8), allocatable :: grfir(:,:)
+real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
+real(8), allocatable :: rfmt(:,:,:),rfir(:)
+real(8), allocatable :: grfmt(:,:,:,:),grfir(:,:)
 if (.not.spinpol) then
   write(*,*)
   write(*,'("Error(dbxcplot): spin-unpolarised field is zero")')
@@ -25,12 +22,9 @@ end if
 call init0
 ! read magnetisation from file
 call readstate
-allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(rvfir(ngrtot,3))
-allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
-allocate(rfir(ngrtot))
-allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(grfir(ngrtot,3))
+allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3),rvfir(ngtot,3))
+allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
+allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3),grfir(ngtot,3))
 if (ncmag) then
 ! non-collinear
   rvfmt(:,:,:,:)=bxcmt(:,:,:,:)

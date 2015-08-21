@@ -12,10 +12,10 @@ use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   rvfmt1 : first input muffin-tin field (in,real(lmmaxvr,nrmtmax,natmtot,3))
 !   rvfmt2 : second input muffin-tin field (in,real(lmmaxvr,nrmtmax,natmtot,3))
-!   rvfir1 : first input interstitial field (in,real(ngrtot,3))
-!   rvfir2 : second input interstitial field (in,real(ngrtot,3))
+!   rvfir1 : first input interstitial field (in,real(ngtot,3))
+!   rvfir2 : second input interstitial field (in,real(ngtot,3))
 !   rvfmt3 : output muffin-tin field (out,real(lmmaxvr,nrmtmax,natmtot,3))
-!   rvfir3 : output interstitial field (out,real(ngrtot,3))
+!   rvfir3 : output interstitial field (out,real(ngtot,3))
 ! !DESCRIPTION:
 !   Given two real vector fields, ${\bf f}_1$ and ${\bf f}_2$, defined over the
 !   entire unit cell, this routine computes the local cross product
@@ -29,10 +29,10 @@ implicit none
 ! arguments
 real(8), intent(in) :: rvfmt1(lmmaxvr,nrmtmax,natmtot,3)
 real(8), intent(in) :: rvfmt2(lmmaxvr,nrmtmax,natmtot,3)
-real(8), intent(in) :: rvfir1(ngrtot,3)
-real(8), intent(in) :: rvfir2(ngrtot,3)
+real(8), intent(in) :: rvfir1(ngtot,3)
+real(8), intent(in) :: rvfir2(ngtot,3)
 real(8), intent(out) :: rvfmt3(lmmaxvr,nrmtmax,natmtot,3)
-real(8), intent(out) :: rvfir3(ngrtot,3)
+real(8), intent(out) :: rvfir3(ngtot,3)
 ! local variables
 integer is,ia,ias,ir,itp,i
 real(8) v1(3),v2(3),v3(3)
@@ -63,7 +63,7 @@ do is=1,nspecies
   end do
 end do
 ! interstitial region
-do ir=1,ngrtot
+do ir=1,ngtot
   v1(:)=rvfir1(ir,:)
   v2(:)=rvfir2(ir,:)
   call r3cross(v1,v2,v3)

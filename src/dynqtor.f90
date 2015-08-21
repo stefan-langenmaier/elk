@@ -8,15 +8,14 @@ use modmain
 implicit none
 ! arguments
 complex(8), intent(in) :: dynq(3*natmtot,3*natmtot,nqpt)
-complex(8), intent(out) :: dynr(3*natmtot,3*natmtot,ngridq(1)*ngridq(2) &
- *ngridq(3))
+complex(8), intent(out) :: dynr(3*natmtot,3*natmtot,nqptnr)
 ! local variables
 integer ir,iq,i,j,n
 integer isym,lspl
 integer i1,i2,i3,j1,j2,j3
 real(8) v1(3),v2(3),v3(3)
 real(8) s(3,3),t1
-complex(8) zt1
+complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: dyns(:,:)
 allocate(dyns(3*natmtot,3*natmtot))
@@ -62,10 +61,10 @@ do j1=0,ngridq(1)-1
           do i1=ngridq(1)/2-ngridq(1)+1,ngridq(1)/2
             ir=ir+1
             t1=twopi*(v1(1)*dble(i1)+v1(2)*dble(i2)+v1(3)*dble(i3))
-            zt1=cmplx(cos(t1),sin(t1),8)
+            z1=cmplx(cos(t1),sin(t1),8)
             do i=1,3*natmtot
               do j=1,3*natmtot
-                dynr(i,j,ir)=dynr(i,j,ir)+zt1*dyns(i,j)
+                dynr(i,j,ir)=dynr(i,j,ir)+z1*dyns(i,j)
               end do
             end do
           end do
@@ -74,7 +73,7 @@ do j1=0,ngridq(1)-1
     end do
   end do
 end do
-t1=1.d0/dble(ngridq(1)*ngridq(2)*ngridq(3))
+t1=1.d0/dble(nqptnr)
 dynr(:,:,:)=t1*dynr(:,:,:)
 deallocate(dyns)
 return

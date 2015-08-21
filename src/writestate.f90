@@ -28,15 +28,19 @@ write(50) spinpol
 write(50) nspecies
 write(50) lmmaxvr
 write(50) nrmtmax
+write(50) nrcmtmax
 do is=1,nspecies
   write(50) natoms(is)
   write(50) nrmt(is)
   write(50) spr(1:nrmt(is),is)
+  write(50) nrcmt(is)
+  write(50) rcmt(1:nrcmt(is),is)
 end do
-write(50) ngrid
+write(50) ngridg
 write(50) ngvec
 write(50) ndmag
 write(50) nspinor
+write(50) fixspin
 write(50) ldapu
 write(50) lmmaxlu
 ! write the density
@@ -45,12 +49,17 @@ write(50) rhomt,rhoir
 write(50) vclmt,vclir
 ! write the exchange-correlation potential
 write(50) vxcmt,vxcir
-! write the effective potential
-write(50) veffmt,veffir,veffig
-! write the magnetisation and effective magnetic fields
+! write the Kohn-Sham effective potential
+write(50) vsmt,vsir,vsig
+! write the magnetisation, exchange-correlation and effective magnetic fields
 if (spinpol) then
   write(50) magmt,magir
   write(50) bxcmt,bxcir
+  write(50) bsmt,bsir
+  if (fixspin.ne.0) then
+    write(50) bfsmc
+    write(50) bfsmcmt
+  end if
 end if
 ! write the LDA+U potential matrix elements
 if (ldapu.ne.0) then

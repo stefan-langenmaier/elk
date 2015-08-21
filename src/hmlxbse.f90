@@ -9,12 +9,6 @@ use modmpi
 implicit none
 ! local variables
 integer ik2
-! allocatable arrays
-real(8), allocatable :: jlgr(:,:,:)
-! allocate local arrays
-allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
-! compute the required spherical Bessel functions
-call genjlgpr(lnpsd+1,gc,jlgr)
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
 do ik2=1,nkptnr
@@ -23,11 +17,10 @@ do ik2=1,nkptnr
 !$OMP CRITICAL
   write(*,'("Info(hmlxbse): ",I6," of ",I6," k-points")') ik2,nkptnr
 !$OMP END CRITICAL
-  call hmlxbsek(ik2,jlgr)
+  call hmlxbsek(ik2)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-deallocate(jlgr)
 return
 end subroutine
 

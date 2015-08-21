@@ -19,9 +19,9 @@ use modmpi
 !   the basis set is dependent on the nuclear coordinates and is not complete,
 !   the Hellman-Feynman force is inacurate and corrections to it are required.
 !   The first is the core correction which arises because the core wavefunctions
-!   were determined by neglecting the non-spherical parts of the effective
+!   were determined by neglecting the non-spherical parts of the Kohn-Sham
 !   potential $v_s$. Explicitly this is given by
-!   $$ {\bf F}_{\rm core}^{\alpha}=\int_{\rm MT_{\alpha}} v_{\rm s}({\bf r})
+!   $$ {\bf F}_{\rm core}^{\alpha}=\int_{\rm MT_{\alpha}} v_s({\bf r})
 !    \nabla\rho_{\rm core}^{\alpha}({\bf r})\,d{\bf r} $$
 !   for atom $\alpha$. The second, which is the incomplete basis set (IBS)
 !   correction, is due to the position dependence of the APW functions, and is
@@ -64,14 +64,13 @@ use modmpi
 !    {\bf F}_{\rm IBS}^{\alpha}=\sum_{\bf k}w_{\bf k}\sum_{l\sigma}n_{l{\bf k}}
 !    \sum_{ij}c_{\sigma i}^{l{\bf k}*}c_{\sigma j}^{l{\bf k}}
 !    {\bf F}_{ij}^{\alpha{\bf k}}
-!    +\int_{\rm MT_{\alpha}}v_{\rm s}({\bf r})\nabla\left[\rho({\bf r})
+!    +\int_{\rm MT_{\alpha}}v_s({\bf r})\nabla\left[\rho({\bf r})
 !    -\rho^{\alpha}_{\rm core}({\bf r})\right]\,d{\bf r},
 !   \end{align*}
 !   where $c^{l{\bf k}}$ are the second-variational coefficients, $w_{\bf k}$
-!   are the $k$-point weights, $n_{l{\bf k}}$ are the occupancies, and
-!   $v_{\rm s}$ is the Kohn-Sham effective potential. See routines {\tt hmlaa},
-!   {\tt olpaa}, {\tt hmlalo}, {\tt olpalo}, {\tt energy}, {\tt seceqn} and
-!   {\tt gencfun}.
+!   are the $k$-point weights, $n_{l{\bf k}}$ are the occupancies. See routines
+!   {\tt hmlaa}, {\tt olpaa}, {\tt hmlalo}, {\tt olpalo}, {\tt energy},
+!   {\tt seceqn} and {\tt gencfun}.
 !
 ! !REVISION HISTORY:
 !   Created January 2004 (JKD)
@@ -80,57 +79,30 @@ use modmpi
 !BOC
 implicit none
 ! local variables
-integer ik,is,ia,ias,nr,i
+integer ik,is,ias,nr,i
 real(8) sum,t1
 real(8) ts0,ts1
 ! allocatable arrays
-real(8), allocatable :: rfmt(:,:)
 real(8), allocatable :: grfmt(:,:,:)
 ! external functions
 real(8) rfmtinp
 external rfmtinp
 call timesec(ts0)
-allocate(rfmt(lmmaxvr,nrmtmax))
 allocate(grfmt(lmmaxvr,nrmtmax,3))
 !--------------------------------!
 !     Hellmann-Feynman force     !
 !--------------------------------!
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-! compute the gradient of the Coulomb potential
-    call gradrfmt(1,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,vclmt(:,:,ias),grfmt)
-    forcehf(:,ias)=-spzn(is)*grfmt(1,1,:)*y00
-  end do
+! compute the gradient of the Coulomb potential at the nucleus
+do ias=1,natmtot
+  is=idxis(ias)
+  call gradrfmt(1,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,vclmt(:,:,ias),grfmt)
+  forcehf(:,ias)=-spzn(is)*grfmt(1,1,:)*y00
 end do
 ! symmetrise Hellmann-Feynman force
 call symvect(.false.,forcehf)
-!--------------------------------------!
-!     core correction to the force     !
-!--------------------------------------!
-if (spincore) then
-  write(*,*)
-  write(*,'("Warning(force): forces are inaccurate with polarised cores")')
-end if
-rfmt(:,:)=0.d0
-do is=1,nspecies
-  nr=nrmt(is)
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-! compute the gradient of the core density
-    rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
-    call gradrfmt(1,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
-    do i=1,3
-      forcecr(i,ias)=rfmtinp(1,1,nr,spr(:,is),lmmaxvr,veffmt(:,:,ias), &
-       grfmt(:,:,i))
-    end do
-  end do
-end do
-! symmetrise core correction force
-call symvect(.false.,forcecr)
-!-------------------------------------!
-!     IBS correction to the force     !
-!-------------------------------------!
+!---------------------------------!
+!     IBS correction to force     !
+!---------------------------------!
 ! set the IBS forces to zero
 forceibs(:,:)=0.d0
 if (tfibs) then
@@ -144,31 +116,27 @@ if (tfibs) then
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-! symmetrise IBS force
-  call symvect(.false.,forceibs)
 ! add IBS forces from each process and redistribute
   if (np_mpi.gt.1) then
     call mpi_allreduce(mpi_in_place,forceibs,3*natmtot,mpi_double_precision, &
-     mpi_sum,mpi_comm_world,ierror)
+     mpi_sum,mpi_comm_kpt,ierror)
   end if
-! integral of effective potential with gradient of valence density
-  do is=1,nspecies
+! integral of Kohn-Sham potential with gradient of density
+  do ias=1,natmtot
+    is=idxis(ias)
     nr=nrmt(is)
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      rfmt(:,1:nr)=rhomt(:,1:nr,ias)
-      rfmt(1,1:nr)=rfmt(1,1:nr)-rhocr(1:nr,ias,1)/y00
-      call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
-      do i=1,3
-        t1=rfmtinp(1,lmaxvr,nr,spr(:,is),lmmaxvr,veffmt(:,:,ias),grfmt(:,:,i))
-        forceibs(i,ias)=forceibs(i,ias)+t1
-      end do
+    call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rhomt(:,:,ias),grfmt)
+    do i=1,3
+      t1=rfmtinp(1,lmaxvr,nr,spr(:,is),lmmaxvr,vsmt(:,:,ias),grfmt(:,:,i))
+      forceibs(i,ias)=forceibs(i,ias)+t1
     end do
   end do
+! symmetrise IBS force
+  call symvect(.false.,forceibs)
 end if
 ! total force
 do ias=1,natmtot
-  forcetot(:,ias)=forcehf(:,ias)+forcecr(:,ias)+forceibs(:,ias)
+  forcetot(:,ias)=forcehf(:,ias)+forceibs(:,ias)
 end do
 ! symmetrise total force
 call symvect(.false.,forcetot)
@@ -187,11 +155,11 @@ do ias=1,natmtot
   t1=sqrt(forcetot(1,ias)**2+forcetot(2,ias)**2+forcetot(3,ias)**2)
   if (t1.gt.forcemax) forcemax=t1
 end do
-deallocate(rfmt,grfmt)
+deallocate(grfmt)
 call timesec(ts1)
 timefor=timefor+ts1-ts0
 ! write total forces to test file
-call writetest(750,'total forces',nv=3*natmtot,tol=1.d-5,rva=forcetot)
+call writetest(750,'total forces',nv=3*natmtot,tol=1.d-4,rva=forcetot)
 return
 end subroutine
 !EOC

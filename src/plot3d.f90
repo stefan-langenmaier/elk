@@ -15,7 +15,7 @@ use modmain
 !   lmax : maximum angular momentum (in,integer)
 !   ld   : leading dimension (in,integer)
 !   rfmt : real muffin-tin function (in,real(ld,nrmtmax,natmtot,nf))
-!   rfir : real intersitial function (in,real(ngrtot,nf))
+!   rfir : real intersitial function (in,real(ngtot,nf))
 ! !DESCRIPTION:
 !   Produces a 3D plot of the real functions contained in arrays {\tt rfmt} and
 !   {\tt rfir} in the parallelepiped defined by the corner vertices in the
@@ -33,7 +33,7 @@ integer, intent(in) :: nf
 integer, intent(in) :: lmax
 integer, intent(in) :: ld
 real(8), intent(in) :: rfmt(ld,nrmtmax,natmtot,nf)
-real(8), intent(in) :: rfir(ngrtot,nf)
+real(8), intent(in) :: rfir(ngtot,nf)
 ! local variables
 integer np,ip,ip1,ip2,ip3,i
 real(8) v1(3),v2(3),v3(3)
@@ -50,7 +50,7 @@ end if
 ! allocate local arrays
 allocate(vpl(3,np3d(1)*np3d(2)*np3d(3)))
 allocate(fp(np3d(1)*np3d(2)*np3d(3),nf))
-! generate 3D grid
+! generate 3D grid from corner vectors
 v1(:)=vclp3d(:,2)-vclp3d(:,1)
 v2(:)=vclp3d(:,3)-vclp3d(:,1)
 v3(:)=vclp3d(:,4)-vclp3d(:,1)

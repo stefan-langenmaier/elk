@@ -11,9 +11,10 @@ tasks
   0
   20
 
-! use the Tran-Blaha meta-GGA functional [Phys. Rev. Lett. 102, 226401 (2009)]
+! use the Tran-Blaha meta-GGA functional for exchange and LDA for correlation
+! [Phys. Rev. Lett. 102, 226401 (2009)]
 xctype
-  100 208 0
+  100 208 12
 
 avec
   5.13 5.13 0.00

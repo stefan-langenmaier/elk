@@ -10,17 +10,15 @@ implicit none
 ! local variables
 integer is,ia,nrc,m1,m2
 integer ik,ist,jst
-complex(8) zt1
+complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: wfcr1(:,:,:),wfcr2(:,:,:)
 complex(8), allocatable :: zrhomt(:,:),zvclmt(:,:),zfmt(:,:)
 ! external functions
 complex(8) zfmtinp
 external zfmtinp
-allocate(wfcr1(lmmaxvr,nrcmtmax,2))
-allocate(wfcr2(lmmaxvr,nrcmtmax,2))
-allocate(zrhomt(lmmaxvr,nrcmtmax))
-allocate(zvclmt(lmmaxvr,nrcmtmax))
+allocate(wfcr1(lmmaxvr,nrcmtmax,2),wfcr2(lmmaxvr,nrcmtmax,2))
+allocate(zrhomt(lmmaxvr,nrcmtmax),zvclmt(lmmaxvr,nrcmtmax))
 allocate(zfmt(lmmaxvr,nrcmtmax))
 ! zero the exchange energy
 engyx=0.d0
@@ -41,7 +39,7 @@ end do
 !$OMP END PARALLEL
 ! add energies from each process and redistribute
 call mpi_allreduce(mpi_in_place,engyx,1,mpi_double_precision,mpi_sum, &
- mpi_comm_world,ierror)
+ mpi_comm_kpt,ierror)
 !-----------------------------------!
 !    core-core-core contribution    !
 !-----------------------------------!
@@ -56,6 +54,7 @@ do is=1,nspecies
           do ist=1,spnst(is)
             if (spcore(ist,is)) then
               do m1=-spk(ist,is),spk(ist,is)-1
+! generate the core wavefunction
                 call wavefcr(.false.,lradstp,is,ia,ist,m1,nrcmtmax,wfcr1)
 ! calculate the complex overlap density
                 zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfcr2(:,1:nrc,1) &
@@ -64,8 +63,8 @@ do is=1,nspecies
                  zfmt,lmmaxvr,zzero,zrhomt,lmmaxvr)
 ! calculate the Coulomb potential
                 call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
-                zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
-                engyx=engyx-0.5d0*dble(zt1)
+                z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
+                engyx=engyx-0.5d0*dble(z1)
               end do
 ! end loop over ist
             end if

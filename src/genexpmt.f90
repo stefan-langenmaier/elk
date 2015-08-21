@@ -12,8 +12,8 @@ complex(8), intent(out) :: expmt(lmmaxvr,nrcmtmax,natmtot)
 ! local variables
 integer is,ia,ias
 integer nrc,irc,l,m,lm
-real(8) pc,tp(2),x
-complex(8) zt1
+real(8) pc,tp(2),t1
+complex(8) z1
 ! automatic arrays
 real(8) jl(0:lmaxvr)
 complex(8) ylm(lmmaxvr)
@@ -27,26 +27,26 @@ call genylm(lmaxvr,tp,ylm)
 do is=1,nspecies
   nrc=nrcmt(is)
   do irc=1,nrc
-    x=pc*rcmt(irc,is)
-    call sbessel(lmaxvr,x,jl)
+    t1=pc*rcmt(irc,is)
+    call sbessel(lmaxvr,t1,jl)
     lm=0
     do l=0,lmaxvr
-      zt1=fourpi*jl(l)*zil(l)
+      z1=fourpi*jl(l)*zil(l)
       do m=-l,l
         lm=lm+1
-        zfmt1(lm,irc)=zt1*conjg(ylm(lm))
+        zfmt1(lm,irc)=z1*conjg(ylm(lm))
       end do
     end do
   end do
-! convert to spherical harmonics
+! convert to spherical coordinates
   call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1,lmmaxvr, &
    zzero,zfmt2,lmmaxvr)
 ! mutiply by phase factors and store for all atoms
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    x=dot_product(vpc(:),atposc(:,ia,is))
-    zt1=cmplx(cos(x),sin(x),8)
-    expmt(:,1:nrc,ias)=zt1*zfmt2(:,1:nrc)
+    t1=dot_product(vpc(:),atposc(:,ia,is))
+    z1=cmplx(cos(t1),sin(t1),8)
+    expmt(:,1:nrc,ias)=z1*zfmt2(:,1:nrc)
   end do
 end do
 deallocate(zfmt1,zfmt2)

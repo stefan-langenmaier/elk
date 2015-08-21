@@ -39,8 +39,8 @@ do ias=1,natmtot
   chgmttot=chgmttot+chgmt(ias)
 end do
 ! find the interstitial charge
-t1=ddot(ngrtot,rhoir,1,cfunir,1)
-chgir=t1*omega/dble(ngrtot)
+t1=ddot(ngtot,rhoir,1,cfunir,1)
+chgir=t1*omega/dble(ngtot)
 ! total calculated charge
 chgcalc=chgmttot+chgir
 ! write calculated total charge to test file

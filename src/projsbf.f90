@@ -7,33 +7,20 @@ subroutine projsbf
 use modmain
 implicit none
 ! local variables
-integer is,ia,ias
-integer ir,idm,lm
+integer is,ias,ir,idm,lm
 real(8) t1
 complex(8) zrho0
 ! allocatable arrays
-real(8), allocatable :: rvfmt(:,:,:,:)
-real(8), allocatable :: rvfir(:,:)
-real(8), allocatable :: rfmt(:,:,:)
-real(8), allocatable :: rfir(:)
-real(8), allocatable :: grfmt(:,:,:,:)
-real(8), allocatable :: grfir(:,:)
-real(8), allocatable :: jlgr(:,:,:)
-complex(8), allocatable :: zrhomt(:,:,:)
-complex(8), allocatable :: zrhoir(:)
-complex(8), allocatable :: zvclmt(:,:,:)
-complex(8), allocatable :: zvclir(:)
-allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(rvfir(ngrtot,3))
-allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
-allocate(rfir(ngrtot))
-allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(grfir(ngrtot,3))
-allocate(jlgr(0:lnpsd+1,ngvec,nspecies))
-allocate(zrhomt(lmmaxvr,nrmtmax,natmtot))
-allocate(zrhoir(ngrtot))
-allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
-allocate(zvclir(ngrtot))
+real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
+real(8), allocatable :: rfmt(:,:,:),rfir(:)
+real(8), allocatable :: grfmt(:,:,:,:),grfir(:,:)
+complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
+complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
+allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3),rvfir(ngtot,3))
+allocate(rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
+allocate(grfmt(lmmaxvr,nrmtmax,natmtot,3),grfir(ngtot,3))
+allocate(zrhomt(lmmaxvr,nrmtmax,natmtot),zrhoir(ngtot))
+allocate(zvclmt(lmmaxvr,nrmtmax,natmtot),zvclir(ngtot))
 if (.not.spinpol) then
   write(*,*)
   write(*,'("Error(projsbf): spin-unpolarised field is zero")')
@@ -56,12 +43,10 @@ rfmt(:,:,:)=0.d0
 rfir(:)=0.d0
 do idm=1,3
   call gradrf(rvfmt(:,:,:,idm),rvfir(:,idm),grfmt,grfir)
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      do ir=1,nrmt(is)
-        rfmt(:,ir,ias)=rfmt(:,ir,ias)+grfmt(:,ir,ias,idm)
-      end do
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ir=1,nrmt(is)
+      rfmt(:,ir,ias)=rfmt(:,ir,ias)+grfmt(:,ir,ias,idm)
     end do
   end do
   rfir(:)=rfir(:)+grfir(:,idm)
@@ -71,29 +56,23 @@ t1=-1.d0/fourpi
 rfmt(:,:,:)=t1*rfmt(:,:,:)
 rfir(:)=t1*rfir(:)
 ! convert real muffin-tin divergence to complex spherical harmonic expansion
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      call rtozflm(lmaxvr,rfmt(:,ir,ias),zrhomt(:,ir,ias))
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    call rtozflm(lmaxvr,rfmt(:,ir,ias),zrhomt(:,ir,ias))
   end do
 end do
 ! store real interstitial divergence in a complex array
 zrhoir(:)=rfir(:)
-! compute the required spherical Bessel functions
-call genjlgpr(lnpsd+1,gc,jlgr)
 ! solve the complex Poisson's equation
 call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
 call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
  zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      call ztorflm(lmaxvr,zvclmt(:,ir,ias),rfmt(:,ir,ias))
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    call ztorflm(lmaxvr,zvclmt(:,ir,ias),rfmt(:,ir,ias))
   end do
 end do
 ! store complex interstitial potential in real array
@@ -112,16 +91,14 @@ else
 end if
 ! remove numerical noise from the muffin-tin B-field
 do idm=1,ndmag
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      do lm=1,lmmaxvr
-        call fsmooth(10,nrmt(is),lmmaxvr,bxcmt(lm,1,ias,idm))
-      end do
+  do ias=1,natmtot
+    is=idxis(ias)
+    do lm=1,lmmaxvr
+      call fsmooth(10,nrmt(is),lmmaxvr,bxcmt(lm,1,ias,idm))
     end do
   end do
 end do
-deallocate(rvfmt,rvfir,rfmt,rfir,grfmt,grfir,jlgr)
+deallocate(rvfmt,rvfir,rfmt,rfir,grfmt,grfir)
 deallocate(zrhomt,zrhoir,zvclmt,zvclir)
 return
 end subroutine

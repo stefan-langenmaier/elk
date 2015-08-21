@@ -52,20 +52,20 @@ end do
 if (np_mpi.gt.1) then
   n=lmmaxvr*nrmtmax*natmtot
   call mpi_allreduce(mpi_in_place,rhomt,n,mpi_double_precision,mpi_sum, &
-   mpi_comm_world,ierror)
-  call mpi_allreduce(mpi_in_place,rhoir,ngrtot,mpi_double_precision,mpi_sum, &
-   mpi_comm_world,ierror)
+   mpi_comm_kpt,ierror)
+  call mpi_allreduce(mpi_in_place,rhoir,ngtot,mpi_double_precision,mpi_sum, &
+   mpi_comm_kpt,ierror)
   if (spinpol) then
     n=n*ndmag
     call mpi_allreduce(mpi_in_place,magmt,n,mpi_double_precision,mpi_sum, &
-     mpi_comm_world,ierror)
-    n=ngrtot*ndmag
+     mpi_comm_kpt,ierror)
+    n=ngtot*ndmag
     call mpi_allreduce(mpi_in_place,magir,n,mpi_double_precision,mpi_sum, &
-     mpi_comm_world,ierror)
+     mpi_comm_kpt,ierror)
   end if
 end if
 ! add the core density to the total density
-call addrhocr
+call rhocore
 ! calculate the charges
 call charge
 ! calculate the moments

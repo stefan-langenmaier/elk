@@ -22,9 +22,6 @@ molecule
 rgkmax
   4.0
 
-deband
- 0.01
-
 sppath
   '../../species/'
 

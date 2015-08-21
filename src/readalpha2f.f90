@@ -7,8 +7,8 @@ subroutine readalpha2f(w,a2f)
 use modmain
 implicit none
 ! arguments
-real(8), intent(out) :: w(nwdos)
-real(8), intent(out) :: a2f(nwdos)
+real(8), intent(out) :: w(nwplot)
+real(8), intent(out) :: a2f(nwplot)
 ! local variables
 integer iw,iostat
 open(50,file='ALPHA2F.OUT',action='READ',form='FORMATTED',status='OLD', &
@@ -19,7 +19,7 @@ if (iostat.ne.0) then
   write(*,*)
   stop
 end if
-do iw=1,nwdos
+do iw=1,nwplot
   read(50,*,iostat=iostat) w(iw),a2f(iw)
   if (iostat.ne.0) then
     write(*,*)

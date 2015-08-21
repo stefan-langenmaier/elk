@@ -28,8 +28,8 @@ integer ik
 do ik=1,nkpt
   allocate(evecsv(nstsv,nstsv))
   call getevecsv(vkl(:,ik),evecsv)
-  call zgemm('N','N',nstsv,nstsv,nstsv,zone,kinmatc(:,:,ik),nstsv,evecsv, &
-   nstsv,zzero,dkdc(:,:,ik),nstsv)
+  call zgemm('N','N',nstsv,nstsv,nstsv,zone,kmatc(:,:,ik),nstsv,evecsv,nstsv, &
+   zzero,dkdc(:,:,ik),nstsv)
   deallocate(evecsv)
 end do
 !$OMP END DO

@@ -12,11 +12,18 @@ logical exist
 integer ik,lp
 real(8) etp,de
 ! allocatable arrays
+real(8), allocatable :: vmt(:,:,:),vir(:)
+real(8), allocatable :: bmt(:,:,:,:),bir(:,:)
 complex(8), allocatable :: evecsv(:,:)
 ! initialise universal variables
 call init0
 call init1
 call init2
+! allocate local arrays
+allocate(vmt(lmmaxvr,nrcmtmax,natmtot),vir(ngtot))
+if (hybrid.and.spinpol) then
+  allocate(bmt(lmmaxvr,nrcmtmax,natmtot,ndmag),bir(ngtot,ndmag))
+end if
 ! only the MPI master process should write files
 if (mp_mpi) then
 ! open INFO.OUT file
@@ -28,12 +35,14 @@ if (mp_mpi) then
 ! open MOMENT.OUT if required
   if (spinpol) open(63,file='MOMENT'//trim(filext),action='WRITE', &
    form='FORMATTED')
+! open GAP.OUT
+  open(64,file='GAP'//trim(filext),action='WRITE',form='FORMATTED')
 ! open DTOTENERGY.OUT
   open(66,file='DTOTENERGY'//trim(filext),action='WRITE',form='FORMATTED')
 ! write out general information to INFO.OUT
   call writeinfo(60)
 end if
-! read the charge density and potentials from file
+! read the charge density from file
 call readstate
 ! generate the core wavefunctions and densities
 call gencore
@@ -47,10 +56,14 @@ call genlofr
 call olprad
 ! compute the Hamiltonian radial integrals
 call hmlrad
-! generate the kinetic matrix elements in the Cartesian basis
-call genkinmatc
+! generate the spin-orbit coupling radial functions
+call gensocfr
+! generate the first- and second-variational eigenvectors and eigenvalues
+call genevfsv
 ! find the occupation numbers and Fermi energy
 call occupy
+! generate the kinetic matrix elements in the Cartesian basis
+call genkmatc(.true.)
 ! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
@@ -78,12 +91,11 @@ do iscl=1,maxscl
     end if
     tlast=.true.
   end if
-! compute the exchange-correlation potential for hybrid functionals
-  if (hybrid) call potxc
+! compute the Hartree-Fock local potentials
+  call hflocal(vmt,vir,bmt,bir)
 ! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecsv)
+  call mpi_barrier(mpi_comm_kpt,ierror)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(evecsv)
 !$OMP DO
   do ik=1,nkpt
 ! distribute among MPI processes
@@ -91,7 +103,7 @@ do iscl=1,maxscl
     allocate(evecsv(nstsv,nstsv))
     call getevecsv(vkl(:,ik),evecsv)
 ! solve the Hartree-Fock secular equation
-    call seceqnhf(ik,evecsv)
+    call seceqnhf(ik,vmt,vir,bmt,bir,evecsv)
 ! write the eigenvalues/vectors to file
     call putevalsv(ik,evalsv(:,ik))
     call putevecsv(ik,evecsv)
@@ -100,11 +112,11 @@ do iscl=1,maxscl
 !$OMP END DO
 !$OMP END PARALLEL
 ! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
+  call mpi_barrier(mpi_comm_kpt,ierror)
 ! broadcast eigenvalue array to every process
   do ik=1,nkpt
     lp=mod(ik-1,np_mpi)
-    call mpi_bcast(evalsv(:,ik),nstsv,mpi_double_precision,lp,mpi_comm_world, &
+    call mpi_bcast(evalsv(:,ik),nstsv,mpi_double_precision,lp,mpi_comm_kpt, &
      ierror)
   end do
 ! find the occupation numbers and Fermi energy
@@ -121,8 +133,6 @@ do iscl=1,maxscl
   end if
 ! generate the density and magnetisation
   call rhomag
-! compute the Coulomb potential
-  call potcoul
 ! compute the energy components
   call energy
   if (mp_mpi) then
@@ -131,6 +141,8 @@ do iscl=1,maxscl
     write(60,*)
     write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
     write(60,'(" (states/Hartree/unit cell)")')
+    write(60,'("Estimated indirect band gap : ",G18.10)') bandgap
+    write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
 ! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)
@@ -145,6 +157,9 @@ do iscl=1,maxscl
       call flushifc(63)
     end if
   end if
+! write estimated Hartree-Fock band gap
+  write(64,'(G22.12)') bandgap
+  call flushifc(64)
   if (tlast) goto 10
 ! compute the change in total energy and check for convergence
   if (iscl.ge.2) then
@@ -179,7 +194,7 @@ do iscl=1,maxscl
     end if
   end if
 ! broadcast tlast from master process to all other processes
-  call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_world,ierror)
+  call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_kpt,ierror)
 end do
 10 continue
 if (mp_mpi) then
@@ -217,6 +232,8 @@ if (mp_mpi) then
 ! close the DTOTENERGY.OUT file
   close(66)
 end if
+deallocate(vmt,vir)
+if (hybrid.and.spinpol) deallocate(bmt,bir)
 return
 end subroutine
 

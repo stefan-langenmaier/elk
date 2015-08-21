@@ -36,7 +36,7 @@ complex(8), intent(out) :: zlflm(ld,3)
 ! local variables
 integer l,m,lm
 real(8) t1
-complex(8) zt1
+complex(8) z1
 if (lmax.lt.0) then
   write(*,*)
   write(*,'("Error(lopzflm): lmax < 0 : ",I8)') lmax
@@ -53,15 +53,15 @@ do l=0,lmax
     end if
     if (m.lt.l) then
       t1=0.5d0*sqrt(dble((l-m)*(l+m+1)))
-      zt1=t1*zflm(lm)
-      zlflm(lm+1,1)=zt1
-      zlflm(lm+1,2)=cmplx(aimag(zt1),-dble(zt1),8)
+      z1=t1*zflm(lm)
+      zlflm(lm+1,1)=z1
+      zlflm(lm+1,2)=cmplx(aimag(z1),-dble(z1),8)
     end if
     if (m.gt.-l) then
       t1=0.5d0*sqrt(dble((l+m)*(l-m+1)))
-      zt1=t1*zflm(lm)
-      zlflm(lm-1,1)=zlflm(lm-1,1)+zt1
-      zlflm(lm-1,2)=zlflm(lm-1,2)+cmplx(-aimag(zt1),dble(zt1),8)
+      z1=t1*zflm(lm)
+      zlflm(lm-1,1)=zlflm(lm-1,1)+z1
+      zlflm(lm-1,2)=zlflm(lm-1,2)+cmplx(-aimag(z1),dble(z1),8)
     end if
     if (m.ne.0) then
       zlflm(lm,3)=dble(m)*zflm(lm)

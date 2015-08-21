@@ -17,7 +17,7 @@ if (mp_mpi) then
   close(70,status='DELETE')
 end if
 ! synchronise MPI processes
-call mpi_barrier(mpi_comm_world,ierror)
+call mpi_barrier(mpi_comm_kpt,ierror)
 return
 end subroutine
 

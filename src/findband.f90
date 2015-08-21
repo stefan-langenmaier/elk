@@ -6,28 +6,30 @@
 !BOP
 ! !ROUTINE: findband
 ! !INTERFACE:
-subroutine findband(sol,l,k,np,nr,r,vr,de0,eps,e,fnd)
+subroutine findband(sol,l,k,np,nr,r,vr,eps,demax,e,fnd)
 ! !INPUT/OUTPUT PARAMETERS:
-!   sol : speed of light in atomic units (in,real)
-!   l   : angular momentum quantum number (in,integer)
-!   k   : quantum number k, zero if Dirac eqn. is not to be used (in,integer)
-!   np  : order of predictor-corrector polynomial (in,integer)
-!   nr  : number of radial mesh points (in,integer)
-!   r   : radial mesh (in,real(nr))
-!   vr  : potential on radial mesh (in,real(nr))
-!   de0 : default energy step size (in,real)
-!   eps : energy search tolerance (in,real)
-!   e   : input energy and returned band energy (inout,real)
-!   fnd : set to .true. if the band energy is found (out,logical)
+!   sol   : speed of light in atomic units (in,real)
+!   l     : angular momentum quantum number (in,integer)
+!   k     : quantum number k, zero if Dirac eqn. is not to be used (in,integer)
+!   np    : order of predictor-corrector polynomial (in,integer)
+!   nr    : number of radial mesh points (in,integer)
+!   r     : radial mesh (in,real(nr))
+!   vr    : potential on radial mesh (in,real(nr))
+!   eps   : energy search tolerance (in,real)
+!   demax : maximum allowed change from the input energy; enforced only if e < 0
+!           (in,real)
+!   e     : input energy and returned band energy (inout,real)
+!   fnd   : set to .true. if the band energy is found (out,logical)
 ! !DESCRIPTION:
 !   Finds the band energies for a given radial potential and angular momentum.
-!   This is done by first searching upwards in energy until the radial
-!   wavefunction at the muffin-tin radius is zero. This is the energy at the top
-!   of the band, denoted $E_{\rm t}$. A downward search is now performed from
-!   $E_{\rm t}$ until the slope of the radial wavefunction at the muffin-tin
-!   radius is zero. This energy, $E_{\rm b}$, is at the bottom of the band. The
-!   band energy is taken as $(E_{\rm t}+E_{\rm b})/2$. If either $E_{\rm t}$ or
-!   $E_{\rm b}$ cannot be found then the band energy is set to the input value.
+!   This is done by first searching upwards in energy, starting from the input
+!   energy plus the offset energy, until the radial wavefunction at the
+!   muffin-tin radius is zero. This is the energy at the top of the band,
+!   denoted $E_{\rm t}$. A downward search is now performed from $E_{\rm t}$
+!   until the slope of the radial wavefunction at the muffin-tin radius is zero.
+!   This energy, $E_{\rm b}$, is at the bottom of the band. The band energy is
+!   taken as $(E_{\rm t}+E_{\rm b})/2$. If either $E_{\rm t}$ or $E_{\rm b}$
+!   cannot be found then the band energy is set to the input value.
 !
 ! !REVISION HISTORY:
 !   Created September 2004 (JKD)
@@ -42,30 +44,37 @@ integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
-real(8), intent(in) :: de0
 real(8), intent(in) :: eps
+real(8), intent(in) :: demax
 real(8), intent(inout) :: e
 logical, intent(out) :: fnd
 ! local variables
 ! maximum number of steps
 integer, parameter :: maxstp=1000
 integer ie,nn
+! initial step size
+real(8), parameter :: de0=0.001d0
 real(8) de,et,eb,t,tp
 ! automatic arrays
 real(8) p0(nr),p1(nr),q0(nr),q1(nr)
 fnd=.false.
 tp=0.d0
 ! find the top of the band
-de=abs(de0)
+de=de0
 et=e
 do ie=1,maxstp
   et=et+de
+  if (e.lt.0.d0) then
+    if (et.gt.e+demax) return
+  end if
   call rschroddme(sol,0,l,k,et,np,nr,r,vr,nn,p0,p1,q0,q1)
   t=p0(nr)
   if (ie.gt.1) then
     if (t*tp.le.0.d0) then
       if (abs(de).lt.eps) goto 10
       de=-0.5d0*de
+    else
+      de=1.5d0*de
     end if
   end if
   tp=t
@@ -73,16 +82,21 @@ end do
 return
 10 continue
 ! find the bottom of the band
-de=-abs(de0)
+de=-de0
 eb=et+5.d0*abs(de0)
 do ie=1,maxstp
   eb=eb+de
+  if (e.lt.0.d0) then
+    if (eb.lt.e-demax) return
+  end if
   call rschroddme(sol,0,l,k,eb,np,nr,r,vr,nn,p0,p1,q0,q1)
   t=p1(nr)
   if (ie.gt.1) then
     if (t*tp.le.0.d0) then
       if (abs(de).lt.eps) goto 20
       de=-0.5d0*de
+    else
+      de=1.5d0*de
     end if
   end if
   tp=t

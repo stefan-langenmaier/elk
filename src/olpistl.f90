@@ -6,12 +6,13 @@
 !BOP
 ! !ROUTINE: olpistl
 ! !INTERFACE:
-subroutine olpistl(ngp,igpig,o)
+subroutine olpistl(ngp,igpig,ld,o)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   ngp   : number of G+p-vectors (in,integer)
 !   igpig : index from G+p-vectors to G-vectors (in,integer(ngkmax))
+!   ld    : leading dimension of o (in,integer)
 !   o     : overlap matrix (inout,complex(*))
 ! !DESCRIPTION:
 !   Computes the interstitial contribution to the overlap matrix for the APW
@@ -28,10 +29,10 @@ implicit none
 ! arguments
 integer, intent(in) :: ngp
 integer, intent(in) :: igpig(ngkmax)
+integer, intent(in) :: ld
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ld,iv(3),jv(3),i,j,k
-ld=ngp+nlotot
+integer iv(3),jv(3),i,j,k
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,jv,i,iv)
 !$OMP DO
 do j=1,ngp

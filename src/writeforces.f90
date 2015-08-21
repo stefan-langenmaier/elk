@@ -19,7 +19,6 @@ do is=1,nspecies
     ias=idxas(ia,is)
     write(fnum,'("  atom : ",I4)') ia
     write(fnum,'("   Hellmann-Feynman",T30,": ",3F14.8)') forcehf(:,ias)
-    write(fnum,'("   core correction",T30,": ",3F14.8)') forcecr(:,ias)
     write(fnum,'("   IBS",T30,": ",3F14.8)') forceibs(:,ias)
     write(fnum,'("   total force",T30,": ",3F14.8)') forcetot(:,ias)
     t1=sqrt(forcetot(1,ias)**2+forcetot(2,ias)**2+forcetot(3,ias)**2)

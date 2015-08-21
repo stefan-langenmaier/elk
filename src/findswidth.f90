@@ -60,6 +60,7 @@ end do
 20 continue
 ! valence band width
 vbw=efermi-e
+vbw=max(vbw,1.d-2)
 ! determine swidth
 swidth=(sqrt(2.d0*vbw)/mstar)*(6.d0*pi**2/(omega*dble(nkptnr)))**(1.d0/3.d0)
 deallocate(idx)

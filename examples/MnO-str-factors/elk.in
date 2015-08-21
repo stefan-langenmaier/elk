@@ -7,7 +7,7 @@
 ! magnetisation, respectively.
 !
 ! The structure factors are calculated for the reflections whose diffraction
-! vectors have lengths up to hmax (given in a.u.). The connection to the
+! vectors have lengths up to hmaxvr (given in a.u.). The connection to the
 ! traditional sin(theta)/lambda ratio is
 !
 !      max|H| = 4*pi*max(sin(theta)/lambda)    [wavelength also in a.u.!]
@@ -67,7 +67,7 @@ ngridk
   4  4  4
 
 ! maximum |H|
-hmax
+hmaxvr
  6.0
 
 ! H-vectors are reduced by the symmorphic crystal symmetries

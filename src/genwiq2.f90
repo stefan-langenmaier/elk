@@ -50,7 +50,7 @@ real(8) polynom
 external polynom
 ! allocate global wiq2 array
 if (allocated(wiq2)) deallocate(wiq2)
-allocate(wiq2(ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(wiq2(nqpt))
 ! begin loop over q-points, note that the vectors vqc are assumed to be in the
 ! first Brillouin zone
 do iq=1,nqpt

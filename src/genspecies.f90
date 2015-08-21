@@ -79,7 +79,7 @@ do i=1,2
   call atom(sol,.true.,zn,nst,n,l,k,occ,3,0,nprad,nr,r,eval,rho,vr,rwf)
   do ir=nr,1,-1
     if (rho(ir).gt.1.d-20) then
-      rmax=1.5d0*r(ir)
+      rmax=1.25d0*r(ir)
       goto 10
     end if
   end do
@@ -146,7 +146,6 @@ do ist=1,nst
     write(60,'(2I4,T45,": lorbl, lorbord")') l(ist),3
     write(60,'(F8.4,I4,"  ",L1,T45,": lorbe0, lorbdm, lorbve")') e0,0,.false.
     write(60,'(F8.4,I4,"  ",L1)') e0,1,.false.
-! subtract 0.25 Ha from eigenvalue because findband searches upwards
     write(60,'(F8.4,I4,"  ",L1)') eval(ist)-0.25d0,0,.true.
   end if
 end do

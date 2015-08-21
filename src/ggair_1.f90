@@ -18,18 +18,18 @@ use modmain
 !BOC
 implicit none
 ! arguments
-real(8), intent(out) :: grho(ngrtot)
-real(8), intent(out) :: g2rho(ngrtot)
-real(8), intent(out) :: g3rho(ngrtot)
+real(8), intent(out) :: grho(ngtot)
+real(8), intent(out) :: g2rho(ngtot)
+real(8), intent(out) :: g3rho(ngtot)
 ! local variables
 integer i,ig,ifg
 ! allocatable arrays
 real(8), allocatable :: gvrho(:,:)
 complex(8), allocatable :: zfft1(:),zfft2(:)
-allocate(gvrho(ngrtot,3))
-allocate(zfft1(ngrtot),zfft2(ngrtot))
+allocate(gvrho(ngtot,3))
+allocate(zfft1(ngtot),zfft2(ngtot))
 zfft1(:)=rhoir(:)
-call zfftifc(3,ngrid,-1,zfft1)
+call zfftifc(3,ngridg,-1,zfft1)
 ! |grad rho|
 do i=1,3
   zfft2(:)=0.d0
@@ -37,7 +37,7 @@ do i=1,3
     ifg=igfft(ig)
     zfft2(ifg)=vgc(i,ig)*cmplx(-aimag(zfft1(ifg)),dble(zfft1(ifg)),8)
   end do
-  call zfftifc(3,ngrid,1,zfft2)
+  call zfftifc(3,ngridg,1,zfft2)
   gvrho(:,i)=dble(zfft2(:))
 end do
 grho(:)=sqrt(gvrho(:,1)**2+gvrho(:,2)**2+gvrho(:,3)**2)
@@ -47,11 +47,11 @@ do ig=1,ngvec
   ifg=igfft(ig)
   zfft2(ifg)=-(gc(ig)**2)*zfft1(ifg)
 end do
-call zfftifc(3,ngrid,1,zfft2)
+call zfftifc(3,ngridg,1,zfft2)
 g2rho(:)=dble(zfft2(:))
 ! (grad rho).(grad |grad rho|)
 zfft1(:)=grho(:)
-call zfftifc(3,ngrid,-1,zfft1)
+call zfftifc(3,ngridg,-1,zfft1)
 g3rho(:)=0.d0
 do i=1,3
   zfft2(:)=0.d0
@@ -59,7 +59,7 @@ do i=1,3
     ifg=igfft(ig)
     zfft2(ifg)=vgc(i,ig)*cmplx(-aimag(zfft1(ifg)),dble(zfft1(ifg)),8)
   end do
-  call zfftifc(3,ngrid,1,zfft2)
+  call zfftifc(3,ngridg,1,zfft2)
   g3rho(:)=g3rho(:)+gvrho(:,i)*dble(zfft2(:))
 end do
 deallocate(gvrho,zfft1,zfft2)

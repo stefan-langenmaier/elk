@@ -18,37 +18,37 @@ use modmain
 !BOC
 implicit none
 ! arguments
-real(8), intent(out) :: g2rho(ngrtot)
-real(8), intent(out) :: gvrho(ngrtot,3)
-real(8), intent(out) :: grho2(ngrtot)
+real(8), intent(out) :: g2rho(ngtot)
+real(8), intent(out) :: gvrho(ngtot,3)
+real(8), intent(out) :: grho2(ngtot)
 ! local variables
 integer i,ig,ifg
 ! allocatable arrays
 complex(8), allocatable :: zfft1(:),zfft2(:)
-allocate(zfft1(ngrtot),zfft2(ngrtot))
+allocate(zfft1(ngtot),zfft2(ngtot))
 ! Fourier transform density to G-space
 zfft1(:)=rhoir(:)
-call zfftifc(3,ngrid,-1,zfft1)
-! compute grad^2 rho
+call zfftifc(3,ngridg,-1,zfft1)
+! grad^2 rho
 zfft2(:)=0.d0
 do ig=1,ngvec
   ifg=igfft(ig)
   zfft2(ifg)=-(gc(ig)**2)*zfft1(ifg)
 end do
-call zfftifc(3,ngrid,1,zfft2)
+call zfftifc(3,ngridg,1,zfft2)
 g2rho(:)=dble(zfft2(:))
-! compute grad rho and (grad rho)^2
-grho2(:)=0.d0
+! grad rho
 do i=1,3
   zfft2(:)=0.d0
   do ig=1,ngvec
     ifg=igfft(ig)
     zfft2(ifg)=vgc(i,ig)*cmplx(-aimag(zfft1(ifg)),dble(zfft1(ifg)),8)
   end do
-  call zfftifc(3,ngrid,1,zfft2)
+  call zfftifc(3,ngridg,1,zfft2)
   gvrho(:,i)=dble(zfft2(:))
-  grho2(:)=grho2(:)+gvrho(:,i)**2
 end do
+! (grad rho)^2
+grho2(:)=gvrho(:,1)**2+gvrho(:,2)**2+gvrho(:,3)**2
 deallocate(zfft1,zfft2)
 return
 end subroutine

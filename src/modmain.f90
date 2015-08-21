@@ -10,6 +10,8 @@ module modmain
 !----------------------------!
 ! lattice vectors stored column-wise
 real(8) avec(3,3)
+! magnitude of random displacements added to lattice vectors
+real(8) rndavec
 ! inverse of lattice vector matrix
 real(8) ainv(3,3)
 ! reciprocal lattice vectors
@@ -51,6 +53,8 @@ logical primcell
 real(8) atposl(3,maxatoms,maxspecies)
 ! atomic positions in Cartesian coordinates
 real(8) atposc(3,maxatoms,maxspecies)
+! magnitude of random displacements added to the atomic positions
+real(8) rndatposc
 
 !----------------------------------!
 !     atomic species variables     !
@@ -68,6 +72,14 @@ real(8) spzn(maxspecies)
 ! ptnucl is .true. if the nuclei are to be treated as point charges, if .false.
 ! the nuclei have a finite spherical distribution
 logical ptnucl
+! nuclear radius
+real(8) rnucl(maxspecies)
+! nuclear volume
+real(8) vnucl(maxspecies)
+! number of radial mesh points to nuclear radius
+integer nrnucl(maxspecies)
+! number of coarse radial mesh points to nuclear radius
+integer nrcnucl(maxspecies)
 ! species electronic charge
 real(8) spze(maxspecies)
 ! species mass
@@ -116,6 +128,8 @@ real(8), allocatable :: spvr(:,:)
 !---------------------------------------------------------------!
 ! radial function integration and differentiation polynomial order
 integer nprad
+! scale factor for number of muffin-tin points
+integer nrmtscf
 ! number of muffin-tin radial points for each species
 integer nrmt(maxspecies)
 ! maximum nrmt over all the species
@@ -124,8 +138,6 @@ integer nrmtmax
 real(8) rmtdelta
 ! muffin-tin radii
 real(8) rmt(maxspecies)
-! species for which the muffin-tin radius will be used for calculating gkmax
-integer isgkmax
 ! radial step length for coarse mesh
 integer lradstp
 ! number of coarse radial mesh points
@@ -148,14 +160,14 @@ integer lmmaxvr
 integer lmaxmat
 ! (lmaxmat+1)^2
 integer lmmaxmat
-! fraction of muffin-tin radius which constitutes the inner part
-real(8) fracinr
 ! maximum angular momentum in the inner part of the muffin-int
 integer lmaxinr
 ! (lmaxinr+1)^2
 integer lmmaxinr
-! number of radial points to the inner part of the muffin-tin
-integer nrmtinr(maxspecies)
+! fraction of muffin-tin radius which constitutes the inner part
+real(8) fracinr
+! number of fine/coarse radial points to the inner part of the muffin-tin
+integer nrmtinr(maxspecies),nrcmtinr(maxspecies)
 ! index to (l,m) pairs
 integer, allocatable :: idxlm(:,:)
 ! inverse index to (l,m) pairs
@@ -181,8 +193,8 @@ real(8) bfsmc(3)
 ! muffin-tin fixed spin moments
 real(8) mommtfix(3,maxatoms,maxspecies)
 ! muffin-tin fixed spin moment effective fields in Cartesian coordinates
-real(8) bfsmcmt(3,maxatoms,maxspecies)
-! fixed spin moment field mixing parameter
+real(8), allocatable :: bfsmcmt(:,:)
+! fixed spin moment field step size
 real(8) taufsm
 ! second-variational spinor dimension (1 or 2)
 integer nspinor
@@ -192,8 +204,10 @@ real(8) bfieldc(3)
 real(8) bfieldc0(3)
 ! external magnetic field in each muffin-tin in Cartesian coordinates
 real(8) bfcmt(3,maxatoms,maxspecies)
-! initial field
+! initial field as read in from input file
 real(8) bfcmt0(3,maxatoms,maxspecies)
+! magnitude of random vectors added to muffin-tin fields
+real(8) rndbfcmt
 ! external magnetic fields are multiplied by reducebf after each s.c. loop
 real(8) reducebf
 ! spinsprl is .true. if a spin-spiral is to be calculated
@@ -202,10 +216,16 @@ logical spinsprl
 logical ssdph
 ! number of spin-dependent first-variational functions per state
 integer nspnfv
+! map from second- to first-variational spin index
+integer jspnfv(2)
 ! spin-spiral q-vector in lattice coordinates
 real(8) vqlss(3)
 ! spin-spiral q-vector in Cartesian coordinates
 real(8) vqcss(3)
+! current q-point in spin-spiral supercell calculation
+integer iqss
+! number of primitive unit cells in spin-spiral supercell
+integer nscss
 
 !---------------------------------------------!
 !     electric field and vector potential     !
@@ -224,8 +244,11 @@ real(8) afieldc(3)
 !----------------------------!
 !     symmetry variables     !
 !----------------------------!
-! nosym is .true. if no symmetry information should be used
-logical nosym
+! type of symmetry allowed for the crystal
+!  0 : only the identity element is used
+!  1 : full symmetry group is used
+!  2 : only symmorphic symmetries are allowed
+integer symtype
 ! number of Bravais lattice point group symmetries
 integer nsymlat
 ! Bravais lattice point group symmetries
@@ -263,22 +286,22 @@ integer, allocatable :: lsplsyms(:,:)
 ! site symmetry global spin rotation element in lattice point group
 integer, allocatable :: lspnsyms(:,:)
 
-!--------------------------------!
-!     G-vector set variables     !
-!--------------------------------!
+!----------------------------!
+!     G-vector variables     !
+!----------------------------!
 ! G-vector cut-off for interstitial potential and density
 real(8) gmaxvr
 ! G-vector grid sizes
-integer ngrid(3)
+integer ngridg(3)
 ! total number of G-vectors
-integer ngrtot
+integer ngtot
 ! integer grid intervals for each direction
-integer intgv(3,2)
+integer intgv(2,3)
 ! number of G-vectors with G < gmaxvr
 integer ngvec
-! G-vector integer coordinates
+! G-vector integer coordinates (i1,i2,i3)
 integer, allocatable :: ivg(:,:)
-! map from integer grid to G-vector array
+! map from (i1,i2,i3) to G-vector index
 integer, allocatable :: ivgig(:,:,:)
 ! map from G-vector array to FFT array
 integer, allocatable :: igfft(:)
@@ -286,20 +309,22 @@ integer, allocatable :: igfft(:)
 real(8), allocatable :: vgc(:,:)
 ! length of G-vectors
 real(8), allocatable :: gc(:)
+! spherical Bessel functions j_l(|G|R_mt)
+real(8), allocatable :: jlgr(:,:,:)
 ! spherical harmonics of the G-vectors
 complex(8), allocatable :: ylmg(:,:)
 ! structure factors for the G-vectors
 complex(8), allocatable :: sfacg(:,:)
 ! smooth step function form factors for all species and G-vectors
 real(8), allocatable :: ffacg(:,:)
-! G-space characteristic function: 0 inside the muffin-tins and 1 outside
+! characteristic function in G-space: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
-! real-space characteristic function: 0 inside the muffin-tins and 1 outside
+! characteristic function in real-space: 0 inside the muffin-tins and 1 outside
 real(8), allocatable :: cfunir(:)
 
-!-------------------------------!
-!     k-point set variables     !
-!-------------------------------!
+!---------------------------!
+!     k-point variables     !
+!---------------------------!
 ! autokpt is .true. if the k-point set is determined automatically
 logical autokpt
 ! radius of sphere used to determine k-point density when autokpt is .true.
@@ -344,9 +369,11 @@ real(8) deltaem
 ! number of displacements in each direction
 integer ndspem
 
-!----------------------------------!
-!     G+k-vector set variables     !
-!----------------------------------!
+!------------------------------!
+!     G+k-vector variables     !
+!------------------------------!
+! species for which the muffin-tin radius will be used for calculating gkmax
+integer isgkmax
 ! smallest muffin-tin radius times gkmax
 real(8) rgkmax
 ! maximum |G+k| cut-off for APW functions
@@ -365,12 +392,12 @@ real(8), allocatable :: vgkc(:,:,:,:)
 real(8), allocatable :: gkc(:,:,:)
 ! (theta, phi) coordinates of G+k-vectors
 real(8), allocatable :: tpgkc(:,:,:,:)
-! structure factor for the G+k-vectors
+! structure factors for the G+k-vectors
 complex(8), allocatable :: sfacgk(:,:,:,:)
 
-!-------------------------------!
-!     q-point set variables     !
-!-------------------------------!
+!---------------------------!
+!     q-point variables     !
+!---------------------------!
 ! q-point grid sizes
 integer ngridq(3)
 ! type of reduction to perform on q-point set (see reducek)
@@ -425,10 +452,10 @@ character(512) xcdescr
 integer xcspin
 ! exchange-correlation functional density gradient requirement
 integer xcgrad
-! exchange-correlation functional kinetic energy density requirement
-integer xctau
-! Tran-Blaha '09 constant c
+! Tran-Blaha '09 constant c [Phys. Rev. Lett. 102, 226401 (2009)]
 real(8) c_tb09
+! tc_tb09 is .true. if the Tran-Blaha constant has been read in
+logical tc_tb09
 ! muffin-tin charge density
 real(8), allocatable :: rhomt(:,:,:)
 ! interstitial real-space charge density
@@ -443,30 +470,10 @@ real(8), allocatable :: magir(:,:)
 real(8), allocatable :: vclmt(:,:,:)
 ! interstitial real-space Coulomb potential
 real(8), allocatable :: vclir(:)
-! Poisson solver pseudocharge density constant l + n(l)
+! Poisson solver pseudocharge density constant
+integer npsd
+! lmaxvr+npsd+1
 integer lnpsd
-! muffin-tin exchange-correlation potential
-real(8), allocatable :: vxcmt(:,:,:)
-! interstitial real-space exchange-correlation potential
-real(8), allocatable :: vxcir(:)
-! muffin-tin exchange-correlation magnetic field
-real(8), allocatable :: bxcmt(:,:,:,:)
-! interstitial exchange-correlation magnetic field
-real(8), allocatable :: bxcir(:,:)
-! muffin-tin effective magnetic field in spherical coordinates
-real(8), allocatable :: beffmt(:,:,:,:)
-! spin-orbit coupling radial function
-real(8), allocatable :: socfr(:,:)
-! nosource is .true. if the field is to be made source-free
-logical nosource
-! muffin-tin effective potential
-real(8), allocatable :: veffmt(:,:,:)
-! interstitial effective potential
-real(8), allocatable :: veffir(:)
-! G-space interstitial effective potential
-complex(8), allocatable :: veffig(:)
-! trimvg is .true. if veffir should be trimmed for |G| > gmaxvr/2
-logical trimvg
 ! muffin-tin exchange energy density
 real(8), allocatable :: exmt(:,:,:)
 ! interstitial real-space exchange energy density
@@ -475,6 +482,30 @@ real(8), allocatable :: exir(:)
 real(8), allocatable :: ecmt(:,:,:)
 ! interstitial real-space correlation energy density
 real(8), allocatable :: ecir(:)
+! muffin-tin exchange-correlation potential
+real(8), allocatable :: vxcmt(:,:,:)
+! interstitial real-space exchange-correlation potential
+real(8), allocatable :: vxcir(:)
+! muffin-tin Kohn-Sham effective potential
+real(8), allocatable :: vsmt(:,:,:)
+! interstitial Kohn-Sham effective potential
+real(8), allocatable :: vsir(:)
+! G-space interstitial Kohn-Sham effective potential
+complex(8), allocatable :: vsig(:)
+! trimvg is .true. if vsir should be trimmed for |G| > gmaxvr/2
+logical trimvg
+! muffin-tin exchange-correlation magnetic field
+real(8), allocatable :: bxcmt(:,:,:,:)
+! interstitial exchange-correlation magnetic field
+real(8), allocatable :: bxcir(:,:)
+! muffin-tin Kohn-Sham effective magnetic field in spherical coordinates
+real(8), allocatable :: bsmt(:,:,:,:)
+! interstitial Kohn-Sham effective magnetic field
+real(8), allocatable :: bsir(:,:)
+! spin-orbit coupling radial function
+real(8), allocatable :: socfr(:,:)
+! nosource is .true. if the field is to be made source-free
+logical nosource
 ! muffin-tin paramagnetic current
 real(8), allocatable :: jcmt(:,:,:,:)
 ! interstitial paramagnetic current
@@ -541,7 +572,7 @@ real(8) mommttot(3)
 !     APW and local-orbital variables     !
 !-----------------------------------------!
 ! maximum allowable APW order
-integer, parameter :: maxapword=3
+integer, parameter :: maxapword=4
 ! APW order
 integer apword(0:maxlapw,maxspecies)
 ! maximum of apword over all angular momenta and species
@@ -559,7 +590,7 @@ real(8), allocatable :: apwfr(:,:,:,:,:)
 ! derivate of radial functions at the muffin-tin surface
 real(8), allocatable :: apwdfr(:,:,:)
 ! maximum number of local-orbitals
-integer, parameter :: maxlorb=20
+integer, parameter :: maxlorb=200
 ! maximum allowable local-orbital order
 integer, parameter :: maxlorbord=4
 ! number of local-orbitals
@@ -586,10 +617,11 @@ integer lorbdm(maxlorbord,maxlorb,maxspecies)
 logical lorbve(maxlorbord,maxlorb,maxspecies)
 ! local-orbital radial functions
 real(8), allocatable :: lofr(:,:,:,:)
-! energy step size for locating the band energy
-real(8) deband
 ! band energy search tolerance
 real(8) epsband
+! maximum allowed change in energy during band energy search; enforced only if
+! default energy is less than zero
+real(8) demaxbnd
 ! minimum default linearisation energy over all APWs and local-orbitals
 real(8) e0min
 ! if autolinengy is .true. then the fixed linearisation energies are set to the
@@ -597,11 +629,15 @@ real(8) e0min
 logical autolinengy
 ! difference between linearisation and Fermi energies when autolinengy is .true.
 real(8) dlefe
+! lorbcnd is .true. if conduction state local-orbitals should be added
+logical lorbcnd
+! conduction state local-orbital order
+integer lorbordc
 
 !-------------------------------------------!
 !     overlap and Hamiltonian variables     !
 !-------------------------------------------!
-! order of overlap and Hamiltonian matrices for each k-point
+! overlap and Hamiltonian matrices sizes at each k-point
 integer, allocatable :: nmat(:,:)
 ! maximum nmat over all k-points
 integer nmatmax
@@ -633,6 +669,8 @@ real(8) tauseq
 !--------------------------------------------!
 !     eigenvalue and occupancy variables     !
 !--------------------------------------------!
+! number of empty states per atom and spin
+integer nempty0
 ! number of empty states
 integer nempty
 ! number of first-variational states
@@ -657,12 +695,14 @@ real(8) epsocc
 real(8), allocatable :: occsv(:,:)
 ! Fermi energy for second-variational states
 real(8) efermi
-! scissor correction applied to the eigenvalues
+! scissor correction applied when computing response functions
 real(8) scissor
 ! density of states at the Fermi energy
 real(8) fermidos
-! estimated band gap
+! estimated indirect band gap
 real(8) bandgap
+! k-points of indirect gap
+integer ikgap(2)
 ! error tolerance for the first-variational eigenvalues
 real(8) evaltol
 ! second-variational eigenvalues
@@ -679,6 +719,8 @@ integer kstlist(2,maxkst)
 !------------------------------!
 !     core state variables     !
 !------------------------------!
+! occupancies for core states
+real(8), allocatable :: occcr(:,:)
 ! eigenvalues for core states
 real(8), allocatable :: evalcr(:,:)
 ! radial wavefunctions for core states
@@ -741,9 +783,7 @@ logical tforce
 logical tfibs
 ! Hellmann-Feynman force on each atom
 real(8), allocatable :: forcehf(:,:)
-! core correction to force on each atom
-real(8), allocatable :: forcecr(:,:)
-! IBS core force on each atom
+! incomplete basis set (IBS) force on each atom
 real(8), allocatable :: forceibs(:,:)
 ! total force on each atom
 real(8), allocatable :: forcetot(:,:)
@@ -765,7 +805,7 @@ real(8), allocatable :: tauatm(:)
 integer maxscl
 ! current self-consistent loop number
 integer iscl
-! effective potential convergence tolerance
+! Kohn-Sham potential convergence tolerance
 real(8) epspot
 ! energy convergence tolerance
 real(8) epsengy
@@ -775,14 +815,16 @@ real(8) epsforce
 !----------------------------------------------------------!
 !     density of states, optics and response variables     !
 !----------------------------------------------------------!
-! number of energy intervals in the DOS/optics function
-integer nwdos
-! effective size of k/q-point grid for integrating the Brillouin zone
-integer ngrdos
-! smoothing level for DOS/optics function
-integer nsmdos
-! energy interval for DOS/optics function
-real(8) wdos(2)
+! number of energy intervals in the DOS/optics function plot
+integer nwplot
+! fine k-point grid size for integration of functions in the Brillouin zone
+integer ngrkf
+! smoothing level for DOS/optics function plot
+integer nswplot
+! energy interval for DOS/optics function plot
+real(8) wplot(2)
+! maximum angular momentum for the partial DOS plot
+integer lmaxdos
 ! dosocc is .true. if the DOS is to be weighted by the occupancy
 logical dosocc
 ! dosmsum is .true. if the partial DOS is to be summed over m
@@ -793,8 +835,6 @@ logical dosssum
 integer noptcomp
 ! required optical matrix components
 integer optcomp(3,27)
-! usegdft is .true. if the generalised DFT correction is to be used
-logical usegdft
 ! intraband is .true. if the intraband term is to be added to the optical matrix
 logical intraband
 ! lmirep is .true. if the (l,m) band characters should correspond to the
@@ -803,25 +843,13 @@ logical lmirep
 ! spin-quantisation axis in Cartesian coordinates used when plotting the
 ! spin-resolved DOS (z-axis by default)
 real(8) sqados(3)
-! q-vector in lattice coordinates for calculating the matrix elements
-! < i,k+q | exp(iq.r) | j,k >
-real(8) vecql(3)
+! q-vector in lattice and Cartesian coordinates for calculating the matrix
+! elements < i,k+q | exp(iq.r) | j,k >
+real(8) vecql(3),vecqc(3)
 ! maximum initial-state energy allowed in ELNES transitions
 real(8) emaxelnes
-! maximum |H| for density or magnetisation structure factors
-real(8) hmax
-! H-vector transformation matrix
-real(8) vhmat(3,3)
-! number of H-vectors
-integer nhvec
-! H-vector integer coordinates
-integer, allocatable :: ivh(:,:)
-! H-vector multiplicity
-integer, allocatable :: mulh(:)
 ! structure factor energy window
 real(8) wsfac(2)
-! reduceh is .true. if the H-vectors are reduced with the crystal symmetries
-logical reduceh
 
 !-------------------------------------!
 !     1D/2D/3D plotting variables     !
@@ -846,8 +874,6 @@ integer np2d(2)
 real(8) vclp3d(3,4)
 ! grid sizes of 3D plot
 integer np3d(3)
-! number of states for plotting Fermi surface
-integer nstfsp
 
 !----------------------------------------!
 !     OEP and Hartree-Fock variables     !
@@ -861,7 +887,7 @@ real(8) tauoep(3)
 ! magnitude of the OEP residual
 real(8) resoep
 ! kinetic matrix elements in Cartesian basis
-complex(8), allocatable :: kinmatc(:,:,:)
+complex(8), allocatable :: kmatc(:,:,:)
 ! complex versions of the exchange potential and field
 complex(8), allocatable :: zvxmt(:,:,:)
 complex(8), allocatable :: zvxir(:)
@@ -869,23 +895,22 @@ complex(8), allocatable :: zbxmt(:,:,:,:)
 complex(8), allocatable :: zbxir(:,:)
 ! hybrid is .true. if a hybrid functional is to be used
 logical hybrid
-! hybrid functional mixing parameter
-real(8) hybmix
+! hybrid functional coefficient
+real(8) hybridc
 
-!--------------------------------------------------------!
-!     many-body perturbation theory (MBPT) variables     !
-!--------------------------------------------------------!
-! |G| cut-off for the RPA dielectric function
-real(8) gmaxrpa
-! number of G-vectors for the RPA dielectric function
-integer ngrpa
-! number of RPA frequencies
-integer nwrpa
-! complex RPA frequencies
-complex(8), allocatable :: wrpa(:)
-! exp(iG.r) functions for all MBPT G-vectors
-complex(8), allocatable :: expgmt(:,:,:,:)
-complex(8), allocatable :: expgir(:,:)
+!-------------------------------------------------------------!
+!     response function and perturbation theory variables     !
+!-------------------------------------------------------------!
+! |G| cut-off for response functions
+real(8) gmaxrf
+! energy cut-off for response functions
+real(8) emaxrf
+! number of G-vectors for response functions
+integer ngrf
+! number of response function frequencies
+integer nwrf
+! complex response function frequencies
+complex(8), allocatable :: wrf(:)
 
 !-------------------------------------------------!
 !     Bethe-Salpeter equation (BSE) variables     !
@@ -927,9 +952,11 @@ logical hxbse,hdbse
 !     Time-dependent density functional theory (TDDFT) variables     !
 !--------------------------------------------------------------------!
 ! exchange-correlation kernel type
-integer fxctype
-! parameters for long range correction (LRC) kernel
+integer fxctype(3)
+! parameters for long-range correction (LRC) kernel
 real(8) fxclrc(2)
+! number of independent spin components of the f_xc spin tensor
+integer nscfxc
 
 !--------------------------!
 !     timing variables     !
@@ -960,9 +987,10 @@ real(8), parameter :: y00=0.28209479177387814347d0
 ! complex constants
 complex(8), parameter :: zzero=(0.d0,0.d0)
 complex(8), parameter :: zone=(1.d0,0.d0)
+complex(8), parameter :: ztwo=(2.d0,0.d0)
 complex(8), parameter :: zi=(0.d0,1.d0)
-! array of i^l values
-complex(8), allocatable :: zil(:)
+! array of i^l and (-i)^l values
+complex(8), allocatable :: zil(:),zilc(:)
 ! Pauli spin matrices:
 ! sigma_x = ( 0  1 )   sigma_y = ( 0 -i )   sigma_z = ( 1  0 )
 !           ( 1  0 )             ( i  0 )             ( 0 -1 )
@@ -998,7 +1026,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,4,5 /
+data version / 2,1,22 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

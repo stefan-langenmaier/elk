@@ -9,9 +9,6 @@ tasks
  120
  121
 
-spinpol
- .true.
-
 spinorb
  .true.
 
@@ -29,7 +26,7 @@ scale
 nempty
   50
 
-dos
+wplot
  1000 150 0
  -0.5  2.0
 

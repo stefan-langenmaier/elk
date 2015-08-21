@@ -13,10 +13,12 @@ logical exist
 integer itask
 ! initialise MPI execution environment
 call mpi_init(ierror)
+! duplicate mpi_comm_world
+call mpi_comm_dup(mpi_comm_world,mpi_comm_kpt,ierror)
 ! determine the number of MPI processes
-call mpi_comm_size(mpi_comm_world,np_mpi,ierror)
+call mpi_comm_size(mpi_comm_kpt,np_mpi,ierror)
 ! determine the local MPI process number
-call mpi_comm_rank(mpi_comm_world,lp_mpi,ierror)
+call mpi_comm_rank(mpi_comm_kpt,lp_mpi,ierror)
 ! determine if the local process is the master
 if (lp_mpi.eq.0) then
   mp_mpi=.true.
@@ -24,6 +26,10 @@ if (lp_mpi.eq.0) then
   write(*,'("Elk code started")')
 else
   mp_mpi=.false.
+end if
+if (np_mpi.gt.1) then
+  write(*,*)
+  write(*,'("Using MPI, number of processes : ",I8)') np_mpi
 end if
 ! read input files
 call readinput
@@ -40,7 +46,7 @@ if (mp_mpi) then
     close(50)
   end if
 end if
-! perform the appropriate task
+! perform the tasks
 do itask=1,ntasks
   task=tasks(itask)
   if (mp_mpi) then
@@ -48,12 +54,17 @@ do itask=1,ntasks
     write(*,'("Info(main): current task : ",I6)') task
   end if
 ! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
-  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.135).and. &
-   (task.ne.180).and.(task.ne.185).and.(task.ne.188).and.(task.ne.240).and. &
-   (task.ne.300)) then
-    write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi,task
-    cycle
+  call mpi_barrier(mpi_comm_kpt,ierror)
+! check if task can be run with MPI
+  if (lp_mpi.gt.0) then
+    select case(task)
+    case(0,1,2,3,5,120,135,136,170,180,185,188,240,300,320,330)
+      continue
+    case default
+      write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi, &
+       task
+      cycle
+    end select
   end if
   select case(task)
   case(-1)
@@ -112,19 +123,27 @@ do itask=1,ntasks
     call writewfpw
   case(140)
     call elnes
+  case(170)
+    call writeemd
+  case(175)
+    call compton
   case(180)
     call epsinv_rpa
   case(185)
-    call bse
-  case(188)
-    call tddftlr
+    call writehmlbse
+  case(186)
+    call writeevbse
+  case(187)
+    call dielectric_bse
   case(190)
     call geomplot
   case(195)
     call sfacrho
   case(196)
     call sfacmag
-  case(200,205)
+  case(200,201,202)
+    call phononsc
+  case(205)
     call phonon
   case(210)
     call phdos
@@ -140,8 +159,16 @@ do itask=1,ntasks
     call alpha2f
   case(260)
     call eliashberg
+  case(270)
+    call scdft
   case(300)
     call rdmft
+  case(188,320)
+    call tddftlr
+  case(330)
+    call tddftsplr
+  case(350,351,352)
+    call spiralsc
   case(400)
     call writetensmom
   case(500)
@@ -165,8 +192,8 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.4.5}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
-! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.1.22}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
 !   Welcome to the Elk Code! Elk is an all-electron full-potential linearised
@@ -193,11 +220,12 @@ end program
 !   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich, Torbj\"{o}rn
-!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr
-!   and Vladimir Nazarov. Special mention of David Singh's very useful book on
-!   the LAPW method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and
-!   the LAPW Method} (Kluwer Academic Publishers, Boston, 1994).} must also be
-!   made. Finally we would like to acknowledge the generous support of
+!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr,
+!   Vladimir Nazarov, Kevin Krieger, Pink Floyd, Arkardy Davydov, Florian Eich
+!   and Aldo Romero Castro. Special mention of David Singh's very useful book on
+!   the LAPW method\footnote{ D. J. Singh, {\it Planewaves, Pseudopotentials
+!   and the LAPW Method} (Kluwer Academic Publishers, Boston, 1994).} must also
+!   be made. Finally we would like to acknowledge the generous support of
 !   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
 !   Training Networks initiative.
 !
@@ -207,10 +235,11 @@ end program
 !   Lars Nordstr\"{o}m\newline
 !   Francesco Cricchio\newline
 !   Fredrik Bultmark\newline
+!   Oscar Gr\aa n\"{a}s\newline
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, November 2011
+!   Halle and Uppsala, June 2013
 !   \newpage
 !
 !   \section{Units}
@@ -413,7 +442,7 @@ end program
 !   quantum number $l$; quantum number $k$ ($l$ or $l+1$); occupancy of atomic
 !   state (can be fractional); {\tt .T.} if state is in the core and therefore
 !   treated with the Dirac equation in the spherical part of the muffin-tin
-!   effective potential.
+!   Kohn-Sham potential.
 !   \vskip 6pt
 !   {\tt apword} \\
 !   Default APW function order, i.e. the number of radial functions and
@@ -542,27 +571,21 @@ end program
 !   more efficient if the field is applied in the $z$-direction.
 !
 !   \block{broydpm}{
-!   {\tt broydpm } & Broyden mixing parameters $\alpha$ and $w_0$ & real &
+!   {\tt broydpm} & Broyden mixing parameters $\alpha$ and $w_0$ & real &
 !    $(0.25,0.01)$}
 !   See {\tt mixtype} and {\tt mixsdb}.
 !
+!   \block{c\_tb09}{
+!   {\tt c\_tb09} & Tran-Blaha constant $c$ & real & -}
+!   Sets the constant $c$ in the Tran-Blaha '09 functional. Normally this is
+!   calculated from the density, but there may be situations where this needs to
+!   be adjusted by hand. See {\it Phys. Rev. Lett.} {\bf 102}, 226401 (2009).
+!
 !   \block{chgexs}{
-!   {\tt chgexs } & excess electronic charge & real & $0.0$}
+!   {\tt chgexs} & excess electronic charge & real & $0.0$}
 !   This controls the amount of charge in the unit cell beyond that required to
 !   maintain neutrality. It can be set positive or negative depending on whether
 !   electron or hole doping is required.
-!
-!   \block{deband}{
-!   {\tt deband} & initial band energy step size & real & $0.0025$}
-!   The initial step length used when searching for the band energy, which is
-!   used as the APW and local-orbital linearisation energies. This is done by
-!   first searching upwards in energy until the radial wavefunction at the
-!   muffin-tin radius is zero. This is the energy at the top of the band,
-!   denoted $E_{\rm t}$. A downward search is now performed from $E_{\rm t}$
-!   until the slope of the radial wavefunction at the muffin-tin radius is zero.
-!   This energy, $E_{\rm b}$, is at the bottom of the band. The band energy is
-!   taken as $(E_{\rm t}+E_{\rm b})/2$. If either $E_{\rm t}$ or $E_{\rm b}$
-!   cannot be found then the band energy is set to the default value.
 !
 !   \block{deltaem}{
 !   {\tt deltaem} & the size of the ${\bf k}$-vector displacement used when
@@ -586,26 +609,26 @@ end program
 !   When {\tt autolinengy} is {\tt .true.} then the fixed linearisation energies
 !   are set to the Fermi energy plus {\tt dlefe}.
 !
-!   \block{dos}{
-!   {\tt nwdos} & number of frequency/energy points in the DOS or optics plot &
+!   \block{wplot}{
+!   {\tt nwplot} & number of frequency/energy points in the DOS or optics plot &
 !    integer & $500$ \\
-!   {\tt ngrdos} & effective $k$-point mesh size to be used for Brillouin zone
-!    integration & integer & $100$ \\
-!   {\tt nsmdos} & level of smoothing applied to DOS/optics output & integer &
+!   {\tt ngrkf} & fine $k$-point grid size used for integrating functions in the
+!    Brillouin zone & integer & $100$ \\
+!   {\tt nswplot} & level of smoothing applied to DOS/optics output & integer &
 !    $1$ \\
 !   \hline
-!   {\tt wintdos} & frequency/energy window for the DOS or optics plot &
-!    real(2) & $(-0.5,0.5)$}
+!   {\tt wplot} & frequency/energy window for the DOS or optics plot & real(2) &
+!    $(-0.5,0.5)$}
 !   DOS and optics plots require integrals of the kind
 !   $$ g(\omega_i)=\frac{\Omega}{(2\pi)^3}\int_{\rm BZ} f({\bf k})
 !    \delta(\omega_i-e({\bf k}))d{\bf k}. $$
 !   These are calculated by first interpolating the functions $e({\bf k})$ and
 !   $f({\bf k})$ with the trilinear method on a much finer mesh whose size is
-!   determined by {\tt ngrdos}. Then the $\omega$-dependent histogram of the
+!   determined by {\tt ngrkf}. Then the $\omega$-dependent histogram of the
 !   integrand is accumulated over the fine mesh. If the output function is noisy
-!   then either {\tt ngrdos} should be increased or {\tt nwdos} decreased.
+!   then either {\tt ngrkf} should be increased or {\tt nwplot} decreased.
 !   Alternatively, the output function can be artificially smoothed up to a
-!   level given by {\tt nsmdos}. This is the number of successive 3-point
+!   level given by {\tt nswplot}. This is the number of successive 3-point
 !   averages to be applied to the function $g$.
 !
 !   \block{dosmsum}{
@@ -625,8 +648,13 @@ end program
 !   {\tt epsband} & convergence tolerance for determining band energies & real &
 !    $1\times 10^{-12}$}
 !   APW and local-orbital linearisation energies are determined from the band
-!   energies. Good convergence of these energies, especially for low-lying,
-!   states is required for accurate total energies. See also {\tt deband}.
+!   energies. This is done by first searching upwards in energy until the radial
+!   wavefunction at the muffin-tin radius is zero. This is the energy at the top
+!   of the band, denoted $E_{\rm t}$. A downward search is now performed from
+!   $E_{\rm t}$ until the slope of the radial wavefunction at the muffin-tin
+!   radius is zero. This energy, $E_{\rm b}$, is at the bottom of the band. The
+!   band energy is taken as $(E_{\rm t}+E_{\rm b})/2$. If either $E_{\rm t}$ or
+!   $E_{\rm b}$ is not found, then the band energy is set to the default value.
 !
 !   \block{epschg}{
 !   {\tt epschg} & maximum allowed error in the calculated total charge beyond
@@ -655,9 +683,9 @@ end program
 !    density & real & $1\times 10^{-8}$}
 !
 !   \block{epspot}{
-!   {\tt epspot} & convergence criterion for the effective potential and field &
+!   {\tt epspot} & convergence criterion for the Kohn-Sham potential and field &
 !    real & $1\times 10^{-6}$}
-!   If the RMS change in the effective potential and magnetic field is smaller
+!   If the RMS change in the Kohn-Sham potential and magnetic field is smaller
 !   than {\tt epspot} and the absolute change in the total energy is less than
 !   {\tt epsengy}, then the self-consistent loop is considered converged
 !   and exited. For geometry optimisation runs this results in the forces being
@@ -688,9 +716,9 @@ end program
 !   $$ f_{xc}({\bf G},{\bf G}',{\bf q},\omega)=-\frac{\alpha+\beta\omega^2}{q^2}
 !    \delta_{{\bf G},{\bf G}'}\delta_{{\bf G},{\bf 0}}. $$
 !
-!   \block{gmaxrpa}{
-!   {\tt gmaxrpa} & maximum length of $|{\bf G}|$ for computing RPA dielectric
-!    response function & real & $3.0$}
+!   \block{gmaxrf}{
+!   {\tt gmaxrf} & maximum length of $|{\bf G}|$ for computing response
+!    functions & real & $3.0$}
 !
 !   \block{gmaxvr}{
 !   {\tt gmaxvr} & maximum length of $|{\bf G}|$ for expanding the interstitial
@@ -698,17 +726,27 @@ end program
 !   This variable has a lower bound which is enforced by the code as follows:
 !   $$ {\rm gmaxvr}\rightarrow\max\,({\rm gmaxvr},2\times{\rm gkmax}
 !    +{\rm epslat}) $$
-!   See {\tt rgkmax}.
+!   See {\tt rgkmax} and {\tt trimvg}.
 !
-!   \block{hmax}{
-!   {\tt hmax} & maximum length of reciprocal vectors $|{\bf H}|$ used for
-!    calculating X-ray and magnetic structure factors & real & $6.0$}
-!   See also {\tt vhmat}, {\tt reduceh} and {\tt wsfac}.
+!   \block{highq}{
+!   {\tt highq} & {\tt .true.} if a high quality parameter set should be used &
+!    logical & {\tt .false}}
+!   Setting this to {\tt .true.} results in some default parameters being
+!   changed to ensure good convergence in most situations. See the subroutine
+!   {\tt readinput} for the list of changed parameters and their values. These
+!   changes can be overruled by subsequent blocks in the input file.
+!
+!   \block{hmaxvr}{
+!   {\tt hmaxvr} & maximum length of ${\bf H}$-vectors & real & $6.0$}
+!   The ${\bf H}$-vectors are used for calculating X-ray and magnetic structure
+!   factors. They are also used in linear response phonon calculations for
+!   expanding the density and potential in plane waves. See also {\tt gmaxvr},
+!   {\tt vhmat}, {\tt reduceh}, {\tt wsfac} and {\tt hkmax}.
 !
 !   \block{hybrid}{
 !   {\tt hybrid} & {\tt .true} if a hybrid functional is to be used when running
 !    a Hartree-Fock calculation & logical & {\tt .false}}
-!   See also {\tt hybmix} and {\tt xctype}.
+!   See also {\tt hybridc} and {\tt xctype}.
 !
 !   \block{intraband}{
 !   {\tt intraband} & {\tt .true.} if the intraband (Drude-like) contribution is
@@ -881,7 +919,7 @@ end program
 !   See {\tt deltaem} and {\tt vklem}.
 !
 !   \block{nempty}{
-!   {\tt nempty} & the number of empty states & integer & 5}
+!   {\tt nempty} & the number of empty states per atom and spin & integer & 4}
 !   Defines the number of eigenstates beyond that required for charge
 !   neutrality. When running metals it is not known {\it a priori} how many
 !   states will be below the Fermi energy for each $k$-point. Setting
@@ -910,10 +948,6 @@ end program
 !    of the exchange-correlation magnetic field & logical & {\tt .false.}}
 !   Experimental feature.
 !
-!   \block{nosym}{
-!   {\tt nosym} & when set to {\tt .true.} no symmetries, apart from the
-!    identity, are used anywhere in the code & logical & {\tt .false.}}
-!
 !   \block{notes}{
 !   {\tt notes(i)} & the $i$th line of the notes & string & -}
 !   This block allows users to add their own notes to the file {\tt INFO.OUT}.
@@ -928,12 +962,8 @@ end program
 !
 !   \block{nseqit}{
 !   {\tt nseqit} & number of iterations per self-consistent loop using the
-!    iterative first-variational secular equation solver & integer & 6}
+!    iterative first-variational secular equation solver & integer & 30}
 !   See {\tt tseqit}.
-!
-!   \block{nstfsp}{
-!   {\tt nstfsp} & number of states to be included in the Fermi surface plot
-!    file & integer & 6}
 !
 !   \block{ntemp}{
 !   {\tt ntemp} & number of temperature steps & integer & 20}
@@ -1020,7 +1050,8 @@ end program
 !    real & $40.0$}
 !   Used for the automatic determination of the $k$-point mesh. If {\tt autokpt}
 !   is set to {\tt .true.} then the mesh sizes will be determined by
-!   $n_i=\lambda/|{\bf A}_i|+1$.
+!   $n_i=R_k|{\bf B}_i|+1$, where ${\bf B}_i$ are the primitive reciprocal
+!   lattice vectors.
 !
 !   \block{readalu}{
 !   {\tt readalu} & set to {\tt .true.} if the interpolation constant for
@@ -1046,7 +1077,7 @@ end program
 !   \block{reduceh}{
 !   {\tt reduceh} & set to {\tt .true.} if the reciprocal ${\bf H}$-vectors
 !    should be reduced by the symmorphic crystal symmetries & logical & .true.}
-!   See {\tt hmax} and {\tt vmat}.
+!   See {\tt hmaxvr} and {\tt vmat}.
 !
 !   \block{reducek}{
 !   {\tt reducek} & type of reduction of the $k$-point set & integer & 1}
@@ -1056,8 +1087,7 @@ end program
 !   0 & no reduction \\
 !   1 & reduce with full crystal symmetry group (including non-symmorphic
 !    symmetries) \\
-!   2 & reduce with symmorphic symmetries only, and any spin rotation has to
-!    be the same as the spatial rotation
+!   2 & reduce with symmorphic symmetries only
 !   \end{tabularx}\vskip 0.25cm
 !   See also {\tt ngridk} and {\tt vkloff}.
 !
@@ -1108,7 +1138,7 @@ end program
 !    required & logical & {\tt .false.}}
 !   If {\tt spinpol} is {\tt .true.}, then the spin-polarised Hamiltonian is
 !   solved as a second-variational step using two-component spinors in the
-!   effective magnetic field. The first variational scalar wavefunctions are
+!   Kohn-Sham magnetic field. The first variational scalar wavefunctions are
 !   used as a basis for setting this Hamiltonian.
 !
 !   \block{spinsprl}{
@@ -1223,18 +1253,17 @@ end program
 !   162 & Scanning-tunneling microscopy (STM) image. \\
 !   180 & Generate the RPA inverse dielectric function with local contributions
 !    and write it to file. \\
-!   185 & Solve the Bethe-Salpeter equation (BSE) and compute the BSE linear
-!    optical response tensor. \\
-!   188 & Time-dependent density functional theory (TDDFT) calculation of the
-!    $q\rightarrow 0$ dielectric response function including microscopic
-!    contributions. \\
+!   185 & Write the Bethe-Salpeter equation (BSE) Hamiltonian to file. \\
+!   186 & Diagonalise the BSE Hamiltonian and write the eigenvectors and
+!         eigenvalues to file. \\
+!   187 & Output the BSE dielectric response function. \\
 !   190 & Write the atomic geometry to file for plotting with XCrySDen and
 !    V\_Sim. \\
 !   195 & Calculation of X-ray density structure factors. \\
 !   196 & Calculation of magnetic structure factors. \\
 !   200 & Calculation of dynamical matrices on a $q$-point set defined by
 !    {\tt ngridq}. \\
-!   205 & Phonon dry run: just produce a set of empty DYN files. \\
+!   201 & Phonon dry run: just produce a set of empty DYN files. \\
 !   210 & Phonon density of states. \\
 !   220 & Phonon dispersion plot. \\
 !   230 & Phonon frequencies and eigenvectors for an arbitrary $q$-point. \\
@@ -1245,6 +1274,10 @@ end program
 !    constant $\lambda$, and the McMillan-Allen-Dynes critical temperature
 !    $T_c$. \\
 !   300 & Reduced density matrix functional theory (RDMFT) calculation. \\
+!   320 & Time-dependent density functional theory (TDDFT) calculation of the
+!    dielectric response function including microscopic contributions. \\
+!   330 & TDDFT calculation of the spin-polarised response function for
+!    arbitrary ${\bf q}$-vectors. \\
 !   400 & Calculation of tensor moments and corresponding LDA+U Hartree-Fock
 !    energy contributions.
 !   \end{tabularx}
@@ -1309,7 +1342,7 @@ end program
 !
 !   \block{trimvg}{
 !   {\tt trimvg} & set to {\tt .true.} if the Fourier components of the
-!    effective potential for $|G|>{\tt gmaxvr}/2$ are to be set to zero &
+!    Kohn-Sham potential for $|G|>{\tt gmaxvr}/2$ are to be set to zero &
 !    logical & {\tt .false.}}
 !   This fixes stability problems which can occur for large {\tt rgkmax}. Should
 !   be used only in conjunction with large {\tt gmaxvr}.
@@ -1343,7 +1376,7 @@ end program
 !   structure factor output files {\tt SFACRHO.OUT} and {\tt SFACMAG.OUT}. It is
 !   stored in the usual row-column setting and applied directly as
 !   ${\bf H}'=M{\bf H}$ to every vector but {\em only} when writing the output
-!   files. See also {\tt hmax} and {\tt reduceh}.
+!   files. See also {\tt hmaxvr} and {\tt reduceh}.
 !
 !   \block{vklem}{
 !   {\tt vklem} & the $k$-point in lattice coordinates at which to compute the
@@ -1368,13 +1401,13 @@ end program
 !   magnetisation density of the form
 !   $$ {\bf m}^{\bf q}({\bf r})=(m_x({\bf r})\cos({\bf q \cdot r}),
 !    m_y({\bf r})\sin({\bf q \cdot r}),m_z({\bf r})), $$
-!    where $m_x$, $m_y$ and $m_z$ are lattice periodic. See also {\tt spinprl}.
+!   where $m_x$, $m_y$ and $m_z$ are lattice periodic. See also {\tt spinsprl}.
 !
 !   \block{wsfac}{
 !   {\tt wsfac} & energy window to be used when calculating density or magnetic
 !    structure factors & real(2) & $(-10^6,10^6)$}
 !   Only those states with eigenvalues within this window will contribute to the
-!   density or magnetisation. See also {\tt hmax} and {\tt vhmat}.
+!   density or magnetisation. See also {\tt hmaxvr} and {\tt vhmat}.
 !
 !   \block{xctype}{
 !   {\tt xctype} & integers defining the type of exchange-correlation functional

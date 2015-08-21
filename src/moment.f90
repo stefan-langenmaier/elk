@@ -51,8 +51,8 @@ do idm=1,ndmag
 end do
 ! find the interstitial moments
 do idm=1,ndmag
-  t1=ddot(ngrtot,magir(:,idm),1,cfunir,1)
-  momir(idm)=t1*omega/dble(ngrtot)
+  t1=ddot(ngtot,magir(:,idm),1,cfunir,1)
+  momir(idm)=t1*omega/dble(ngtot)
 end do
 momtot(:)=mommttot(:)+momir(:)
 ! write total moment to test file

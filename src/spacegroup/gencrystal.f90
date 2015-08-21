@@ -98,7 +98,7 @@ end do
 ! set magnetic fields to zero
 bfcmt0(:,:,:)=0.d0
 ! reduce conventional cell to primitive cell if required
-if (primcell) call findprim
+if (primcell) call findprimcell
 ! find the total number of atoms
 natmtot=0
 do is=1,nspecies

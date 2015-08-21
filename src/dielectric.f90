@@ -28,11 +28,10 @@ integer ik,jk,ist,jst
 integer iw,i,j,l
 real(8) w1,w2,wplas
 real(8) eji,x,t1,t2
-complex(8) eta,zt1
+complex(8) eta,z1
 character(256) fname
 ! allocatable arrays
 real(8), allocatable :: w(:)
-real(8), allocatable :: delta(:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
 complex(8), allocatable :: sigma(:)
 ! external functions
@@ -49,25 +48,13 @@ do ik=1,nkpt
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
 ! allocate local arrays
-allocate(w(nwdos))
-if (usegdft) allocate(delta(nstsv,nstsv,nkpt))
-allocate(sigma(nwdos))
-! compute generalised DFT correction
-if (usegdft) then
-  call readstate
-  call poteff
-  call linengy
-  call genapwfr
-  call genlofr
-  do ik=1,nkpt
-    call gdft(ik,delta(:,:,ik))
-  end do
-end if
+allocate(w(nwplot))
+allocate(sigma(nwplot))
 ! generate energy grid (always non-negative)
-w1=max(wdos(1),0.d0)
-w2=max(wdos(2),w1)
-t1=(w2-w1)/dble(nwdos)
-do iw=1,nwdos
+w1=max(wplot(1),0.d0)
+w2=max(wplot(2),w1)
+t1=(w2-w1)/dble(nwplot)
+do iw=1,nwplot
   w(iw)=w1+t1*dble(iw-1)
 end do
 ! i divided by the complex relaxation time
@@ -81,7 +68,7 @@ do l=1,noptcomp
 ! parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(pmat,jk,ist,jst) &
-!$OMP PRIVATE(zt1,eji,t1,x)
+!$OMP PRIVATE(z1,eji,t1,x)
 !$OMP DO
   do ik=1,nkptnr
     allocate(pmat(3,nstsv,nstsv))
@@ -93,24 +80,20 @@ do l=1,noptcomp
     do ist=1,nstsv
 ! conduction states
       do jst=1,nstsv
-        zt1=pmat(i,ist,jst)*conjg(pmat(j,ist,jst))
+        z1=pmat(i,ist,jst)*conjg(pmat(j,ist,jst))
         eji=evalsv(jst,jk)-evalsv(ist,jk)
         if ((evalsv(ist,jk).le.efermi).and.(evalsv(jst,jk).gt.efermi)) then
-! generalised DFT correction
-          if (usegdft) then
-            eji=eji+delta(jst,ist,jk)
-          end if
 ! scissor correction
           if (scissor.ne.0.d0) then
             t1=(eji+scissor)/eji
-            zt1=zt1*t1**2
+            z1=z1*t1**2
             eji=eji+scissor
           end if
         end if
         if (abs(eji).gt.1.d-8) then
           t1=occsv(ist,jk)*(1.d0-occsv(jst,jk)/occmax)/eji
 !$OMP CRITICAL
-          sigma(:)=sigma(:)+t1*(zt1/(w(:)-eji+eta)+conjg(zt1)/(w(:)+eji+eta))
+          sigma(:)=sigma(:)+t1*(z1/(w(:)-eji+eta)+conjg(z1)/(w(:)+eji+eta))
 !$OMP END CRITICAL
         end if
 ! add to the plasma frequency
@@ -119,7 +102,7 @@ do l=1,noptcomp
             if (ist.eq.jst) then
               x=(evalsv(ist,jk)-efermi)/swidth
 !$OMP CRITICAL
-              wplas=wplas+wkptnr*dble(zt1)*sdelta(stype,x)/swidth
+              wplas=wplas+wkptnr*dble(z1)*sdelta(stype,x)/swidth
 !$OMP END CRITICAL
             end if
           end if
@@ -130,8 +113,8 @@ do l=1,noptcomp
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-  zt1=zi*wkptnr/omega
-  sigma(:)=zt1*sigma(:)
+  z1=zi*wkptnr/omega
+  sigma(:)=z1*sigma(:)
 ! intraband contribution
   if (intraband) then
     if (i.eq.j) then
@@ -143,7 +126,7 @@ do l=1,noptcomp
       close(60)
 ! add the intraband contribution to sigma
       t1=wplas**2/fourpi
-      do iw=1,nwdos
+      do iw=1,nwplot
         sigma(iw)=sigma(iw)+t1/(swidth-zi*w(iw))
       end do
     end if
@@ -151,11 +134,11 @@ do l=1,noptcomp
 ! write the optical conductivity to file
   write(fname,'("SIGMA_",2I1,".OUT")') i,j
   open(60,file=trim(fname),action='WRITE',form='FORMATTED')
-  do iw=1,nwdos
+  do iw=1,nwplot
     write(60,'(2G18.10)') w(iw),dble(sigma(iw))
   end do
   write(60,'("     ")')
-  do iw=1,nwdos
+  do iw=1,nwplot
     write(60,'(2G18.10)') w(iw),aimag(sigma(iw))
   end do
   close(60)
@@ -164,18 +147,18 @@ do l=1,noptcomp
   open(60,file=trim(fname),action='WRITE',form='FORMATTED')
   t1=0.d0
   if (i.eq.j) t1=1.d0
-  do iw=1,nwdos
+  do iw=1,nwplot
     t2=t1-fourpi*aimag(sigma(iw)/(w(iw)+eta))
     write(60,'(2G18.10)') w(iw),t2
   end do
   write(60,'("     ")')
-  do iw=1,nwdos
+  do iw=1,nwplot
     t2=fourpi*dble(sigma(iw)/(w(iw)+eta))
     write(60,'(2G18.10)') w(iw),t2
   end do
   close(60)
 ! write sigma to test file
-  call writetest(121,'optical conductivity',nv=nwdos,tol=1.d-2,zva=sigma)
+  call writetest(121,'optical conductivity',nv=nwplot,tol=1.d-2,zva=sigma)
 ! end loop over tensor components
 end do
 close(50)
@@ -191,7 +174,6 @@ do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
 deallocate(w,sigma)
-if (usegdft) deallocate(delta)
 return
 end subroutine
 !EOC

@@ -15,7 +15,7 @@ use modmain
 !   lmax : maximum angular momentum (in,integer)
 !   ld   : leading dimension (in,integer)
 !   rfmt : real muffin-tin function (in,real(ld,nrmtmax,natmtot,nf))
-!   rfir : real intersitial function (in,real(ngrtot,nf))
+!   rfir : real intersitial function (in,real(ngtot,nf))
 ! !DESCRIPTION:
 !   Produces a 2D plot of the real functions contained in arrays {\tt rfmt} and
 !   {\tt rfir} on the parallelogram defined by the corner vertices in the global
@@ -32,7 +32,7 @@ integer, intent(in) :: nf
 integer, intent(in) :: lmax
 integer, intent(in) :: ld
 real(8), intent(in) :: rfmt(ld,nrmtmax,natmtot,nf)
-real(8), intent(in) :: rfir(ngrtot,nf)
+real(8), intent(in) :: rfir(ngtot,nf)
 ! local variables
 integer i,ip,ip1,ip2
 real(8) vl1(3),vl2(3),vc1(3),vc2(3)

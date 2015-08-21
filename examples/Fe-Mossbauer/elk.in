@@ -41,6 +41,9 @@ mixtype
 nempty
   60
 
+rgkmax
+  7.5
+
 avec
   1.0  1.0 -1.0
   1.0 -1.0  1.0

@@ -30,14 +30,11 @@ integer ik,ispn,is,ia,ias,iv,ist
 real(8) emin,emax,sum
 character(256) fname
 ! allocatable arrays
-real(8), allocatable :: evalfv(:,:)
-real(8), allocatable :: e(:,:)
+real(8), allocatable :: evalfv(:,:),e(:,:)
 ! low precision for band character array saves memory
 real(4), allocatable :: bc(:,:,:,:)
-complex(8), allocatable :: dmat(:,:,:,:,:)
-complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: dmat(:,:,:,:,:),apwalm(:,:,:,:,:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 ! initialise universal variables
 call init0
 call init1
@@ -63,8 +60,8 @@ call genlofr
 call olprad
 ! compute the Hamiltonian radial integrals
 call hmlrad
-! generate muffin-tin effective magnetic fields and s.o. coupling functions
-call genbeffmt
+! generate the spin-orbit coupling radial functions
+call gensocfr
 emin=1.d5
 emax=-1.d5
 ! begin parallel loop over k-points

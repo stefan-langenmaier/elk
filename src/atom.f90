@@ -106,7 +106,7 @@ end do
 call potnucl(ptnucl,nr,r,zn,vn)
 do ir=1,nr
   ri(ir)=1.d0/r(ir)
-! initialise the effective potential to the nuclear potential
+! initialise the Kohn-Sham potential to the nuclear potential
   vr(ir)=vn(ir)
 end do
 dvp=0.d0

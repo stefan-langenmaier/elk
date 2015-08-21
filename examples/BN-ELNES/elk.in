@@ -23,17 +23,9 @@ vecql
  0.0 0.0 0.125
 
 ! energy range for ELNES plot
-dos
- 300 150 3    : nwdos, ngrdos, nsmdos
- 18.0 22.0    : wdos (for the nitrogen K-edge)
-
-! tight convergence for band (linearisation) energies required
-epsband
- 1.e-7
-
-! large initial step-length for band energy search
-deband
- 0.01
+wplot
+ 300 150 3    : nwplot, ngrkf, nswplot
+ 18.0 22.0    : wplot (for the nitrogen K-edge)
 
 ! maximum allowed energy for the initial state in the double differential
 ! cross-section formula

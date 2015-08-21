@@ -13,8 +13,8 @@ contains
 ! !ROUTINE: xcifc
 ! !INTERFACE:
 subroutine xcifc(xctype,n,c_tb09,rho,rhoup,rhodn,grho,gup,gdn,g2rho,g2up,g2dn, &
- g3rho,g3up,g3dn,grho2,gup2,gdn2,gupdn,tau,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn, &
- dxdg2,dxdgu2,dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
+ g3rho,g3up,g3dn,grho2,gup2,gdn2,gupdn,tau,tauup,taudn,ex,ec,vx,vc,vxup,vxdn, &
+ vcup,vcdn,dxdg2,dxdgu2,dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
 ! !INPUT/OUTPUT PARAMETERS:
 !   xctype : type of exchange-correlation functional (in,integer(3))
 !   n      : number of density points (in,integer)
@@ -36,6 +36,8 @@ subroutine xcifc(xctype,n,c_tb09,rho,rhoup,rhodn,grho,gup,gdn,g2rho,g2up,g2dn, &
 !   gdn2   : |grad rhodn|^2 (in,real(n),optional)
 !   gupdn  : (grad rhoup).(grad rhodn) (in,real(n),optional)
 !   tau    : kinetic energy density (in,real(n),optional)
+!   tauup  : spin-up kinetic energy density (in,real(n),optional)
+!   taudn  : spin-down kinetic energy density (in,real(n),optional)
 !   ex     : exchange energy density (out,real(n),optional)
 !   ec     : correlation energy density (out,real(n),optional)
 !   vx     : spin-unpolarised exchange potential (out,real(n),optional)
@@ -76,39 +78,16 @@ integer, intent(in) :: xctype(3)
 integer, intent(in) :: n
 ! optional arguments
 real(8), optional, intent(in) :: c_tb09
-real(8), optional, intent(in) :: rho(n)
-real(8), optional, intent(in) :: rhoup(n)
-real(8), optional, intent(in) :: rhodn(n)
-real(8), optional, intent(in) :: grho(n)
-real(8), optional, intent(in) :: gup(n)
-real(8), optional, intent(in) :: gdn(n)
-real(8), optional, intent(in) :: g2rho(n)
-real(8), optional, intent(in) :: g2up(n)
-real(8), optional, intent(in) :: g2dn(n)
-real(8), optional, intent(in) :: g3rho(n)
-real(8), optional, intent(in) :: g3up(n)
-real(8), optional, intent(in) :: g3dn(n)
-real(8), optional, intent(in) :: grho2(n)
-real(8), optional, intent(in) :: gup2(n)
-real(8), optional, intent(in) :: gdn2(n)
-real(8), optional, intent(in) :: gupdn(n)
-real(8), optional, intent(in) :: tau(n)
-real(8), optional, intent(out) :: ex(n)
-real(8), optional, intent(out) :: ec(n)
-real(8), optional, intent(out) :: vx(n)
-real(8), optional, intent(out) :: vc(n)
-real(8), optional, intent(out) :: vxup(n)
-real(8), optional, intent(out) :: vxdn(n)
-real(8), optional, intent(out) :: vcup(n)
-real(8), optional, intent(out) :: vcdn(n)
-real(8), optional, intent(out) :: dxdg2(n)
-real(8), optional, intent(out) :: dxdgu2(n)
-real(8), optional, intent(out) :: dxdgd2(n)
-real(8), optional, intent(out) :: dxdgud(n)
-real(8), optional, intent(out) :: dcdg2(n)
-real(8), optional, intent(out) :: dcdgu2(n)
-real(8), optional, intent(out) :: dcdgd2(n)
-real(8), optional, intent(out) :: dcdgud(n)
+real(8), optional, intent(in) :: rho(n),rhoup(n),rhodn(n)
+real(8), optional, intent(in) :: grho(n),gup(n),gdn(n)
+real(8), optional, intent(in) :: g2rho(n),g2up(n),g2dn(n)
+real(8), optional, intent(in) :: g3rho(n),g3up(n),g3dn(n)
+real(8), optional, intent(in) :: grho2(n),gup2(n),gdn2(n),gupdn(n)
+real(8), optional, intent(in) :: tau(n),tauup(n),taudn(n)
+real(8), optional, intent(out) :: ex(n),ec(n),vx(n),vc(n)
+real(8), optional, intent(out) :: vxup(n),vxdn(n),vcup(n),vcdn(n)
+real(8), optional, intent(out) :: dxdg2(n),dxdgu2(n),dxdgd2(n),dxdgud(n)
+real(8), optional, intent(out) :: dcdg2(n),dcdgu2(n),dcdgd2(n),dcdgud(n)
 ! local variables
 real(8) kappa,mu,beta
 ! allocatable arrays
@@ -249,13 +228,13 @@ case(30)
 case(100)
 ! libxc library functionals
   if (present(rhoup).and.present(rhodn).and.present(g2up).and.present(g2dn) &
-   .and.present(gup2).and.present(gdn2).and.present(gupdn).and.present(tau) &
-   .and.present(vxup).and.present(vxdn).and.present(vcup).and.present(vcdn)) &
-   then
+   .and.present(gup2).and.present(gdn2).and.present(gupdn).and.present(tauup) &
+   .and.present(taudn).and.present(vxup).and.present(vxdn).and.present(vcup) &
+   .and.present(vcdn)) then
 ! spin-polarised potential-only meta-GGA
     call xcifc_libxc(xctype,n,c_tb09=c_tb09,rhoup=rhoup,rhodn=rhodn,g2up=g2up, &
-     g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tau=tau,vxup=vxup,vxdn=vxdn, &
-     vcup=vcup,vcdn=vcdn)
+     g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tauup=tauup,taudn=taudn, &
+     vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
   else if (present(rhoup).and.present(rhodn).and.present(gup2) &
    .and.present(gdn2).and.present(gupdn).and.present(ex).and.present(ec) &
    .and.present(vxup).and.present(vxdn).and.present(vcup).and.present(vcdn) &
@@ -315,12 +294,14 @@ end subroutine
 !BOP
 ! !ROUTINE: getxcdata
 ! !INTERFACE:
-subroutine getxcdata(xctype,xcdescr,xcspin,xcgrad)
+subroutine getxcdata(xctype,xcdescr,xcspin,xcgrad,hybrid,hybridc)
 ! !INPUT/OUTPUT PARAMETERS:
 !   xctype  : type of exchange-correlation functional (in,integer(3))
 !   xcdescr : description of functional (out,character(256))
 !   xcspin  : spin treatment (out,integer)
 !   xcgrad  : gradient treatment (out,integer)
+!   hybrid  : .true. if functional a hybrid (out,logical)
+!   hybridc : hybrid exact exchange mixing coefficient (out,real(8))
 ! !DESCRIPTION:
 !   Returns data on the exchange-correlation functional labeled by {\tt xctype}.
 !   The character array {\tt xcdescr} contains a short description of the
@@ -339,6 +320,8 @@ integer, intent(in) :: xctype(3)
 character(512), intent(out) :: xcdescr
 integer, intent(out) :: xcspin
 integer, intent(out) :: xcgrad
+logical, intent(out) :: hybrid
+real(8), intent(out) :: hybridc
 select case(abs(xctype(1)))
 case(1)
   xcdescr='No density-derived exchange-correlation energy or potential'
@@ -385,7 +368,7 @@ case(30)
   xcgrad=1
 case(100)
 ! libxc library functionals
-  call xcdata_libxc(xctype,xcdescr,xcspin,xcgrad)
+  call xcdata_libxc(xctype,xcdescr,xcspin,xcgrad,hybrid,hybridc)
 case default
   write(*,*)
   write(*,'("Error(getxcdata): xctype not defined : ",I8)') xctype(1)

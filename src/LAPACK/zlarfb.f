@@ -1,11 +1,204 @@
+*> \brief \b ZLARFB applies a block reflector or its conjugate-transpose to a general rectangular matrix.
+*
+*  =========== DOCUMENTATION ===========
+*
+* Online html documentation available at 
+*            http://www.netlib.org/lapack/explore-html/ 
+*
+*> \htmlonly
+*> Download ZLARFB + dependencies 
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/zlarfb.f"> 
+*> [TGZ]</a> 
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/zlarfb.f"> 
+*> [ZIP]</a> 
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/zlarfb.f"> 
+*> [TXT]</a>
+*> \endhtmlonly 
+*
+*  Definition:
+*  ===========
+*
+*       SUBROUTINE ZLARFB( SIDE, TRANS, DIRECT, STOREV, M, N, K, V, LDV,
+*                          T, LDT, C, LDC, WORK, LDWORK )
+* 
+*       .. Scalar Arguments ..
+*       CHARACTER          DIRECT, SIDE, STOREV, TRANS
+*       INTEGER            K, LDC, LDT, LDV, LDWORK, M, N
+*       ..
+*       .. Array Arguments ..
+*       COMPLEX*16         C( LDC, * ), T( LDT, * ), V( LDV, * ),
+*      $                   WORK( LDWORK, * )
+*       ..
+*  
+*
+*> \par Purpose:
+*  =============
+*>
+*> \verbatim
+*>
+*> ZLARFB applies a complex block reflector H or its transpose H**H to a
+*> complex M-by-N matrix C, from either the left or the right.
+*> \endverbatim
+*
+*  Arguments:
+*  ==========
+*
+*> \param[in] SIDE
+*> \verbatim
+*>          SIDE is CHARACTER*1
+*>          = 'L': apply H or H**H from the Left
+*>          = 'R': apply H or H**H from the Right
+*> \endverbatim
+*>
+*> \param[in] TRANS
+*> \verbatim
+*>          TRANS is CHARACTER*1
+*>          = 'N': apply H (No transpose)
+*>          = 'C': apply H**H (Conjugate transpose)
+*> \endverbatim
+*>
+*> \param[in] DIRECT
+*> \verbatim
+*>          DIRECT is CHARACTER*1
+*>          Indicates how H is formed from a product of elementary
+*>          reflectors
+*>          = 'F': H = H(1) H(2) . . . H(k) (Forward)
+*>          = 'B': H = H(k) . . . H(2) H(1) (Backward)
+*> \endverbatim
+*>
+*> \param[in] STOREV
+*> \verbatim
+*>          STOREV is CHARACTER*1
+*>          Indicates how the vectors which define the elementary
+*>          reflectors are stored:
+*>          = 'C': Columnwise
+*>          = 'R': Rowwise
+*> \endverbatim
+*>
+*> \param[in] M
+*> \verbatim
+*>          M is INTEGER
+*>          The number of rows of the matrix C.
+*> \endverbatim
+*>
+*> \param[in] N
+*> \verbatim
+*>          N is INTEGER
+*>          The number of columns of the matrix C.
+*> \endverbatim
+*>
+*> \param[in] K
+*> \verbatim
+*>          K is INTEGER
+*>          The order of the matrix T (= the number of elementary
+*>          reflectors whose product defines the block reflector).
+*> \endverbatim
+*>
+*> \param[in] V
+*> \verbatim
+*>          V is COMPLEX*16 array, dimension
+*>                                (LDV,K) if STOREV = 'C'
+*>                                (LDV,M) if STOREV = 'R' and SIDE = 'L'
+*>                                (LDV,N) if STOREV = 'R' and SIDE = 'R'
+*>          See Further Details.
+*> \endverbatim
+*>
+*> \param[in] LDV
+*> \verbatim
+*>          LDV is INTEGER
+*>          The leading dimension of the array V.
+*>          If STOREV = 'C' and SIDE = 'L', LDV >= max(1,M);
+*>          if STOREV = 'C' and SIDE = 'R', LDV >= max(1,N);
+*>          if STOREV = 'R', LDV >= K.
+*> \endverbatim
+*>
+*> \param[in] T
+*> \verbatim
+*>          T is COMPLEX*16 array, dimension (LDT,K)
+*>          The triangular K-by-K matrix T in the representation of the
+*>          block reflector.
+*> \endverbatim
+*>
+*> \param[in] LDT
+*> \verbatim
+*>          LDT is INTEGER
+*>          The leading dimension of the array T. LDT >= K.
+*> \endverbatim
+*>
+*> \param[in,out] C
+*> \verbatim
+*>          C is COMPLEX*16 array, dimension (LDC,N)
+*>          On entry, the M-by-N matrix C.
+*>          On exit, C is overwritten by H*C or H**H*C or C*H or C*H**H.
+*> \endverbatim
+*>
+*> \param[in] LDC
+*> \verbatim
+*>          LDC is INTEGER
+*>          The leading dimension of the array C. LDC >= max(1,M).
+*> \endverbatim
+*>
+*> \param[out] WORK
+*> \verbatim
+*>          WORK is COMPLEX*16 array, dimension (LDWORK,K)
+*> \endverbatim
+*>
+*> \param[in] LDWORK
+*> \verbatim
+*>          LDWORK is INTEGER
+*>          The leading dimension of the array WORK.
+*>          If SIDE = 'L', LDWORK >= max(1,N);
+*>          if SIDE = 'R', LDWORK >= max(1,M).
+*> \endverbatim
+*
+*  Authors:
+*  ========
+*
+*> \author Univ. of Tennessee 
+*> \author Univ. of California Berkeley 
+*> \author Univ. of Colorado Denver 
+*> \author NAG Ltd. 
+*
+*> \date September 2012
+*
+*> \ingroup complex16OTHERauxiliary
+*
+*> \par Further Details:
+*  =====================
+*>
+*> \verbatim
+*>
+*>  The shape of the matrix V and the storage of the vectors which define
+*>  the H(i) is best illustrated by the following example with n = 5 and
+*>  k = 3. The elements equal to 1 are not stored; the corresponding
+*>  array elements are modified but restored on exit. The rest of the
+*>  array is not used.
+*>
+*>  DIRECT = 'F' and STOREV = 'C':         DIRECT = 'F' and STOREV = 'R':
+*>
+*>               V = (  1       )                 V = (  1 v1 v1 v1 v1 )
+*>                   ( v1  1    )                     (     1 v2 v2 v2 )
+*>                   ( v1 v2  1 )                     (        1 v3 v3 )
+*>                   ( v1 v2 v3 )
+*>                   ( v1 v2 v3 )
+*>
+*>  DIRECT = 'B' and STOREV = 'C':         DIRECT = 'B' and STOREV = 'R':
+*>
+*>               V = ( v1 v2 v3 )                 V = ( v1 v1  1       )
+*>                   ( v1 v2 v3 )                     ( v2 v2 v2  1    )
+*>                   (  1 v2 v3 )                     ( v3 v3 v3 v3  1 )
+*>                   (     1 v3 )
+*>                   (        1 )
+*> \endverbatim
+*>
+*  =====================================================================
       SUBROUTINE ZLARFB( SIDE, TRANS, DIRECT, STOREV, M, N, K, V, LDV,
      $                   T, LDT, C, LDC, WORK, LDWORK )
-      IMPLICIT NONE
 *
-*  -- LAPACK auxiliary routine (version 3.3.1) --
+*  -- LAPACK auxiliary routine (version 3.4.2) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
 *  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
-*  -- April 2011                                                      --
+*     September 2012
 *
 *     .. Scalar Arguments ..
       CHARACTER          DIRECT, SIDE, STOREV, TRANS
@@ -15,103 +208,6 @@
       COMPLEX*16         C( LDC, * ), T( LDT, * ), V( LDV, * ),
      $                   WORK( LDWORK, * )
 *     ..
-*
-*  Purpose
-*  =======
-*
-*  ZLARFB applies a complex block reflector H or its transpose H**H to a
-*  complex M-by-N matrix C, from either the left or the right.
-*
-*  Arguments
-*  =========
-*
-*  SIDE    (input) CHARACTER*1
-*          = 'L': apply H or H**H from the Left
-*          = 'R': apply H or H**H from the Right
-*
-*  TRANS   (input) CHARACTER*1
-*          = 'N': apply H (No transpose)
-*          = 'C': apply H**H (Conjugate transpose)
-*
-*  DIRECT  (input) CHARACTER*1
-*          Indicates how H is formed from a product of elementary
-*          reflectors
-*          = 'F': H = H(1) H(2) . . . H(k) (Forward)
-*          = 'B': H = H(k) . . . H(2) H(1) (Backward)
-*
-*  STOREV  (input) CHARACTER*1
-*          Indicates how the vectors which define the elementary
-*          reflectors are stored:
-*          = 'C': Columnwise
-*          = 'R': Rowwise
-*
-*  M       (input) INTEGER
-*          The number of rows of the matrix C.
-*
-*  N       (input) INTEGER
-*          The number of columns of the matrix C.
-*
-*  K       (input) INTEGER
-*          The order of the matrix T (= the number of elementary
-*          reflectors whose product defines the block reflector).
-*
-*  V       (input) COMPLEX*16 array, dimension
-*                                (LDV,K) if STOREV = 'C'
-*                                (LDV,M) if STOREV = 'R' and SIDE = 'L'
-*                                (LDV,N) if STOREV = 'R' and SIDE = 'R'
-*          The matrix V. See Further Details.
-*
-*  LDV     (input) INTEGER
-*          The leading dimension of the array V.
-*          If STOREV = 'C' and SIDE = 'L', LDV >= max(1,M);
-*          if STOREV = 'C' and SIDE = 'R', LDV >= max(1,N);
-*          if STOREV = 'R', LDV >= K.
-*
-*  T       (input) COMPLEX*16 array, dimension (LDT,K)
-*          The triangular K-by-K matrix T in the representation of the
-*          block reflector.
-*
-*  LDT     (input) INTEGER
-*          The leading dimension of the array T. LDT >= K.
-*
-*  C       (input/output) COMPLEX*16 array, dimension (LDC,N)
-*          On entry, the M-by-N matrix C.
-*          On exit, C is overwritten by H*C or H**H*C or C*H or C*H**H.
-*
-*  LDC     (input) INTEGER
-*          The leading dimension of the array C. LDC >= max(1,M).
-*
-*  WORK    (workspace) COMPLEX*16 array, dimension (LDWORK,K)
-*
-*  LDWORK  (input) INTEGER
-*          The leading dimension of the array WORK.
-*          If SIDE = 'L', LDWORK >= max(1,N);
-*          if SIDE = 'R', LDWORK >= max(1,M).
-*
-*  Further Details
-*  ===============
-*
-*  The shape of the matrix V and the storage of the vectors which define
-*  the H(i) is best illustrated by the following example with n = 5 and
-*  k = 3. The elements equal to 1 are not stored; the corresponding
-*  array elements are modified but restored on exit. The rest of the
-*  array is not used.
-*
-*  DIRECT = 'F' and STOREV = 'C':         DIRECT = 'F' and STOREV = 'R':
-*
-*               V = (  1       )                 V = (  1 v1 v1 v1 v1 )
-*                   ( v1  1    )                     (     1 v2 v2 v2 )
-*                   ( v1 v2  1 )                     (        1 v3 v3 )
-*                   ( v1 v2 v3 )
-*                   ( v1 v2 v3 )
-*
-*  DIRECT = 'B' and STOREV = 'C':         DIRECT = 'B' and STOREV = 'R':
-*
-*               V = ( v1 v2 v3 )                 V = ( v1 v1  1       )
-*                   ( v1 v2 v3 )                     ( v2 v2 v2  1    )
-*                   (  1 v2 v3 )                     ( v3 v3 v3 v3  1 )
-*                   (     1 v3 )
-*                   (        1 )
 *
 *  =====================================================================
 *
@@ -286,15 +382,14 @@
 *              Form  H * C  or  H**H * C  where  C = ( C1 )
 *                                                    ( C2 )
 *
-               LASTV = MAX( K, ILAZLR( M, K, V, LDV ) )
-               LASTC = ILAZLC( LASTV, N, C, LDC )
+               LASTC = ILAZLC( M, N, C, LDC )
 *
 *              W := C**H * V  =  (C1**H * V1 + C2**H * V2)  (stored in WORK)
 *
 *              W := C2**H
 *
                DO 70 J = 1, K
-                  CALL ZCOPY( LASTC, C( LASTV-K+J, 1 ), LDC,
+                  CALL ZCOPY( LASTC, C( M-K+J, 1 ), LDC,
      $                 WORK( 1, J ), 1 )
                   CALL ZLACGV( LASTC, WORK( 1, J ), 1 )
    70          CONTINUE
@@ -302,14 +397,14 @@
 *              W := W * V2
 *
                CALL ZTRMM( 'Right', 'Upper', 'No transpose', 'Unit',
-     $              LASTC, K, ONE, V( LASTV-K+1, 1 ), LDV,
+     $              LASTC, K, ONE, V( M-K+1, 1 ), LDV,
      $              WORK, LDWORK )
-               IF( LASTV.GT.K ) THEN
+               IF( M.GT.K ) THEN
 *
 *                 W := W + C1**H*V1
 *
                   CALL ZGEMM( 'Conjugate transpose', 'No transpose',
-     $                 LASTC, K, LASTV-K,
+     $                 LASTC, K, M-K,
      $                 ONE, C, LDC, V, LDV,
      $                 ONE, WORK, LDWORK )
                END IF
@@ -321,12 +416,12 @@
 *
 *              C := C - V * W**H
 *
-               IF( LASTV.GT.K ) THEN
+               IF( M.GT.K ) THEN
 *
 *                 C1 := C1 - V1 * W**H
 *
                   CALL ZGEMM( 'No transpose', 'Conjugate transpose',
-     $                 LASTV-K, LASTC, K,
+     $                 M-K, LASTC, K,
      $                 -ONE, V, LDV, WORK, LDWORK,
      $                 ONE, C, LDC )
                END IF
@@ -334,14 +429,14 @@
 *              W := W * V2**H
 *
                CALL ZTRMM( 'Right', 'Upper', 'Conjugate transpose',
-     $              'Unit', LASTC, K, ONE, V( LASTV-K+1, 1 ), LDV,
+     $              'Unit', LASTC, K, ONE, V( M-K+1, 1 ), LDV,
      $              WORK, LDWORK )
 *
 *              C2 := C2 - W**H
 *
                DO 90 J = 1, K
                   DO 80 I = 1, LASTC
-                     C( LASTV-K+J, I ) = C( LASTV-K+J, I ) -
+                     C( M-K+J, I ) = C( M-K+J, I ) -
      $                               DCONJG( WORK( I, J ) )
    80             CONTINUE
    90          CONTINUE
@@ -350,29 +445,28 @@
 *
 *              Form  C * H  or  C * H**H  where  C = ( C1  C2 )
 *
-               LASTV = MAX( K, ILAZLR( N, K, V, LDV ) )
-               LASTC = ILAZLR( M, LASTV, C, LDC )
+               LASTC = ILAZLR( M, N, C, LDC )
 *
 *              W := C * V  =  (C1*V1 + C2*V2)  (stored in WORK)
 *
 *              W := C2
 *
                DO 100 J = 1, K
-                  CALL ZCOPY( LASTC, C( 1, LASTV-K+J ), 1,
+                  CALL ZCOPY( LASTC, C( 1, N-K+J ), 1,
      $                 WORK( 1, J ), 1 )
   100          CONTINUE
 *
 *              W := W * V2
 *
                CALL ZTRMM( 'Right', 'Upper', 'No transpose', 'Unit',
-     $              LASTC, K, ONE, V( LASTV-K+1, 1 ), LDV,
+     $              LASTC, K, ONE, V( N-K+1, 1 ), LDV,
      $              WORK, LDWORK )
-               IF( LASTV.GT.K ) THEN
+               IF( N.GT.K ) THEN
 *
 *                 W := W + C1 * V1
 *
                   CALL ZGEMM( 'No transpose', 'No transpose',
-     $                 LASTC, K, LASTV-K,
+     $                 LASTC, K, N-K,
      $                 ONE, C, LDC, V, LDV, ONE, WORK, LDWORK )
                END IF
 *
@@ -383,26 +477,26 @@
 *
 *              C := C - W * V**H
 *
-               IF( LASTV.GT.K ) THEN
+               IF( N.GT.K ) THEN
 *
 *                 C1 := C1 - W * V1**H
 *
                   CALL ZGEMM( 'No transpose', 'Conjugate transpose',
-     $                 LASTC, LASTV-K, K, -ONE, WORK, LDWORK, V, LDV,
+     $                 LASTC, N-K, K, -ONE, WORK, LDWORK, V, LDV,
      $                 ONE, C, LDC )
                END IF
 *
 *              W := W * V2**H
 *
                CALL ZTRMM( 'Right', 'Upper', 'Conjugate transpose',
-     $              'Unit', LASTC, K, ONE, V( LASTV-K+1, 1 ), LDV,
+     $              'Unit', LASTC, K, ONE, V( N-K+1, 1 ), LDV,
      $              WORK, LDWORK )
 *
 *              C2 := C2 - W
 *
                DO 120 J = 1, K
                   DO 110 I = 1, LASTC
-                     C( I, LASTV-K+J ) = C( I, LASTV-K+J )
+                     C( I, N-K+J ) = C( I, N-K+J )
      $                    - WORK( I, J )
   110             CONTINUE
   120          CONTINUE
@@ -547,15 +641,14 @@
 *              Form  H * C  or  H**H * C  where  C = ( C1 )
 *                                                    ( C2 )
 *
-               LASTV = MAX( K, ILAZLC( K, M, V, LDV ) )
-               LASTC = ILAZLC( LASTV, N, C, LDC )
+               LASTC = ILAZLC( M, N, C, LDC )
 *
 *              W := C**H * V**H  =  (C1**H * V1**H + C2**H * V2**H) (stored in WORK)
 *
 *              W := C2**H
 *
                DO 190 J = 1, K
-                  CALL ZCOPY( LASTC, C( LASTV-K+J, 1 ), LDC,
+                  CALL ZCOPY( LASTC, C( M-K+J, 1 ), LDC,
      $                 WORK( 1, J ), 1 )
                   CALL ZLACGV( LASTC, WORK( 1, J ), 1 )
   190          CONTINUE
@@ -563,14 +656,14 @@
 *              W := W * V2**H
 *
                CALL ZTRMM( 'Right', 'Lower', 'Conjugate transpose',
-     $              'Unit', LASTC, K, ONE, V( 1, LASTV-K+1 ), LDV,
+     $              'Unit', LASTC, K, ONE, V( 1, M-K+1 ), LDV,
      $              WORK, LDWORK )
-               IF( LASTV.GT.K ) THEN
+               IF( M.GT.K ) THEN
 *
 *                 W := W + C1**H * V1**H
 *
                   CALL ZGEMM( 'Conjugate transpose',
-     $                 'Conjugate transpose', LASTC, K, LASTV-K,
+     $                 'Conjugate transpose', LASTC, K, M-K,
      $                 ONE, C, LDC, V, LDV, ONE, WORK, LDWORK )
                END IF
 *
@@ -581,26 +674,26 @@
 *
 *              C := C - V**H * W**H
 *
-               IF( LASTV.GT.K ) THEN
+               IF( M.GT.K ) THEN
 *
 *                 C1 := C1 - V1**H * W**H
 *
                   CALL ZGEMM( 'Conjugate transpose',
-     $                 'Conjugate transpose', LASTV-K, LASTC, K,
+     $                 'Conjugate transpose', M-K, LASTC, K,
      $                 -ONE, V, LDV, WORK, LDWORK, ONE, C, LDC )
                END IF
 *
 *              W := W * V2
 *
                CALL ZTRMM( 'Right', 'Lower', 'No transpose', 'Unit',
-     $              LASTC, K, ONE, V( 1, LASTV-K+1 ), LDV,
+     $              LASTC, K, ONE, V( 1, M-K+1 ), LDV,
      $              WORK, LDWORK )
 *
 *              C2 := C2 - W**H
 *
                DO 210 J = 1, K
                   DO 200 I = 1, LASTC
-                     C( LASTV-K+J, I ) = C( LASTV-K+J, I ) -
+                     C( M-K+J, I ) = C( M-K+J, I ) -
      $                               DCONJG( WORK( I, J ) )
   200             CONTINUE
   210          CONTINUE
@@ -609,29 +702,28 @@
 *
 *              Form  C * H  or  C * H**H  where  C = ( C1  C2 )
 *
-               LASTV = MAX( K, ILAZLC( K, N, V, LDV ) )
-               LASTC = ILAZLR( M, LASTV, C, LDC )
+               LASTC = ILAZLR( M, N, C, LDC )
 *
 *              W := C * V**H  =  (C1*V1**H + C2*V2**H)  (stored in WORK)
 *
 *              W := C2
 *
                DO 220 J = 1, K
-                  CALL ZCOPY( LASTC, C( 1, LASTV-K+J ), 1,
+                  CALL ZCOPY( LASTC, C( 1, N-K+J ), 1,
      $                 WORK( 1, J ), 1 )
   220          CONTINUE
 *
 *              W := W * V2**H
 *
                CALL ZTRMM( 'Right', 'Lower', 'Conjugate transpose',
-     $              'Unit', LASTC, K, ONE, V( 1, LASTV-K+1 ), LDV,
+     $              'Unit', LASTC, K, ONE, V( 1, N-K+1 ), LDV,
      $              WORK, LDWORK )
-               IF( LASTV.GT.K ) THEN
+               IF( N.GT.K ) THEN
 *
 *                 W := W + C1 * V1**H
 *
                   CALL ZGEMM( 'No transpose', 'Conjugate transpose',
-     $                 LASTC, K, LASTV-K, ONE, C, LDC, V, LDV, ONE,
+     $                 LASTC, K, N-K, ONE, C, LDC, V, LDV, ONE,
      $                 WORK, LDWORK )
                END IF
 *
@@ -642,27 +734,26 @@
 *
 *              C := C - W * V
 *
-               IF( LASTV.GT.K ) THEN
+               IF( N.GT.K ) THEN
 *
 *                 C1 := C1 - W * V1
 *
                   CALL ZGEMM( 'No transpose', 'No transpose',
-     $                 LASTC, LASTV-K, K, -ONE, WORK, LDWORK, V, LDV,
+     $                 LASTC, N-K, K, -ONE, WORK, LDWORK, V, LDV,
      $                 ONE, C, LDC )
                END IF
 *
 *              W := W * V2
 *
                CALL ZTRMM( 'Right', 'Lower', 'No transpose', 'Unit',
-     $              LASTC, K, ONE, V( 1, LASTV-K+1 ), LDV,
+     $              LASTC, K, ONE, V( 1, N-K+1 ), LDV,
      $              WORK, LDWORK )
 *
 *              C1 := C1 - W
 *
                DO 240 J = 1, K
                   DO 230 I = 1, LASTC
-                     C( I, LASTV-K+J ) = C( I, LASTV-K+J )
-     $                    - WORK( I, J )
+                     C( I, N-K+J ) = C( I, N-K+J ) - WORK( I, J )
   230             CONTINUE
   240          CONTINUE
 *

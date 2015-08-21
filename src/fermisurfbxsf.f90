@@ -7,12 +7,16 @@ subroutine fermisurfbxsf
 use modmain
 implicit none
 ! local variables
-integer ik,ist,ist0,ist1
-integer fnum,fnum0,fnum1
-integer lst,nst,i,i1,i2,i3
-real(8) vc(3,4)
+integer ik,nf,f
+integer nst,ist,i
+integer ist0,ist1
+integer jst0,jst1
+integer i1,i2,i3
+integer j1,j2,j3
+real(8) vc(3,4),e0,e1
 ! allocatable arrays
-real(8), allocatable :: evalfv(:,:)
+integer, allocatable :: idx(:)
+real(8), allocatable :: evalfv(:,:),e(:)
 complex(8), allocatable :: evecfv(:,:,:)
 complex(8), allocatable :: evecsv(:,:)
 ! initialise universal variables
@@ -32,8 +36,8 @@ call genlofr
 call olprad
 ! compute the Hamiltonian radial integrals
 call hmlrad
-! generate muffin-tin effective magnetic fields and s.o. coupling functions
-call genbeffmt
+! generate the spin-orbit coupling radial functions
+call gensocfr
 ! begin parallel loop over reduced k-points set
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(evalfv,evecfv,evecsv)
@@ -43,7 +47,7 @@ do ik=1,nkpt
   allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
 !$OMP CRITICAL
-  write(*,'("Info(fermisurf): ",I6," of ",I6," k-points")') ik,nkpt
+  write(*,'("Info(fermisurfbxsf): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL
 ! solve the first- and second-variational secular equations
   call seceqn(ik,evalfv,evecfv,evecsv)
@@ -52,60 +56,82 @@ do ik=1,nkpt
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-fnum0=50
-fnum1=50
-if (ndmag.eq.1) then
-! special case of collinear magnetism
-  open(50,file='FERMISURF_UP.bxsf',action='WRITE',form='FORMATTED')
-  open(51,file='FERMISURF_DN.bxsf',action='WRITE',form='FORMATTED')
-  fnum1=51
-  ist=nstfv-nempty
-  ist0=max(ist-nstfsp/2,1)
-  ist1=min(ist+nstfsp/2,nstfv)
-else
-! spin-unpolarised and non-collinear cases
-  open(50,file='FERMISURF.bxsf',action='WRITE',form='FORMATTED')
-  ist=(nstfv-nempty)*nspinor
-  ist0=max(ist-nstfsp/2,1)
-  ist1=min(ist+nstfsp/2,nstsv)
+! if iterative diagonalisation is used the eigenvalues must be reordered
+if (tseqit.and.(.not.spinpol)) then
+  allocate(idx(nstsv),e(nstsv))
+  do ik=1,nkpt
+    e(:)=evalsv(:,ik)
+    call sortidx(nstsv,e,idx)
+    do ist=1,nstsv
+      evalsv(ist,ik)=e(idx(ist))
+    end do
+  end do
+  deallocate(idx,e)
 end if
-nst=ist1-ist0+1
 ! plotting box in Cartesian coordinates
 do i=1,4
   vc(:,i)=bvec(:,1)*kptboxl(1,i)+bvec(:,2)*kptboxl(2,i)+bvec(:,3)*kptboxl(3,i)
 end do
-! produce the Fermi surface plot
-lst=0
-do fnum=fnum0,fnum1
-  if ((ndmag.eq.1).and.(fnum.eq.fnum1)) lst=nstfv
-  write(fnum,'(" BEGIN_INFO")')
-  write(fnum,'(" # Band-XCRYSDEN-Structure-File for Fermi surface plotting")')
-  write(fnum,'(" # created by Elk version ",I1.1,".",I1.1,".",I2.2)') version
-  write(fnum,'(" # Launch as: xcrysden --bxsf FERMISURF(_UP/_DN).bxsf")')
-  write(fnum,'("   Fermi Energy: ",G18.10)') 0.d0
-  write(fnum,'(" END_INFO")')
-  write(fnum,'(" BEGIN_BLOCK_BANDGRID_3D")')
-  write(fnum, '(" band_energies")')
-  write(fnum,'(" BANDGRID_3D_BANDS")')
-  write(fnum,'(I4)') nst
-  write(fnum,'(3I6)') ngridk(:)
+! number of files to plot (2 for collinear magnetism, 1 otherwise)
+if (ndmag.eq.1) then
+  nf=2
+else
+  nf=1
+end if
+do f=1,nf
+  if (nf.eq.2) then
+    if (f.eq.1) then
+      open(50,file='FERMISURF_UP.bxsf',action='WRITE',form='FORMATTED')
+      jst0=1; jst1=nstfv
+    else
+      open(50,file='FERMISURF_DN.bxsf',action='WRITE',form='FORMATTED')
+      jst0=nstfv+1; jst1=2*nstfv
+    end if
+  else
+    open(50,file='FERMISURF.bxsf',action='WRITE',form='FORMATTED')
+    jst0=1; jst1=nstsv
+  end if
+! find the range of eigenvalues which contribute to the Fermi surface (Lars)
+  ist0=jst1; ist1=jst0
+  do ist=jst0,jst1
+    e0=minval(evalsv(ist,:)); e1=maxval(evalsv(ist,:))
+! determine if the band crosses the Fermi energy
+    if ((e0.lt.efermi).and.(e1.gt.efermi)) then
+      ist0=min(ist0,ist); ist1=max(ist1,ist)
+    end if
+  end do
+  nst=ist1-ist0+1
+  write(50,'(" BEGIN_INFO")')
+  write(50,'(" # Band-XCRYSDEN-Structure-File for Fermi surface plotting")')
+  write(50,'(" # created by Elk version ",I1.1,".",I1.1,".",I2.2)') version
+  write(50,'(" # Launch as: xcrysden --bxsf FERMISURF(_UP/_DN).bxsf")')
+  write(50,'("   Fermi Energy: ",G18.10)') 0.d0
+  write(50,'(" END_INFO")')
+  write(50,'(" BEGIN_BLOCK_BANDGRID_3D")')
+  write(50, '(" band_energies")')
+  write(50,'(" BANDGRID_3D_BANDS")')
+  write(50,'(I4)') nst
+  write(50,'(3I6)') ngridk(:)+1
   do i=1,4
-    write(fnum,'(3G18.10)') vc(:,i)
+    write(50,'(3G18.10)') vc(:,i)
   end do
   do ist=ist0,ist1
-    write(fnum,'(" BAND: ",I4)') ist
-    do i1=0,ngridk(1)-1
-      do i2=0,ngridk(2)-1
-        do i3=0,ngridk(3)-1
-          ik=ikmap(i1,i2,i3)
-          write(fnum,'(G18.10)') evalsv(ist+lst,ik)-efermi
+    write(50,'(" BAND: ",I4)') ist
+    do i1=0,ngridk(1)
+      j1=mod(i1,ngridk(1))
+      do i2=0,ngridk(2)
+        j2=mod(i2,ngridk(2))
+        do i3=0,ngridk(3)
+          j3=mod(i3,ngridk(3))
+          ik=ikmap(j1,j2,j3)
+          write(50,'(G18.10)') evalsv(ist,ik)-efermi
         end do
       end do
     end do
   end do
-  write(fnum,'(" END_BANDGRID_3D")')
-  write(fnum,'(" END_BLOCK_BANDGRID_3D")')
-  close(fnum)
+  write(50,'(" END_BANDGRID_3D")')
+  write(50,'(" END_BLOCK_BANDGRID_3D")')
+  close(50)
 end do
 write(*,*)
 write(*,'("Info(fermisurfbxsf):")')

@@ -7,26 +7,28 @@ subroutine seceqnit(nmatp,ngp,igpig,vpl,vgpl,vgpc,apwalm,evalfv,evecfv)
 use modmain
 implicit none
 ! arguments
-integer, intent(in) :: nmatp
-integer, intent(in) :: ngp
+integer, intent(in) :: nmatp,ngp
 integer, intent(in) :: igpig(ngkmax)
 real(8), intent(in) :: vpl(3)
-real(8), intent(in) :: vgpl(3,ngkmax)
-real(8), intent(in) :: vgpc(3,ngkmax)
+real(8), intent(in) :: vgpl(3,ngkmax),vgpc(3,ngkmax)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
 ! local variables
-integer ist,jst,ias,it
-real(8) ts1,ts0
+integer n2,ns,ist,ias
+integer it,lwork,info
 real(8) t1
-complex(8) zt1
+real(8) ts1,ts0
 ! allocatable arrays
-complex(8), allocatable :: h(:),o(:)
-complex(8), allocatable :: hv(:,:),ov(:,:)
+real(8), allocatable :: w(:),rwork(:)
+complex(8), allocatable :: h(:),o(:),hv(:,:),ov(:,:)
+complex(8), allocatable :: u(:,:),hu(:,:),ou(:,:)
+complex(8), allocatable :: hs(:,:),os(:,:),work(:)
 ! external functions
 complex(8) zdotc
 external zdotc
+n2=2*nmatp
+ns=2*nstfv
 if (iscl.ge.2) then
 ! read in the eigenvalues/vectors from file
   call getevalfv(vpl,evalfv)
@@ -46,108 +48,125 @@ allocate(h(nmatp**2),o(nmatp**2))
 ! Hamiltonian
 h(:)=0.d0
 do ias=1,natmtot
-  call hmlaa(ias,ngp,apwalm,h)
-  call hmlalo(ias,ngp,apwalm,h)
-  call hmllolo(ias,ngp,h)
+  call hmlaa(ias,ngp,apwalm,nmatp,h)
+  call hmlalo(ias,ngp,apwalm,nmatp,h)
+  call hmllolo(ias,ngp,nmatp,h)
 end do
-call hmlistl(ngp,igpig,vgpc,h)
+call hmlistl(ngp,igpig,vgpc,nmatp,h)
 !$OMP SECTION
 ! overlap
 o(:)=0.d0
 do ias=1,natmtot
-  call olpaa(ias,ngp,apwalm,o)
-  call olpalo(ias,ngp,apwalm,o)
-  call olplolo(ias,ngp,o)
+  call olpaa(ias,ngp,apwalm,nmatp,o)
+  call olpalo(ias,ngp,apwalm,nmatp,o)
+  call olplolo(ias,ngp,nmatp,o)
 end do
-call olpistl(ngp,igpig,o)
+call olpistl(ngp,igpig,nmatp,o)
 !$OMP END PARALLEL SECTIONS
 call timesec(ts1)
 !$OMP CRITICAL
 timemat=timemat+ts1-ts0
 !$OMP END CRITICAL
 call timesec(ts0)
+allocate(w(ns),rwork(3*ns))
 allocate(hv(nmatp,nstfv),ov(nmatp,nstfv))
+allocate(u(nmatp,nstfv),hu(nmatp,nstfv),ou(nmatp,nstfv))
+allocate(hs(ns,ns),os(ns,ns))
+lwork=2*ns
+allocate(work(lwork))
 ! start iteration loop
 do it=1,nseqit
-! operate with H and O on the current vectors
-!$OMP PARALLEL DEFAULT(SHARED)
-!$OMP DO
-  do ist=1,nstfv
-    call zhemv('U',nmatp,zone,h,nmatp,evecfv(:,ist),1,zzero,hv(:,ist),1)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-!$OMP PARALLEL DEFAULT(SHARED)
-!$OMP DO
-  do ist=1,nstfv
-    call zhemv('U',nmatp,zone,o,nmatp,evecfv(:,ist),1,zzero,ov(:,ist),1)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(t1)
 !$OMP DO
   do ist=1,nstfv
-! normalise
+! operate with O on the current eigenvector
+    call zhemv('U',nmatp,zone,o,nmatp,evecfv(:,ist),1,zzero,ov(:,ist),1)
+! normalise the eigenvector
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,ov(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      call zdscal(nmatp,t1,evecfv(:,ist),1)
-      call zdscal(nmatp,t1,hv(:,ist),1)
-      call zdscal(nmatp,t1,ov(:,ist),1)
+      call dscal(n2,t1,evecfv(:,ist),1)
+      call dscal(n2,t1,ov(:,ist),1)
     end if
+! operate with H on the current eigenvector
+    call zhemv('U',nmatp,zone,h,nmatp,evecfv(:,ist),1,zzero,hv(:,ist),1)
 ! estimate the eigenvalue
     evalfv(ist)=dble(zdotc(nmatp,evecfv(:,ist),1,hv(:,ist),1))
-! subtract the gradient of the Rayleigh quotient from the eigenvector
-    t1=evalfv(ist)
-    evecfv(1:nmatp,ist)=evecfv(1:nmatp,ist)-tauseq*(hv(1:nmatp,ist) &
-     -t1*ov(1:nmatp,ist))
+! compute the residual |u> = (H - eO)|v>
+    call zcopy(nmatp,hv(:,ist),1,u(:,ist),1)
+    call daxpy(n2,-evalfv(ist),ov(:,ist),1,u(:,ist),1)
+! apply the overlap matrix to the residual
+    call zhemv('U',nmatp,zone,o,nmatp,u(:,ist),1,zzero,ou(:,ist),1)
+! compute the overlap of the residual with itself
+    t1=dble(zdotc(nmatp,u(:,ist),1,ou(:,ist),1))
+! normalise the residual
+    if (t1.gt.0.d0) then
+      t1=1.d0/sqrt(t1)
+      call dscal(n2,t1,u(:,ist),1)
+      call dscal(n2,t1,ou(:,ist),1)
+    end if
+! apply the Hamiltonian matrix to the residual
+    call zhemv('U',nmatp,zone,h,nmatp,u(:,ist),1,zzero,hu(:,ist),1)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-! normalise again
+! compute the Hamiltonian and overlap matrices in the subspace formed by the
+! eigenvectors and their residuals
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
   do ist=1,nstfv
-    call zhemv('U',nmatp,zone,o,nmatp,evecfv(:,ist),1,zzero,ov(:,ist),1)
+    call zgemv('C',nmatp,nstfv,zone,evecfv,nmatmax,hv(:,ist),1,zzero, &
+     hs(1,ist),1)
+    call zgemv('C',nmatp,nstfv,zone,evecfv,nmatmax,hu(:,ist),1,zzero, &
+     hs(1,nstfv+ist),1)
+    call zgemv('C',nmatp,nstfv,zone,u,nmatp,hu(:,ist),1,zzero, &
+     hs(nstfv+1,nstfv+ist),1)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(t1)
+!$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
   do ist=1,nstfv
-    t1=dble(zdotc(nmatp,evecfv(:,ist),1,ov(:,ist),1))
-    if (t1.gt.0.d0) then
-      t1=1.d0/sqrt(t1)
-      call zdscal(nmatp,t1,evecfv(:,ist),1)
-      call zdscal(nmatp,t1,ov(:,ist),1)
-    end if
+    call zgemv('C',nmatp,nstfv,zone,evecfv,nmatmax,ov(:,ist),1,zzero, &
+     os(1,ist),1)
+    call zgemv('C',nmatp,nstfv,zone,evecfv,nmatmax,ou(:,ist),1,zzero, &
+     os(1,nstfv+ist),1)
+    call zgemv('C',nmatp,nstfv,zone,u,nmatp,ou(:,ist),1,zzero, &
+     os(nstfv+1,nstfv+ist),1)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-! perform Gram-Schmidt orthonormalisation
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(jst,zt1,t1)
-!$OMP DO ORDERED
+! solve the generalised eigenvalue problem in the subspace
+  call zhegv(1,'V','U',ns,hs,ns,os,ns,w,work,lwork,rwork,info)
+  if (info.ne.0) then
+    write(*,*)
+    write(*,'("Error(seceqnit): diagonalisation failed")')
+    write(*,'(" ZHEGV returned INFO = ",I8)') info
+    write(*,'("Try increasing rgkmax")')
+    write(*,*)
+    stop
+  end if
+! construct the new eigenvectors
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
   do ist=1,nstfv
-!$OMP ORDERED
-    do jst=1,ist-1
-      zt1=-zdotc(nmatp,evecfv(:,jst),1,ov(:,ist),1)
-      call zaxpy(nmatp,zt1,evecfv(:,jst),1,evecfv(:,ist),1)
-      call zaxpy(nmatp,zt1,ov(:,jst),1,ov(:,ist),1)
-    end do
-!$OMP END ORDERED
-! normalise
-    t1=dble(zdotc(nmatp,evecfv(:,ist),1,ov(:,ist),1))
-    if (t1.gt.0.d0) then
-      t1=1.d0/sqrt(t1)
-      call zdscal(nmatp,t1,evecfv(:,ist),1)
-      call zdscal(nmatp,t1,ov(:,ist),1)
-    end if
+    call zgemv('N',nmatp,nstfv,zone,evecfv,nmatmax,hs(1,ist),1,zzero, &
+     ov(:,ist),1)
+    call zgemv('N',nmatp,nstfv,zone,u,nmatp,hs(nstfv+1,ist),1,zone,ov(:,ist),1)
+  end do
+!$OMP END DO
+!$OMP END PARALLEL
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
+  do ist=1,nstfv
+    call zcopy(nmatp,ov(:,ist),1,evecfv(:,ist),1)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! end iteration loop
 end do
-deallocate(h,o,hv,ov)
+deallocate(w,rwork,h,o,hv,ov)
+deallocate(u,hu,ou,hs,os,work)
 call timesec(ts1)
 !$OMP CRITICAL
 timefv=timefv+ts1-ts0
