@@ -9,6 +9,7 @@
 subroutine genrmesh
 ! !USES:
 use modmain
+use modvars
 ! !DESCRIPTION:
 !   Generates the coarse and fine radial meshes for each atomic species in the
 !   crystal. Also determines which points are in the inner part of the
@@ -66,6 +67,16 @@ do is=1,nspecies
   do ir=1,nrmt(is)
     if (spr(ir,is).lt.radfhf) irfhf(is)=ir
   end do
+end do
+! write to VARIABLES.OUT
+call writevars('spnr',nv=nspecies,iva=spnr)
+call writevars('nrmt',nv=nspecies,iva=nrmt)
+call writevars('nrmtinr',nv=nspecies,iva=nrmtinr)
+call writevars('lradstp',iv=lradstp)
+call writevars('nrcmt',nv=nspecies,iva=nrcmt)
+call writevars('nrcmtinr',nv=nspecies,iva=nrcmtinr)
+do is=1,nspecies
+  call writevars('spr',nv=nrmt(is),rva=spr(:,is))
 end do
 return
 end subroutine

@@ -7,6 +7,7 @@
 program main
 use modmain
 use modmpi
+use modvars
 implicit none
 ! local variables
 logical exist
@@ -33,6 +34,10 @@ else
 end if
 ! read input files
 call readinput
+! delete the VARIABLES.OUT file
+call delvars
+! write version number to VARIABLES.OUT
+call writevars('version',nv=3,iva=version)
 ! check if Elk is already running in this directory
 if (mp_mpi) then
   inquire(file='RUNNING',exist=exist)
@@ -66,6 +71,8 @@ do itask=1,ntasks
       cycle
     end select
   end if
+! write task to VARIABLES.OUT
+  call writevars('task',iv=task)
   select case(task)
   case(-1)
     write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
@@ -196,7 +203,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.2.8}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.2.9}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -243,7 +250,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, October 2013
+!   Halle and Uppsala, November 2013
 !   \newpage
 !
 !   \section{Units}

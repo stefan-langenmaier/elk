@@ -34,7 +34,7 @@ SRC_libxc = libxcifc_stub.f90
 # modules
 SRC_modules = modmain.f90 $(SRC_mpi) modmpi.f90 $(SRC_libxc) modxcifc.f90 \
  modfxcifc.f90 modldapu.f90 modrdm.f90 modphonon.f90 modscdft.f90 modtest.f90 \
- modrandom.f90 modstore.f90 modpw.f90
+ modrandom.f90 modstore.f90 modpw.f90 modvars.f90
 
 # main program
 SRC_main = main.f90
@@ -128,11 +128,11 @@ SRC_LDAU = \
  writetensmom.f90
 
 SRC_RDMFT = \
- rdmft.f90 rdmdkdc.f90 rdmminc.f90 rdmvaryc.f90 rdmdedc.f90 \
- rdmenergy.f90 rdmengyxc.f90 rdmwritededn.f90 rdmwriteengy.f90 rdmminn.f90 \
- rdmvaryn.f90 rdmdedn.f90 rdmdexcdn.f90 genvnlijji.f90 genvnlijjk.f90 \
- getvnlijji.f90 getvnlijjk.f90 writevnlijji.f90 writevnlijjk.f90 \
- rdmdexcdc.f90 rdmdtsdn.f90 rdmentropy.f90 rdmeval.f90
+ rdmft.f90 rdmdkdc.f90 rdmminc.f90 rdmvaryc.f90 rdmdedc.f90 rdmenergy.f90 \
+ rdmengyxc.f90 rdmwritededn.f90 rdmwriteengy.f90 rdmminn.f90 rdmvaryn.f90 \
+ rdmdedn.f90 rdmdexcdn.f90 genvnlijji.f90 genvnlijjk.f90 getvnlijji.f90 \
+ getvnlijjk.f90 writevnlijji.f90 writevnlijjk.f90 rdmdexcdc.f90 rdmdtsdn.f90 \
+ rdmentropy.f90 rdmeval.f90
 
 SRC_TDDFT = tddftlr.f90 genvfxc.f90 genfxcr.f90 genspfxcr.f90 genvfxcg.f90 \
  tddftsplr.f90 genspfxcg.f90

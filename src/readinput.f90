@@ -17,6 +17,7 @@ use modtest
 use modrandom
 use modscdft
 use modpw
+use modvars
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
 !   values for the input parameters.
@@ -248,6 +249,7 @@ lmaxdos=3
 epsph=0.01d0
 msmooth=0
 npmae=6
+wrtvars=.false.
 
 !--------------------------!
 !     read from elk.in     !
@@ -1319,6 +1321,8 @@ case('npmae')
     write(*,*)
     stop
   end if
+case('wrtvars')
+  read(50,*,err=20) wrtvars
 case('')
   goto 10
 case default

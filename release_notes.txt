@@ -1,3 +1,12 @@
+elk-2.2.9
+-fixed problem with fixed spin moment (FSM) calculations pointed out by
+ Jagdish Kumar
+-added new output file VARIABLES.OUT; this is for developers wanting to
+ interface their codes to Elk; it contains most of the useful variables required
+ for reading the Elk binary files; if you would like a variable added then just
+ send me a mail; enabled when 'wrtvars' is set to .true.
+-minor cosmetic changes
+
 elk-2.2.8
 -Important: fixed serious bug discovered by Jan Balluff and Markus Meinert which
  produced erroneous magnetic moments with GGA; this only affects version 2.2.5;
