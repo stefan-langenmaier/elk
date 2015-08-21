@@ -157,7 +157,7 @@ write(*,'(" logarithmic and RMS average frequencies;")')
 write(*,'(" and McMillan-Allen-Dynes superconducting critical temperature")')
 write(*,'(" written to MCMILLAN.OUT")')
 ! write lambda to test file
-call writetest(251,'Electron-phonon coupling constant, lambda',tol=1.d-2, &
+call writetest(251,'Electron-phonon coupling constant, lambda',tol=5.d-2, &
  rv=lambda)
 deallocate(wq,wp,gq,a2fp,w,a2f)
 deallocate(rwork,dynq,dynp,dynr,ev,b)

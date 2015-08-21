@@ -24,11 +24,9 @@ implicit none
 ! local variables
 ! maximum allowed number of Matsubara frequencies
 integer, parameter :: maxwf=40000
-! number of points to be used as input to the Pade approximant
-integer, parameter :: nin=80
 ! maximum number of iterations
 integer, parameter :: maxit=1000
-integer nwf,nwfcl,nout
+integer nwf,nwfcl,nin,nout
 integer itemp,it,i,m,n
 ! convergence tolerance
 real(8), parameter :: eps=1.d-12
@@ -51,7 +49,7 @@ dw=(w(nwdos)-w(1))/dble(nwdos)
 ! compute the McMillan parameters
 call mcmillan(w,a2f,lambda,wlog,wrms,tc)
 ! Matsubara frequency cut-off
-wfmax=60.d0*wrms
+wfmax=20.d0*wrms
 ! minumum temperature
 tmin=tc/6.d0
 ! maximum temperature
@@ -59,14 +57,14 @@ tmax=3.d0*tc
 ! temperature step size
 dtemp=(tmax-tmin)/dble(ntemp)
 ! maximum number of fermionic Matsubara frequencies
-nwf=nint(wfmax/(twopi*kboltz*dtemp))+nin
+nwf=nint(wfmax/(twopi*kboltz*dtemp))
 if (nwf.gt.maxwf) nwf=maxwf
 allocate(wf(-nwf:nwf))
 allocate(l(-2*nwf:2*nwf))
 allocate(d0(0:nwf),d(0:nwf))
 allocate(z0(0:nwf),z(0:nwf))
 allocate(r(0:nwf))
-allocate(zin(0:nin),uin(0:nin))
+allocate(zin(0:nwf),uin(0:nwf))
 ! generate output points for continuation on the real axis
 nout=4*nwdos
 allocate(zout(nout),uout(nout))
@@ -85,7 +83,6 @@ write(62,'("+------------------------------+")')
 write(62,*)
 write(62,'("Temperature range : ",2G18.10)') tmin,tmax
 write(62,'("Number of temperature steps : ",I6)') ntemp
-write(62,'("Number of Pade approximant input points : ",I4)') nin
 write(62,'("Number of output frequencies : ",I8)') nout
 write(62,'("Fermionic Matsubara frequency cut-off")')
 write(62,'(" phonons : ",G18.10)') wfmax
@@ -100,7 +97,7 @@ do itemp=1,ntemp
   write(62,'("Temperature (kelvin) : ",G18.10)') temp
   t0=pi*kboltz*temp
 ! number of Matsubara frequencies
-  nwf=nint(wfmax/(2.d0*t0))+nin
+  nwf=nint(wfmax/(2.d0*t0))
   if (nwf.gt.maxwf) nwf=maxwf
   nwfcl=nint(wrms/(2.d0*t0))
   if (nwfcl.gt.nwf) nwfcl=nwf
@@ -108,6 +105,8 @@ do itemp=1,ntemp
   write(62,'("Number of Matsubara frequencies")')
   write(62,'(" phonons : ",I8)') nwf
   write(62,'(" Coulomb : ",I8)') nwfcl
+! make Pade approximant input points same as Matsubara frequencies
+  nin=nwf
 ! generate fermionic Matsubara frequencies
   do m=-nwf,nwf
     wf(m)=t0*dble(2*m+1)
@@ -185,12 +184,9 @@ do itemp=1,ntemp
   write(64,'(3G18.10)') temp,d(0),z(0)
   call flushifc(64)
 ! analytic continuation to real axis
-  m=-1
-  do n=0,nwf,nwf/nin
-    m=m+1
-    if (m.eq.nin) exit
-    zin(m)=cmplx(0.d0,wf(n),8)
-    uin(m)=cmplx(d(n),0.d0,8)
+  do m=0,nin
+    zin(m)=cmplx(0.d0,wf(m),8)
+    uin(m)=cmplx(d(m),0.d0,8)
   end do
   call pade(nin,zin,uin,nout,zout,uout)
   do i=1,nout

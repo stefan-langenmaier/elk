@@ -34,6 +34,7 @@ complex(8), intent(in) :: zout(nout)
 complex(8), intent(out) :: uout(nout)
 ! local variables
 integer i,j
+real(8) t1
 complex(8) a0,a1,b0,b1,zt1,zt2
 ! allocatable arrays
 complex(8), allocatable :: g(:,:)
@@ -67,10 +68,28 @@ do i=1,nout
     zt2=b1+zt1*b0
     b0=b1
     b1=zt2
-    if ((abs(dble(a1)).gt.1.d150).or.(abs(aimag(a1)).gt.1.d150).or. &
-        (abs(dble(b1)).gt.1.d150).or.(abs(aimag(b1)).gt.1.d150)) exit
+! check for overflow and rescale
+    if ((abs(dble(a1)).gt.1.d100).or.(abs(aimag(a1)).gt.1.d100)) then
+      t1=1.d0/abs(a1)
+      a0=a0*t1
+      b0=b0*t1
+      a1=a1*t1
+      b1=b1*t1
+    end if
+    if ((abs(dble(b1)).gt.1.d100).or.(abs(aimag(b1)).gt.1.d100)) then
+      t1=1.d0/abs(b1)
+      a0=a0*t1
+      b0=b0*t1
+      a1=a1*t1
+      b1=b1*t1
+    end if
   end do
-  uout(i)=a1/b1
+  t1=abs(dble(b1))+abs(aimag(b1))
+  if (t1.ne.0.d0) then
+    uout(i)=a1/b1
+  else
+    uout(i)=0.d0
+  end if
 end do
 deallocate(g)
 return

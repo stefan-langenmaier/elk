@@ -162,7 +162,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.22}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.24}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction

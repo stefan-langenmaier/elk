@@ -7,8 +7,8 @@ subroutine fermisurf
 use modmain
 implicit none
 ! local variables
-integer ik,jk,ist
-integer ist0,ist1,nst
+integer ik,jk,i1,i2,i3
+integer nst,ist,ist0,ist1
 real(8) prd1,prd2
 ! allocatable arrays
 real(8), allocatable :: evalfv(:,:)
@@ -59,16 +59,21 @@ if (ndmag.eq.1) then
 ! write product of eigenstates minus the Fermi energy
     write(50,'(3I6," : grid size")') np3d(:)
     write(51,'(3I6," : grid size")') np3d(:)
-    do ik=1,nkptnr
-      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-      prd1=1.d0
-      prd2=1.d0
-      do ist=1,nstfv
-        prd1=prd1*(evalsv(ist,jk)-efermi)
-        prd2=prd2*(evalsv(nstfv+ist,jk)-efermi)
+    do i3=0,ngridk(3)-1
+      do i2=0,ngridk(2)-1
+        do i1=0,ngridk(1)-1
+          ik=ikmapnr(i1,i2,i3)
+          jk=ikmap(i1,i2,i3)
+          prd1=1.d0
+          prd2=1.d0
+          do ist=1,nstfv
+            prd1=prd1*(evalsv(ist,jk)-efermi)
+            prd2=prd2*(evalsv(nstfv+ist,jk)-efermi)
+          end do
+          write(50,'(4G18.10)') vkc(:,ik),prd1
+          write(51,'(4G18.10)') vkc(:,ik),prd2
+        end do
       end do
-      write(50,'(4G18.10)') vkc(:,ik),prd1
-      write(51,'(4G18.10)') vkc(:,ik),prd2
     end do
   else
 ! write the eigenvalues minus the Fermi energy separately
@@ -78,10 +83,16 @@ if (ndmag.eq.1) then
     nst=ist1-ist0+1
     write(50,'(4I6," : grid size, number of states")') np3d(:),nst
     write(51,'(4I6," : grid size, number of states")') np3d(:),nst
-    do ik=1,nkptnr
-      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-      write(50,'(G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
-      write(51,'(G18.10,40F14.8)') vkc(:,ik),evalsv(nstfv+ist0:ist1,jk)-efermi
+    do i3=0,ngridk(3)-1
+      do i2=0,ngridk(2)-1
+        do i1=0,ngridk(1)-1
+          ik=ikmapnr(i1,i2,i3)
+          jk=ikmap(i1,i2,i3)
+          write(50,'(G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
+          write(51,'(G18.10,40F14.8)') vkc(:,ik),evalsv(nstfv+ist0:ist1,jk) &
+           -efermi
+        end do
+      end do
     end do
   end if
   close(50)
@@ -92,13 +103,18 @@ else
   if (task.eq.100) then
 ! write product of eigenstates minus the Fermi energy
     write(50,'(3I6," : grid size")') np3d(:)
-    do ik=1,nkptnr
-      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-      prd1=1.d0
-      do ist=1,nstsv
-        prd1=prd1*(evalsv(ist,jk)-efermi)
+    do i3=0,ngridk(3)-1
+      do i2=0,ngridk(2)-1
+        do i1=0,ngridk(1)-1
+          ik=ikmapnr(i1,i2,i3)
+          jk=ikmap(i1,i2,i3)
+          prd1=1.d0
+          do ist=1,nstsv
+            prd1=prd1*(evalsv(ist,jk)-efermi)
+          end do
+          write(50,'(4G18.10)') vkc(:,ik),prd1
+        end do
       end do
-      write(50,'(4G18.10)') vkc(:,ik),prd1
     end do
   else
 ! write the eigenvalues minus the Fermi energy separately
@@ -107,9 +123,14 @@ else
     ist1=min(ist+nstfsp/2,nstsv)
     nst=ist1-ist0+1
     write(50,'(4I6," : grid size, number of states")') np3d(:),nst
-    do ik=1,nkptnr
-      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-      write(50,'(3G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
+    do i3=0,ngridk(3)-1
+      do i2=0,ngridk(2)-1
+        do i1=0,ngridk(1)-1
+          ik=ikmapnr(i1,i2,i3)
+          jk=ikmap(i1,i2,i3)
+          write(50,'(3G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
+        end do
+      end do
     end do
   end if
   close(50)
