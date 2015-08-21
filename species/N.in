@@ -2,7 +2,7 @@
  'nitrogen'                                 : spname
   -7.00000                                  : spzn
    25532.65213                              : spmass
-  0.755929E-06    1.8000   31.6725   300    : sprmin, rmt, sprmax, nrmt
+  0.755929E-06    1.8000   33.2667   300    : sprmin, rmt, sprmax, nrmt
    4                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    F
@@ -21,4 +21,4 @@
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.9270   0  T
+ -0.6770   0  T

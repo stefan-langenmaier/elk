@@ -11,8 +11,8 @@ implicit none
 real(8), intent(out) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
 real(8), intent(out) :: tauir(ngtot,nspinor)
 ! local variables
-integer ik,ispn,ld,n
-integer is,ias,ir,itp
+integer ik,ispn,is,ias
+integer ir,itp,n
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:),rfir(:)
 real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
@@ -32,7 +32,6 @@ end do
 !$OMP END PARALLEL
 allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
 ! convert taumt to spherical harmonics
-ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,ispn,ir)
 !$OMP DO
 do ias=1,natmtot
@@ -41,8 +40,8 @@ do ias=1,natmtot
     do ir=1,nrmt(is),lradstp
       rfmt(:,ir,ias)=taumt(:,ir,ias,ispn)
     end do
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-     rfmt(:,:,ias),ld,0.d0,taumt(:,:,ias,ispn),ld)
+    call rfsht(nrcmt(is),nrcmtinr(is),lradstp,rfmt(:,:,ias),lradstp, &
+     taumt(:,:,ias,ispn))
   end do
 end do
 !$OMP END DO
@@ -89,8 +88,8 @@ do ias=1,natmtot
     do ir=1,nrmt(is),lradstp
       rfmt(:,ir,ias)=taumt(:,ir,ias,ispn)
     end do
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-     rfmt(:,:,ias),ld,0.d0,taumt(:,:,ias,ispn),ld)
+    call rbsht(nrcmt(is),nrcmtinr(is),lradstp,rfmt(:,:,ias),lradstp, &
+     taumt(:,:,ias,ispn))
   end do
 end do
 !$OMP END DO

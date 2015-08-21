@@ -2,7 +2,7 @@
  'dysprosium'                               : spname
   -66.0000                                  : spzn
    296219.3787                              : spmass
-  0.246183E-06    2.8000   50.0753   700    : sprmin, rmt, sprmax, nrmt
+  0.246183E-06    2.8000   48.9249   700    : sprmin, rmt, sprmax, nrmt
   20                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -43,12 +43,12 @@
    3   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.3537   0  T
+ -0.1037   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.0487   0  T
+ -1.7987   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.1349   0  T
+ -0.8849   0  T

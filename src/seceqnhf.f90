@@ -131,15 +131,16 @@ do ik=1,nkptnr
     do ist2=1,nstsv
       allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 ! calculate the Coulomb potential
-      call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist2),zvclmt)
-      call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
+      call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist2), &
+       zvclmt)
+      call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
        zrhoir(:,ist2),nrcmtmax,zvclmt,zvclir,zrho02)
       do ist1=1,ist2
         z1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
 ! compute the density coefficient of the smallest G+q-vector
         call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist1), &
          zrhoir(:,ist1),zrho01)
-        z2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
+        z2=cfq*wiq2(iq)*conjg(zrho01)*zrho02
         t1=occsv(ist3,jk)/occmax
 !$OMP CRITICAL
         c(ist1,ist2)=c(ist1,ist2)-t1*(wkptnr*z1+z2)

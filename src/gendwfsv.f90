@@ -23,8 +23,8 @@ integer, intent(in) :: ld
 complex(8), intent(out) :: dwfir(ld,nspinor,nstsv)
 ! local variables
 integer ispn,jspn,ist
-integer is,ia,ias,nrc
-integer igp,ifg,i,j,n
+integer is,ia,ias,nrc,nrci
+integer igp,ifg,i,j
 real(8) t1
 complex(8) z1
 ! automatic arrays
@@ -41,7 +41,7 @@ end if
 if (.not.tsh) allocate(wfmt2(lmmaxvr,nrcmtmax))
 do is=1,nspecies
   nrc=nrcmt(is)
-  n=lmmaxvr*nrc
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     done(:)=.false.
@@ -67,13 +67,12 @@ do is=1,nspecies
                 else
                   call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
                    apwalmq(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt2)
-                  call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-                   wfmt2,lmmaxvr,zzero,wfmt1(:,:,ist),lmmaxvr)
+                  call zbsht(nrc,nrci,wfmt2,wfmt1(:,:,ist))
 !****** fix
                 end if
                 done(ist)=.true.
               end if
-              call zaxpy(n,z1,wfmt1(:,:,ist),1,dwfmt(:,:,ias,ispn,j),1)
+              call zfmtadd(nrc,nrci,z1,wfmt1(:,:,ist),dwfmt(:,:,ias,ispn,j))
             end if
             z1=evecsv(i,j)
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
@@ -87,12 +86,11 @@ do is=1,nspecies
                   call dwavefmt(lradstp,lmaxvr,ias,ngp(jspn),ngpq(jspn), &
                    apwalmq(:,:,:,:,jspn),dapwalm(:,:,:,jspn), &
                    evecfv(:,ist,jspn),devecfv(:,ist,jspn),lmmaxvr,wfmt2)
-                  call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-                   wfmt2,lmmaxvr,zzero,dwfmt1(:,:,ist),lmmaxvr)
+                  call zbsht(nrc,nrci,wfmt2,dwfmt1(:,:,ist))
                 end if
                 ddone(ist)=.true.
               end if
-              call zaxpy(n,z1,dwfmt1(:,:,ist),1,dwfmt(:,:,ias,ispn,j),1)
+              call zfmtadd(nrc,nrci,z1,dwfmt1(:,:,ist),dwfmt(:,:,ias,ispn,j))
             end if
           end do
         end do
@@ -103,8 +101,7 @@ do is=1,nspecies
         else
           call dwavefmt(lradstp,lmaxvr,ias,ngp,ngpq,apwalmq,dapwalm, &
            evecfv(:,j,1),devecfv(:,j,1),lmmaxvr,wfmt2)
-          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt2, &
-           lmmaxvr,zzero,dwfmt(:,:,ias,1,j),lmmaxvr)
+          call zbsht(nrc,nrci,wfmt2,dwfmt(:,:,ias,1,j))
         end if
       end if
     end do

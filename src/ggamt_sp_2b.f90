@@ -36,53 +36,47 @@ real(8), intent(in) :: dcdgu2(lmmaxvr,nrmtmax)
 real(8), intent(in) :: dcdgd2(lmmaxvr,nrmtmax)
 real(8), intent(in) :: dcdgud(lmmaxvr,nrmtmax)
 ! local variables
-integer nr,i
+integer nr,nri,i
 ! allocatable arrays
-real(8), allocatable :: rfmt1(:,:),rfmt2(:,:)
-real(8), allocatable :: grfmt(:,:,:)
+real(8), allocatable :: rfmt1(:,:),rfmt2(:,:),grfmt(:,:,:)
 allocate(rfmt1(lmmaxvr,nrmtmax),rfmt2(lmmaxvr,nrmtmax))
 allocate(grfmt(lmmaxvr,nrmtmax,3))
 nr=nrmt(is)
+nri=nrmtinr(is)
 !------------------!
 !     exchange     !
 !------------------!
 ! convert dxdgu2 to spherical harmonics
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dxdgu2,lmmaxvr, &
- 0.d0,rfmt1,lmmaxvr)
+call rfsht(nr,nri,1,dxdgu2,1,rfmt1)
 ! compute grad dxdgu2
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdgu2).(grad rhoup) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt2,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt2)
   rfmt1(:,1:nr)=rfmt1(:,1:nr)+rfmt2(:,1:nr)*gvup(:,1:nr,i)
 end do
 vxup(:,1:nr)=vxup(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdgu2(:,1:nr)*g2up(:,1:nr)) &
  -dxdgud(:,1:nr)*g2dn(:,1:nr)
 ! convert dxdgd2 to spherical harmonics
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dxdgd2,lmmaxvr, &
- 0.d0,rfmt1,lmmaxvr)
+call rfsht(nr,nri,1,dxdgd2,1,rfmt1)
 ! compute grad dxdgd2
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdgd2).(grad rhodn) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt2,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt2)
   rfmt1(:,1:nr)=rfmt1(:,1:nr)+rfmt2(:,1:nr)*gvdn(:,1:nr,i)
 end do
 vxdn(:,1:nr)=vxdn(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dxdgd2(:,1:nr)*g2dn(:,1:nr)) &
  -dxdgud(:,1:nr)*g2up(:,1:nr)
 ! convert dxdgud to spherical harmonics
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dxdgud,lmmaxvr, &
- 0.d0,rfmt1,lmmaxvr)
+call rfsht(nr,nri,1,dxdgud,1,rfmt1)
 ! compute grad dxdgud
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dxdgud).(grad rhodn) and (grad dxdgud).(grad rhoup)
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt1,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)
   vxup(:,1:nr)=vxup(:,1:nr)-rfmt1(:,1:nr)*gvdn(:,1:nr,i)
   vxdn(:,1:nr)=vxdn(:,1:nr)-rfmt1(:,1:nr)*gvup(:,1:nr,i)
 end do
@@ -90,42 +84,36 @@ end do
 !     correlation     !
 !---------------------!
 ! convert dcdgu2 to spherical harmonics
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dcdgu2,lmmaxvr, &
- 0.d0,rfmt1,lmmaxvr)
+call rfsht(nr,nri,1,dcdgu2,1,rfmt1)
 ! compute grad dcdgu2
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdgu2).(grad rhoup) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt2,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt2)
   rfmt1(:,1:nr)=rfmt1(:,1:nr)+rfmt2(:,1:nr)*gvup(:,1:nr,i)
 end do
 vcup(:,1:nr)=vcup(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dcdgu2(:,1:nr)*g2up(:,1:nr)) &
  -dcdgud(:,1:nr)*g2dn(:,1:nr)
 ! convert dcdgd2 to spherical harmonics
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dcdgd2,lmmaxvr, &
- 0.d0,rfmt1,lmmaxvr)
+call rfsht(nr,nri,1,dcdgd2,1,rfmt1)
 ! compute grad dcdgd2
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdgd2).(grad rhodn) in spherical coordinates
 rfmt1(:,1:nr)=0.d0
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt2,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt2)
   rfmt1(:,1:nr)=rfmt1(:,1:nr)+rfmt2(:,1:nr)*gvdn(:,1:nr,i)
 end do
 vcdn(:,1:nr)=vcdn(:,1:nr)-2.d0*(rfmt1(:,1:nr)+dcdgd2(:,1:nr)*g2dn(:,1:nr)) &
  -dcdgud(:,1:nr)*g2up(:,1:nr)
 ! convert dcdgud to spherical harmonics
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dcdgud,lmmaxvr, &
- 0.d0,rfmt1,lmmaxvr)
+call rfsht(nr,nri,1,dcdgud,1,rfmt1)
 ! compute grad dcdgud
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt1,nrmtmax,grfmt)
 ! (grad dcdgud).(grad rhodn) and (grad dcdgud).(grad rhoup)
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt1,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt1)
   vcup(:,1:nr)=vcup(:,1:nr)-rfmt1(:,1:nr)*gvdn(:,1:nr,i)
   vcdn(:,1:nr)=vcdn(:,1:nr)-rfmt1(:,1:nr)*gvup(:,1:nr,i)
 end do

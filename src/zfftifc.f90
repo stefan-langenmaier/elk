@@ -34,14 +34,6 @@ complex(8), intent(inout) :: z(*)
 call cfftnd(nd,n,sgn,z)
 
 !-------------------------------------!
-!     interface to HP MLIB Z3DFFT     !
-!-------------------------------------!
-!integer ier
-!if (nd.eq.3) then
-!  call z3dfft(z,n(1),n(2),n(3),n(1),n(2),sgn,ier)
-!end if
-
-!-------------------------------------!
 !     interface to FFTW version 3     !
 !-------------------------------------!
 !integer, parameter :: FFTW_ESTIMATE=64

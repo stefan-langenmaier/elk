@@ -12,7 +12,7 @@ implicit none
 integer is,ia,ja,ias,jas
 integer ip,nph,i,p
 real(8) dph,a,b,t1
-real(8) forcetot1(3,maxatoms*maxspecies)
+real(8) ft1(3,maxatoms*maxspecies)
 complex(8) z1,z2
 ! allocatable arrays
 real(8), allocatable :: vsmt1(:,:,:),vsir1(:)
@@ -108,7 +108,7 @@ do p=0,nph
   trdstate=.true.
 ! store the total force for the first displacement
   do ias=1,natmtot
-    forcetot1(:,ias)=forcetot(:,ias)
+    ft1(:,ias)=forcetot(:,ias)
   end do
 ! store the Kohn-Sham potential for the first displacement
   allocate(vsmt1(lmmaxvr,nrmtmax,natmtot),vsir1(ngtot))
@@ -138,7 +138,7 @@ do p=0,nph
         t1=-dot_product(vqc(:,iqph),vscph(:,i))
         z2=z1*cmplx(cos(t1),sin(t1),8)
         do ip=1,3
-          t1=-(forcetot(ip,jas)-forcetot1(ip,jas))
+          t1=-(forcetot(ip,jas)-ft1(ip,jas))
           dyn(ip,ias)=dyn(ip,ias)+z2*t1
         end do
       end do

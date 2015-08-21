@@ -2,6 +2,9 @@
 ! Phonon dispersion of aluminium calculated with density functional perturbation
 ! theory.
 
+! (A well-converged phonon dispersion using a 4x4x4 q-point set and a 12x12x12
+! k-point set is included with this example)
+
 tasks
   0
   205

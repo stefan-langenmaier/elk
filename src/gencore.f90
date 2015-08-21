@@ -89,9 +89,8 @@ do is=1,nspecies
         if (spcore(ist,is)) then
 ! solve the Dirac equation
           eval(ist)=evalcr(ist,ias)
-          call rdirac(solsc,spn(ist,is),spl(ist,is),spk(ist,is),nprad, &
-           spnr(is),spr(:,is),vr,eval(ist),rwfcr(:,1,ist,ias), &
-           rwfcr(:,2,ist,ias))
+          call rdirac(solsc,spn(ist,is),spl(ist,is),spk(ist,is),spnr(is), &
+           spr(:,is),vr,eval(ist),rwfcr(:,1,ist,ias),rwfcr(:,2,ist,ias))
           if (spincore) then
 ! use the spin-averaged eigenvalue for the polarised core
             if (ispn.eq.1) then

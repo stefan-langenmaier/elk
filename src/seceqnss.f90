@@ -17,8 +17,8 @@ real(8), intent(out) :: evalsvp(nstsv)
 complex(8), intent(out) :: evecsv(nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,jst
-integer is,ia,ias,nrc,l,lm,nm
-integer igp,ifg,i,j,k
+integer is,ia,ias,nrc,nrci
+integer l,lm,nm,igp,ifg,i,j,k
 integer lwork,info
 real(8) t1
 real(8) ts0,ts1
@@ -49,6 +49,7 @@ do ias=1,natmtot
   is=idxis(ias)
   ia=idxia(ias)
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
 ! de-phasing factor (FC, FB & LN)
   t1=-0.5d0*dot_product(vqcss(:),atposc(:,ia,is))
   zq=cmplx(cos(t1),sin(t1),8)
@@ -69,20 +70,16 @@ do ias=1,natmtot
   do jst=1,nstfv
 ! convert wavefunction to spherical coordinates
     do ispn=1,nspnfv
-      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-       wfmt1(:,:,jst,ispn),lmmaxvr,zzero,wfmt2(:,:,ispn),lmmaxvr)
+      call zbsht(nrc,nrci,wfmt1(:,:,jst,ispn),wfmt2(:,:,ispn))
     end do
 ! apply effective magnetic field and convert to spherical harmonics
     wfmt3(:,1:nrc)=bsmt(:,1:nrc,ias,3)*wfmt2(:,1:nrc,1)
-    call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3,lmmaxvr, &
-     zzero,wfmt4(:,:,1),lmmaxvr)
+    call zfsht(nrc,nrci,wfmt3,wfmt4(:,:,1))
     wfmt3(:,1:nrc)=-bsmt(:,1:nrc,ias,3)*wfmt2(:,1:nrc,2)
-    call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3,lmmaxvr, &
-     zzero,wfmt4(:,:,2),lmmaxvr)
+    call zfsht(nrc,nrci,wfmt3,wfmt4(:,:,2))
     wfmt3(:,1:nrc)=cmplx(bsmt(:,1:nrc,ias,1),-bsmt(:,1:nrc,ias,2),8) &
      *wfmt2(:,1:nrc,2)
-    call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3,lmmaxvr, &
-     zzero,wfmt4(:,:,3),lmmaxvr)
+    call zfsht(nrc,nrci,wfmt3,wfmt4(:,:,3))
 ! apply LDA+U potential if required
     if ((ldapu.ne.0).and.(llu(is).ge.0)) then
       l=llu(is)
@@ -120,8 +117,8 @@ do ias=1,natmtot
           j=jst+nstfv
         end if
         if (i.le.j) then
-          evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is), &
-           lmmaxvr,wfmt1(:,:,ist,ispn),wfmt4(:,:,k))
+          evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,nrc,nrci,rcmt(:,is), &
+           wfmt1(:,:,ist,ispn),wfmt4(:,:,k))
         end if
       end do
     end do

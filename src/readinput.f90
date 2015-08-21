@@ -17,6 +17,7 @@ use modtest
 use modrandom
 use modscdft
 use modpw
+use modvars
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
 !   values for the input parameters.
@@ -63,7 +64,7 @@ lmaxapw=8
 lmaxvr=7
 lmaxmat=5
 lmaxinr=3
-fracinr=0.15d0
+fracinr=0.2d0
 trhonorm=.true.
 xctype(1)=3
 xctype(2)=0
@@ -74,7 +75,7 @@ autoswidth=.false.
 mstar=10.d0
 epsocc=1.d-8
 epschg=1.d-3
-nempty0=4
+nempty0=4.d0
 maxscl=200
 mixtype=1
 beta0=0.05d0
@@ -87,6 +88,7 @@ broydpm(2)=0.15d0
 epspot=1.d-6
 epsengy=1.d-4
 epsforce=5.d-4
+epsstress=5.d-3
 molecule=.false.
 nspecies=0
 natoms(:)=0
@@ -121,18 +123,22 @@ dosssum=.false.
 lmirep=.true.
 spinpol=.false.
 spinorb=.false.
-maxgeostp=200
-tau0atm=0.2d0
+socscf=1.d0
+maxatpstp=200
+tau0atp=0.25d0
+deltast=0.01d0
+latvopt=0
+maxlatvstp=20
+tau0latv=0.01d0
 lradstp=4
 chgexs=0.d0
-nprad=4
 scissor=0.d0
 noptcomp=1
 optcomp(:,1)=1
 intraband=.false.
 evaltol=-1.d0
 epsband=1.d-12
-demaxbnd=2.d0
+demaxbnd=2.5d0
 autolinengy=.false.
 dlefe=-0.1d0
 bfieldc0(:)=0.d0
@@ -145,7 +151,7 @@ taufsm=0.01d0
 rmtdelta=0.05d0
 isgkmax=-1
 symtype=1
-deltaph=0.03d0
+deltaph=0.02d0
 nphwrt=1
 if (allocated(vqlwrt)) deallocate(vqlwrt)
 allocate(vqlwrt(3,nphwrt))
@@ -240,8 +246,11 @@ hkmax=12.d0
 lorbcnd=.false.
 lorbordc=3
 nrmtscf=1
-etaph=4.d0
 lmaxdos=3
+epsph=0.01d0
+msmooth=0
+npmae=4
+wrtvars=.false.
 
 !--------------------------!
 !     read from elk.in     !
@@ -401,6 +410,14 @@ case('spinpol')
   read(50,*,err=20) spinpol
 case('spinorb')
   read(50,*,err=20) spinorb
+case('socscf')
+  read(50,*,err=20) socscf
+  if (socscf.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): socscf < 0 : ",G18.10)') socscf
+    write(*,*)
+    stop
+  end if
 case('xctype')
   read(50,'(A256)',err=20) str
   str=trim(str)//' 0 0'
@@ -444,9 +461,9 @@ case('epschg')
   end if
 case('nempty')
   read(50,*,err=20) nempty0
-  if (nempty0.le.0) then
+  if (nempty0.le.0.d0) then
     write(*,*)
-    write(*,'("Error(readinput): nempty <= 0 : ",I8)') nempty0
+    write(*,'("Error(readinput): nempty <= 0 : ",G18.10)') nempty0
     write(*,*)
     stop
   end if
@@ -508,6 +525,8 @@ case('epsengy')
   read(50,*,err=20) epsengy
 case('epsforce')
   read(50,*,err=20) epsforce
+case('epsstress')
+  read(50,*,err=20) epsstress
 case('sppath')
   read(50,*,err=20) sppath
   sppath=adjustl(sppath)
@@ -632,16 +651,36 @@ case('dosssum')
   read(50,*,err=20) dosssum
 case('lmirep')
   read(50,*,err=20) lmirep
-case('maxgeostp')
-  read(50,*,err=20) maxgeostp
-  if (maxgeostp.le.0) then
+case('maxatpstp','maxatmstp')
+  read(50,*,err=20) maxatpstp
+  if (maxatpstp.le.0) then
     write(*,*)
-    write(*,'("Error(readinput): maxgeostp <= 0 : ",I8)') maxgeostp
+    write(*,'("Error(readinput): maxatpstp <= 0 : ",I8)') maxatpstp
     write(*,*)
     stop
   end if
-case('tau0atm')
-  read(50,*,err=20) tau0atm
+case('tau0atp','tau0atm')
+  read(50,*,err=20) tau0atp
+case('deltast')
+  read(50,*,err=20) deltast
+  if (deltast.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): deltast <= 0 : ",G18.10)') deltast
+    write(*,*)
+    stop
+  end if
+case('latvopt')
+  read(50,*,err=20) latvopt
+case('maxlatvstp')
+  read(50,*,err=20) maxlatvstp
+  if (maxlatvstp.le.0) then
+    write(*,*)
+    write(*,'("Error(readinput): maxlatvstp <= 0 : ",I8)') maxlatvstp
+    write(*,*)
+    stop
+  end if
+case('tau0latv')
+  read(50,*,err=20) tau0latv
 case('nstfsp')
   read(50,*,err=20)
   write(*,*)
@@ -657,13 +696,9 @@ case('lradstp')
 case('chgexs')
   read(50,*,err=20) chgexs
 case('nprad')
-  read(50,*,err=20) nprad
-  if (nprad.lt.2) then
-    write(*,*)
-    write(*,'("Error(readinput): nprad < 2 : ",I8)') nprad
-    write(*,*)
-    stop
-  end if
+  read(50,*,err=20)
+  write(*,*)
+  write(*,'("Info(readinput): variable ''nprad'' is no longer used")')
 case('scissor')
   read(50,*,err=20) scissor
 case('optcomp')
@@ -788,9 +823,9 @@ case('symtype')
   end if
 case('deltaph')
   read(50,*,err=20) deltaph
-  if (deltaph.lt.0.d0) then
+  if (deltaph.le.0.d0) then
     write(*,*)
-    write(*,'("Error(readinput): deltaph < 0 : ",G18.10)') deltaph
+    write(*,'("Error(readinput): deltaph <= 0 : ",G18.10)') deltaph
     write(*,*)
     stop
   end if
@@ -1211,11 +1246,10 @@ case('highq')
     lmaxapw=10
     lmaxvr=8
     lmaxmat=7
-    autoswidth=.true.
     radkpt=60.d0
     autokpt=.true.
     vkloff(:)=0.d0
-    nempty0=10
+    nempty0=10.d0
     lradstp=2
     epspot=1.d-7
     epsengy=1.d-5
@@ -1263,14 +1297,6 @@ case('nrmtscf')
     write(*,*)
     stop
   end if
-case('etaph')
-  read(50,*,err=20) etaph
-  if (etaph.le.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): etaph <= 0 : ",G18.10)') etaph
-    write(*,*)
-    stop
-  end if
 case('lmaxdos')
   read(50,*,err=20) lmaxdos
   if (lmaxdos.lt.0) then
@@ -1279,6 +1305,32 @@ case('lmaxdos')
     write(*,*)
     stop
   end if
+case('epsph')
+  read(50,*,err=20) epsph
+  if (epsph.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): epsph <= 0 : ",G18.10)') epsph
+    write(*,*)
+    stop
+  end if
+case('msmooth')
+  read(50,*,err=20) msmooth
+  if (msmooth.lt.0) then
+    write(*,*)
+    write(*,'("Error(readinput): msmooth < 0 : ",I8)') msmooth
+    write(*,*)
+    stop
+  end if
+case('npmae')
+  read(50,*,err=20) npmae
+  if (npmae.le.1) then
+    write(*,*)
+    write(*,'("Error(readinput): npmae <= 1 : ",I8)') npmae
+    write(*,*)
+    stop
+  end if
+case('wrtvars')
+  read(50,*,err=20) wrtvars
 case('')
   goto 10
 case default

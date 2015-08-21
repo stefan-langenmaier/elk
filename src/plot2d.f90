@@ -6,15 +6,13 @@
 !BOP
 ! !ROUTINE: plot2d
 ! !INTERFACE:
-subroutine plot2d(fnum,nf,lmax,ld,rfmt,rfir)
+subroutine plot2d(fnum,nf,rfmt,rfir)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   fnum : plot file number (in,integer)
 !   nf   : number of functions (in,integer)
-!   lmax : maximum angular momentum (in,integer)
-!   ld   : leading dimension (in,integer)
-!   rfmt : real muffin-tin function (in,real(ld,nrmtmax,natmtot,nf))
+!   rfmt : real muffin-tin function (in,real(lmmaxvr,nrmtmax,natmtot,nf))
 !   rfir : real intersitial function (in,real(ngtot,nf))
 ! !DESCRIPTION:
 !   Produces a 2D plot of the real functions contained in arrays {\tt rfmt} and
@@ -29,17 +27,14 @@ implicit none
 ! arguments
 integer, intent(in) :: fnum
 integer, intent(in) :: nf
-integer, intent(in) :: lmax
-integer, intent(in) :: ld
-real(8), intent(in) :: rfmt(ld,nrmtmax,natmtot,nf)
+real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot,nf)
 real(8), intent(in) :: rfir(ngtot,nf)
 ! local variables
 integer i,ip,ip1,ip2
 real(8) vl1(3),vl2(3),vc1(3),vc2(3)
 real(8) d1,d2,d12,t1,t2,t3,t4
 ! allocatable arrays
-real(8), allocatable :: vpl(:,:)
-real(8), allocatable :: fp(:,:)
+real(8), allocatable :: vpl(:,:),fp(:,:)
 if ((nf.lt.1).or.(nf.gt.4)) then
   write(*,*)
   write(*,'("Error(plot2d): invalid number of functions : ",I8)') nf
@@ -74,7 +69,7 @@ do ip2=0,np2d(2)-1
 end do
 ! evaluate the functions at the grid points
 do i=1,nf
-  call rfarray(lmax,ld,rfmt(:,:,:,i),rfir(:,i),ip,vpl,fp(:,i))
+  call rfarray(ip,vpl,rfmt(:,:,:,i),rfir(:,i),fp(:,i))
 end do
 ! write the functions to file
 write(fnum,'(2I6," : grid size")') np2d(:)

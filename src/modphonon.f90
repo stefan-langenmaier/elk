@@ -106,9 +106,8 @@ complex(8), allocatable :: dhloa(:,:,:,:,:)
 complex(8), allocatable :: dhlolo(:,:,:,:)
 ! real Gaunt coefficient array
 real(8), allocatable :: gntyyy(:,:,:)
-! smallest allowed perturbation theory denominator when calculating eigenvector
-! derivatives; in units of swidth
-real(8) etaph
+! smallest allowed perturbation theory denominator for eigenvector derivatives
+real(8) epsph
 
 end module
 

@@ -7,6 +7,7 @@
 program main
 use modmain
 use modmpi
+use modvars
 implicit none
 ! local variables
 logical exist
@@ -33,6 +34,10 @@ else
 end if
 ! read input files
 call readinput
+! delete the VARIABLES.OUT file
+call delvars
+! write version number to VARIABLES.OUT
+call writevars('version',nv=3,iva=version)
 ! check if Elk is already running in this directory
 if (mp_mpi) then
   inquire(file='RUNNING',exist=exist)
@@ -58,7 +63,7 @@ do itask=1,ntasks
 ! check if task can be run with MPI
   if (lp_mpi.gt.0) then
     select case(task)
-    case(0,1,2,3,5,120,135,136,170,180,185,188,240,300,320,330)
+    case(0,1,2,3,5,28,120,135,136,170,180,185,188,240,300,320,330,440)
       continue
     case default
       write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi, &
@@ -66,6 +71,8 @@ do itask=1,ntasks
       cycle
     end select
   end if
+! write task to VARIABLES.OUT
+  call writevars('task',iv=task)
   select case(task)
   case(-1)
     write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
@@ -85,6 +92,8 @@ do itask=1,ntasks
     call bandstr
   case(25)
     call effmass
+  case(28)
+    call mae
   case(31,32,33)
     call rhoplot
   case(41,42,43)
@@ -171,6 +180,8 @@ do itask=1,ntasks
     call spiralsc
   case(400)
     call writetensmom
+  case(440)
+    call writestress
   case(500)
     call testcheck
   case default
@@ -192,7 +203,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.1.25}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.2.10}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -239,7 +250,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, July 2013
+!   Halle and Uppsala, December 2013
 !   \newpage
 !
 !   \section{Units}
@@ -343,11 +354,11 @@ end program
 !   \subsection{Linking with the libxc functional library}
 !   Libxc is the ETSF library of exchange-correlation functionals. Elk can use
 !   the complete set of LDA and GGA functionals available in libxc. In order to
-!   do this, first download and compile libxc version $1.x$. This should have
-!   produced the file {\tt libxc.a}. Copy this file to the {\tt elk/src}
-!   directory and then uncomment the lines indicated for libxc in the file
-!   {\tt elk/src/Makefile}. Once this is done, run {\tt make clean} followed by
-!   {\tt make}. To select a particular functional of libxc, use the block
+!   do this, first download and compile libxc. This should have produced the
+!   file {\tt libxc.a}. Copy this file to the {\tt elk/src} directory and then
+!   uncomment the lines indicated for libxc in the file {\tt elk/src/Makefile}.
+!   Once this is done, run {\tt make clean} followed by {\tt make}. To select a
+!   particular functional of libxc, use the block
 !   \begin{verbatim}
 !     xctype
 !      100 nx nc
@@ -594,14 +605,23 @@ end program
 !   See {\tt ndspem} and {\tt vklem}.
 !
 !   \block{deltaph}{
-!   {\tt deltaph} & the size of the atomic displacement used for calculating
-!    dynamical matrices & real & $0.03$}
+!   {\tt deltaph} & size of the atomic displacement used for calculating
+!    dynamical matrices & real & $0.02$}
 !   Phonon calculations are performed by constructing a supercell corresponding
 !   to a particular ${\bf q}$-vector and making a small periodic displacement of
 !   the atoms. The magnitude of this displacement is given by {\tt deltaph}.
 !   This should not be made too large, as anharmonic terms could then become
 !   significant, neither should it be too small as this can introduce numerical
 !   error.
+!
+!   \block{deltast}{
+!   {\tt deltast} & size of the change in lattice vectors used for calculating
+!    the stress tensor & real & $0.01$}
+!   The stress tensor is computed by changing the lattice vector matrix $A$ by
+!   $$ A\rightarrow (1+\delta t\,e_i)A, $$
+!   where $dt$ is an infinitesimal equal in practice to {\tt deltast} and $e_i$
+!   is the $i^{\rm th}$ strain tensor. Numerical finite differences are used to
+!   compute the stress tensor as the derivative of the total energy $dE_i/dt$.
 !
 !   \block{dlefe}{
 !   {\tt dlefe} & difference between the fixed linearisation energy and the
@@ -647,7 +667,8 @@ end program
 !   {\tt epsforce} & convergence tolerance for the forces during a geometry
 !    optimisation run & real & $5\times 10^{-4}$}
 !   If the mean absolute value of the atomic forces is less than {\tt epsforce}
-!   then the geometry optimisation run is ended. See {\tt tasks}.
+!   then the geometry optimisation run is ended. See also {\tt tasks} and
+!   {\tt latvopt}.
 !
 !   \block{epslat}{
 !   {\tt epslat } & vectors with lengths less than this are considered zero &
@@ -669,6 +690,12 @@ end program
 !   and exited. For geometry optimisation runs this results in the forces being
 !   calculated, the atomic positions updated and the loop restarted. See also
 !   {\tt epsengy} and {\tt maxscl}.
+!
+!   \block{epsstress}{
+!   {\tt epsstress} & convergence tolerance for the stress tensor during a
+!    geometry optimisation run with lattice vector relaxation & real &
+!    $5\times 10^{-3}$}
+!   See also {\tt epsforce} and {\tt latvopt}.
 !
 !   \block{emaxelnes}{
 !   {\tt emaxelnes} & maximum allowed initial-state eigenvalue for ELNES
@@ -779,7 +806,8 @@ end program
 !    calculating {\tt gkmax} & integer & $-1$}
 !   By default ($-1$) the average muffin-tin radius is used for determining
 !   {\tt gkmax} from {\tt rgkmax}. This can be changed by setting {\tt isgkmax}
-!   either to the desired species number, or to $-2$ in which case the smallest
+!   either to the desired species number; or to $-2$ if
+!   ${\tt gkmax}={\tt rgkmax}/2$; or to $-3$ in which case the smallest
 !   radius is used.
 !
 !   \block{kstlist}{
@@ -788,6 +816,16 @@ end program
 !   those used for plotting wavefunctions and writing ${\bf L}$, ${\bf S}$ and
 !   ${\bf J}$ expectation values. Only the first pair is used by the
 !   aforementioned tasks. The list should be terminated by a blank line.
+!
+!   \block{latvopt}{
+!   {\tt latvopt} & type of lattice vector optimisation to be performed during
+!    structural relaxation & integer & 0}
+!   Unconstrained optimisation of the lattice vectors will be performed with
+!   ${\tt task}=2,3$ when ${\tt latvopt}=1$. When ${\tt latvopt}=2$ the lattice
+!   vectors will be optimised while keeping the unit cell volume fixed. In
+!   either case, the crystal symmetry is retained during optimisation. By
+!   default (${\tt latvopt}=0$) no lattice vector optimisation is performed
+!   during structural relaxation. See also {\tt tau0latv}.
 !
 !   \block{lda+u}{
 !   {\tt ldapu} & type of LDA+$U$ calculation & integer & 0 \\
@@ -957,7 +995,7 @@ end program
 !   See {\tt deltaem} and {\tt vklem}.
 !
 !   \block{nempty}{
-!   {\tt nempty} & the number of empty states per atom and spin & integer & 4}
+!   {\tt nempty} & the number of empty states per atom and spin & real & $4.0$ }
 !   Defines the number of eigenstates beyond that required for charge
 !   neutrality. When running metals it is not known {\it a priori} how many
 !   states will be below the Fermi energy for each $k$-point. Setting
@@ -991,12 +1029,6 @@ end program
 !   This block allows users to add their own notes to the file {\tt INFO.OUT}.
 !   The block should be terminated with a blank line, and no line should exceed
 !   80 characters.
-!
-!   \block{nprad}{
-!   {\tt nprad} & radial polynomial order & integer & 4}
-!   This sets the polynomial order for the predictor-corrector method when
-!   solving the radial Dirac and Schr\"odinger equations, as well as for
-!   performing radial interpolation in the plotting routines.
 !
 !   \block{nseqit}{
 !   {\tt nseqit} & number of iterations per self-consistent loop using the
@@ -1137,7 +1169,7 @@ end program
 !   {\tt rgkmax} & $R^{\rm MT}_{\rm min}\times\max\{|{\bf G}+{\bf k}|\}$ &
 !    real & $7.0$}
 !   This sets the maximum length for the ${\bf G}+{\bf k}$ vectors, defined as
-!   {\tt rgkmax} divided by the smallest muffin-tin radius.
+!   {\tt rgkmax} divided by the average muffin-tin radius. See {\tt isgkmax}.
 !
 !   \block{scale}{
 !   {\tt scale } & lattice vector scaling factor & real & $1.0$}
@@ -1160,6 +1192,12 @@ end program
 !   network then {\tt scrpath} can be set to a directory on the local disk, for
 !   example {\tt /tmp/}. Note that the forward slash {\tt /} at the end of the
 !   path must be included.
+!
+!   \block{socscf}{
+!   {\tt socscf} & scaling factor for the spin-orbit coupling term in the
+!    Hamiltonian & real & $1.0$}
+!   This can be used to enhance the effect of spin-orbit coupling in order to
+!   accurately determine the magnetic anisotropy energy (MAE).
 !
 !   \block{spincore}{
 !   {\tt spincore} & set to {\tt .true.} if the core should be spin-polarised
@@ -1322,16 +1360,23 @@ end program
 !    energy contributions.
 !   \end{tabularx}
 !
-!   \block{tau0atm}{
-!   {\tt tau0atm} & the step size to be used for geometry optimisation & real &
-!    $0.2$}
+!   \block{tau0atp}{
+!   {\tt tau0atp} & the step size to be used for atomic position optimisation &
+!    real & $0.25$}
 !   The position of atom $\alpha$ is updated on step $m$ of a geometry
 !   optimisation run using
 !   $$ {\bf r}_{\alpha}^{m+1}={\bf r}_{\alpha}^m+\tau_{\alpha}^m
 !    \left({\bf F}_{\alpha}^m+{\bf F}_{\alpha}^{m-1}\right), $$
-!   where $\tau_{\alpha}$ is set to {\tt tau0atm} for $m=0$, and incremented by
+!   where $\tau_{\alpha}$ is set to {\tt tau0atp} for $m=0$, and incremented by
 !   the same amount if the atom is moving in the same direction between steps.
-!   If the direction changes then $\tau_{\alpha}$ is reset to {\tt tau0atm}.
+!   If the direction changes then $\tau_{\alpha}$ is reset to {\tt tau0atp}.
+!
+!   \block{tau0latv}{
+!   {\tt tau0latv} & the step size to be used for lattice vector optimisation &
+!    real & $0.01$}
+!   This parameter is used for lattice vector optimisation in a procedure
+!   identical to that for atomic position optimisation. See {\tt tau0atp} and
+!   {\tt latvopt}.
 !
 !   \block{tauoep}{
 !   {\tt tauoep} & step length initial value and scaling factors for the OEP
@@ -1346,12 +1391,11 @@ end program
 !   {\tt taufsm} & the step size to be used when finding the effective magnetic
 !   field in fixed spin moment calculations & real & $0.01$}
 !   An effective magnetic field, ${\bf B}_{\rm FSM}$, is required for fixing the
-!   spin moment to a given value, $\boldsymbol{\mu}_{\rm FSM}$. This is found by
-!   adding a vector to the field which is proportional to the difference between
-!   the moment calculated in the $i$th self-consistent loop and the required
-!   moment:
-!   $$ {\bf B}_{\rm FSM}^{i+1}={\bf B}_{\rm FSM}^i+\lambda\left(
-!    \boldsymbol{\mu}^i-\boldsymbol{\mu}_{\rm FSM}\right), $$
+!   spin moment to a given value, ${\bf M}_{\rm FSM}$. This is found by adding a
+!   vector to the field which is proportional to the difference between the
+!   moment calculated in the $i$th self-consistent loop and the required moment:
+!   $$ {\bf B}_{\rm FSM}^{i+1}={\bf B}_{\rm FSM}^i+\lambda\left({\bf M}^i
+!    -{\bf M}_{\rm FSM}\right), $$
 !   where $\lambda$ is proportional to {\tt taufsm}. See also {\tt fixspin},
 !   {\tt momfix} and {\tt spinpol}.
 !

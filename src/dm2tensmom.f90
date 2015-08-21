@@ -8,11 +8,11 @@
 subroutine dm2tensmom(l,nsp,ldim,k1,p,r,dmcomb,tmom)
 ! !INPUT/OUTPUT PARAMETERS:
 !   l      : angular momentum (in,integer)
-!   nsp    : number of spinors  (in,integer)
+!   nsp    : number of spinors (in,integer)
 !   ldim   : ldim=2*l (in,integer)
 !   k1     : k-index of tensor moment (in,integer)
-!   p      : p-index of tensor moment  (in,integer)
-!   r      : r-index of tensor moment  (in,integer)
+!   p      : p-index of tensor moment (in,integer)
+!   r      : r-index of tensor moment (in,integer)
 !   dmcomb : density matrix with combined indices (in,complex)
 !   tmom   : tensor moment (out,complex)
 ! !DESCRIPTION:

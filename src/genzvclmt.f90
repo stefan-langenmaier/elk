@@ -3,11 +3,11 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genzvclmt(nr,ld1,r,ld2,zrhomt,zvclmt)
+subroutine genzvclmt(nr,nri,ld1,r,ld2,zrhomt,zvclmt)
 use modmain
 implicit none
 ! arguments
-integer, intent(in) :: nr(nspecies)
+integer, intent(in) :: nr(nspecies),nri(nspecies)
 integer, intent(in) :: ld1
 real(8), intent(in) :: r(ld1,nspecies)
 integer, intent(in) :: ld2
@@ -19,7 +19,7 @@ integer is,ias
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  call zpotclmt(lmaxvr,nr(is),r(:,is),lmmaxvr,zrhomt(:,:,ias),zvclmt(:,:,ias))
+  call zpotclmt(nr(is),nri(is),r(:,is),zrhomt(:,:,ias),zvclmt(:,:,ias))
 end do
 !$OMP END DO
 !$OMP END PARALLEL

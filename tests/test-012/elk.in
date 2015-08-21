@@ -14,10 +14,10 @@ test
  .true.
 
 mixtype
- 3
+ 1
 
 maxscl
- 30
+ 5
 
 wplot
  50 100 2

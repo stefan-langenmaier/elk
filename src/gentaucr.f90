@@ -9,15 +9,16 @@ implicit none
 ! arguments
 real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
 ! local variables
-integer is,ia,ias,nr,i
-integer ist,m,ispn,jspn
+integer ist,ispn,jspn
+integer is,ia,ias
+integer nr,nri,ir,i,m
 ! allocatable arrays
 complex(8), allocatable :: wfcr(:,:,:)
 complex(8), allocatable :: gzfmt(:,:,:),zfmt(:,:)
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(wfcr,gzfmt,zfmt) &
-!$OMP PRIVATE(is,ia,nr,ist,m) &
-!$OMP PRIVATE(ispn,jspn,i)
+!$OMP PRIVATE(is,ia,nr,nri,ist,m) &
+!$OMP PRIVATE(ispn,jspn,i,ir)
 !$OMP DO
 do ias=1,natmtot
   allocate(wfcr(lmmaxvr,nrmtmax,2))
@@ -25,6 +26,7 @@ do ias=1,natmtot
   is=idxis(ias)
   ia=idxia(ias)
   nr=nrmt(is)
+  nri=nrmtinr(is)
   do ist=1,spnst(is)
     if (spcore(ist,is)) then
       do m=-spk(ist,is),spk(ist,is)-1
@@ -37,14 +39,21 @@ do ias=1,natmtot
             jspn=1
           end if
 ! compute the gradient
-          call gradzfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,wfcr(:,:,ispn), &
-           gzfmt)
+          call gradzfmt(nr,nri,spr(:,is),wfcr(:,:,ispn),nrmtmax,gzfmt)
           do i=1,3
 ! convert gradient to spherical coordinates
-            call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-             gzfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
-            taumt(:,1:nr,ias,jspn)=taumt(:,1:nr,ias,jspn) &
-             +0.5d0*(dble(zfmt(:,1:nr))**2+aimag(zfmt(:,1:nr))**2)
+            call zbsht(nr,nri,gzfmt(:,:,i),zfmt)
+! add on inner part of muffin-tin
+            do ir=1,nri
+              taumt(1:lmmaxinr,ir,ias,jspn)=taumt(1:lmmaxinr,ir,ias,jspn) &
+               +0.5d0*(dble(zfmt(1:lmmaxinr,ir))**2 &
+               +aimag(zfmt(1:lmmaxinr,ir))**2)
+            end do
+! add on outer part of muffin-tin
+            do ir=nri+1,nr
+              taumt(:,ir,ias,jspn)=taumt(:,ir,ias,jspn) &
+               +0.5d0*(dble(zfmt(:,ir))**2+aimag(zfmt(:,ir))**2)
+            end do
           end do
         end do
       end do

@@ -17,7 +17,7 @@ module libxc_funcs_m
   integer, parameter :: XC_LDA_C_PW          =  12  !  Perdew & Wang                
   integer, parameter :: XC_LDA_C_PW_MOD      =  13  !  Perdew & Wang (Modified)     
   integer, parameter :: XC_LDA_C_OB_PW       =  14  !  Ortiz & Ballone (PW)         
-  integer, parameter :: XC_LDA_C_2D_AMGB     =  15  !  Attacalite et al             
+  integer, parameter :: XC_LDA_C_2D_AMGB     =  15  !  Attaccalite et al             
   integer, parameter :: XC_LDA_C_2D_PRM      =  16  !  Pittalis, Rasanen & Marques correlation in 2D 
   integer, parameter :: XC_LDA_C_vBH         =  17  !  von Barth & Hedin            
   integer, parameter :: XC_LDA_C_1D_CSC      =  18  !  Casula, Sorella, and Senatore 1D correlation     

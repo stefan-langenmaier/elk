@@ -50,7 +50,7 @@ write(50) vclmt,vclir
 ! write the exchange-correlation potential
 write(50) vxcmt,vxcir
 ! write the Kohn-Sham effective potential
-write(50) vsmt,vsir,vsig
+write(50) vsmt,vsir
 ! write the magnetisation, exchange-correlation and effective magnetic fields
 if (spinpol) then
   write(50) magmt,magir

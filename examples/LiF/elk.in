@@ -8,7 +8,7 @@ tasks
 
 ! the inverse lifetime is determined by swidth
 swidth
-  0.005
+  0.01
 
 nempty
   10

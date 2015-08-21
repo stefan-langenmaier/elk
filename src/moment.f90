@@ -20,7 +20,7 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,ir,idm
+integer idm,is,ias,ir
 real(8) t1
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax)
@@ -37,16 +37,14 @@ end if
 ! find the muffin-tin moments
 mommttot(:)=0.d0
 do idm=1,ndmag
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      do ir=1,nrmt(is)
-        fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
-      end do
-      call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
-      mommt(idm,ias)=fourpi*y00*gr(nrmt(is))
-      mommttot(idm)=mommttot(idm)+mommt(idm,ias)
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ir=1,nrmt(is)
+      fr(ir)=magmt(1,ir,ias,idm)*spr(ir,is)**2
     end do
+    call fderiv(-1,nrmt(is),spr(:,is),fr,gr)
+    mommt(idm,ias)=fourpi*y00*gr(nrmt(is))
+    mommttot(idm)=mommttot(idm)+mommt(idm,ias)
   end do
 end do
 ! find the interstitial moments
@@ -56,7 +54,13 @@ do idm=1,ndmag
 end do
 momtot(:)=mommttot(:)+momir(:)
 ! write total moment to test file
-call writetest(450,'total moment',nv=ndmag,tol=1.d-2,rva=momtot)
+call writetest(450,'total moment',nv=ndmag,tol=2.d-2,rva=momtot)
+! total moment magnitude
+if (ncmag) then
+  momtotm=sqrt(momtot(1)**2+momtot(2)**2+momtot(3)**2)
+else
+  momtotm=abs(momtot(1))
+end if
 return
 end subroutine
 !EOC

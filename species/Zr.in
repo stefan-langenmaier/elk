@@ -2,7 +2,7 @@
  'zirconium'                                : spname
   -40.0000                                  : spzn
    166291.1791                              : spmass
-  0.316228E-06    2.6000   43.5781   600    : sprmin, rmt, sprmax, nrmt
+  0.316228E-06    2.6000   44.7520   600    : sprmin, rmt, sprmax, nrmt
   14                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -34,8 +34,8 @@
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.2502   0  T
+ -2.0002   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.4208   0  T
+ -1.1708   0  T

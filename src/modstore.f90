@@ -10,33 +10,28 @@
 module modstore
 use modmain
 
-! lattice vectors
 real(8) avec0(3,3)
-! inverse reciprocal lattice vector matrix
 real(8) binv0(3,3)
-! number of atoms
+real(8) omega0
+logical tshift0
+logical primcell0
 integer natoms0(maxspecies)
 integer natmtot0
-! atomic positions in lattice coordinates
 real(8) atposl0(3,maxatoms,maxspecies)
-! atomic positions in Cartesian coordinates
 real(8) atposc0(3,maxatoms,maxspecies)
-! G-vector grid sizes
 integer ngridg0(3),ngtot0
-! external magnetic field in each muffin-tin
+logical spinpol0,spinorb0
+real(8) bfieldc00(3)
 real(8) bfcmt00(3,maxatoms,maxspecies)
-! muffin-tin fixed spin moments
+real(8) reducebf0
+integer fixspin0
+real(8) momfix0(3)
 real(8) mommtfix0(3,maxatoms,maxspecies)
-! basis shifting flag
-logical tshift0
-! force calculation flag
 logical tforce0
-! automatic k-point generation flag
 logical autokpt0
-! primitive cell reduction flag
-logical primcell0
-! k-point grid
 integer ngridk0(3)
+real(8) vkloff0(3)
+logical ptnucl0
 
 end module
 

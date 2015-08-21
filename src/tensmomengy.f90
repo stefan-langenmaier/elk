@@ -13,8 +13,8 @@ use modldapu
 !   is   : species type (in,integer)
 !   l    : angular momentum (in,integer)
 !   k1   : k-index of tensor moment (in,integer)
-!   p    : p-index of tensor moment  (in,integer)
-!   r    : r-index of tensor moment  (in,integer)
+!   p    : p-index of tensor moment (in,integer)
+!   r    : r-index of tensor moment (in,integer)
 !   edir : direct energy (out,real)
 !   exch : exchange energy (out,real)
 ! !DESCRIPTION:

@@ -23,8 +23,9 @@ use modtest
 implicit none
 ! local variables
 integer, parameter :: maxit=1000
-integer ik,ist,jst,it
-real(8) e0,e1,e,chg,x,t1
+integer ik,ist,it
+real(8) e0,e1,e
+real(8) chg,x,t1
 ! external functions
 real(8) sdelta,stheta
 external sdelta,stheta
@@ -84,7 +85,7 @@ do ik=1,nkpt
 end do
 fermidos=fermidos*occmax
 ! write Fermi density of states to test file
-call writetest(500,'DOS at Fermi energy',tol=1.d-3,rv=fermidos)
+call writetest(500,'DOS at Fermi energy',tol=5.d-3,rv=fermidos)
 ! estimate the indirect band gap (FC)
 e0=-1.d8
 e1=1.d8
@@ -108,24 +109,26 @@ do ik=1,nkpt
 end do
 bandgap(1)=e1-e0
 ! write band gap to test file
-call writetest(510,'estimated indirect band gap',tol=1.d-2,rv=bandgap(1))
+call writetest(510,'estimated indirect band gap',tol=2.d-2,rv=bandgap(1))
 ! estimate the direct band gap
 e=1.d8
 ikgap(3)=1
 do ik=1,nkpt
+  e0=-1.d8
+  e1=1.d8
   do ist=1,nstsv
-    e0=evalsv(ist,ik)
-    if (e0.ge.efermi) cycle
-    do jst=1,nstsv
-      e1=evalsv(jst,ik)
-      if (e1.lt.efermi) cycle
-      t1=e1-e0
-      if (t1.lt.e) then
-        e=t1
-        ikgap(3)=ik
-      end if
-    end do
+    t1=evalsv(ist,ik)
+    if (t1.le.efermi) then
+      if (t1.gt.e0) e0=t1
+    else
+      if (t1.lt.e1) e1=t1
+    end if
   end do
+  t1=e1-e0
+  if (t1.lt.e) then
+    e=t1
+    ikgap(3)=ik
+  end if
 end do
 bandgap(2)=e
 return

@@ -10,8 +10,8 @@ implicit none
 ! arguments
 logical, intent(in) :: tvnlcr
 ! local variables
-integer ld,is,ias
-integer ik,ispn,ist,n,lp
+integer ik,ist,ispn
+integer is,ias,n,lp
 ! allocatable arrays
 real(8), allocatable :: vmt(:,:,:),vir(:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
@@ -23,13 +23,11 @@ if (allocated(kmatc)) deallocate(kmatc)
 allocate(kmatc(nstsv,nstsv,nkpt))
 allocate(vmt(lmmaxvr,nrcmtmax,natmtot),vir(ngtot))
 ! convert muffin-tin Kohn-Sham potential to spherical coordinates
-ld=lmmaxvr*lradstp
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-   vsmt(:,:,ias),ld,0.d0,vmt(:,:,ias),lmmaxvr)
+  call rbsht(nrcmt(is),nrcmtinr(is),lradstp,vsmt(:,:,ias),1,vmt(:,:,ias))
 end do
 !$OMP END DO
 !$OMP END PARALLEL

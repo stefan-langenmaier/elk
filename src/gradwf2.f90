@@ -13,9 +13,10 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv)
 real(8), intent(inout) :: gwf2mt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(inout) :: gwf2ir(ngtot)
 ! local variables
-integer ispn,jspn,ist
-integer is,ia,ias,i,j,n
-integer nr,ir,igk,ifg
+integer ist,ispn,jspn
+integer is,ia,ias
+integer nr,nri,ir
+integer igk,ifg,i,j
 real(8) t0,t1
 complex(8) zq(2),z1
 ! automatic arrays
@@ -39,7 +40,7 @@ do ispn=1,nspnfv
 end do
 do is=1,nspecies
   nr=nrmt(is)
-  n=lmmaxvr*nr
+  nri=nrmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! de-phasing factor for spin-spirals
@@ -69,7 +70,7 @@ do is=1,nspecies
                 done(ist,jspn)=.true.
               end if
 ! add to spinor wavefunction
-              call zaxpy(n,z1,wfmt1(:,:,ist,jspn),1,wfmt2(:,:,ispn),1)
+              call zfmtadd(nr,nri,z1,wfmt1(:,:,ist,jspn),wfmt2(:,:,ispn))
             end if
           end do
         end do
@@ -79,12 +80,15 @@ do is=1,nspecies
       end if
 ! compute the gradient of the wavefunction
       do ispn=1,nspinor
-        call gradzfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,wfmt2(:,:,ispn),gwfmt)
+        call gradzfmt(nr,nri,spr(:,is),wfmt2(:,:,ispn),nrmtmax,gwfmt)
 ! convert gradient from spherical harmonics to spherical coordinates
         do i=1,3
-          call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-           gwfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
-          do ir=1,nr
+          call zbsht(nr,nri,gwfmt(:,:,i),zfmt)
+          do ir=1,nri
+            gwf2mt(1:lmmaxinr,ir,ias)=gwf2mt(1:lmmaxinr,ir,ias) &
+             +t0*(dble(zfmt(1:lmmaxinr,ir))**2+aimag(zfmt(1:lmmaxinr,ir))**2)
+          end do
+          do ir=nri+1,nr
             gwf2mt(:,ir,ias)=gwf2mt(:,ir,ias) &
              +t0*(dble(zfmt(:,ir))**2+aimag(zfmt(:,ir))**2)
           end do

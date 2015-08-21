@@ -24,8 +24,8 @@ use modxcifc
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias
-integer n,nr,ir,idm,i
+integer idm,is,ia,ias
+integer nr,nri,ir,i,n
 real(8) t1,t2,t3,t4
 ! allocatable arrays
 real(8), allocatable :: rho(:),rhoup(:),rhodn(:)
@@ -91,20 +91,19 @@ end if
 !---------------------------------------!
 do is=1,nspecies
   nr=nrmt(is)
+  nri=nrmtinr(is)
   n=lmmaxvr*nr
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the density in spherical coordinates
-    call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rhomt(:,:,ias), &
-     lmmaxvr,0.d0,rho,lmmaxvr)
+    call rbsht(nr,nri,1,rhomt(:,:,ias),1,rho)
     if (spinpol) then
 !------------------------!
 !     spin-polarised     !
 !------------------------!
 ! magnetisation in spherical coordinates
       do idm=1,ndmag
-        call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-         magmt(:,:,ias,idm),lmmaxvr,0.d0,mag(:,idm),lmmaxvr)
+        call rbsht(nr,nri,1,magmt(:,:,ias,idm),1,mag(:,idm))
       end do
       if (ncmag) then
 ! non-collinear (use Kubler's trick)
@@ -179,8 +178,7 @@ do is=1,nspecies
       end if
 ! convert field to spherical harmonics
       do idm=1,ndmag
-        call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,bxc(:,idm), &
-         lmmaxvr,0.d0,bxcmt(:,:,ias,idm),lmmaxvr)
+        call rfsht(nr,nri,1,bxc(:,idm),1,bxcmt(:,:,ias,idm))
       end do
     else
 !--------------------------!
@@ -215,13 +213,10 @@ do is=1,nspecies
       end if
     end if
 ! convert exchange and correlation energy densities to spherical harmonics
-    call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,ex,lmmaxvr, &
-     0.d0,exmt(:,:,ias),lmmaxvr)
-    call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,ec,lmmaxvr, &
-     0.d0,ecmt(:,:,ias),lmmaxvr)
+    call rfsht(nr,nri,1,ex,1,exmt(:,:,ias))
+    call rfsht(nr,nri,1,ec,1,ecmt(:,:,ias))
 ! convert exchange-correlation potential to spherical harmonics
-    call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,vxc,lmmaxvr, &
-     0.d0,vxcmt(:,:,ias),lmmaxvr)
+    call rfsht(nr,nri,1,vxc,1,vxcmt(:,:,ias))
   end do
 end do
 !------------------------------------------!

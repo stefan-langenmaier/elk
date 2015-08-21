@@ -2,7 +2,7 @@
  'argon'                                    : spname
   -18.0000                                  : spzn
    72820.74917                              : spmass
-  0.471405E-06    2.0000   27.6084   400    : sprmin, rmt, sprmax, nrmt
+  0.471405E-06    2.0000   26.5724   400    : sprmin, rmt, sprmax, nrmt
    7                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -24,4 +24,4 @@
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.1416   0  T
+ -0.8916   0  T

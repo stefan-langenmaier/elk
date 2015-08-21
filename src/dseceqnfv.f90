@@ -23,7 +23,7 @@ complex(8), intent(out) :: devecfv(nmatmax,nstfv)
 ! local variables
 integer nm,nmq,ias,ist,i
 integer lwork,info
-real(8) eta,t1
+real(8) t1
 complex(8) z1
 ! allocatable arrays
 real(8), allocatable :: w(:),rwork(:)
@@ -90,8 +90,6 @@ end do
 call dolpistl(n,nq,igpig,igpqig,nmq,od)
 !$OMP END PARALLEL SECTIONS
 allocate(x(nmq),y(nmq))
-! smallest denominator in response function
-eta=etaph*swidth
 ! loop over states
 do ist=1,nstfv
 ! compute |dv_i> = V(e_i - D)^(-1)V^(*t)(dH - e_i dO)|v_i>
@@ -107,7 +105,7 @@ do ist=1,nstfv
   call zgemv('C',nmq,nmq,zone,h,nmq,x,1,zzero,y,1)
   do i=1,nmq
     t1=evalfv(ist)-w(i)
-    if (abs(t1).gt.eta) then
+    if (abs(t1).gt.epsph) then
       y(i)=y(i)/t1
     else
       y(i)=0.d0

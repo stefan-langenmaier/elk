@@ -79,7 +79,8 @@ use modmpi
 !BOC
 implicit none
 ! local variables
-integer ik,is,ias,nr,i
+integer ik,is,ias
+integer nr,nri,i
 real(8) sum,t1
 real(8) ts0,ts1
 ! allocatable arrays
@@ -95,7 +96,7 @@ allocate(grfmt(lmmaxvr,nrmtmax,3))
 ! compute the gradient of the Coulomb potential at the nucleus
 do ias=1,natmtot
   is=idxis(ias)
-  call gradrfmt(1,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,vclmt(:,:,ias),grfmt)
+  call gradrfmt(nrmt(is),nrmtinr(is),spr(:,is),vclmt(:,:,ias),nrmtmax,grfmt)
   forcehf(:,ias)=-spzn(is)*grfmt(1,irfhf(is),:)*y00
 end do
 ! symmetrise Hellmann-Feynman force
@@ -125,9 +126,10 @@ if (tfibs) then
   do ias=1,natmtot
     is=idxis(ias)
     nr=nrmt(is)
-    call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rhomt(:,:,ias),grfmt)
+    nri=nrmtinr(is)
+    call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
     do i=1,3
-      t1=rfmtinp(1,lmaxvr,nr,spr(:,is),lmmaxvr,vsmt(:,:,ias),grfmt(:,:,i))
+      t1=rfmtinp(1,nr,nri,spr(:,is),vsmt(:,:,ias),grfmt(:,:,i))
       forceibs(i,ias)=forceibs(i,ias)+t1
     end do
   end do
@@ -149,6 +151,11 @@ do i=1,3
   sum=sum/dble(natmtot)
   forcetot(i,:)=forcetot(i,:)-sum
 end do
+! zero force on atoms with negative mass
+do ias=1,natmtot
+  is=idxis(ias)
+  if (spmass(is).le.0.d0) forcetot(:,ias)=0.d0
+end do
 ! compute maximum force magnitude over all atoms
 forcemax=0.d0
 do ias=1,natmtot
@@ -159,7 +166,7 @@ deallocate(grfmt)
 call timesec(ts1)
 timefor=timefor+ts1-ts0
 ! write total forces to test file
-call writetest(750,'total forces',nv=3*natmtot,tol=1.d-4,rva=forcetot)
+call writetest(750,'total forces',nv=3*natmtot,tol=1.d-3,rva=forcetot)
 return
 end subroutine
 !EOC

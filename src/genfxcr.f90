@@ -12,8 +12,8 @@ logical, intent(in) :: tsh
 real(8), intent(out) :: fxcmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(out) :: fxcir(ngtot)
 ! local variables
-integer n,is,ia,ias
-integer idm,nr,ir,i
+integer idm,is,ia,ias
+integer nr,nri,ir,i,n
 real(8) t1
 real(8), allocatable :: rho(:),rhoup(:),rhodn(:),mag(:,:)
 real(8), allocatable :: fxc(:),fxcuu(:),fxcud(:),fxcdd(:)
@@ -31,20 +31,19 @@ end if
 !---------------------------!
 do is=1,nspecies
   nr=nrmt(is)
+  nri=nrmtinr(is)
   n=lmmaxvr*nr
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the density in spherical coordinates
-    call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rhomt(:,:,ias), &
-     lmmaxvr,0.d0,rho,lmmaxvr)
+    call rbsht(nr,nri,1,rhomt(:,:,ias),1,rho)
     if (spinpol) then
 !------------------------!
 !     spin-polarised     !
 !------------------------!
 ! magnetisation in spherical coordinates
       do idm=1,ndmag
-        call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-         magmt(:,:,ias,idm),lmmaxvr,0.d0,mag(:,idm),lmmaxvr)
+        call rbsht(nr,nri,1,magmt(:,:,ias,idm),1,mag(:,idm))
       end do
       if (ncmag) then
 ! non-collinear (use Kubler's trick)
@@ -77,8 +76,7 @@ do is=1,nspecies
     end if
     if (tsh) then
 ! convert fxc to spherical harmonics if required
-      call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,fxc,lmmaxvr, &
-       0.d0,fxcmt(:,:,ias),lmmaxvr)
+      call rfsht(nr,nri,1,fxc,1,fxcmt(:,:,ias))
     else
       call dcopy(n,fxc,1,fxcmt(:,:,ias),1)
     end if

@@ -63,11 +63,12 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias
 integer ik,ist,idm,jdm
+integer is,ia,ias,nrc,nrci
 real(8) cb,vn,sum,f
 complex(8) z1
 ! allocatable arrays
+real(8), allocatable :: rfmt(:,:,:)
 complex(8), allocatable :: evecsv(:,:),c(:,:)
 ! external functions
 real(8) rfinp
@@ -91,7 +92,6 @@ end do
 !     external magnetic field energies     !
 !------------------------------------------!
 engybext=0.d0
-engybmt=0.d0
 do idm=1,ndmag
   if (ncmag) then
     jdm=idm
@@ -100,13 +100,6 @@ do idm=1,ndmag
   end if
 ! energy of physical global field
   engybext=engybext+cb*momtot(idm)*bfieldc(jdm)
-! energy of non-physical muffin-tin fields
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      engybmt=engybmt+cb*mommt(idm,ias)*bfcmt(jdm,ia,is)
-    end do
-  end do
 end do
 !----------------------------------!
 !     Coulomb potential energy     !
@@ -184,12 +177,10 @@ end if
 !----------------------------!
 ! core eigenvalues
 evalsum=0.d0
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ist=1,spnst(is)
-      if (spcore(ist,is)) evalsum=evalsum+occcr(ist,ias)*evalcr(ist,ias)
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ist=1,spnst(is)
+    if (spcore(ist,is)) evalsum=evalsum+occcr(ist,ias)*evalcr(ist,ias)
   end do
 end do
 ! valence eigenvalues
@@ -222,7 +213,20 @@ if (task.eq.5) then
   deallocate(evecsv,c)
 else
 ! Kohn-Sham case
-  engykn=evalsum-engyvcl-engyvxc-engybxc-engybext-engybmt
+  allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
+  sum=0.d0
+  do idm=1,ndmag
+    do ias=1,natmtot
+      is=idxis(ias)
+      nrc=nrcmt(is)
+      nrci=nrcmtinr(is)
+      call rfsht(nrc,nrci,1,bsmt(:,:,ias,idm),lradstp,rfmt(:,:,ias))
+    end do
+    call rfmtctof(rfmt)
+    sum=sum+rfinp(1,magmt(:,:,:,idm),rfmt,magir(:,idm),bsir(:,idm))
+  end do
+  engykn=evalsum-engyvcl-engyvxc-sum
+  deallocate(rfmt)
 end if
 !-------------------------------!
 !     entropic contribution     !
@@ -252,7 +256,7 @@ engytot=engykn+0.5d0*engyvcl+engymad+engyx+engyc+engyts
 ! add the LDA+U correction if required
 if (ldapu.ne.0) engytot=engytot+engylu
 ! write total energy to test file
-call writetest(0,'total energy',tol=1.d-6,rv=engytot)
+call writetest(0,'total energy',tol=1.d-4,rv=engytot)
 return
 end subroutine
 !EOC

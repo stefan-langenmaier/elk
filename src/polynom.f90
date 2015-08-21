@@ -28,8 +28,7 @@ implicit none
 ! argmuments
 integer, intent(in) :: m
 integer, intent(in) :: np
-real(8), intent(in) :: xa(np)
-real(8), intent(in) :: ya(np)
+real(8), intent(in) :: xa(np),ya(np)
 real(8), intent(out) :: c(np)
 real(8), intent(in) :: x
 ! local variables

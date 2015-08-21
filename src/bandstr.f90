@@ -25,8 +25,8 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer lmax,lmmax,l,m,lm
-integer ik,ispn,is,ia,ias,iv,ist
+integer ik,ist,ispn,is,ia,ias
+integer lmax,lmmax,l,m,lm,iv
 real(8) emin,emax,sum
 character(256) fname
 ! allocatable arrays
@@ -41,7 +41,7 @@ call init1
 ! allocate array for storing the eigenvalues
 allocate(e(nstsv,nkpt))
 ! maximum angular momentum for band character
-lmax=min(3,lmaxapw)
+lmax=min(3,lmaxvr)
 lmmax=(lmax+1)**2
 if (task.eq.21) then
   allocate(bc(0:lmax,natmtot,nstsv,nkpt))
@@ -68,7 +68,7 @@ emax=-1.d5
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(evalfv,evecfv,evecsv) &
 !$OMP PRIVATE(ist,dmat,apwalm,ispn) &
-!$OMP PRIVATE(is,ia,ias,l,m,lm,sum)
+!$OMP PRIVATE(ias,l,m,lm,sum)
 !$OMP DO
 do ik=1,nkpt
   allocate(evalfv(nstfv,nspnfv))
@@ -97,23 +97,20 @@ do ik=1,nkpt
        sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
     end do
 ! average band character over spin and m for all atoms
-    do is=1,nspecies
-      do ia=1,natoms(is)
-        ias=idxas(ia,is)
+    do ias=1,natmtot
 ! generate the diagonal of the density matrix
-        call gendmat(.true.,.true.,0,lmax,ias,ngk(:,ik),apwalm,evecfv,evecsv, &
-         lmmax,dmat)
-        do ist=1,nstsv
-          do l=0,lmax
-            sum=0.d0
-            do m=-l,l
-              lm=idxlm(l,m)
-              do ispn=1,nspinor
-                sum=sum+dble(dmat(lm,lm,ispn,ispn,ist))
-              end do
+      call gendmat(.true.,.true.,0,lmax,ias,ngk(:,ik),apwalm,evecfv,evecsv, &
+       lmmax,dmat)
+      do ist=1,nstsv
+        do l=0,lmax
+          sum=0.d0
+          do m=-l,l
+            lm=idxlm(l,m)
+            do ispn=1,nspinor
+              sum=sum+dble(dmat(lm,lm,ispn,ispn,ist))
             end do
-            bc(l,ias,ist,ik)=real(sum)
           end do
+          bc(l,ias,ist,ik)=real(sum)
         end do
       end do
     end do

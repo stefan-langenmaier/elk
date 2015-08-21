@@ -12,9 +12,8 @@ logical, intent(in) :: tsh
 real(8), intent(out) :: fxcmt(lmmaxvr,nrmtmax,natmtot,4,4)
 real(8), intent(out) :: fxcir(ngtot,4,4)
 ! local variables
-integer is,ia,ias
-integer ld,n,nr,ir
-integer idm,i,j
+integer idm,is,ia,ias
+integer nr,nri,ir,ld,i,j,n
 real(8) t1
 ! allocatable arrays
 real(8), allocatable :: rho(:),rhoup(:),rhodn(:)
@@ -42,19 +41,17 @@ allocate(fxcuu(n),fxcud(n),fxcdd(n))
 ld=lmmaxvr*nrmtmax
 do is=1,nspecies
   nr=nrmt(is)
+  nri=nrmtinr(is)
   n=lmmaxvr*nr
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the density in spherical coordinates
-    call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rhomt(:,:,ias), &
-     lmmaxvr,0.d0,rho,lmmaxvr)
-! magnetisation in spherical coordinates
+    call rbsht(nr,nri,1,rhomt(:,:,ias),1,rho)
     do idm=1,ndmag
-      call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-       magmt(:,:,ias,idm),lmmaxvr,0.d0,mag(:,idm),lmmaxvr)
+! magnetisation in spherical coordinates
+      call rbsht(nr,nri,1,magmt(:,:,ias,idm),1,mag(:,idm))
 ! B_xc in spherical coordinates
-      call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-       bxcmt(:,:,ias,idm),lmmaxvr,0.d0,bxc(:,idm),lmmaxvr)
+      call rbsht(nr,nri,1,bxcmt(:,:,ias,idm),1,bxc(:,idm))
     end do
     if (ncmag) then
 ! non-collinear (use Kubler's trick)
@@ -101,8 +98,7 @@ do is=1,nspecies
       do j=i,4
         if (tsh) then
 ! convert to spherical harmonics if required
-          call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-           fxc(:,i,j),lmmaxvr,0.d0,fxcmt(:,:,ias,i,j),lmmaxvr)
+          call rfsht(nr,nri,1,fxc(:,i,j),1,fxcmt(:,:,ias,i,j))
         else
           call dcopy(n,fxc(:,i,j),1,fxcmt(:,:,ias,i,j),1)
         end if

@@ -51,7 +51,7 @@ write(fnum,*)
 write(fnum,'("atoms")')
 write(fnum,'(I4,T40," : nspecies")') nspecies
 do is=1,nspecies
-  write(fnum,'(" ''",A,"''",T40," : spfname")') trim(spfname(is))
+  write(fnum,'("''",A,"''",T40," : spfname")') trim(spfname(is))
   write(fnum,'(I4,T40," : natoms; atpos, bfcmt below")') natoms(is)
   do ia=1,natoms(is)
     if (molecule) then

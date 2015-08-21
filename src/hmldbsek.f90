@@ -11,7 +11,7 @@ integer, intent(in) :: ik2
 ! local variables
 integer ik1,iv(3),iq,igq0,ig,jg
 integer i1,i2,j1,j2,a1,a2,b1,b2
-integer ist1,ist2,jst1,jst2,n
+integer ist1,ist2,jst1,jst2
 real(8) vl(3),vc(3),t0,t1,t2
 complex(8) zsum
 character(256) fname
@@ -22,7 +22,7 @@ real(8), allocatable :: vgqc(:,:),gqc(:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
-complex(8), allocatable :: zrhomt(:,:,:,:),zrhoir(:,:)
+complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
 complex(8), allocatable :: zvv(:,:,:),zcc(:,:,:)
 complex(8), allocatable :: zvc(:,:,:),zcv(:,:,:)
 complex(8), allocatable :: epsinv(:,:,:)
@@ -31,8 +31,7 @@ allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
-n=max(nvbse,ncbse)
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,n),zrhoir(ngtot,n))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
 allocate(zvv(ngrf,nvbse,nvbse),zcc(ngrf,ncbse,ncbse))
 allocate(epsinv(ngrf,ngrf,nwrf))
 if (bsefull) then

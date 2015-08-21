@@ -9,7 +9,7 @@ use modpw
 implicit none
 ! local variables
 logical trhonorm0
-integer is,ias,ist,ik
+integer ik,ist,is,ias
 ! allocatable arrays
 real(8), allocatable :: occcr0(:,:)
 ! initialise universal variables

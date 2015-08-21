@@ -47,8 +47,8 @@ do is=1,nspecies
     do l=0,lmaxapw
       do io=1,apword(l,is)
 ! integrate the radial Schrodinger equation
-        call rschroddme(solsc,apwdm(io,l,is),l,0,apwe(io,l,ias),nprad,nr, &
-         spr(:,is),vr,nn,p0(:,io),p1,q0(:,io),q1(:,io))
+        call rschroddme(solsc,apwdm(io,l,is),l,0,apwe(io,l,ias),nr,spr(:,is), &
+         vr,nn,p0(:,io),p1,q0(:,io),q1(:,io))
 ! normalise radial functions
         fr(1:nr)=p0(1:nr,io)**2
         call fderiv(-1,nr,spr(:,is),fr,gr)

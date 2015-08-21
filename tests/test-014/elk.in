@@ -18,7 +18,10 @@ maxitoep
  10
 
 maxscl
- 1
+ 2
+
+swidth
+ 0.02
 
 rgkmax
  6.5
@@ -39,5 +42,5 @@ atoms
   0.25 0.25 0.25   0.0 0.0 0.0
 
 ngridk
-  2  1  1
+  2  2  2
 

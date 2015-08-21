@@ -55,22 +55,22 @@ integer, intent(in) :: ld
 complex(8), intent(out) :: wfir(ld,nspinor,nstsv)
 ! local variables
 integer ispn,jspn,ist
-integer is,ia,ias,nrc
-integer igp,ifg,i,j,n
+integer is,ia,ias,nrc,nrci
+integer igp,ifg,i,j
 real(8) t1
 complex(8) zq(2),z1
 ! automatic arrays
-logical done(nstfv)
+logical done(nstfv,nspnfv)
 ! allocatable arrays
-complex(8), allocatable :: wfmt1(:,:,:),wfmt2(:,:)
+complex(8), allocatable :: wfmt1(:,:,:,:),wfmt2(:,:)
 !--------------------------------!
 !     muffin-tin wavefunction    !
 !--------------------------------!
-if (tevecsv) allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
+if (tevecsv) allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv,nspnfv))
 if (.not.tsh) allocate(wfmt2(lmmaxvr,nrcmtmax))
 do is=1,nspecies
   nrc=nrcmt(is)
-  n=lmmaxvr*nrc
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! de-phasing factor for spin-spirals
@@ -79,56 +79,56 @@ do is=1,nspecies
       zq(1)=cmplx(cos(t1),sin(t1),8)
       zq(2)=conjg(zq(1))
     end if
-    done(:)=.false.
+    done(:,:)=.false.
     do j=1,nstsv
       if (tocc) then
         if (abs(occsvp(j)).lt.epsocc) cycle
       end if
       if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
-        wfmt(:,:,ias,:,j)=0.d0
         i=0
         do ispn=1,nspinor
           jspn=jspnfv(ispn)
+          if (tsh) then
+            wfmt(:,:,ias,ispn,j)=0.d0
+          else
+            wfmt2(:,:)=0.d0
+          end if
           do ist=1,nstfv
             i=i+1
             z1=evecsv(i,j)
             if (spinsprl.and.ssdph) z1=z1*zq(ispn)
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
-              if (.not.done(ist)) then
-                if (tsh) then
-! wavefunction returned in spherical harmonics
-                  call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
-                   apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
-                   wfmt1(:,:,ist))
-                else
-                  call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
-                   apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt2)
-! convert from spherical harmonics to spherical coordinates
-                  call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-                   wfmt2,lmmaxvr,zzero,wfmt1(:,:,ist),lmmaxvr)
-                end if
-                done(ist)=.true.
+              if (.not.done(ist,jspn)) then
+                call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
+                 apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
+                 wfmt1(:,:,ist,jspn))
+                done(ist,jspn)=.true.
               end if
 ! add to spinor wavefunction
-              call zaxpy(n,z1,wfmt1(:,:,ist),1,wfmt(:,:,ias,ispn,j),1)
+              if (tsh) then
+                call zfmtadd(nrc,nrci,z1,wfmt1(:,:,ist,jspn), &
+                 wfmt(:,:,ias,ispn,j))
+              else
+                call zfmtadd(nrc,nrci,z1,wfmt1(:,:,ist,jspn),wfmt2)
+              end if
             end if
-! end loop over first-variational states
           end do
-! end loop over spin
+! convert to spherical coordinates if required
+          if (.not.tsh) then
+            call zbsht(nrc,nrci,wfmt2,wfmt(:,:,ias,ispn,j))
+          end if
         end do
       else
 ! spin-unpolarised wavefunction
         if (tsh) then
-! wavefunction returned in spherical harmonics
           call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,j,1),lmmaxvr, &
            wfmt(:,:,ias,1,j))
         else
           call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,j,1),lmmaxvr, &
            wfmt2)
-! convert from spherical harmonics to spherical coordinates
-          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,wfmt2, &
-           lmmaxvr,zzero,wfmt(:,:,ias,1,j),lmmaxvr)
+! convert from to spherical coordinates
+          call zbsht(nrc,nrci,wfmt2,wfmt(:,:,ias,1,j))
         end if
       end if
 ! end loop over second-variational states

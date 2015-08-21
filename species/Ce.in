@@ -2,7 +2,7 @@
  'cerium'                                   : spname
   -58.0000                                  : spzn
    255415.8429                              : spmass
-  0.262613E-06    2.8000   61.1079   700    : sprmin, rmt, sprmax, nrmt
+  0.262613E-06    2.8000   62.5390   700    : sprmin, rmt, sprmax, nrmt
   19                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -42,8 +42,8 @@
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.6297   0  T
+ -1.3797   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.9861   0  T
+ -0.7361   0  T

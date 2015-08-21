@@ -34,12 +34,10 @@ allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
 ! convert real muffin-tin charge density to complex spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
-  do ir=1,nrmt(is)
-    call rtozflm(lmaxvr,rhomt(:,ir,ias),zrhomt(:,ir,ias))
-  end do
+  call rtozfmt(nrmt(is),nrmtinr(is),1,rhomt(:,:,ias),1,zrhomt(:,:,ias))
 end do
 ! solve the complex Poisson's equation in the muffin-tins
-call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
+call genzvclmt(nrmt,nrmtinr,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
 deallocate(zrhomt)
 ! add the nuclear monopole potentials
 t1=1.d0/y00
@@ -58,14 +56,12 @@ allocate(zrhoir(ngtot))
 zrhoir(:)=rhoir(:)
 ! solve Poisson's equation in the entire unit cell
 allocate(zvclir(ngtot))
-call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
- zvclir,zrho0)
+call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
+ zvclmt,zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
 do ias=1,natmtot
   is=idxis(ias)
-  do ir=1,nrmt(is)
-    call ztorflm(lmaxvr,zvclmt(:,ir,ias),vclmt(:,ir,ias))
-  end do
+  call ztorfmt(nrmt(is),nrmtinr(is),1,zvclmt(:,:,ias),1,vclmt(:,:,ias))
 end do
 ! store complex interstitial potential in real array
 vclir(:)=dble(zvclir(:))

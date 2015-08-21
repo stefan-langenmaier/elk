@@ -24,7 +24,7 @@ logical spinpol_
 integer iostat
 integer is,ias,lmmax,lm,ir,jr
 integer idm0,idm1,idm,jdm,mapidm(3)
-integer ngm,i1,i2,i3,j1,j2,j3
+integer i1,i2,i3,j1,j2,j3
 integer version_(3)
 integer nspecies_,natoms_,lmmaxvr_
 integer nrmt_(maxspecies),nrmtmax_
@@ -122,7 +122,6 @@ allocate(vxcmt_(lmmaxvr_,nrmtmax_,natmtot))
 allocate(vxcir_(ngtot_))
 allocate(vsmt_(lmmaxvr_,nrmtmax_,natmtot))
 allocate(vsir_(ngtot_))
-allocate(vsig_(ngvec_))
 ! read the muffin-tin density
 read(50) rhomt_,rhoir_
 ! read the Coulomb potential (spin independent)
@@ -130,7 +129,13 @@ read(50) vclmt_,vclir_
 ! read the exchange-correlation potential
 read(50) vxcmt_,vxcir_
 ! read the Kohn-Sham effective potential
-read(50) vsmt_,vsir_,vsig_
+if ((version_(1).gt.2).or.(version_(2).ge.2)) then
+  read(50) vsmt_,vsir_
+else
+  allocate(vsig_(ngvec_))
+  read(50) vsmt_,vsir_,vsig_
+  deallocate(vsig_)
+end if
 ! read the magnetisation, exchange-correlation and effective magnetic fields
 if (spinpol_) then
   allocate(magmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
@@ -242,7 +247,6 @@ rhoir(:)=0.d0
 vclir(:)=0.d0
 vxcir(:)=0.d0
 vsir(:)=0.d0
-vsig(:)=0.d0
 if (spinpol) then
   magir(:,:)=0.d0
   bxcir(:,:)=0.d0
@@ -272,8 +276,6 @@ do ir=1,ngtot
   vxcir(ir)=vxcir_(jr)
   vsir(ir)=vsir_(jr)
 end do
-ngm=min(ngvec,ngvec_)
-vsig(1:ngm)=vsig_(1:ngm)
 if ((spinpol).and.(spinpol_)) then
   do idm=idm0,idm1
     jdm=mapidm(idm)
@@ -292,8 +294,10 @@ if ((spinpol).and.(spinpol_)) then
   end do
 end if
 deallocate(mapir,spr_,rcmt_,rhomt_,rhoir_,vclmt_,vclir_)
-deallocate(vxcmt_,vxcir_,vsmt_,vsir_,vsig_)
+deallocate(vxcmt_,vxcir_,vsmt_,vsir_)
 if (spinpol_) deallocate(magmt_,magir_,bxcmt_,bxcir_,bsmt_,bsir_)
+! Fourier transform Kohn-Sham potential to G-space
+call genvsig
 return
 end subroutine
 !EOC

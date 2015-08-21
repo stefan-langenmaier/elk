@@ -34,35 +34,44 @@ real(8), intent(in) :: rvfir2(ngtot,3)
 real(8), intent(out) :: rvfmt3(lmmaxvr,nrmtmax,natmtot,3)
 real(8), intent(out) :: rvfir3(ngtot,3)
 ! local variables
-integer is,ia,ias,ir,itp,i
+integer is,ias,nr,nri,ir
+integer lmmax,itp,i
 real(8) v1(3),v2(3),v3(3)
-! automatic arrays
-real(8) rftp1(lmmaxvr,3),rftp2(lmmaxvr,3)
-! muffin-tin region
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      do i=1,3
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-         rvfmt1(:,ir,ias,i),1,0.d0,rftp1(:,i),1)
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-         rvfmt2(:,ir,ias,i),1,0.d0,rftp2(:,i),1)
-      end do
-      do itp=1,lmmaxvr
-        v1(:)=rftp1(itp,:)
-        v2(:)=rftp2(itp,:)
-        call r3cross(v1,v2,v3)
-        rftp1(itp,:)=v3(:)
-      end do
-      do i=1,3
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rftp1(:,i),1,0.d0, &
-         rvfmt3(:,ir,ias,i),1)
-      end do
+! allocatable arrays
+real(8), allocatable :: rvfmt4(:,:,:),rvfmt5(:,:,:)
+!---------------------------!
+!     muffin-tin region     !
+!---------------------------!
+allocate(rvfmt4(lmmaxvr,nrmtmax,3),rvfmt5(lmmaxvr,nrmtmax,3))
+do ias=1,natmtot
+  is=idxis(ias)
+  nr=nrmt(is)
+  nri=nrmtinr(is)
+  do i=1,3
+    call rbsht(nr,nri,1,rvfmt1(:,:,ias,i),1,rvfmt4(:,:,i))
+    call rbsht(nr,nri,1,rvfmt2(:,:,ias,i),1,rvfmt5(:,:,i))
+  end do
+  do ir=1,nr
+    if (ir.le.nri) then
+      lmmax=lmmaxinr
+    else
+      lmmax=lmmaxvr
+    end if
+    do itp=1,lmmax
+      v1(:)=rvfmt4(itp,ir,:)
+      v2(:)=rvfmt5(itp,ir,:)
+      call r3cross(v1,v2,v3)
+      rvfmt4(itp,ir,:)=v3(:)
     end do
   end do
+  do i=1,3
+    call rfsht(nr,nri,1,rvfmt4(:,:,i),1,rvfmt3(:,:,ias,i))
+  end do
 end do
-! interstitial region
+deallocate(rvfmt4,rvfmt5)
+!-----------------------------!
+!     interstitial region     !
+!-----------------------------!
 do ir=1,ngtot
   v1(:)=rvfir1(ir,:)
   v2(:)=rvfir2(ir,:)

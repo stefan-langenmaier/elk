@@ -8,6 +8,7 @@ use modmain
 use modmpi
 implicit none
 ! local variables
+integer, parameter :: maxit=500
 integer ik,iw,n
 integer igq0,ig,jg
 integer it,info
@@ -111,7 +112,7 @@ do iw=1,nwrf
 ! left multiply by v^1/2 chi0 v^1/2
   b(:,:)=vchi0(iw,:,:)
   call zgemm('N','N',ngrf,ngrf,ngrf,zone,b,ngrf,a,ngrf,zzero,eps(:,:,iw),ngrf)
-! compute epsilon = 1 + v^1/2 chi v^1/2
+! compute epsilon^(-1) = 1 + v^1/2 chi v^1/2
   do ig=1,ngrf
     eps(ig,ig,iw)=1.d0+eps(ig,ig,iw)
   end do
@@ -120,11 +121,14 @@ deallocate(ipiv,a,b,work)
 ! bootstrap f_xc
 if (fxctype(1).eq.210) then
   it=it+1
-  if (it.gt.500) then
+  if (it.gt.maxit) then
     write(*,*)
     write(*,'("Error(tddftlr): bootstrap kernel failed to converge")')
     write(*,*)
     stop
+  end if
+  if (mod(it,10).eq.0) then
+    write(*,'("Info(tddftlr): done ",I4," bootstrap iterations")') it
   end if
 ! check for convergence
   t1=abs(vfxcp)-abs(vfxc(1,1,1))

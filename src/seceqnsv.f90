@@ -19,9 +19,8 @@ real(8), intent(out) :: evalsvp(nstsv)
 complex(8), intent(out) :: evecsv(nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,jst
-integer is,ias,nrc,irc
-integer lmax,lmmax,l,lm,nm
-integer igp,ifg,i,j,k
+integer is,ias,nrc,nrci,irc
+integer l,lm,nm,igp,ifg,i,j,k
 integer nsc,nsd,lwork,info
 real(8) ca,t1
 real(8) ts0,ts1
@@ -66,12 +65,11 @@ evecsv(:,:)=0.d0
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
-lmax=min(lmaxmat,lmaxvr)
-lmmax=(lmax+1)**2
 allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
 do ias=1,natmtot
   is=idxis(ias)
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
 ! compute the first-variational wavefunctions
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
@@ -93,20 +91,17 @@ do ias=1,natmtot
     if (afieldpol) allocate(gwfmt(lmmaxvr,nrcmtmax,3))
     if (spinpol) then
 ! convert wavefunction to spherical coordinates
-      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-       wfmt1(:,:,jst),lmmaxvr,zzero,wfmt2,lmmaxvr)
+      call zbsht(nrc,nrci,wfmt1(:,:,jst),wfmt2)
 ! apply Kohn-Sham effective magnetic field
       wfmt3(:,1:nrc)=bsmt(:,1:nrc,ias,ndmag)*wfmt2(:,1:nrc)
 ! convert to spherical harmonics and store in wfmt4
-      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
-       lmmaxvr,zzero,wfmt4(:,:,1),lmmaxvr)
+      call zfsht(nrc,nrci,wfmt3,wfmt4(:,:,1))
       wfmt4(:,1:nrc,2)=-wfmt4(:,1:nrc,1)
 ! non-collinear field
       if (ncmag) then
         wfmt3(:,1:nrc)=cmplx(bsmt(:,1:nrc,ias,1),-bsmt(:,1:nrc,ias,2),8) &
          *wfmt2(:,1:nrc)
-        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
-         lmmaxvr,zzero,wfmt4(:,:,3),lmmaxvr)
+        call zfsht(nrc,nrci,wfmt3,wfmt4(:,:,3))
       end if
 ! apply spin-orbit coupling if required
       if (spinorb) then
@@ -144,7 +139,7 @@ do ias=1,natmtot
     end if
 ! apply vector potential if required
     if (afieldpol) then
-      call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax,wfmt1(:,:,jst),gwfmt)
+      call gradzfmt(nrc,nrci,rcmt(:,is),wfmt1(:,:,jst),nrcmtmax,gwfmt)
       do irc=1,nrc
         wfmt3(:,irc)=afieldc(1)*gwfmt(:,irc,1) &
                     +afieldc(2)*gwfmt(:,irc,2) &
@@ -169,7 +164,7 @@ do ias=1,natmtot
           j=jst+nstfv
         end if
         if (i.le.j) then
-          evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,lmmax,nrc,rcmt(:,is),lmmaxvr, &
+          evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,nrc,nrci,rcmt(:,is), &
            wfmt1(:,:,ist),wfmt4(:,:,k))
         end if
       end do

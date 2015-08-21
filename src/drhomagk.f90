@@ -19,8 +19,9 @@ complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: devecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv),devecsv(nstsv,nstsv)
 ! local variables
-integer is,ias,ist
-integer nr,ir,irc,itp
+integer ist,is,ias
+integer nr,nrci,ir,irc
+integer lmmax,itp
 real(8) t0
 complex(8) z1,z2,z3,z4,z5,z6
 ! allocatable arrays
@@ -46,6 +47,7 @@ do ist=1,nstsv
   do ias=1,natmtot
     is=idxis(ias)
     nr=nrmt(is)
+    nrci=nrcmtinr(is)
 !$OMP CRITICAL
     if (spinpol) then
 ! spin-polarised
@@ -54,7 +56,12 @@ do ist=1,nstsv
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          do itp=1,lmmaxvr
+          if (irc.le.nrci) then
+            lmmax=lmmaxinr
+          else
+            lmmax=lmmaxvr
+          end if
+          do itp=1,lmmax
             z1=conjg(wfmt(itp,irc,ias,1,ist))
             z2=conjg(wfmt(itp,irc,ias,2,ist))
             z3=dwfmt(itp,irc,ias,1,ist)
@@ -76,7 +83,12 @@ do ist=1,nstsv
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          do itp=1,lmmaxvr
+          if (irc.le.nrci) then
+            lmmax=lmmaxinr
+          else
+            lmmax=lmmaxvr
+          end if
+          do itp=1,lmmax
             z1=conjg(wfmt(itp,irc,ias,1,ist))*dwfmt(itp,irc,ias,1,ist)
             z2=conjg(wfmt(itp,irc,ias,2,ist))*dwfmt(itp,irc,ias,2,ist)
             drhomt(itp,ir,ias)=drhomt(itp,ir,ias)+t0*(z1+z2)
@@ -89,8 +101,13 @@ do ist=1,nstsv
       irc=0
       do ir=1,nr,lradstp
         irc=irc+1
-        drhomt(:,ir,ias)=drhomt(:,ir,ias) &
-         +t0*conjg(wfmt(:,irc,ias,1,ist))*dwfmt(:,irc,ias,1,ist)
+        if (irc.le.nrci) then
+          lmmax=lmmaxinr
+        else
+          lmmax=lmmaxvr
+        end if
+        drhomt(1:lmmax,ir,ias)=drhomt(1:lmmax,ir,ias) &
+         +t0*conjg(wfmt(1:lmmax,irc,ias,1,ist))*dwfmt(1:lmmax,irc,ias,1,ist)
       end do
     end if
 !$OMP END CRITICAL

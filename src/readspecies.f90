@@ -56,6 +56,7 @@ do is=1,nspecies
   end if
 ! multiply nrmt by the scale factor
   nrmt(is)=nrmt(is)*nrmtscf
+! reduce the minimum radial mesh point by the same factor
   sprmin(is)=sprmin(is)/dble(nrmtscf)
   read(50,*) spnst(is)
   if ((spnst(is).le.0).or.(spnst(is).gt.maxspst)) then

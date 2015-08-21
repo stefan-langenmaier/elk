@@ -53,7 +53,7 @@ write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
 write(fnum,*)
 select case(task)
-case(0,1,8,200,201,350,351)
+case(0,1,28,200,201,350,351,440)
   if (trdstate) then
     write(fnum,'("+------------------------------------------+")')
     write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
@@ -110,6 +110,7 @@ do is=1,nspecies
   write(fnum,'(" atomic mass : ",G18.10)') spmass(is)
   write(fnum,'(" muffin-tin radius : ",G18.10)') rmt(is)
   write(fnum,'(" number of radial points in muffin-tin : ",I6)') nrmt(is)
+  write(fnum,'(" number on inner part of muffin-tin    : ",I6)') nrmtinr(is)
   write(fnum,'(" atomic positions (lattice), magnetic fields (Cartesian) :")')
   do ia=1,natoms(is)
     write(fnum,'(I4," : ",3F12.8,"  ",3F12.8)') ia,atposl(:,ia,is), &
@@ -206,13 +207,17 @@ end if
 write(fnum,'("Total number of k-points : ",I8)') nkpt
 write(fnum,*)
 write(fnum,'("Muffin-tin radius times maximum |G+k| : ",G18.10)') rgkmax
-if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
-  write(fnum,'(" using radius of species ",I4," (",A,")")') isgkmax, &
-   trim(spsymb(isgkmax))
-else if (isgkmax.eq.-1) then
-  write(fnum,'(" using average radius")')
+if (isgkmax.eq.-2) then
+  write(fnum,'(" using gkmax = rgkmax / 2")')
 else
-  write(fnum,'(" using smallest radius")')
+  if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
+    write(fnum,'(" using radius of species ",I4," (",A,")")') isgkmax, &
+     trim(spsymb(isgkmax))
+  else if (isgkmax.eq.-1) then
+    write(fnum,'(" using average radius")')
+  else
+    write(fnum,'(" using smallest radius")')
+  end if
 end if
 write(fnum,'("Maximum |G+k| for APW functions       : ",G18.10)') gkmax
 write(fnum,'("Maximum (1/2)|G+k|^2                  : ",G18.10)') 0.5d0*gkmax**2

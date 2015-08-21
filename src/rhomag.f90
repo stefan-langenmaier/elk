@@ -10,8 +10,7 @@ implicit none
 ! local variables
 integer ik,idm,n
 ! allocatable arrays
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 ! set the charge density and magnetisation to zero
 rhomt(:,:,:)=0.d0
 rhoir(:)=0.d0
@@ -64,12 +63,16 @@ if (np_mpi.gt.1) then
      mpi_comm_kpt,ierror)
   end if
 end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_kpt,ierror)
 ! add the core density to the total density
 call rhocore
 ! calculate the charges
 call charge
 ! calculate the moments
 if (spinpol) call moment
+! apply smoothing operation to the density and magnetisation if required
+call rhomagsm
 ! normalise the density
 call rhonorm
 return

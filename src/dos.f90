@@ -35,9 +35,9 @@ use modtest
 implicit none
 ! local variables
 logical tsqaz
-integer lmmax,l0,l1,l,m,lm
-integer is,ia,ias,nsd,ispn,jspn
 integer nsk(3),ik,jk,ist,iw
+integer nsd,ispn,jspn,is,ia,ias
+integer lmmax,l0,l1,l,m,lm
 real(8) dw,th,sps(2),vl(3),vc(3)
 real(8) v1(3),v2(3),v3(3),t1
 complex(8) su2(2,2),dm1(2,2),dm2(2,2)
@@ -51,8 +51,7 @@ complex(8), allocatable :: ulm(:,:,:),a(:,:)
 complex(8), allocatable :: dmat(:,:,:,:,:)
 complex(8), allocatable :: sdmat(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 ! always use the second-variational states (avoids confusion for RDMFT)
 tevecsv=.true.
 ! initialise universal variables
@@ -306,11 +305,13 @@ do is=1,nspecies
           end if
         end if
 ! subtract from interstitial DOS
+!$OMP CRITICAL
         if (dosssum) then
           dt(:,1)=dt(:,1)-g(:)
         else
           dt(:,ispn)=dt(:,ispn)-g(:)
         end if
+!$OMP END CRITICAL
         deallocate(f,g)
       end do
 !$OMP END DO

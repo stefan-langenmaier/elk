@@ -12,8 +12,7 @@ real(8), intent(out) :: vir(ngtot)
 real(8), intent(out) :: bmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
 real(8), intent(out) :: bir(ngtot,ndmag)
 ! local variables
-integer ld,is,ias
-integer idm,ir,irc
+integer idm,is,ias,ir,irc
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:)
 ! compute the Coulomb potential
@@ -21,7 +20,6 @@ call potcoul
 ! generate the exchange-correlation potentials for hybrids
 if (hybrid) call potxc
 ! convert to spherical coordinates and store in output arrays
-ld=lmmaxvr*lradstp
 if (hybrid) then
 ! hybrid functional case
   allocate(rfmt(lmmaxvr,nrcmtmax))
@@ -32,8 +30,7 @@ if (hybrid) then
       irc=irc+1
       rfmt(:,irc)=vclmt(:,ir,ias)+vxcmt(:,ir,ias)
     end do
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt, &
-     lmmaxvr,0.d0,vmt(:,:,ias),lmmaxvr)
+    call rbsht(nrcmt(is),nrcmtinr(is),1,rfmt,1,vmt(:,:,ias))
   end do
   deallocate(rfmt)
   vir(:)=(vclir(:)+vxcir(:))*cfunir(:)
@@ -41,8 +38,8 @@ if (hybrid) then
     do idm=1,ndmag
       do ias=1,natmtot
         is=idxis(ias)
-        call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-         bxcmt(:,:,ias,idm),ld,0.d0,bmt(:,:,ias,idm),lmmaxvr)
+        call rbsht(nrcmt(is),nrcmtinr(is),lradstp,bxcmt(:,:,ias,idm),1, &
+         bmt(:,:,ias,idm))
       end do
       bir(:,idm)=bxcir(:,idm)*cfunir(:)
     end do
@@ -51,8 +48,7 @@ else
 ! normal Hartree-Fock case
   do ias=1,natmtot
     is=idxis(ias)
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-     vclmt(:,:,ias),ld,0.d0,vmt(:,:,ias),lmmaxvr)
+    call rbsht(nrcmt(is),nrcmtinr(is),lradstp,vclmt(:,:,ias),1,vmt(:,:,ias))
   end do
   vir(:)=vclir(:)*cfunir(:)
 end if

@@ -12,6 +12,7 @@ use modmain
 use modxcifc
 use modldapu
 use modtest
+use modvars
 ! !DESCRIPTION:
 !   Performs basic consistency checks as well as allocating and initialising
 !   global variables not dependent on the $k$-point set.
@@ -59,7 +60,7 @@ if (lmaxmat.gt.lmaxapw) then
   stop
 end if
 ! check DOS lmax is within range
-lmaxdos=min(lmaxdos,lmaxapw)
+lmaxdos=min(lmaxdos,lmaxvr)
 ! index to (l,m) pairs
 if (allocated(idxlm)) deallocate(idxlm)
 allocate(idxlm(0:lmaxapw,-lmaxapw:lmaxapw))
@@ -84,6 +85,10 @@ do l=0,lmaxapw
   zil(l)=zi**l
   zilc(l)=conjg(zil(l))
 end do
+! write to VARIABLES.OUT
+call writevars('lmaxvr',iv=lmaxvr)
+call writevars('lmaxapw',iv=lmaxapw)
+call writevars('lmaxinr',iv=lmaxinr)
 
 !------------------------------------!
 !     index to atoms and species     !
@@ -102,6 +107,12 @@ do is=1,nspecies
 end do
 ! total number of atoms
 natmtot=ias
+! write to VARIABLES.OUT
+call writevars('nspecies',iv=nspecies)
+call writevars('natoms',nv=nspecies,iva=natoms)
+call writevars('spsymb',nv=nspecies,sva=spsymb)
+call writevars('spname',nv=nspecies,sva=spname)
+call writevars('spzn',nv=nspecies,rva=spzn)
 
 !------------------------!
 !     spin variables     !
@@ -215,20 +226,24 @@ bfcmt(:,:,:)=bfcmt0(:,:,:)
 ! if reducebf < 1 then reduce the external magnetic fields immediately for
 ! non-self-consistent calculations or resumptions
 if (reducebf.lt.1.d0-epslat) then
-  if ((task.ge.10).and.(task.ne.200).and.(task.ne.350).and.(task.ne.351)) then
+  if ((task.ge.10).and.(task.ne.28).and.(task.ne.200).and.(task.ne.201).and. &
+   (task.ne.350).and.(task.ne.351)) then
     bfieldc(:)=0.d0
     bfcmt(:,:,:)=0.d0
   end if
 end if
+! write to VARIABLES.OUT
+call writevars('nspinor',iv=nspinor)
+call writevars('ndmag',iv=ndmag)
 
 !----------------------------------!
 !     crystal structure set up     !
 !----------------------------------!
 ! generate the reciprocal lattice vectors and unit cell volume
 call reciplat
-! compute the inverse of the lattice vector matrix
+! inverse of the lattice vector matrix
 call r3minv(avec,ainv)
-! compute the inverse of the reciprocal vector matrix
+! inverse of the reciprocal vector matrix
 call r3minv(bvec,binv)
 ! Cartesian coordinates of the spin-spiral vector
 call r3mv(bvec,vqlss,vqcss)
@@ -242,6 +257,13 @@ do is=1,nspecies
 end do
 ! check muffin-tins are not too close together
 call checkmt
+! write to VARIABLES.OUT
+call writevars('avec',nv=9,rva=avec)
+call writevars('bvec',nv=9,rva=bvec)
+call writevars('omega',rv=omega)
+do is=1,nspecies
+  call writevars('atposl',l=is,nv=3*natoms(is),rva=atposl(:,:,is))
+end do
 
 !-------------------------------!
 !     vector fields E and A     !
@@ -263,18 +285,7 @@ end if
 !---------------------------------!
 !     crystal symmetry set up     !
 !---------------------------------!
-! find Bravais lattice symmetries
-call findsymlat
-! use only the identity if required
-if (symtype.eq.0) nsymlat=1
-! find the crystal symmetries and shift atomic positions if required
-call findsymcrys
-! find the site symmetries
-call findsymsite
-! check if fixed spin moments are invariant under the symmetry group
-call checkfsm
-! check if real symmetric eigen solver can be used
-if (.not.tsyminv) tseqr=.false.
+call symmetry
 
 !-----------------------!
 !     radial meshes     !
@@ -332,12 +343,20 @@ if (chgtot.lt.1.d-8) then
 end if
 ! effective Wigner radius
 rwigner=(3.d0/(fourpi*(chgtot/omega)))**(1.d0/3.d0)
+! write to VARIABLES.OUT
+call writevars('spze',nv=nspecies,rva=spze)
+call writevars('chgcr',nv=nspecies,rva=chgcr)
+call writevars('chgexs',rv=chgexs)
+call writevars('chgval',rv=chgtot)
 
 !-------------------------!
 !     G-vector arrays     !
 !-------------------------!
+if (nspecies.eq.0) isgkmax=-2
 ! determine gkmax from rgkmax and the muffin-tin radius
-if (nspecies.gt.0) then
+if (isgkmax.eq.-2) then
+  gkmax=rgkmax/2.d0
+else
   if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
 ! use user-specified muffin-tin radius
     gkmax=rgkmax/rmt(isgkmax)
@@ -350,11 +369,9 @@ if (nspecies.gt.0) then
     rsum=rsum/dble(natmtot)
     gkmax=rgkmax/rsum
   else
-! use minimum muffin-tin radius
+! use minimum muffin-tin radius (isgkmax=-3)
     gkmax=rgkmax/minval(rmt(1:nspecies))
   end if
-else
-  gkmax=rgkmax/2.d0
 end if
 ! ensure |G| cut-off is at least twice |G+k| cut-off
 gmaxvr=max(gmaxvr,2.d0*gkmax+epslat)
@@ -403,6 +420,13 @@ do is=1,nspecies
 end do
 ! generate the characteristic function
 call gencfun
+! write to VARIABLES.OUT
+call writevars('gmaxvr',rv=gmaxvr)
+call writevars('ngridg',nv=3,iva=ngridg)
+call writevars('intgv',nv=6,iva=intgv)
+call writevars('ngvec',iv=ngvec)
+call writevars('ivg',nv=3*ngtot,iva=ivg)
+call writevars('igfft',nv=ngtot,iva=igfft)
 
 !-------------------------!
 !     atoms and cores     !

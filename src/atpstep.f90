@@ -4,9 +4,9 @@
 ! See the file COPYING for license details.
 
 !BOP
-! !ROUTINE: geomstep
+! !ROUTINE: atpstep
 ! !INTERFACE:
-subroutine geomstep
+subroutine atpstep
 ! !USES:
 use modmain
 use modmpi
@@ -36,15 +36,13 @@ do is=1,nspecies
     t1=dot_product(forcetot(:,ias),forcetotp(:,ias))
 ! if the force is in the same direction then increase step size parameter
     if (t1.gt.0.d0) then
-      tauatm(ias)=tauatm(ias)+tau0atm
+      tauatp(ias)=tauatp(ias)+tau0atp
     else
-      tauatm(ias)=tau0atm
+      tauatp(ias)=tau0atp
     end if
-! check for negative mass
-    if (spmass(is).gt.0.d0) then
-      atposc(:,ia,is)=atposc(:,ia,is)+tauatm(ias)*(forcetot(:,ias) &
-       +forcetotp(:,ias))
-    end if
+! make atomic position step
+    atposc(:,ia,is)=atposc(:,ia,is)+tauatp(ias)*(forcetot(:,ias) &
+     +forcetotp(:,ias))
   end do
 end do
 ! each MPI process should have identical atomic positions
@@ -55,8 +53,6 @@ do is=1,nspecies
     ias=idxas(ia,is)
 ! compute the lattice coordinates of the atomic positions
     call r3mv(ainv,atposc(:,ia,is),atposl(:,ia,is))
-! set the previous to the current total force
-    forcetotp(:,ias)=forcetot(:,ias)
   end do
 end do
 return

@@ -6,15 +6,16 @@
 !BOP
 ! !ROUTINE: gradrfmt
 ! !INTERFACE:
-subroutine gradrfmt(lmax,nr,r,ld1,ld2,rfmt,grfmt)
+subroutine gradrfmt(nr,nri,r,rfmt,ld,grfmt)
+! !USES:
+use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   lmax  : maximum angular momentum (in,integer)
 !   nr    : number of radial mesh points (in,integer)
+!   nri   : number of points on inner part of muffin-tin (in,integer)
 !   r     : radial mesh (in,real(nr))
-!   ld1   : leading dimension 1 (in,integer)
-!   ld2   : leading dimension 2 (in,integer)
-!   rfmt  : real muffin-tin function (in,real(ld1,nr))
-!   grfmt : gradient of rfmt (out,real(ld1,ld2,3))
+!   rfmt  : real muffin-tin function (in,real(lmmaxvr,nr))
+!   ld    : leading dimension (in,integer)
+!   grfmt : gradient of rfmt (out,real(lmmaxvr,ld,3))
 ! !DESCRIPTION:
 !   Calculates the gradient of a real muffin-tin function. In other words, given
 !   the real spherical harmonic expansion coefficients, $f_{lm}(r)$, of a
@@ -30,32 +31,23 @@ subroutine gradrfmt(lmax,nr,r,ld1,ld2,rfmt,grfmt)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: lmax
-integer, intent(in) :: nr
+integer, intent(in) :: nr,nri
 real(8), intent(in) :: r(nr)
-integer, intent(in) :: ld1
-integer, intent(in) :: ld2
-real(8), intent(in) :: rfmt(ld1,nr)
-real(8), intent(out) :: grfmt(ld1,ld2,3)
+real(8), intent(in) :: rfmt(lmmaxvr,nr)
+integer, intent(in) :: ld
+real(8), intent(out) :: grfmt(lmmaxvr,ld,3)
 ! local variables
-integer lmmax,ir,i
+integer i
 ! allocatable arrays
-complex(8), allocatable :: zfmt(:,:)
-complex(8), allocatable :: gzfmt(:,:,:)
-lmmax=(lmax+1)**2
-allocate(zfmt(lmmax,nr))
-allocate(gzfmt(lmmax,nr,3))
+complex(8), allocatable :: zfmt(:,:),gzfmt(:,:,:)
+allocate(zfmt(lmmaxvr,nr),gzfmt(lmmaxvr,nr,3))
 ! convert real to complex spherical harmonic expansion
-do ir=1,nr
-  call rtozflm(lmax,rfmt(:,ir),zfmt(:,ir))
-end do
+call rtozfmt(nr,nri,1,rfmt,1,zfmt)
 ! compute the gradient
-call gradzfmt(lmax,nr,r,lmmax,nr,zfmt,gzfmt)
+call gradzfmt(nr,nri,r,zfmt,nr,gzfmt)
 ! convert complex to real spherical harmonic expansion
 do i=1,3
-  do ir=1,nr
-    call ztorflm(lmax,gzfmt(:,ir,i),grfmt(:,ir,i))
-  end do
+  call ztorfmt(nr,nri,1,gzfmt(:,:,i),1,grfmt(:,:,i))
 end do
 deallocate(zfmt,gzfmt)
 return

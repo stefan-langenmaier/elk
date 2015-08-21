@@ -10,8 +10,8 @@ implicit none
 complex(8), intent(in) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
 complex(8), intent(inout) :: vmat(nstsv,nstsv)
 ! local variables
-integer is,ia,ias,nrc
 integer ist1,ist2,ist3,m
+integer is,ia,ias,nrc,nrci
 complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: zrhomt(:,:,:)
@@ -24,6 +24,7 @@ allocate(wfcr(lmmaxvr,nrcmtmax,2))
 vmat(:,:)=0.d0
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist3=1,spnst(is)
@@ -36,13 +37,13 @@ do is=1,nspecies
           do ist1=1,nstsv
             allocate(zfmt(lmmaxvr,nrcmtmax))
 ! calculate the complex overlap density in spherical harmonics
-            zfmt(:,1:nrc)=conjg(wfcr(:,1:nrc,1))*wfmt(:,1:nrc,ias,1,ist1)
             if (spinpol) then
-              zfmt(:,1:nrc)=zfmt(:,1:nrc) &
-               +conjg(wfcr(:,1:nrc,2))*wfmt(:,1:nrc,ias,2,ist1)
+              call zfmtmul2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
+               wfmt(:,:,ias,1,ist1),wfmt(:,:,ias,2,ist1),zfmt)
+            else
+              call zfmtmul1(nrc,nrci,wfcr(:,:,1),wfmt(:,:,ias,1,ist1),zfmt)
             end if
-            call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt, &
-             lmmaxvr,zzero,zrhomt(:,:,ist1),lmmaxvr)
+            call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ist1))
             deallocate(zfmt)
           end do
 !$OMP END DO
@@ -51,10 +52,9 @@ do is=1,nspecies
 !$OMP DO
           do ist2=1,nstsv
             allocate(zfmt(lmmaxvr,nrcmtmax))
-            call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ist2),zfmt)
+            call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ist2),zfmt)
             do ist1=1,ist2
-              z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr, &
-               zrhomt(:,:,ist1),zfmt)
+              z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ist1),zfmt)
 !$OMP CRITICAL
               vmat(ist1,ist2)=vmat(ist1,ist2)-z1
 !$OMP END CRITICAL

@@ -11,6 +11,10 @@ tasks
   121       ! compute RPA dielectric function with no local field contributions
   320       ! compute TDDFT dielectric function with local field contributions
 
+! long-range contribution kernel
+fxctype
+  200
+
 ! parameter alpha for long-range contribution kernel
 fxclrc
   5.5
@@ -18,6 +22,9 @@ fxclrc
 ! G-vector cut-off of exchange-correlation kernel and response function
 gmaxrf
   1.0
+
+swidth
+  0.01
 
 nempty
   8

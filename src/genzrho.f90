@@ -43,7 +43,7 @@ complex(8), intent(in) ::  wfmt2(lmmaxvr,nrcmtmax,natmtot,*)
 complex(8), intent(in) ::  wfir1(ngtot,*),wfir2(ngtot,*)
 complex(8), intent(out) :: zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot)
 ! local variables
-integer is,ias,nrc,n
+integer is,ias,nrc,nrci
 ! allocatable arrays
 complex(8), allocatable :: zfmt(:,:)
 if (tsh) allocate(zfmt(lmmaxvr,nrcmtmax))
@@ -51,32 +51,31 @@ if (tsh) allocate(zfmt(lmmaxvr,nrcmtmax))
 do ias=1,natmtot
   is=idxis(ias)
   nrc=nrcmt(is)
-  n=lmmaxvr*nrc
+  nrci=nrcmtinr(is)
   if (tsh) then
     if (tspc.and.spinpol) then
 ! contract over spin
-      call zvmul2(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),wfmt1(:,:,ias,2), &
-       wfmt2(:,:,ias,2),zfmt)
+      call zfmtmul2(nrc,nrci,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2), &
+       wfmt2(:,:,ias,1),wfmt2(:,:,ias,2),zfmt)
     else
 ! no spin contraction
-      call zvmul1(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zfmt)
+      call zfmtmul1(nrc,nrci,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zfmt)
     end if
 ! convert to spherical harmonics
-    call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt,lmmaxvr, &
-     zzero,zrhomt(:,:,ias),lmmaxvr)
+    call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ias))
   else
     if (tspc.and.spinpol) then
-      call zvmul2(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),wfmt1(:,:,ias,2), &
-       wfmt2(:,:,ias,2),zrhomt(:,:,ias))
+      call zfmtmul2(nrc,nrci,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2), &
+       wfmt2(:,:,ias,1),wfmt2(:,:,ias,2),zrhomt(:,:,ias))
     else
-      call zvmul1(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zrhomt(:,:,ias))
+      call zfmtmul1(nrc,nrci,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zrhomt(:,:,ias))
     end if
   end if
 end do
 if (tsh) deallocate(zfmt)
 ! interstitial part
 if (tspc.and.spinpol) then
-  call zvmul2(ngtot,wfir1(:,1),wfir2(:,1),wfir1(:,2),wfir2(:,2),zrhoir)
+  call zvmul2(ngtot,wfir1(:,1),wfir1(:,2),wfir2(:,1),wfir2(:,2),zrhoir)
 else
   call zvmul1(ngtot,wfir1(:,1),wfir2(:,1),zrhoir)
 end if
@@ -93,10 +92,10 @@ z(:)=conjg(x(:))*y(:)
 return
 end subroutine
 
-subroutine zvmul2(n,x1,y1,x2,y2,z)
+subroutine zvmul2(n,x1,x2,y1,y2,z)
 implicit none
 integer, intent(in) :: n
-complex(8), intent(in) :: x1(n),y1(n),x2(n),y2(n)
+complex(8), intent(in) :: x1(n),x2(n),y1(n),y2(n)
 complex(8), intent(out) :: z(n)
 z(:)=conjg(x1(:))*y1(:)+conjg(x2(:))*y2(:)
 return

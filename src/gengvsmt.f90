@@ -8,17 +8,16 @@ use modmain
 use modphonon
 implicit none
 ! local variables
-integer nr,ir
+integer nr,nri
 ! allocatable arrays
 complex(8), allocatable :: zfmt(:,:),gzfmt(:,:,:)
 allocate(zfmt(lmmaxvr,nrmtmax),gzfmt(lmmaxvr,nrmtmax,3))
 nr=nrmt(isph)
+nri=nrmtinr(isph)
 ! convert potential to complex spherical harmonics
-do ir=1,nr
-  call rtozflm(lmaxvr,vsmt(:,ir,iasph),zfmt(:,ir))
-end do
+call rtozfmt(nr,nri,1,vsmt(:,:,iasph),1,zfmt)
 ! calculate the gradient
-call gradzfmt(lmaxvr,nr,spr(:,isph),lmmaxvr,nrmtmax,zfmt,gzfmt)
+call gradzfmt(nr,nri,spr(:,isph),zfmt,nrmtmax,gzfmt)
 ! copy current polarisation component to global array
 gvsmt(:,1:nr)=gzfmt(:,1:nr,ipph)
 deallocate(zfmt,gzfmt)

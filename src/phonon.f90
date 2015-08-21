@@ -85,7 +85,7 @@ if (allocated(v)) deallocate(v)
 allocate(v(n))
 ! determine the size of the mixer work array
 nwork=-1
-call mixerifc(mtype,n,v,ddv,nwork,work)
+call mixerifc(mtype,n,v,ddv,nwork,v)
 allocate(work(nwork))
 allocate(dyn(3,natmtot))
 ! begin new phonon task

@@ -2,7 +2,7 @@
  'californium'                              : spname
   -98.0000                                  : spzn
    457545.0095                              : spmass
-  0.202031E-06    3.0000   45.9858   800    : sprmin, rmt, sprmax, nrmt
+  0.202031E-06    3.0000   52.0569   800    : sprmin, rmt, sprmax, nrmt
   27                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -50,12 +50,12 @@
    3   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.3683   0  T
+ -0.1183   0  T
    0   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -2.3120   0  T
+ -2.0620   0  T
    1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.0350   0  T
+ -0.7850   0  T

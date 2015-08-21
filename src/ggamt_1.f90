@@ -23,32 +23,29 @@ real(8), intent(out) :: grho(lmmaxvr,nrmtmax)
 real(8), intent(out) :: g2rho(lmmaxvr,nrmtmax)
 real(8), intent(out) :: g3rho(lmmaxvr,nrmtmax)
 ! local variables
-integer is,nr,i
+integer is,nr,nri,i
 ! allocatable arrays
 real(8), allocatable :: grfmt(:,:,:),gvrho(:,:,:),rfmt(:,:)
 allocate(grfmt(lmmaxvr,nrmtmax,3),gvrho(lmmaxvr,nrmtmax,3))
 allocate(rfmt(lmmaxvr,nrmtmax))
 is=idxis(ias)
 nr=nrmt(is)
+nri=nrmtinr(is)
 ! |grad rho|
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rhomt(:,:,ias),grfmt)
+call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,gvrho(:,:,i),lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,gvrho(:,:,i))
 end do
 grho(:,1:nr)=sqrt(gvrho(:,1:nr,1)**2+gvrho(:,1:nr,2)**2+gvrho(:,1:nr,3)**2)
 ! grad^2 rho in spherical coordinates
-call grad2rfmt(lmaxvr,nr,spr(:,is),lmmaxvr,rhomt(:,:,ias),rfmt)
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt,lmmaxvr,0.d0, &
- g2rho,lmmaxvr)
+call grad2rfmt(nr,nri,spr(:,is),rhomt(:,:,ias),rfmt)
+call rbsht(nr,nri,1,rfmt,1,g2rho)
 ! (grad rho).(grad |grad rho|)
-call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,grho,lmmaxvr,0.d0, &
- rfmt,lmmaxvr)
-call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt,grfmt)
+call rfsht(nr,nri,1,grho,1,rfmt)
+call gradrfmt(nr,nri,spr(:,is),rfmt,nrmtmax,grfmt)
 g3rho(:,1:nr)=0.d0
 do i=1,3
-  call dgemm('N','N',lmmaxvr,nr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,grfmt(:,:,i), &
-   lmmaxvr,0.d0,rfmt,lmmaxvr)
+  call rbsht(nr,nri,1,grfmt(:,:,i),1,rfmt)
   g3rho(:,1:nr)=g3rho(:,1:nr)+gvrho(:,1:nr,i)*rfmt(:,1:nr)
 end do
 deallocate(grfmt,gvrho,rfmt)

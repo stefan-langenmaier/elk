@@ -8,8 +8,8 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer is,ia,nrc,m1,m2
-integer ik,ist,jst
+integer ik,ist,jst,is,ia
+integer nrc,nrci,m1,m2
 complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: wfcr1(:,:,:),wfcr2(:,:,:)
@@ -46,6 +46,7 @@ call mpi_allreduce(mpi_in_place,engyx,1,mpi_double_precision,mpi_sum, &
 ! begin loops over atoms and species
 do is=1,nspecies
   nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   do ia=1,natoms(is)
     do jst=1,spnst(is)
       if (spcore(jst,is)) then
@@ -57,13 +58,12 @@ do is=1,nspecies
 ! generate the core wavefunction
                 call wavefcr(.false.,lradstp,is,ia,ist,m1,nrcmtmax,wfcr1)
 ! calculate the complex overlap density
-                zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfcr2(:,1:nrc,1) &
-                 +conjg(wfcr1(:,1:nrc,2))*wfcr2(:,1:nrc,2)
-                call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
-                 zfmt,lmmaxvr,zzero,zrhomt,lmmaxvr)
+                call zfmtmul2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2),wfcr2(:,:,1), &
+                 wfcr2(:,:,2),zfmt)
+                call zfsht(nrc,nrci,zfmt,zrhomt)
 ! calculate the Coulomb potential
-                call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
-                z1=zfmtinp(.true.,lmmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
+                call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt,zvclmt)
+                z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt,zvclmt)
                 engyx=engyx-0.5d0*dble(z1)
               end do
 ! end loop over ist

@@ -27,17 +27,20 @@ integer itp,info
 integer ipiv(lmmaxvr)
 real(8) tp(2,lmmaxvr),rlm(lmmaxvr),work(lmmaxvr)
 complex(8) ylm(lmmaxvr),zwork(lmmaxvr)
-! allocate real SHT matrices for lmaxvr
+!---------------------------------!
+!     SHT matrices for lmaxvr     !
+!---------------------------------!
+! allocate real SHT matrices
 if (allocated(rbshtvr)) deallocate(rbshtvr)
 allocate(rbshtvr(lmmaxvr,lmmaxvr))
 if (allocated(rfshtvr)) deallocate(rfshtvr)
 allocate(rfshtvr(lmmaxvr,lmmaxvr))
-! allocate complex SHT matrices for lmaxvr
+! allocate complex SHT matrices
 if (allocated(zbshtvr)) deallocate(zbshtvr)
 allocate(zbshtvr(lmmaxvr,lmmaxvr))
 if (allocated(zfshtvr)) deallocate(zfshtvr)
 allocate(zfshtvr(lmmaxvr,lmmaxvr))
-! generate spherical covering set for lmaxvr
+! generate spherical covering set
 call sphcover(lmmaxvr,tp)
 ! generate real and complex spherical harmonics and set the backward SHT arrays
 do itp=1,lmmaxvr
@@ -58,6 +61,41 @@ zfshtvr(:,:)=zbshtvr(:,:)
 call zgetrf(lmmaxvr,lmmaxvr,zfshtvr,lmmaxvr,ipiv,info)
 if (info.ne.0) goto 10
 call zgetri(lmmaxvr,zfshtvr,lmmaxvr,ipiv,zwork,lmmaxvr,info)
+if (info.ne.0) goto 10
+!----------------------------------!
+!     SHT matrices for lmaxinr     !
+!----------------------------------!
+! allocate real SHT matrices
+if (allocated(rbshtinr)) deallocate(rbshtinr)
+allocate(rbshtinr(lmmaxinr,lmmaxinr))
+if (allocated(rfshtinr)) deallocate(rfshtinr)
+allocate(rfshtinr(lmmaxinr,lmmaxinr))
+! allocate complex SHT matrices
+if (allocated(zbshtinr)) deallocate(zbshtinr)
+allocate(zbshtinr(lmmaxinr,lmmaxinr))
+if (allocated(zfshtinr)) deallocate(zfshtinr)
+allocate(zfshtinr(lmmaxinr,lmmaxinr))
+! generate spherical covering set for lmaxinr
+call sphcover(lmmaxinr,tp)
+! generate real and complex spherical harmonics and set the backward SHT arrays
+do itp=1,lmmaxinr
+  call genrlm(lmaxinr,tp(:,itp),rlm)
+  rbshtinr(itp,1:lmmaxinr)=rlm(1:lmmaxinr)
+  call genylm(lmaxinr,tp(:,itp),ylm)
+  zbshtinr(itp,1:lmmaxinr)=ylm(1:lmmaxinr)
+end do
+! find the forward SHT arrays
+! real
+rfshtinr(:,:)=rbshtinr(:,:)
+call dgetrf(lmmaxinr,lmmaxinr,rfshtinr,lmmaxinr,ipiv,info)
+if (info.ne.0) goto 10
+call dgetri(lmmaxinr,rfshtinr,lmmaxinr,ipiv,work,lmmaxinr,info)
+if (info.ne.0) goto 10
+! complex
+zfshtinr(:,:)=zbshtinr(:,:)
+call zgetrf(lmmaxinr,lmmaxinr,zfshtinr,lmmaxinr,ipiv,info)
+if (info.ne.0) goto 10
+call zgetri(lmmaxinr,zfshtinr,lmmaxinr,ipiv,zwork,lmmaxinr,info)
 if (info.ne.0) goto 10
 return
 10 continue

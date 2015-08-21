@@ -22,12 +22,16 @@ implicit none
 ! arguments
 real(8), intent(inout) :: rfmt(lmmaxvr,nrmtmax,natmtot)
 ! local variables
-integer ld,is,ias,lm
+integer ld,is,ias,ir,lm
 ld=lmmaxvr*lradstp
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,lm)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(is,ir,lm)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
+  do ir=1,nrmtinr(is),lradstp
+    rfmt(lmmaxinr+1:lmmaxvr,ir,ias)=0.d0
+  end do
 ! interpolate with a clamped spline
   do lm=1,lmmaxvr
     call rfinterp(nrcmt(is),rcmt(:,is),ld,rfmt(lm,1,ias),nrmt(is),spr(:,is), &

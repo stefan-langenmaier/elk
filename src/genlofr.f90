@@ -61,8 +61,8 @@ do is=1,nspecies
       l=lorbl(ilo,is)
       do jo=1,lorbord(ilo,is)
 ! integrate the radial Schrodinger equation
-        call rschroddme(solsc,lorbdm(jo,ilo,is),l,0,lorbe(jo,ilo,ias),nprad, &
-         nr,spr(:,is),vr,nn,p0(:,jo),p1,q0(:,jo),q1(:,jo))
+        call rschroddme(solsc,lorbdm(jo,ilo,is),l,0,lorbe(jo,ilo,ias),nr, &
+         spr(:,is),vr,nn,p0(:,jo),p1,q0(:,jo),q1(:,jo))
 ! normalise radial functions
         fr(1:nr)=p0(1:nr,jo)**2
         call fderiv(-1,nr,spr(:,is),fr,gr)
