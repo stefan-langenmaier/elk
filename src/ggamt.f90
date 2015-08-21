@@ -57,22 +57,43 @@ real(8), intent(out) :: g3dnmt(lmmaxvr,nrmtmax)
 integer ias,nr,ir,i,itp
 ! allocatable arrays
 real(8), allocatable :: rfmt1(:,:)
+real(8), allocatable :: rfmt2(:,:)
 real(8), allocatable :: rftp1(:,:,:)
 real(8), allocatable :: rftp2(:,:,:)
 real(8), allocatable :: rftp3(:)
+real(8), allocatable :: rftp4(:,:)
 real(8), allocatable :: grfmt1(:,:,:)
 real(8), allocatable :: grfmt2(:,:,:)
 allocate(rfmt1(lmmaxvr,nrmtmax))
+if (ncmag) allocate(rfmt2(lmmaxvr,nrmtmax))
 allocate(rftp1(lmmaxvr,nrmtmax,3))
 allocate(rftp2(lmmaxvr,nrmtmax,3))
 allocate(rftp3(lmmaxvr))
+if (ncmag) allocate(rftp4(lmmaxvr,3))
 allocate(grfmt1(lmmaxvr,nrmtmax,3))
 allocate(grfmt2(lmmaxvr,nrmtmax,3))
 ias=idxas(ia,is)
 nr=nrmt(is)
 if (spinpol) then
 ! rhoup for spin-polarised case
-  rfmt1(:,1:nr)=0.5d0*(rhomt(:,1:nr,ias)+magmt(:,1:nr,ias,ndmag))
+  if (ncmag) then
+! non-collinear
+    do ir=1,nr
+      do i=1,3
+        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,magmt(:,ir,ias,i), &
+         1,0.d0,rftp4(:,i),1)
+      end do
+! compute |m| in spherical harmonics
+      rftp3(:)=sqrt(rftp4(:,1)**2+rftp4(:,2)**2+rftp4(:,3)**2)
+      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rftp3,1,0.d0, &
+       rfmt2(:,ir),1)
+! compute (rho+|m|)/2
+      rfmt1(:,ir)=0.5d0*(rhomt(:,ir,ias)+rfmt2(:,ir))
+    end do
+  else
+! collinear
+    rfmt1(:,1:nr)=0.5d0*(rhomt(:,1:nr,ias)+magmt(:,1:nr,ias,1))
+  end if
 else
 ! rho for spin-unpolarised case
   rfmt1(:,1:nr)=rhomt(:,1:nr,ias)
@@ -114,8 +135,15 @@ do i=1,3
   end do
 end do
 if (spinpol) then
-! rhodn
-  rfmt1(:,1:nr)=0.5d0*(rhomt(:,1:nr,ias)-magmt(:,1:nr,ias,ndmag))
+! rhodn for spin-polarised case
+  if (ncmag) then
+! non-collinear
+! compute (rho-|m|)/2
+    rfmt1(:,1:nr)=0.5d0*(rhomt(:,1:nr,ias)-rfmt2(:,1:nr))
+  else
+! collinear
+    rfmt1(:,1:nr)=0.5d0*(rhomt(:,1:nr,ias)-magmt(:,1:nr,ias,1))
+  end if
 ! |grad rhodn|
   call gradrfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,rfmt1,grfmt1)
   do ir=1,nr
@@ -180,6 +208,7 @@ if (spinpol) then
   end do
 end if
 deallocate(rfmt1,rftp1,rftp2,rftp3,grfmt1,grfmt2)
+if (ncmag) deallocate(rfmt2,rftp4)
 return
 end subroutine
 !EOC

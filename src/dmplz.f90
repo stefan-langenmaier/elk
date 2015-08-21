@@ -23,34 +23,32 @@ use modmain
 !BOC
 implicit none
 ! input variables
-integer, intent(in) :: l
+integer,intent(in) :: l
 integer, intent(in) :: k1
-integer, intent(in) :: p
-integer, intent(in) :: r
-real(8), intent(in) :: w2
-real(8), intent(out) :: dmpol
+integer,intent(in) :: p
+integer,intent(in) :: r
+real(8),intent(in) :: w2
+real(8),intent(out) :: dmpol
 ! local variables
 integer g
-real(8) nk1l,t1
-complex(8) fact
+real(8) nk1l,fact
 ! external functions
 real(8) wigner3j,factr,factnm
 external wigner3j,factr,factnm
 g=k1+p+r
 if (g.eq.0) then
   fact=sqrt(w2)
-  dmpol=dble(fact*(2*(2*l+1)-fact))
+  dmpol=fact*(2*(2*l+1)-fact)
 else
   if (mod(g,2).eq.0) then
-    fact=cmplx(wigner3j(k1,p,r,0,0,0),0.d0,8)
+    fact=wigner3j(k1,p,r,0,0,0)
   else
-    fact=zi**(g)*cmplx(sqrt(factr(g-2*p,1)*factr(g-2*r,1)/ &
-     factnm(g+1,g-2*k1)),0.d0,8)*factnm(g,2)/(factnm(g-2*k1,2)* &
-     factnm(g-2*p,2)*factnm(g-2*r,2))
+    fact=sqrt(factnm(g-2*p,1)*factnm(g-2*r,1)/ &
+     factnm(g+1,g-2*k1))*factnm(g,2)/(factnm(g-2*k1,2)* &
+     factnm(g-2*p,2)*factnm(g-2*r,2)) 
   end if
-  nk1l=factr(2*l,1)/sqrt(factr(2*l-k1,1)*factr(2*l+k1+1,1))
-  t1=dble(((-1)**(g))*(2*k1+1)*(2*r+1)*(2*l+1))
-  dmpol=(fact**2)*t1*(nk1l**2)*w2
+  nk1l=factnm(2*l,1)/sqrt(factnm(2*l-k1,1)*factnm(2*l+k1+1,1))
+  dmpol=fact**2*(2*k1+1)*(2*r+1)*(2*l+1)*nk1l**2*w2
 end if
 return
 end subroutine

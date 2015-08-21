@@ -799,6 +799,10 @@ real(8), allocatable :: vqlwrt(:,:)
 ! Coulomb pseudopotential
 real(8) mustar
 
+!-----------------------------------!
+!     pseudopotential variables     !
+!-----------------------------------!
+
 !-------------------------------------------------------------!
 !     reduced density matrix functional (RDMFT) variables     !
 !-------------------------------------------------------------!
@@ -883,7 +887,7 @@ real(8), parameter :: gfacte=2.0023193043622d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 0,9,278 /
+data version / 0,9,279 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

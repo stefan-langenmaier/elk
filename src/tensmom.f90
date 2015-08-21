@@ -33,8 +33,8 @@ real(8) dmpoltot,dmpol,dmpol0
 ! automatic arrays
 complex(8) tmom(-ldim:ldim)
 ! allocatable arrays
-real(8),allocatable :: hfexch(:,:,:,:,:)
-real(8),allocatable :: tmom2(:,:,:,:,:)
+real(8),allocatable :: hfexch(:,:,:,:)
+real(8),allocatable :: tmom2(:,:,:,:)
 complex(8),allocatable :: dmcomb(:,:)
 if (.not.spinpol) then
   write(*,*)
@@ -61,10 +61,10 @@ if (iscl.ge.1) then
 end if
 ! allocate arrays
 allocate(dmcomb(ldim*nspinor,ldim*nspinor))
-allocate(tmom2(0:2*lmaxlu,0:1,0:(2*lmaxlu+1),natmtot,nspecies))
-allocate(hfexch(0:2*lmaxlu,0:1,0:(2*lmaxlu+1),natmtot,nspecies))
-tmom2(:,:,:,:,:)=0.d0
-hfexch(:,:,:,:,:)=0.d0
+allocate(tmom2(0:2*lmaxlu,0:1,0:(2*lmaxlu+1),natmtot))
+allocate(hfexch(0:2*lmaxlu,0:1,0:(2*lmaxlu+1),natmtot))
+tmom2(:,:,:,:)=0.d0
+hfexch(:,:,:,:)=0.d0
 dmpol0=0.d0
 ! begin loop over atoms and species
 do is=1,nspecies
@@ -114,8 +114,8 @@ do is=1,nspecies
 ! energy components
           call tensmomengy(is,l,k,p,r,edir,exch)
 ! save square of tensmom modulus and exch energy to be written in test file
-          tmom2(k,p,r,is,ias)=t1
-          hfexch(k,p,r,is,ias)=exch*t1
+          tmom2(k,p,r,ias)=t1
+          hfexch(k,p,r,ias)=exch*t1
 ! polarization terms
           call dmplz(l,k,p,r,t1,dmpol)
 ! write to file square of tensmom modulus, direct and exch energy, polarizations
@@ -154,9 +154,9 @@ do is=1,nspecies
 end do
 ! write test files if required
 if (test) then
-  t1=sqrt(sum(tmom2(:,:,:,:,:)**2))
+  t1=sqrt(sum(tmom2(:,:,:,:)**2))
   call writetest(820,'RMS of tensor moments',tol=1.d-4,rv=t1)
-  t1=sqrt(sum(hfexch(:,:,:,:,:)**2))
+  t1=sqrt(sum(hfexch(:,:,:,:)**2))
   call writetest(830,'RMS of LDA+U Hartree-Fock exchange energies',tol=1.d-4, &
    rv=t1)
 end if

@@ -35,8 +35,7 @@ real(8), intent(out) :: edir
 real(8), intent(out) :: exch
 ! local variables
 integer k,g
-real(8) nk1l
-complex(8) zt1
+real(8) nk1l,fact
 ! automatic arrays
 real(8) ie(0:2*lmaxlu),be(0:2*lmaxlu)
 ! external functions
@@ -46,24 +45,25 @@ external factr,factnm,wigner3j,wigner6j
 ! see Eq. 23 and 29 Paper and Eq.3-4 PRB 78, 100404 (2008)
 g=k1+p+r
 if (mod(g,2).eq.0) then
-  zt1=wigner3j(k1,p,r,0,0,0)
+   fact=wigner3j(k1,p,r,0,0,0)
 else
-  zt1=zi**(g)*sqrt(factr(g-2*p,1)*factr(g-2*r,1)/factnm(g+1,g-2*k1)) &
-   *factnm(g,2)/(factnm(g-2*k1,2)*factnm(g-2*p,2)*factnm(g-2*r,2))
+   fact=sqrt(factnm(g-2*p,1)*factnm(g-2*r,1)/ &
+        factnm(g+1,g-2*k1))*factnm(g,2)/(factnm(g-2*k1,2)* &
+        factnm(g-2*p,2)*factnm(g-2*r,2))
 end if
-zt1=zt1**2*(-1)**(g)*(2*r+1)
+nk1l=factnm(2*l,1)/sqrt(factnm(2*l-k1,1)*factnm(2*l+k1+1,1))
+fact=fact**2*(2*r+1)
 do k=0,2*l,2
-  nk1l=factr(2*l,1)/sqrt(factr(2*l-k1,1)*factr(2*l+k1+1,1))
-  ie(k)=0.5d0*((2*l+1)*nk1l*wigner3j(l,k,l,0,0,0))**2
-  be(k)=0.5d0*((2*k1+1)*(-1)**k1*wigner6j(l,l,k1,l,l,k)*dble(zt1))
+   ie(k)=0.5d0*((2*l+1)*nk1l*wigner3j(l,k,l,0,0,0))**2
+   be(k)=0.5d0*((2*k1+1)*(-1)**k1*wigner6j(l,l,k1,l,l,k)*fact)
 end do
 edir=0.d0
 exch=0.d0
 do k=0,2*l,2
-  exch=exch-ie(k)*be(k)*flu(k,is)
+   exch=exch-ie(k)*be(k)*flu(k,is)
 end do
 if (p.eq.0 .and. mod(k1,2).eq.0) then
-  edir=ie(k1)*flu(k1,is)
+   edir=ie(k1)*flu(k1,is)
 end if
 return
 end subroutine

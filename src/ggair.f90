@@ -50,15 +50,26 @@ integer i,ig,ifg,ir
 ! allocatable arrays
 real(8), allocatable :: rfir1(:,:)
 real(8), allocatable :: rfir2(:,:)
+real(8), allocatable :: rfir3(:)
 complex(8), allocatable :: zfft1(:)
 complex(8), allocatable :: zfft2(:)
 allocate(rfir1(ngrtot,3))
 allocate(rfir2(ngrtot,3))
+if (ncmag) allocate(rfir3(ngrtot))
 allocate(zfft1(ngrtot))
 allocate(zfft2(ngrtot))
 if (spinpol) then
 ! rhoup for spin-polarised case
-  zfft1(:)=0.5d0*(rhoir(:)+magir(:,ndmag))
+  if (ncmag) then
+! non-collinear
+    do ir=1,ngrtot
+      rfir3(ir)=sqrt(magir(ir,1)**2+magir(ir,2)**2+magir(ir,3)**2)
+      zfft1(ir)=0.5d0*(rhoir(ir)+rfir3(ir))
+    end do
+  else
+! collinear
+    zfft1(:)=0.5d0*(rhoir(:)+magir(:,1))
+  end if
 else
 ! rho for spin-unpolarised case
   zfft1(:)=rhoir(:)
@@ -101,8 +112,15 @@ do i=1,3
   end do
 end do
 if (spinpol) then
-! rhodn
-  zfft1(:)=0.5d0*(rhoir(:)-magir(:,ndmag))
+! rhodn for spin-polarised case
+  if (ncmag) then
+! non-collinear
+! compute (rho-|m|)/2
+    zfft1(:)=0.5d0*(rhoir(:)-rfir3(:))
+  else
+! collinear
+    zfft1(:)=0.5d0*(rhoir(:)-magir(:,1))
+  end if
   call zfftifc(3,ngrid,-1,zfft1)
 ! |grad rhodn|
   do i=1,3
@@ -163,6 +181,7 @@ if (spinpol) then
   end do
 end if
 deallocate(rfir1,rfir2,zfft1,zfft2)
+if (ncmag) deallocate(rfir3)
 return
 end subroutine
 !EOC

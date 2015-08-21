@@ -187,6 +187,7 @@ if ((isgkmax.ge.1).and.(isgkmax.le.nspecies)) then
    &I4," (",A,")")') isgkmax,trim(spsymb(isgkmax))
 end if
 write(fnum,'("Maximum |G+k| for APW functions       : ",G18.10)') gkmax
+write(fnum,'("Maximum (1/2)|G+k|^2                  : ",G18.10)') 0.5d0*gkmax**2
 write(fnum,'("Maximum |G| for potential and density : ",G18.10)') gmaxvr
 write(fnum,'("Polynomial order for pseudocharge density : ",I4)') npsden
 write(fnum,'("Radial integration step length : ",I4)') lradstp

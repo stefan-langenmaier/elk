@@ -170,10 +170,6 @@ if (ndmag.eq.3) then
 else
   ncmag=.false.
 end if
-if ((ncmag).and.(xcgrad.gt.0)) then
-  write(*,*)
-  write(*,'("Warning(init0): GGA inconsistent with non-collinear magnetism")')
-end if
 ! set fixed spin moment effective field to zero
 bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero

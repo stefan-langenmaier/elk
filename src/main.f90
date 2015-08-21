@@ -97,7 +97,7 @@ stop
 end program
 
 !BOI
-! !TITLE: The Elk Code Manual\\ Version 0.9.278\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: The Elk Code Manual\\ Version 0.9.279\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: J. K. Dewhurst, S. Sharma, L. Nordstr\"{o}m, F. Cricchio, F. Bultmark
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction

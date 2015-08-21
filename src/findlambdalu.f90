@@ -121,8 +121,7 @@ else
 ! update initial value for lambda for the next iteration in the SC loop
 ! 0.5*dl0 is enough
   lambda0=lambda-0.5d0*dl0
-  write(*,'("Info(findlambdalu): number of iterations to obtain lambdalu : ", &
-   &I6)') it
+  write(*,'("Info(findlambdalu): lambdalu obtained in ",I4," iterations")') nit
 end if
 return
 end subroutine 

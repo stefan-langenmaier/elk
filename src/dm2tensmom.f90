@@ -55,14 +55,14 @@ w3js(1,0,2,2)= 1.d0/sqrt(6.d0)
 w3js(1,-1,2,1)=-1.d0/sqrt(3.d0)
 w3js(1,1,1,2)=-1.d0/sqrt(3.d0)
 ! calculate 3-indices tensor moment, see Eq. 23, 26, 27 in PRB 80, 035121 (2009)
-nk1l=factr(2*l,1)/sqrt(factr(2*l-k1,1)*factr(2*l+k1+1,1))
-nps=1.d0/sqrt(factr(2+p,1))
+nk1l=factnm(2*l,1)/sqrt(factnm(2*l-k1,1)*factnm(2*l+k1+1,1))
+nps=1.d0/sqrt(factnm(2+p,1))
 g=k1+p+r
 if (mod(g,2).eq.0) then
   zt1=cmplx(1.d0/wigner3j(k1,p,r,0,0,0),0.d0,8)
 else
-  zt1=zi**(-g)*cmplx(sqrt(factr(g+1,g-2*k1)/factr(g-2*p,1)/ &
-   factr(g-2*r,1)),0.d0,8)*cmplx(factnm(g-2*k1,2)* &
+  zt1=zi**(-g)*cmplx(sqrt(factr(g+1,g-2*k1)/factnm(g-2*p,1)/ &
+   factnm(g-2*r,1)),0.d0,8)*cmplx(factnm(g-2*k1,2)* &
    factnm(g-2*p,2)*factnm(g-2*r,2)/factnm(g,2),0.d0,8)
 end if
 zt1=zt1*cmplx((-1)**(k1+p+l),0.d0,8)/cmplx(nk1l*nps,0.d0,8)
