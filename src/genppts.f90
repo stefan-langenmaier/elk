@@ -6,8 +6,8 @@
 !BOP
 ! !ROUTINE: genppts
 ! !INTERFACE:
-subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipmap, &
- ipmapnr,ivp,vpl,vpc,wppt,wpptnr)
+subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipvip, &
+ ipvipnr,ivp,vpl,vpc,wppt,wpptnr)
 ! !INPUT/OUTPUT PARAMETERS:
 !   tfbz    : .true. if vpl and vpc should be mapped to the first Brillouin zone
 !             (in,logical)
@@ -22,9 +22,9 @@ subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipmap, &
 !   boxl    : corners of box containing p-points in lattice coordinates, the
 !             first vector is the origin (in,real(3,4))
 !   nppt    : total number of p-points (out,integer)
-!   ipmap   : map from integer grid to reduced p-point index
+!   ipvip   : map from (i1,i2,i3) to reduced p-point index
 !             (out,integer(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1))
-!   ipmapnr : map from integer grid to non-reduced p-point index
+!   ipvipnr : map from (i1,i2,i3) to non-reduced p-point index
 !             (out,integer(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1))
 !   ivp     : integer coordinates of the p-points
 !             (out,integer(3,ngridp(1)*ngridp(2)*ngridp(3)))
@@ -50,7 +50,7 @@ subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipmap, &
 !   {\tt .true.} then each {\tt vpl} vector is mapped to the first Brillouin
 !   zone. If {\tt tfbz} is {\tt .false.} and {\tt nsym} $>0$, then the
 !   coordinates of each {\tt vpl} are mapped to the $[0,1)$ interval. The
-!   $p$-point weights are stored in {\tt wppt} and the array {\tt ipmap}
+!   $p$-point weights are stored in {\tt wppt} and the array {\tt ipvip}
 !   contains the map from the integer coordinates to the reduced index.
 !
 ! !REVISION HISTORY:
@@ -63,21 +63,16 @@ subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipmap, &
 implicit none
 ! arguments
 logical, intent(in) :: tfbz
-integer, intent(in) :: nsym
-integer, intent(in) :: sym(3,3,*)
-integer, intent(in) :: ngridp(3)
-integer, intent(in) :: npptnr
+integer, intent(in) :: nsym,sym(3,3,*)
+integer, intent(in) :: ngridp(3),npptnr
 real(8), intent(in) :: epslat
-real(8), intent(in) :: bvec(3,3)
-real(8), intent(in) :: boxl(3,4)
+real(8), intent(in) :: bvec(3,3),boxl(3,4)
 integer, intent(out) :: nppt
-integer, intent(out) :: ipmap(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1)
-integer, intent(out) :: ipmapnr(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1)
+integer, intent(out) :: ipvip(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1)
+integer, intent(out) :: ipvipnr(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1)
 integer, intent(out) :: ivp(3,npptnr)
-real(8), intent(out) :: vpl(3,npptnr)
-real(8), intent(out) :: vpc(3,npptnr)
-real(8), intent(out) :: wppt(npptnr)
-real(8), intent(out) :: wpptnr
+real(8), intent(out) :: vpl(3,npptnr),vpc(3,npptnr)
+real(8), intent(out) :: wppt(npptnr),wpptnr
 ! local variables
 integer i1,i2,i3,i
 integer isym,ip,jp
@@ -123,11 +118,11 @@ do i3=0,ngridp(3)-1
             t1=abs(v4(1)-v3(1))+abs(v4(2)-v3(2))+abs(v4(3)-v3(3))
             if (t1.lt.epslat) then
 ! equivalent p-point found so add to existing weight
-              ipmap(i1,i2,i3)=i
+              ipvip(i1,i2,i3)=i
               wppt(i)=wppt(i)+wpptnr
 ! add new point to back of set
               jp=jp-1
-              ipmapnr(i1,i2,i3)=jp
+              ipvipnr(i1,i2,i3)=jp
               ivp(1,jp)=i1; ivp(2,jp)=i2; ivp(3,jp)=i3
               vpl(:,jp)=v2(:)
               wppt(jp)=0.d0
@@ -138,8 +133,8 @@ do i3=0,ngridp(3)-1
       end if
 ! add new point to set
       ip=ip+1
-      ipmap(i1,i2,i3)=ip
-      ipmapnr(i1,i2,i3)=ip
+      ipvip(i1,i2,i3)=ip
+      ipvipnr(i1,i2,i3)=ip
       ivp(1,ip)=i1; ivp(2,ip)=i2; ivp(3,ip)=i3
       vpl(:,ip)=v2(:)
       wppt(ip)=wpptnr

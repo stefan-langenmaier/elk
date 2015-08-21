@@ -26,7 +26,7 @@ complex(8), intent(out) :: wfpw(nhkmax,nspinor,nstsv)
 ! local variables
 integer ispn0,ispn1,ispn,jspn
 integer ist,is,ia,ias,i
-integer nrc,nrci,irc0,irc
+integer nrc,nrci,iro,irc
 integer lmax,l,m,lm,igp,ihp
 real(8) t0,t1,t2
 complex(8) zsum1,zsum2
@@ -45,8 +45,8 @@ allocate(evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv))
 allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir(ngkmax,nspinor,nstsv))
 ! get the eigenvectors from file
-call getevecfv(vpl,vgpl,evecfv)
-call getevecsv(vpl,evecsv)
+call getevecfv(filext,vpl,vgpl,evecfv)
+call getevecsv(filext,vpl,evecsv)
 ! find the matching coefficients
 do ispn=1,nspnfv
   call match(ngp(ispn),gpc(:,ispn),tpgpc(:,:,ispn),sfacgp(:,:,ispn), &
@@ -125,16 +125,16 @@ do jspn=1,nspnfv
             lm=0
             do l=0,lmaxvr
               if (l.le.lmaxinr) then
-                irc0=1
+                iro=1
               else
-                irc0=nrci+1
+                iro=nrci+1
               end if
               z3=z2*zil(l)
               do m=-l,l
                 lm=lm+1
                 z4=z3*ylm(lm)
-                wfmt(lm,irc0:nrc,ias,ispn,ist)=wfmt(lm,irc0:nrc,ias,ispn,ist) &
-                 -z4*jl(l,irc0:nrc)
+                wfmt(lm,iro:nrc,ias,ispn,ist)=wfmt(lm,iro:nrc,ias,ispn,ist) &
+                 -z4*jl(l,iro:nrc)
               end do
             end do
           end do

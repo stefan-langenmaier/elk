@@ -1,3 +1,62 @@
+elk-3.0.18
+-fixed electron-phonon coupling again; thanks to Karel Carva and Elie Moujaes
+ for the careful testing and discussion
+-DFPT phonons now work with MPI
+-SS added the 'single-iteration bootstrap kernel' for linear optics
+ calculations; this is selected with fxctype=211; see the example
+ 'Ar-bootstrap-single'
+-SS fixed a problem with RDMFT which had appeared in recent versions
+-SS made minor changes to the non-linear optics code
+-Important: fixed problem with the option 'cmagz' for forcing spin-orbit
+ calculations to be collinear; this may affect MAE calculations; thanks to
+ Martin Gmitra for finding this and the careful testing
+-Important: fixed a problem with the magnetisation directions selected for MAE
+ calculations
+-reworked the 'ncgga' option for non-collinear GGA calculations; should be much
+ more reliable now
+-several important optimisations; the Hamiltonian matrix setup and density
+ symmetrisation are now faster
+-magnetic anisotropy energy (MAE) calculation now outputs the direction vectors;
+ thanks to Galya Madzharova and Yu-ichiro Matsushita for the suggestion
+-added option 'vhighq' for very high quality calculations;see example 'Os-Delta'
+-'highq' and 'vhighq' options now write out the parameters which are changed
+-increased default 'lmaxmat' from 6 to 7
+-added new option 'nxlo'; this adds extra local-orbitals to the species in order
+ to make the APW functions smoother; this can make calculations, particularly of
+ excited state properties, more accurate
+-syntax highlighting now available for the vim editor; just run 'make vim' and
+ highlighting will be enabled
+
+
+elk-3.0.4
+-real-time propagation for solids now available thanks to the considerable
+ efforts of Kevin Krieger over the past three years; see the example
+ 'Ni-laser-pulse'; this feature is highly experimental
+-1D, 2D and 3D integrated electron momentum density (EMD) plots now available
+ thanks to David Ernsting and Stephen Dugdale; these plots can be compared
+ directly to Compton scattering profiles; see the examples 'Li-Compton' and
+ 'Ni-Compton'; still experimental
+-electron-phonon coupling has now been fixed and is also available for
+ linear-response phonons
+-large number of optimizations made throughout code
+-code is more memory efficient in many areas
+-Arkardy Davydov found a bug in OpenMP nested parallelism for BSE which has now
+ been fixed
+-fixed bug in magnetic anisotropy energy (MAE) calculation found by
+ José A. Flores Livas
+-added option for automatically converting species from APW+l.o. to LAPW; see
+ option 'nxapwlo' in manual
+-greatly improved unit cell optimisation algorithm; now should be very stable;
+ see example 'Ge-lattice-opt'
+-Markus Meinert updated his 'blocks2columns.py' python code which should now
+ work correctly with EPSILON_xx.OUT files
+-modified the 'highq' defaults thanks to testest performed by Don Hamann
+ described here
+-full charge and spin response function can be written to file using task=331
+-supercell phonons calculation now work with MPI
+-removed use of OpenMP ATOMIC directive because of bug in ifort version 11
+
+
 elk-2.3.22
 -Lars Nordström, Francesco Cricchio and JKD added fixed tensor moment (FTM)
  calculations (experimental)

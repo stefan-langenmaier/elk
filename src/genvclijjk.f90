@@ -59,8 +59,8 @@ allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
 ! get the eigenvectors from file for non-reduced k-point ikp
-call getevecfv(vkl(:,ikp),vgkl(:,:,1,ikp),evecfv)
-call getevecsv(vkl(:,ikp),evecsv)
+call getevecfv(filext,vkl(:,ikp),vgkl(:,:,1,ikp),evecfv)
+call getevecsv(filext,vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! index to all states
@@ -73,8 +73,8 @@ call genwfsv(.false.,.false.,nstsv,idx,ngk(1,ikp),igkig(:,1,ikp),apwalm, &
 ! start loop over reduced k-point set
 do ik=1,nkpt
 ! get the eigenvectors from file
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! calculate the wavefunctions for all states of the reduced k-point
@@ -116,11 +116,11 @@ do ik=1,nkpt
        zvclmt)
       call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
        zrhoir(:,ist1),nrcmtmax,zvclmt,zvclir,zrho02)
-      z1=zfinp(.true.,zrhomt(:,:,:,ist1),zrhoir(:,ist1),zvclmt,zvclir)
+      z1=zfinp(zrhomt(:,:,:,ist1),zrhoir(:,ist1),zvclmt,zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho02)**2+aimag(zrho02)**2)
       vclijjk(ist1,ist1,ist2,ik)=wkptnr*dble(z1)+t1
       do ist3=ist1+1,nstsv
-        z1=zfinp(.true.,zrhomt(:,:,:,ist3),zrhoir(:,ist3),zvclmt,zvclir)
+        z1=zfinp(zrhomt(:,:,:,ist3),zrhoir(:,ist3),zvclmt,zvclir)
 ! compute the density coefficient of the smallest G+q-vector
         call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt(:,:,:,ist3), &
          zrhoir(:,ist3),zrho01)

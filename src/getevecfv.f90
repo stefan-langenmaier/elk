@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: getevecfv
 ! !INTERFACE:
-subroutine getevecfv(vpl,vgpl,evecfv)
+subroutine getevecfv(fext,vpl,vgpl,evecfv)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
@@ -26,6 +26,7 @@ use modmain
 !BOC
 implicit none
 ! arguments
+character(*), intent(in) :: fext
 real(8), intent(in) :: vpl(3),vgpl(3,ngkmax,nspnfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv,nspnfv)
 ! local variables
@@ -44,7 +45,7 @@ call findkpt(vpl,isym,ik)
 ! find the record length
 inquire(iolength=recl) vkl_,nmatmax_,nstfv_,nspnfv_,evecfv
 !$OMP CRITICAL
-open(70,file=trim(scrpath)//'EVECFV'//trim(filext),action='READ', &
+open(70,file=trim(scrpath)//'EVECFV'//trim(fext),action='READ', &
  form='UNFORMATTED',access='DIRECT',recl=recl)
 read(70,rec=ik) vkl_,nmatmax_,nstfv_,nspnfv_,evecfv
 close(70)
@@ -150,7 +151,7 @@ if (nlotot.gt.0) then
         z1=cmplx(cos(t1),sin(t1),8)
         t1=twopi*dot_product(v(:),atposl(:,ia,is))
         z1=z1*cmplx(cos(t1),sin(t1),8)
-! rotate local orbitals (active transformation)
+! rotate local-orbitals (active transformation)
         do ilo=1,nlorb(is)
           l=lorbl(ilo,is)
           lm=idxlm(l,-l)

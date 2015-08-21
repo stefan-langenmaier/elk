@@ -44,11 +44,9 @@ implicit none
 ! arguments
 logical, intent(in) :: tsh,tgp
 integer, intent(in) :: nst,idx(nst)
-integer, intent(in) :: ngp(nspnfv)
-integer, intent(in) :: igpig(ngkmax,nspnfv)
+integer, intent(in) :: ngp(nspnfv),igpig(ngkmax,nspnfv)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
-complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
-complex(8), intent(in) :: evecsv(nstsv,nstsv)
+complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv)
 complex(8), intent(out) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst)
 integer, intent(in) :: ld
 complex(8), intent(out) :: wfir(ld,nspinor,nst)
@@ -99,9 +97,8 @@ do is=1,nspecies
             if (spinsprl.and.ssdph) z1=z1*zq(ispn)
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
               if (.not.done(ist,jspn)) then
-                call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
-                 apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
-                 wfmt1(:,:,ist,jspn))
+                call wavefmt(lradstp,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
+                 evecfv(:,ist,jspn),wfmt1(:,:,ist,jspn))
                 done(ist,jspn)=.true.
               end if
 ! add to spinor wavefunction
@@ -121,11 +118,9 @@ do is=1,nspecies
       else
 ! spin-unpolarised wavefunction
         if (tsh) then
-          call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,k,1),lmmaxvr, &
-           wfmt(:,:,ias,1,j))
+          call wavefmt(lradstp,ias,ngp,apwalm,evecfv(:,k,1),wfmt(:,:,ias,1,j))
         else
-          call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,k,1),lmmaxvr, &
-           wfmt2)
+          call wavefmt(lradstp,ias,ngp,apwalm,evecfv(:,k,1),wfmt2)
 ! convert from to spherical coordinates
           call zbsht(nrc,nrci,wfmt2,wfmt(:,:,ias,1,j))
         end if

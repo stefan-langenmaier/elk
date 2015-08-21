@@ -21,6 +21,13 @@ tasks
 latvopt
   1
 
+mixtype
+  3
+
+! larger cut-off required for lattice optimisation
+rgkmax
+  8.0
+
 ! PBE exchange-correlation functional
 xctype
   20
@@ -45,3 +52,4 @@ atoms
 
 ngridk
   4  4  4
+

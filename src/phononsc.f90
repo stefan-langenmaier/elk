@@ -7,15 +7,16 @@ subroutine phononsc
 use modmain
 use modphonon
 use modstore
+use modmpi
 implicit none
 ! local variables
 integer is,ia,ja,ias,jas
 integer ip,nph,i,p
 real(8) a,b,t1
-real(8) ft1(3,maxatoms*maxspecies)
+real(8) ft0(3,maxatoms*maxspecies)
 complex(8) z1,z2
 ! allocatable arrays
-real(8), allocatable :: vsmt1(:,:,:),vsir1(:)
+real(8), allocatable :: vsmt0(:,:,:),vsir0(:)
 complex(8), allocatable :: dyn(:,:)
 ! store original parameters
 natoms0(:)=natoms(:)
@@ -42,16 +43,22 @@ call init0
 call init2
 ! store original parameters
 natmtot0=natmtot
+bvec0(:,:)=bvec(:,:)
 binv0(:,:)=binv(:,:)
 atposc0(:,:,:)=atposc(:,:,:)
 ngridg0(:)=ngridg(:)
 ngtot0=ngtot
+if (allocated(ivg0)) deallocate(ivg0)
+allocate(ivg0(3,ngtot0))
+ivg0(:,:)=ivg(:,:)
+if (allocated(igfft0)) deallocate(igfft0)
+allocate(igfft0(ngtot0))
+igfft0(:)=igfft(:)
 ! allocate the Kohn-Sham potential derivative arrays
 if (allocated(dvsmt)) deallocate(dvsmt)
-allocate(dvsmt(lmmaxvr,nrcmtmax,natmtot))
+allocate(dvsmt(lmmaxvr,nrmtmax,natmtot))
 if (allocated(dvsir)) deallocate(dvsir)
 allocate(dvsir(ngtot))
-!***** remove
 ! allocate supercell offset vector array
 if (allocated(vscph)) deallocate(vscph)
 allocate(vscph(3,nqptnr))
@@ -74,16 +81,17 @@ if (iqph.eq.0) then
   autokpt=autokpt0
   primcell=primcell0
   ngridk(:)=ngridk0(:)
+  deallocate(ivg0,igfft0)
   return
 end if
-write(*,'("Info(phononsc): working on ",A)') 'DYN'//trim(filext)
+if (mp_mpi) write(*,'("Info(phononsc): working on ",A)') 'DYN'//trim(filext)
 ! phonon dry run: just generate empty DYN files
 if (task.eq.202) goto 10
 ! zero the dynamical matrix row
 dyn(:,:)=0.d0
+! zero the Kohn-Sham potential derivative
 dvsmt(:,:,:)=0.d0
 dvsir(:)=0.d0
-!***** remove
 ! check to see if mass is considered infinite
 if (spmass(isph).le.0.d0) goto 20
 ! loop over phases: 0 = cos and 1 = sin displacements
@@ -108,19 +116,19 @@ do p=0,nph
   trdstate=.true.
 ! store the total force for the first displacement
   do ias=1,natmtot
-    ft1(:,ias)=forcetot(:,ias)
+    ft0(:,ias)=forcetot(:,ias)
   end do
 ! store the Kohn-Sham potential for the first displacement
-  allocate(vsmt1(lmmaxvr,nrmtmax,natmtot),vsir1(ngtot))
-  vsmt1(:,:,:)=vsmt(:,:,:)
-  vsir1(:)=vsir(:)
+  allocate(vsmt0(lmmaxvr,nrmtmax,natmtot),vsir0(ngtot))
+  vsmt0(:,:,:)=vsmt(:,:,:)
+  vsir0(:)=vsir(:)
 ! generate the supercell again with positive displacement
   call genscph(p,deltaph)
 ! run the ground-state calculation again
   call gndstate
 ! compute the complex Kohn-Sham potential derivative with implicit q-phase
-  call phdvs(p,vsmt1,vsir1)
-  deallocate(vsmt1,vsir1)
+  call phscdvs(p,vsmt0,vsir0)
+  deallocate(vsmt0,vsir0)
 ! Fourier transform the force differences to obtain the dynamical matrix
   z1=1.d0/(dble(nscph)*2.d0*deltaph)
 ! multiply by i for sin-like displacement
@@ -137,7 +145,7 @@ do p=0,nph
         t1=-dot_product(vqc(:,iqph),vscph(:,i))
         z2=z1*cmplx(cos(t1),sin(t1),8)
         do ip=1,3
-          t1=-(forcetot(ip,jas)-ft1(ip,jas))
+          t1=-(forcetot(ip,jas)-ft0(ip,jas))
           dyn(ip,ias)=dyn(ip,ias)+z2*t1
         end do
       end do
@@ -146,24 +154,31 @@ do p=0,nph
 end do
 20 continue
 ! write dynamical matrix row to file
-ias=0
-do is=1,nspecies
-  do ia=1,natoms0(is)
-    ias=ias+1
-    do ip=1,3
-      a=dble(dyn(ip,ias))
-      b=aimag(dyn(ip,ias))
-      if (abs(a).lt.1.d-12) a=0.d0
-      if (abs(b).lt.1.d-12) b=0.d0
-      write(80,'(2G18.10," : is = ",I4,", ia = ",I4,", ip = ",I4)') a,b,is,ia,ip
+if (mp_mpi) then
+  ias=0
+  do is=1,nspecies
+    do ia=1,natoms0(is)
+      ias=ias+1
+      do ip=1,3
+        a=dble(dyn(ip,ias))
+        b=aimag(dyn(ip,ias))
+        if (abs(a).lt.1.d-12) a=0.d0
+        if (abs(b).lt.1.d-12) b=0.d0
+        write(80,'(2G18.10," : is = ",I4,", ia = ",I4,", ip = ",I4)') a,b,is, &
+         ia,ip
+      end do
     end do
   end do
-end do
-close(80)
+  close(80)
 ! write the complex Kohn-Sham potential derivative to file
-call writedvs
+  natoms(:)=natoms0(:)
+  ngridg(:)=ngridg0(:)
+  call writedvs(filext)
 ! delete the non-essential files
-call phscdelete
+  call phscdelete
+end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_kpt,ierror)
 goto 10
 end subroutine
 

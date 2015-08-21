@@ -35,11 +35,9 @@ implicit none
 real(8), intent(in) :: sol
 integer, intent(in) :: n,l,k
 integer, intent(in) :: nr
-real(8), intent(in) :: r(nr)
-real(8), intent(in) :: vr(nr)
+real(8), intent(in) :: r(nr),vr(nr)
 real(8), intent(inout) :: eval
-real(8), intent(out) :: g0(nr)
-real(8), intent(out) :: f0(nr)
+real(8), intent(out) :: g0(nr),f0(nr)
 ! local variables
 integer, parameter :: maxit=2000
 integer kpa,it,nn,ir,irm,nnd,nndp

@@ -30,7 +30,7 @@ do ias=1,natmtot
   do ist=1,spnst(is)
     if (spcore(ist,is)) then
       do m=-spk(ist,is),spk(ist,is)-1
-! generate the core wavefunction in spherical harmonics
+! generate the core wavefunction in spherical harmonics (pass in m-1/2)
         call wavefcr(.true.,1,is,ia,ist,m,nrmtmax,wfcr)
         do ispn=1,2
           if (spinpol) then

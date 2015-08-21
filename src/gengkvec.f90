@@ -51,18 +51,13 @@ do ig=1,ngvec
   t1=v(1)**2+v(2)**2+v(3)**2
   if (t1.lt.t0) then
     ngk=ngk+1
-    if (ngk.gt.ngkmax) then
-      write(*,*)
-      write(*,'("Error(gengkvec): number of G+k-vectors exceeds ngkmax")')
-      write(*,*)
-      stop
-    end if
 ! index to G-vector
     igkig(ngk)=ig
 ! G+k-vector in lattice coordinates
     vgkl(:,ngk)=dble(ivg(:,ig))+vkl(:)
 ! G+k-vector in Cartesian coordinates
     vgkc(:,ngk)=v(:)
+    if (ngk.eq.ngkmax) exit
   end if
 end do
 return

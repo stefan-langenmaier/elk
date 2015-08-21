@@ -12,13 +12,13 @@ tasks
  125
 
 nempty
- 8
+ 15
 
 scissor
  0.031
 
 swidth
- 0.005
+ 0.008
 
 ! components of the optical tensor
 optcomp
@@ -29,7 +29,7 @@ wplot
  0.0 0.3   : wplot
 
 mixtype
- 2
+ 3
 
 avec
   5.3435 5.3435 0.0000

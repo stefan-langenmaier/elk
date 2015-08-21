@@ -8,7 +8,8 @@ use modmain
 implicit none
 ! local variables
 integer is,ist,iostat
-integer io,nlx,ilx,lx,ilo
+integer nlx,ilx,lx,ilo
+integer io,jo,ko,l,i,j
 e0min=0.d0
 do is=1,nspecies
   open(50,file=trim(sppath)//trim(spfname(is)),action='READ',status='OLD', &
@@ -55,9 +56,9 @@ do is=1,nspecies
     stop
   end if
 ! multiply nrmt by the scale factor
-  nrmt(is)=nrmt(is)*nrmtscf
+  nrmt(is)=nint(nrmt(is)*nrmtscf)
 ! reduce the minimum radial mesh point by the same factor
-  sprmin(is)=sprmin(is)/dble(nrmtscf)
+  sprmin(is)=sprmin(is)/nrmtscf
   read(50,*) spnst(is)
   if ((spnst(is).le.0).or.(spnst(is).gt.maxspst)) then
     write(*,*)
@@ -193,6 +194,22 @@ do is=1,nspecies
       e0min=min(e0min,apwe0(io,lx,is))
     end do
   end do
+! add excess order to APW functions if required
+  if (nxoapwlo.gt.0) then
+    do l=0,lmaxapw
+      jo=apword(l,is)
+      ko=jo+nxoapwlo
+      if (ko.gt.maxapword) ko=maxapword
+      i=0
+      do io=jo+1,ko
+        i=i+1
+        apwe0(io,l,is)=apwe0(jo,l,is)
+        apwdm(io,l,is)=apwdm(jo,l,is)+i
+        apwve(io,l,is)=apwve(jo,l,is)
+      end do
+      apword(l,is)=ko
+    end do
+  end if
   read(50,*) nlorb(is)
   if (nlorb(is).lt.0) then
     write(*,*)
@@ -259,6 +276,57 @@ do is=1,nspecies
       e0min=min(e0min,lorbe0(io,ilo,is))
     end do
   end do
+! add excess local-orbitals if required
+  if (nxlo.gt.0) then
+    lx=-1
+    do ilo=1,nlorb(is)
+      do io=1,lorbord(ilo,is)
+        if (lorbe0(io,ilo,is).lt.0.d0) goto 10
+      end do
+      if (lorbl(ilo,is).gt.lx) lx=lorbl(ilo,is)
+10 continue
+    end do
+    ilo=nlorb(is)
+    do i=1,nxlo
+      if (ilo.eq.maxlorb) exit
+      l=lx+i
+      if (l.gt.lmaxmat) exit
+      ilo=ilo+1
+      lorbl(ilo,is)=l
+      lorbord(ilo,is)=apword(l,is)+1
+      do io=1,lorbord(ilo,is)
+        lorbe0(io,ilo,is)=apwe0(1,l,is)
+        lorbdm(io,ilo,is)=io-1
+        lorbve(io,ilo,is)=apwve(1,l,is)
+      end do
+    end do
+    nlorb(is)=ilo
+  end if
+! add excess order to local-orbitals if required
+  if (nxoapwlo.gt.0) then
+    do ilo=1,nlorb(is)
+! find the maximum energy derivative
+      jo=1
+      j=lorbdm(jo,ilo,is)
+      do io=1,lorbord(ilo,is)
+        i=lorbdm(io,ilo,is)
+        if (i.gt.j) then
+          jo=io
+          j=i
+        end if
+      end do
+      ko=lorbord(ilo,is)+nxoapwlo
+      if (ko.gt.maxlorbord) ko=maxlorbord
+      i=0
+      do io=lorbord(ilo,is)+1,ko
+        i=i+1
+        lorbe0(io,ilo,is)=lorbe0(jo,ilo,is)
+        lorbdm(io,ilo,is)=lorbdm(jo,ilo,is)+i
+        lorbve(io,ilo,is)=lorbve(jo,ilo,is)
+      end do
+      lorbord(ilo,is)=ko
+    end do
+  end if
   close(50)
 end do
 ! add conduction state local-orbitals if required

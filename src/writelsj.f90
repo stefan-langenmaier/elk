@@ -36,9 +36,9 @@ if (task.eq.15) then
   dmat1(:,:,:,:,:)=0.d0
   do ik=1,nkpt
 ! get the eigenvectors and occupancies from file
-    call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-    call getevecsv(vkl(:,ik),evecsv)
-    call getoccsv(vkl(:,ik),occsv(:,ik))
+    call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+    call getevecsv(filext,vkl(:,ik),evecsv)
+    call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 ! find the matching coefficients
     do ispn=1,nspnfv
       call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -121,9 +121,9 @@ else
       stop
     end if
 ! get the eigenvectors and occupancies from file
-    call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-    call getevecsv(vkl(:,ik),evecsv)
-    call getoccsv(vkl(:,ik),occsv(:,ik))
+    call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+    call getevecsv(filext,vkl(:,ik),evecsv)
+    call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 ! find the matching coefficients
     do ispn=1,nspnfv
       call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &

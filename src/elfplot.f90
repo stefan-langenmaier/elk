@@ -74,9 +74,9 @@ gwf2mt(:,:,:)=0.d0
 gwf2ir(:)=0.d0
 do ik=1,nkpt
 ! get the eigenvectors and occupancies from file
-  call getoccsv(vkl(:,ik),occsv(:,ik))
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! add the valence wavefunction gradient squared
   call gradwf2(ik,evecfv,evecsv,gwf2mt,gwf2ir)
 end do

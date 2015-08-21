@@ -3,15 +3,15 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine drhomagk(ngp,ngpq,igpig,igpqig,occsvp,apwalm,apwalmq,dapwalm, &
- evecfv,devecfv,evecsv,devecsv)
+subroutine drhomagk(ngp,ngpq,igpig,igpqig,occsvp,doccsvp,apwalm,apwalmq, &
+ dapwalm,evecfv,devecfv,evecsv,devecsv)
 use modmain
 use modphonon
 implicit none
 ! arguments
 integer, intent(in) :: ngp(nspnfv),ngpq(nspnfv)
 integer, intent(in) :: igpig(ngkmax,nspnfv),igpqig(ngkmax,nspnfv)
-real(8), intent(in) :: occsvp(nstsv)
+real(8), intent(in) :: occsvp(nstsv),doccsvp(nstsv)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 complex(8), intent(in) :: apwalmq(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 complex(8), intent(in) :: dapwalm(ngkmax,apwordmax,lmmaxapw,nspnfv)
@@ -21,9 +21,8 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv),devecsv(nstsv,nstsv)
 ! local variables
 integer nst,ist,jst,is,ias
 integer nr,nrci,ir,irc
-integer lmmax,itp
-real(8) t0
-complex(8) z1,z2,z3,z4,z5,z6
+integer lmmax
+real(8) wo,dwo
 ! automatic arrays
 integer idx(nstsv)
 ! allocatable arrays
@@ -50,7 +49,8 @@ call gendwfsv(.false.,.false.,nst,idx,ngp,ngpq,igpqig,apwalmq,dapwalm,evecfv, &
 ! loop over occupied states
 do ist=1,nst
   jst=idx(ist)
-  t0=2.d0*wkptnr*occsvp(jst)
+  wo=2.d0*wkptnr*occsvp(jst)
+  dwo=wkptnr*doccsvp(jst)
 !----------------------------------------------!
 !     muffin-tin density and magnetisation     !
 !----------------------------------------------!
@@ -67,22 +67,14 @@ do ist=1,nst
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          do itp=1,lmmax
-            z1=conjg(wfmt(itp,irc,ias,1,jst))
-            z2=conjg(wfmt(itp,irc,ias,2,jst))
-            z3=dwfmt(itp,irc,ias,1,jst)
-            z4=dwfmt(itp,irc,ias,2,jst)
-            z5=z1*z3
-            z6=z2*z4
-            drhomt(itp,ir,ias)=drhomt(itp,ir,ias)+t0*(z5+z6)
-            dmagmt(itp,ir,ias,3)=dmagmt(itp,ir,ias,3)+t0*(z5-z6)
-            z5=z1*z4
-            z6=z2*z3
-            dmagmt(itp,ir,ias,1)=dmagmt(itp,ir,ias,1)+t0*(z5+z6)
-            z5=z5-z6
-            dmagmt(itp,ir,ias,2)=dmagmt(itp,ir,ias,2) &
-             +t0*cmplx(aimag(z5),-dble(z5),8)
-          end do
+          call drmk1(lmmax,wo,wfmt(:,irc,ias,1,jst),wfmt(:,irc,ias,2,jst), &
+           dwfmt(:,irc,ias,1,jst),dwfmt(:,irc,ias,2,jst),drhomt(:,ir,ias), &
+           dmagmt(:,ir,ias,1),dmagmt(:,ir,ias,2),dmagmt(:,ir,ias,3))
+          if (tphiq0) then
+            call drmk01(lmmax,dwo,wfmt(:,irc,ias,1,jst),wfmt(:,irc,ias,2,jst), &
+             drhomt(:,ir,ias),dmagmt(:,ir,ias,1),dmagmt(:,ir,ias,2), &
+             dmagmt(:,ir,ias,3))
+          end if
           if (irc.eq.nrci) lmmax=lmmaxvr
         end do
       else
@@ -91,12 +83,13 @@ do ist=1,nst
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          do itp=1,lmmax
-            z1=conjg(wfmt(itp,irc,ias,1,jst))*dwfmt(itp,irc,ias,1,jst)
-            z2=conjg(wfmt(itp,irc,ias,2,jst))*dwfmt(itp,irc,ias,2,jst)
-            drhomt(itp,ir,ias)=drhomt(itp,ir,ias)+t0*(z1+z2)
-            dmagmt(itp,ir,ias,1)=dmagmt(itp,ir,ias,1)+t0*(z1-z2)
-          end do
+          call drmk2(lmmax,wo,wfmt(:,irc,ias,1,jst),wfmt(:,irc,ias,2,jst), &
+           dwfmt(:,irc,ias,1,jst),dwfmt(:,irc,ias,2,jst),drhomt(:,ir,ias), &
+           dmagmt(:,ir,ias,1))
+          if (tphiq0) then
+            call drmk02(lmmax,dwo,wfmt(:,irc,ias,1,jst),wfmt(:,irc,ias,2,jst), &
+             drhomt(:,ir,ias),dmagmt(:,ir,ias,1))
+          end if
           if (irc.eq.nrci) lmmax=lmmaxvr
         end do
       end if
@@ -106,8 +99,11 @@ do ist=1,nst
       irc=0
       do ir=1,nr,lradstp
         irc=irc+1
-        drhomt(1:lmmax,ir,ias)=drhomt(1:lmmax,ir,ias) &
-         +t0*conjg(wfmt(1:lmmax,irc,ias,1,jst))*dwfmt(1:lmmax,irc,ias,1,jst)
+        call drmk3(lmmax,wo,wfmt(:,irc,ias,1,jst),dwfmt(:,irc,ias,1,jst), &
+         drhomt(:,ir,ias))
+        if (tphiq0) then
+          call drmk03(lmmax,dwo,wfmt(:,irc,ias,1,jst),drhomt(:,ir,ias))
+        end if
         if (irc.eq.nrci) lmmax=lmmaxvr
       end do
     end if
@@ -120,41 +116,151 @@ do ist=1,nst
   if (spinpol) then
 ! spin-polarised
     if (ncmag) then
-! non-collinear
-      do ir=1,ngtot
-        z1=conjg(wfir(ir,1,jst))
-        z2=conjg(wfir(ir,2,jst))
-        z3=dwfir(ir,1,jst)
-        z4=dwfir(ir,2,jst)
-        z5=z1*z3
-        z6=z2*z4
-        drhoir(ir)=drhoir(ir)+t0*(z5+z6)
-        dmagir(ir,3)=dmagir(ir,3)+t0*(z5-z6)
-        z5=z1*z4
-        z6=z2*z3
-        dmagir(ir,1)=dmagir(ir,1)+t0*(z5+z6)
-        z5=z5-z6
-        dmagir(ir,2)=dmagir(ir,2)+t0*cmplx(aimag(z5),-dble(z5),8)
-      end do
+      call drmk1(ngtot,wo,wfir(:,1,jst),wfir(:,2,jst),dwfir(:,1,jst), &
+       dwfir(:,2,jst),drhoir,dmagir(:,1),dmagir(:,2),dmagir(:,3))
+      if (tphiq0) then
+        call drmk01(ngtot,dwo,wfir(:,1,jst),wfir(:,2,jst),drhoir,dmagir(:,1), &
+         dmagir(:,2),dmagir(:,3))
+      end if
     else
 ! collinear
-      do ir=1,ngtot
-        z1=conjg(wfir(ir,1,jst))*dwfir(ir,1,jst)
-        z2=conjg(wfir(ir,2,jst))*dwfir(ir,2,jst)
-        drhoir(ir)=drhoir(ir)+t0*(z1+z2)
-        dmagir(ir,1)=dmagir(ir,1)+t0*(z1-z2)
-      end do
+      call drmk2(ngtot,wo,wfir(:,1,jst),wfir(:,2,jst),dwfir(:,1,jst), &
+       dwfir(:,2,jst),drhoir,dmagir)
+      if (tphiq0) then
+        call drmk02(ngtot,dwo,wfir(:,1,jst),wfir(:,2,jst),drhoir,dmagir)
+      end if
     end if
   else
 ! spin-unpolarised
-    do ir=1,ngtot
-      drhoir(ir)=drhoir(ir)+t0*conjg(wfir(ir,1,jst))*dwfir(ir,1,jst)
-    end do
+    call drmk3(ngtot,wo,wfir(:,1,jst),dwfir(:,1,jst),drhoir)
+    if (tphiq0) then
+      call drmk03(ngtot,dwo,wfir(:,1,jst),drhoir)
+    end if
   end if
 !$OMP END CRITICAL
 ! end loop over states
 end do
 deallocate(wfmt,wfir,dwfmt,dwfir)
 return
+
+contains
+
+subroutine drmk1(n,wo,wf1,wf2,dwf1,dwf2,drho,dmag1,dmag2,dmag3)
+implicit none
+! arguments
+integer, intent(in) :: n
+real(8), intent(in) :: wo
+complex(8), intent(in) :: wf1(n),wf2(n)
+complex(8), intent(in) :: dwf1(n),dwf2(n)
+complex(8), intent(inout) :: drho(n)
+complex(8), intent(inout) :: dmag1(n),dmag2(n),dmag3(n)
+! local variables
+integer i
+complex(8) z1,z2,z3,z4,z5,z6
+do i=1,n
+  z1=conjg(wf1(i))
+  z2=conjg(wf2(i))
+  z3=dwf1(i)
+  z4=dwf2(i)
+  z5=z1*z3
+  z6=z2*z4
+  drho(i)=drho(i)+wo*(z5+z6)
+  dmag3(i)=dmag3(i)+wo*(z5-z6)
+  z5=z1*z4
+  z6=z2*z3
+  dmag1(i)=dmag1(i)+wo*(z5+z6)
+  z5=z5-z6
+  dmag2(i)=dmag2(i)+wo*cmplx(aimag(z5),-dble(z5),8)
+end do
+return
+end subroutine
+
+subroutine drmk01(n,dwo,wf1,wf2,drho,dmag1,dmag2,dmag3)
+implicit none
+! arguments
+integer, intent(in) :: n
+real(8), intent(in) :: dwo
+complex(8), intent(in) :: wf1(n),wf2(n)
+complex(8), intent(inout) :: drho(n)
+complex(8), intent(inout) :: dmag1(n),dmag2(n),dmag3(n)
+! local variables
+integer i
+real(8) t1,t2
+complex(8) z1,z2
+do i=1,n
+  z1=wf1(i)
+  z2=wf2(i)
+  t1=dble(z1)**2+aimag(z1)**2
+  t2=dble(z2)**2+aimag(z2)**2
+  z1=conjg(z1)*z2
+  drho(i)=drho(i)+dwo*(t1+t2)
+  dmag1(i)=dmag1(i)+dwo*2.d0*dble(z1)
+  dmag2(i)=dmag2(i)+dwo*2.d0*aimag(z1)
+  dmag3(i)=dmag3(i)+dwo*(t1-t2)
+end do
+return
+end subroutine
+
+subroutine drmk2(n,wo,wf1,wf2,dwf1,dwf2,drho,dmag)
+implicit none
+! arguments
+integer, intent(in) :: n
+real(8), intent(in) :: wo
+complex(8), intent(in) :: wf1(n),wf2(n)
+complex(8), intent(in) :: dwf1(n),dwf2(n)
+complex(8), intent(inout) :: drho(n),dmag(n)
+! local variables
+integer i
+complex(8) z1,z2
+do i=1,n
+  z1=conjg(wf1(i))*dwf1(i)
+  z2=conjg(wf2(i))*dwf2(i)
+  drho(i)=drho(i)+wo*(z1+z2)
+  dmag(i)=dmag(i)+wo*(z1-z2)
+end do
+return
+end subroutine
+
+subroutine drmk02(n,dwo,wf1,wf2,drho,dmag)
+implicit none
+! arguments
+integer, intent(in) :: n
+real(8), intent(in) :: dwo
+complex(8), intent(in) :: wf1(n),wf2(n)
+complex(8), intent(inout) :: drho(n),dmag(n)
+! local variables
+integer i
+real(8) t1,t2
+do i=1,n
+  t1=dble(wf1(i))**2+aimag(wf1(i))**2
+  t2=dble(wf2(i))**2+aimag(wf2(i))**2
+  drho(i)=drho(i)+dwo*(t1+t2)
+  dmag(i)=dmag(i)+dwo*(t1-t2)
+end do
+return
+end subroutine
+
+subroutine drmk3(n,wo,wf,dwf,drho)
+implicit none
+! arguments
+integer, intent(in) :: n
+real(8), intent(in) :: wo
+complex(8), intent(in) :: wf(n),dwf(n)
+complex(8), intent(inout) :: drho(n)
+drho(:)=drho(:)+wo*conjg(wf(:))*dwf(:)
+return
+end subroutine
+
+subroutine drmk03(n,dwo,wf,drho)
+implicit none
+! arguments
+integer, intent(in) :: n
+real(8), intent(in) :: dwo
+complex(8), intent(in) :: wf(n)
+complex(8), intent(inout) :: drho(n)
+drho(:)=drho(:)+dwo*(dble(wf(:))**2+aimag(wf(:))**2)
+return
+end subroutine
+
 end subroutine
 

@@ -41,8 +41,8 @@ call init1
 call readfermi
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! generate energy grid (starting from zero)
 allocate(w(nwplot))
@@ -69,12 +69,14 @@ do l=1,noptcomp
 !$OMP PRIVATE(pii,dji,vji,vik,vkj,ztm)
 !$OMP DO
   do ik=1,nkptnr
-    allocate(pmat(3,nstsv,nstsv))
+    allocate(pmat(nstsv,nstsv,3))
+!$OMP CRITICAL
     write(*,'("Info(nonlinopt): ",I6," of ",I6," k-points")') ik,nkptnr
+!$OMP END CRITICAL
 ! equivalent reduced k-point
-    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+    jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! read momentum matrix elements from file
-    call getpmat(vkl(:,ik),pmat)
+    call getpmat(.false.,vkl(:,ik),pmat)
 ! scissor correct the matrix elements
     do ist=1,nstsv
       if (evalsv(ist,jk).lt.efermi) then
@@ -82,7 +84,7 @@ do l=1,noptcomp
           if (evalsv(jst,jk).gt.efermi) then
             eji=evalsv(jst,jk)-evalsv(ist,jk)
             t1=(eji+scissor)/eji
-            pmat(:,ist,jst)=t1*pmat(:,ist,jst)
+            pmat(ist,jst,:)=t1*pmat(ist,jst,:)
           end if
         end do
       end if
@@ -91,13 +93,13 @@ do l=1,noptcomp
 ! loop over valence states
     do ist=1,nstsv
       if (evalsv(ist,jk).lt.efermi) then
-        pii(:)=pmat(:,ist,ist)
+        pii(:)=pmat(ist,ist,:)
 ! loop over conduction states
         do jst=1,nstsv
           if (evalsv(jst,jk).gt.efermi) then
             eji=evalsv(jst,jk)-evalsv(ist,jk)+scissor
-            vji(:)=pmat(:,jst,ist)
-            dji(:)=pmat(:,jst,jst)-pii(:)
+            vji(:)=pmat(jst,ist,:)
+            dji(:)=pmat(jst,jst,:)-pii(:)
 ! loop over intermediate states
             do kst=1,nstsv
               if ((kst.ne.ist).and.(kst.ne.jst)) then
@@ -108,15 +110,14 @@ do l=1,noptcomp
                 else
                   ekj=ekj-scissor
                 end if
-! rotate the matrix elements from the reduced to non-reduced k-point
-                vkj(:)=pmat(:,kst,jst)
-                vik(:)=pmat(:,ist,kst)
+                vkj(:)=pmat(kst,jst,:)
+                vik(:)=pmat(ist,kst,:)
 ! interband terms
                 t1=-eji*eki*(-ekj)*(eki+ekj)
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(1,1)=z1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
                  +conjg(vik(b))*conjg(vkj(c)))*t1
@@ -124,14 +125,14 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(1,2)=0.5d0*z1*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b))*t1
                 t1=eji*(-eki)*ekj*(ekj-eji)
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(1,3)=0.5d0*z1*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a))*t1
 ! intraband terms
@@ -139,15 +140,15 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(2,1)=0.5d0*z1*(eki*vik(b)*(vkj(c)*vji(a)+vji(c)*vkj(a)) &
                  +ekj*vkj(c)*(vji(a)*vik(b)+vik(a)*vji(b)))*t1
-                t1=(eki*(-ekj)*eji**3)/(ekj+eki)
+                t1=((-eji)*eki*(-ekj)*eji**2)/(-ekj-eki)
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
                 ztm(2,3)=z1*conjg(vji(a))*(conjg(vkj(b))*conjg(vik(c)) &
                  +conjg(vik(b))*conjg(vkj(c)))*t1
@@ -156,16 +157,10 @@ do l=1,noptcomp
                 if (abs(t1).gt.etol) then
                   t1=1.d0/t1
                 else
-                  t1=t1/etol**2
+                  t1=0.d0
                 end if
-                ztm(3,1)=-0.5d0*z1*eki*vkj(a)*(vji(b)*vik(c)+vik(b)*vji(c))*t1
-                t1=ekj*(-eki)*eji**3
-                if (abs(t1).gt.etol) then
-                  t1=1.d0/t1
-                else
-                  t1=t1/etol**2
-                end if
-                ztm(3,2)=0.5d0*z1*ekj*vik(a)*(vkj(b)*vji(c)+vji(b)*vkj(c))*t1
+                ztm(3,1)=0.25d0*z1*(-eki)*vkj(a)*(vji(b)*vik(c)+vik(b)*vji(c))*t1
+                ztm(3,2)=0.25d0*z1*ekj*vik(a)*(vkj(b)*vji(c)+vji(b)*vkj(c))*t1
 !$OMP CRITICAL
                 do iw=1,nwplot
 ! 2w interband
@@ -177,21 +172,20 @@ do l=1,noptcomp
 ! w intraband
                   chiw(iw,2)=chiw(iw,2)+ztm(2,1)/(eji-w(iw)+eta)
 ! w modulation
-                  chiw(iw,3)=chiw(iw,3)+0.5d0*(ztm(3,1)-ztm(3,2)) &
-                   /(eji-w(iw)+eta)
+                  chiw(iw,3)=chiw(iw,3)+(ztm(3,1)-ztm(3,2))/(eji-w(iw)+eta)
                 end do
 !$OMP END CRITICAL
               end if
 ! end loop over kst
             end do
             ztm(2,2)=4.d0*z1*conjg(vji(a))*(dji(b)*vji(c)+vji(b)*dji(c))/eji**4
-            ztm(3,3)=0.5d0*z1*vji(a)*(vji(b)*dji(c)+dji(b)*vji(c))/eji**4
+            ztm(3,3)=0.25d0*z1*vji(a)*(vji(b)*dji(c)+dji(b)*vji(c))/eji**4
 !$OMP CRITICAL
             do iw=1,nwplot
 ! 2w intraband
               chi2w(iw,2)=chi2w(iw,2)+ztm(2,2)/(eji-2.d0*w(iw)+eta)
 ! w modulation
-              chiw(iw,3)=chiw(iw,3)+0.5d0*ztm(3,3)/(eji-w(iw)+eta)
+              chiw(iw,3)=chiw(iw,3)+ztm(3,3)/(eji-w(iw)+eta)
             end do
 !$OMP END CRITICAL
 ! end loop over jst

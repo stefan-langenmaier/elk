@@ -9,8 +9,8 @@ use modmpi
 use modstore
 implicit none
 ! local variables
-integer i,im(2)
-real(8) v(3),th,em(2),de
+integer i,j,im(2)
+real(8) v1(3),v2(3),th,em(2),de
 real(8) a(3,3),b(3,3),c(3,3)
 ! initialise global variables
 call init0
@@ -63,28 +63,37 @@ do i=1,npmae
   end if
 ! rotate lattice vectors instead of moment (thanks to J. Glasbrenner,
 ! K. Bussmann and I. Mazin)
-! first by -theta around the y-axis
-  v(:)=0.d0
-  v(2)=1.d0
-  th=-tpmae(1,i)
-  call axangrot(v,th,a)
-! then by -phi around the z-axis
-  v(:)=0.d0
-  v(3)=1.d0
+! first by -phi around the z-axis
+  v1(:)=0.d0
+  v1(3)=1.d0
   th=-tpmae(2,i)
-  call axangrot(v,th,b)
+  call axangrot(v1,th,a)
+! then by -theta around the y-axis
+  v1(:)=0.d0
+  v1(2)=1.d0
+  th=-tpmae(1,i)
+  call axangrot(v1,th,b)
   call r3mm(b,a,c)
   call r3mm(c,avec0,avec)
+! find the corresponding moment direction vector
+  call r3minv(c,a)
+  v1(:)=0.d0
+  v1(3)=1.d0
+  call r3mv(a,v1,v2)
+  do j=1,3
+    if (abs(v2(j)).lt.epslat) v2(j)=0.d0
+  end do
 ! run the ground-state calculation
   call gndstate
 ! subsequent calculations should read the previous density
   trdstate=.true.
 ! make external magnetic field small
-  bfieldc0=0.01d0
+  bfieldc0(3)=-0.01d0
   if (mp_mpi) then
     write(71,*)
     write(71,'("Fixed spin moment direction point ",I6," of ",I6)') i,npmae
     write(71,'("Spherical coordinates of direction : ",2G18.10)') tpmae(:,i)
+    write(71,'("Direction vector (Cartesian coordinates) : ",3G18.10)') v2
     write(71,'("Calculated total moment magnitude : ",G18.10)') momtotm
     write(71,'("Total energy : ",G22.12)') engytot
     call flushifc(71)
@@ -99,7 +108,9 @@ do i=1,npmae
     im(2)=i
   end if
 ! delete the eigenvector files
-  call delevec
+  if (mp_mpi) call delevec
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_kpt,ierror)
 end do
 ! magnetic anisotropy energy
 de=em(2)-em(1)

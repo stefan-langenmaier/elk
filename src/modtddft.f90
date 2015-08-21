@@ -35,14 +35,12 @@ integer itimes
 real(8), allocatable :: times(:)
 ! time-dependent A-field
 real(8), allocatable :: afieldt(:,:)
-! momentum matrix elements in the Cartesian basis
-complex(8), allocatable :: pmatc(:,:,:,:)
 ! number of time steps after which observables are written to file
-integer ntwrite
+integer ntswrite
 ! the following variables are .true. if the corresponding quantities are to be
-! written every ntwrite time steps
-logical tdrho1d
-!****** readinput
+! written every ntswrite time steps
+logical tdrho1d,tdrho2d,tdrho3d
+logical tdmag2d,tdmag3d
 
 end module
 

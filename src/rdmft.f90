@@ -51,8 +51,8 @@ end if
 call genevfsv
 ! find the occupation numbers
 call occupy
-! generate the kinetic matrix elements in the Cartesian basis
-call genkmatc(.true.)
+! generate the kinetic matrix elements in the first-variational basis
+call genkmat(.true.,.false.)
 ! open information files (MPI master process only)
 if (mp_mpi) then
   open(60,file='RDM_INFO.OUT',action='WRITE',form='FORMATTED')

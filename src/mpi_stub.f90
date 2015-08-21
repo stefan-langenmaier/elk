@@ -11,6 +11,7 @@ integer mpi_comm_world
 integer mpi_in_place
 integer mpi_sum
 integer mpi_logical
+integer mpi_integer
 integer mpi_double_precision
 integer mpi_double_complex
 

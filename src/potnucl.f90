@@ -3,7 +3,23 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
+!BOP
+! !ROUTINE: potnucl
+! !INTERFACE:
 subroutine potnucl(ptnucl,nr,r,zn,vn)
+! !DESCRIPTION:
+!   Computes the nuclear potential on a radial mesh. The nuclear radius $R$ is
+!   estimated from the nuclear charge $Z$ and the potential is given by
+!   $$ V(r)=\begin{cases}
+!    Z(3R^2-r^2)/2R^3 & r<R \\
+!    Z/r & r\ge R\end{cases} $$
+!   assuming that the nucleus is a uniformly charged sphere. If {\tt ptnucl} is
+!   {\tt .true.} then the nucleus is treated as a point particle.
+!
+! !REVISION HISTORY:
+!   Created January 2009 (JKD)
+!EOP
+!BOC
 implicit none
 ! arguments
 logical, intent(in) :: ptnucl
@@ -39,4 +55,5 @@ else
 end if
 return
 end subroutine
+!EOC
 

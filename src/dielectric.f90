@@ -32,8 +32,7 @@ complex(8) eta,z1
 character(256) fname
 ! allocatable arrays
 real(8), allocatable :: w(:)
-complex(8), allocatable :: pmat(:,:,:)
-complex(8), allocatable :: sigma(:)
+complex(8), allocatable :: pmat(:,:,:),sigma(:)
 ! external functions
 real(8) sdelta
 external sdelta
@@ -44,8 +43,8 @@ call init1
 call readfermi
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! allocate local arrays
 allocate(w(nwplot))
@@ -71,16 +70,16 @@ do l=1,noptcomp
 !$OMP PRIVATE(z1,eji,t1,x)
 !$OMP DO
   do ik=1,nkptnr
-    allocate(pmat(3,nstsv,nstsv))
+    allocate(pmat(nstsv,nstsv,3))
 ! equivalent reduced k-point
-    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+    jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! read in the momentum matrix elements
-    call getpmat(vkl(:,ik),pmat)
+    call getpmat(.false.,vkl(:,ik),pmat)
 ! valance states
     do ist=1,nstsv
 ! conduction states
       do jst=1,nstsv
-        z1=pmat(i,ist,jst)*conjg(pmat(j,ist,jst))
+        z1=pmat(ist,jst,i)*conjg(pmat(ist,jst,j))
         eji=evalsv(jst,jk)-evalsv(ist,jk)
         if ((evalsv(ist,jk).le.efermi).and.(evalsv(jst,jk).gt.efermi)) then
 ! scissor correction
@@ -101,8 +100,9 @@ do l=1,noptcomp
           if (i.eq.j) then
             if (ist.eq.jst) then
               x=(evalsv(ist,jk)-efermi)/swidth
-!$OMP ATOMIC
+!$OMP CRITICAL
               wplas=wplas+wkptnr*dble(z1)*sdelta(stype,x)/swidth
+!$OMP END CRITICAL
             end if
           end if
         end if

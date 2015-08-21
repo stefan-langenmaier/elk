@@ -8,14 +8,11 @@ use modmain
 use modphonon
 implicit none
 ! arguments
-integer, intent(in) :: iq
-integer, intent(in) :: is
-integer, intent(in) :: ia
-integer, intent(in) :: ip
+integer, intent(in) :: iq,is,ia,ip
 ! local variables
 integer js,iostat
 integer version_(3),nspecies_,lmmaxvr_
-integer natoms_,nrcmt_,ngridg_(3)
+integer natoms_,nrmt_,ngridg_(3)
 character(256) fext,fname
 call phfext(iq,is,ia,ip,fext)
 fname='DVS'//trim(fext)
@@ -67,12 +64,12 @@ do js=1,nspecies
     write(*,*)
     stop
   end if
-  read(50) nrcmt_
-  if (nrcmt(js).ne.nrcmt_) then
+  read(50) nrmt_
+  if (nrmt(js).ne.nrmt_) then
     write(*,*)
-    write(*,'("Error(readdvs): differing nrcmt for species ",I4)') js
-    write(*,'(" current : ",I6)') nrcmt(js)
-    write(*,'(" file    : ",I6)') nrcmt_
+    write(*,'("Error(readdvs): differing nrmt for species ",I4)') js
+    write(*,'(" current : ",I6)') nrmt(js)
+    write(*,'(" file    : ",I6)') nrmt_
     write(*,'(" in file ",A)') trim(fname)
     write(*,*)
     stop

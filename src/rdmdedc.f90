@@ -26,8 +26,7 @@ complex(8), intent(out) :: dedc(nstsv,nstsv,nkpt)
 ! local variables
 integer ik,ist
 ! allocatable arrays
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: c(:,:)
+complex(8), allocatable :: evecsv(:,:),c(:,:)
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(evecsv,c,ist)
 !$OMP DO
@@ -35,7 +34,7 @@ do ik=1,nkpt
   allocate(evecsv(nstsv,nstsv))
   allocate(c(nstsv,nstsv))
 ! get the eigenvectors from file
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! kinetic and Coulomb potential contribution
   call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,vclmat(:,:,ik),nstsv, &
    zzero,c,nstsv)

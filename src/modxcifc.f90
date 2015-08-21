@@ -297,7 +297,7 @@ end subroutine
 subroutine getxcdata(xctype,xcdescr,xcspin,xcgrad,hybrid,hybridc)
 ! !INPUT/OUTPUT PARAMETERS:
 !   xctype  : type of exchange-correlation functional (in,integer(3))
-!   xcdescr : description of functional (out,character(256))
+!   xcdescr : description of functional (out,character(512))
 !   xcspin  : spin treatment (out,integer)
 !   xcgrad  : gradient treatment (out,integer)
 !   hybrid  : .true. if functional a hybrid (out,logical)

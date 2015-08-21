@@ -25,8 +25,7 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: ias
-integer, intent(in) :: ngp
+integer, intent(in) :: ias,ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 integer, intent(in) :: ld
 complex(8), intent(inout) :: h(*)
@@ -37,14 +36,14 @@ integer lm1,lm2,lm3
 real(8) t1
 complex(8) z1,zsum
 ! automatic arrays
-complex(8) x(ngp)
+complex(8) x(ngp),y(ngp)
 is=idxis(ias)
 lm1=0
 do l1=0,lmaxmat
   do m1=-l1,l1
     lm1=lm1+1
     do io=1,apword(l1,is)
-      x(:)=0.d0
+      y(:)=0.d0
       lm3=0
       do l3=0,lmaxmat
         do m3=-l3,l3
@@ -60,12 +59,13 @@ do l1=0,lmaxmat
               end if
             end do
             if (abs(dble(zsum))+abs(aimag(zsum)).gt.1.d-14) then
-              call zaxpy(ngp,zsum,apwalm(:,jo,lm3,ias),1,x,1)
+              call zaxpy(ngp,zsum,apwalm(:,jo,lm3,ias),1,y,1)
             end if
           end do
         end do
       end do
-      call zher2i(ngp,zone,apwalm(:,io,lm1,ias),x,ld,h)
+      x(1:ngp)=conjg(apwalm(1:ngp,io,lm1,ias))
+      call zher2i(ngp,zone,x,y,ld,h)
     end do
   end do
 end do
@@ -76,14 +76,62 @@ do l1=0,lmaxmat
   do m1=-l1,l1
     lm1=lm1+1
     do io=1,apword(l1,is)
+      x(1:ngp)=conjg(apwalm(1:ngp,io,lm1,ias))
       do jo=1,apword(l1,is)
         z1=t1*apwfr(nrmt(is),1,io,l1,ias)*apwdfr(jo,l1,ias)
-        call zher2i(ngp,z1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias),ld,h)
+        call zher2i(ngp,z1,x,apwalm(:,jo,lm1,ias),ld,h)
       end do
     end do
   end do
 end do
 return
+
+contains
+
+subroutine zher2i(n,alpha,x,y,ld,a)
+implicit none
+! arguments
+integer, intent(in) :: n
+complex(8), intent(in) :: alpha
+complex(8), intent(in) :: x(n),y(n)
+integer, intent(in) :: ld
+complex(8), intent(inout) :: a(*)
+! local variables
+integer j,k
+! numbers less than eps are considered to be zero
+real(8), parameter :: eps=1.d-10
+real(8) a1,b1
+complex(8) z1
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,z1,a1,b1)
+!$OMP DO
+do j=1,n
+  k=(j-1)*ld
+  z1=alpha*y(j)
+  if (abs(dble(z1)).gt.eps) then
+    if (abs(aimag(z1)).gt.eps) then
+! complex prefactor
+      call zaxpy(j-1,z1,x,1,a(k+1),1)
+      a(k+j)=dble(a(k+j))+dble(z1*x(j))
+    else
+! real prefactor
+      a1=dble(z1)
+      call daxpy(2*(j-1),a1,x,1,a(k+1),1)
+      a(k+j)=dble(a(k+j))+a1*dble(x(j))
+    end if
+  else
+    if (abs(aimag(z1)).gt.eps) then
+! imaginary prefactor
+      b1=aimag(z1)
+      a(k+1:k+j-1)=a(k+1:k+j-1)+b1*cmplx(-aimag(x(1:j-1)),dble(x(1:j-1)),8)
+      a(k+j)=dble(a(k+j))-b1*aimag(x(j))
+    end if
+  end if
+end do
+!$OMP END DO
+!$OMP END PARALLEL
+return
+end subroutine
+
 end subroutine
 !EOC
 

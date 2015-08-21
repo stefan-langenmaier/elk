@@ -27,8 +27,7 @@ subroutine vecplot
 use modmain
 implicit none
 ! allocatable arrays
-real(8), allocatable :: rvfmt(:,:,:,:)
-real(8), allocatable :: rvfir(:,:)
+real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 ! initialise universal variables
 call init0
 if ((task.eq.72).or.(task.eq.73).or.(task.eq.82).or.(task.eq.83)) then
@@ -86,7 +85,7 @@ case(152,153)
 end select
 select case(task)
 case(72,82,142,152)
-! determine the projection of the magnetisation/field onto the plotting plane
+! project the magnetisation/field onto the plotting plane
   call proj2d(rvfmt,rvfir)
   if (task.eq.72) then
     open(50,file='MAG2D.OUT',action='WRITE',form='FORMATTED')

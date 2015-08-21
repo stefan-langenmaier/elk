@@ -45,13 +45,13 @@ do ias=1,natmtot
   else
     rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
   end if
-  engyvcl=engyvcl+rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vclmt(:,:,ias))
+  engyvcl=engyvcl+rfmtinp(nr,nrmtinr(is),1,spr(:,is),rfmt,vclmt(:,:,ias))
 end do
 deallocate(rfmt)
 engykn=engykncr
 allocate(evecsv(nstsv,nstsv))
 do ik=1,nkpt
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
   do ist=1,nstsv
     t1=wkpt(ik)*occsv(ist,ik)
 ! Coulomb energy from valence states

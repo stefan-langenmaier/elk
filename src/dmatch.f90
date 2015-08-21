@@ -7,9 +7,7 @@ subroutine dmatch(ias,ip,ngp,vgpc,apwalm,dapwalm)
 use modmain
 implicit none
 ! arguments
-integer, intent(in) :: ias
-integer, intent(in) :: ip
-integer, intent(in) :: ngp
+integer, intent(in) :: ias,ip,ngp
 real(8), intent(in) :: vgpc(3,ngkmax)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(out) :: dapwalm(ngkmax,apwordmax,lmmaxapw)

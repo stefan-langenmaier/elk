@@ -8,7 +8,7 @@ use modmain
 use modmpi
 implicit none
 ! arguments
-character(256), intent(in) :: symb,name
+character(*), intent(in) :: symb,name
 real(8), intent(in) :: zn,mass
 real(8), intent(in) :: rmin,rm,rmax
 integer, intent(in) :: nrm,nst

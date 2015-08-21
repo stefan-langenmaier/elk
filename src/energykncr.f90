@@ -30,7 +30,7 @@ do ias=1,natmtot
   else
     rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
   end if
-  engykncr=engykncr-rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vsmt(:,:,ias))
+  engykncr=engykncr-rfmtinp(nr,nrmtinr(is),1,spr(:,is),rfmt,vsmt(:,:,ias))
 end do
 deallocate(rfmt)
 return

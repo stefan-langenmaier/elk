@@ -34,9 +34,9 @@ do ik=1,nkpt
      sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
 ! get the eigenvectors and occupancies from file
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 ! begin loop over atoms and species
   do ias=1,natmtot
     call gendmat(.false.,.false.,0,lmaxdm,ias,ngk(:,ik),apwalm,evecfv,evecsv, &

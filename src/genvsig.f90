@@ -11,7 +11,7 @@ subroutine genvsig
 use modmain
 ! !DESCRIPTION:
 !   Generates the Fourier transform of the Kohn-Sham effective potential in the
-!   intersitial region. The potential is first multiplied by the characteristic
+!   interstitial region. The potential is first multiplied by the characteristic
 !   function which zeros it in the muffin-tins. See routine {\tt gencfun}.
 !
 ! !REVISION HISTORY:
@@ -20,7 +20,7 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ig,ifg
+integer ig
 real(8) gm2
 ! allocatable arrays
 complex(8), allocatable :: zfft(:)
@@ -31,10 +31,7 @@ if (trimvg) then
   call zfftifc(3,ngridg,-1,zfft)
   gm2=gmaxvr/2.d0
   do ig=1,ngtot
-    if (gc(ig).gt.gm2) then
-      ifg=igfft(ig)
-      zfft(ifg)=0.d0
-    end if
+    if (gc(ig).gt.gm2) zfft(igfft(ig))=0.d0
   end do
 ! Fourier transform back to real-space
   call zfftifc(3,ngridg,1,zfft)
@@ -52,8 +49,7 @@ end if
 call zfftifc(3,ngridg,-1,zfft)
 ! store in global array
 do ig=1,ngvec
-  ifg=igfft(ig)
-  vsig(ig)=zfft(ifg)
+  vsig(ig)=zfft(igfft(ig))
 end do
 deallocate(zfft)
 return

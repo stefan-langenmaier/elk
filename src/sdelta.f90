@@ -72,7 +72,7 @@ end function
 subroutine getsdata(stype,sdescr)
 ! !INPUT/OUTPUT PARAMETERS:
 !   stype  : smearing type (in,integer)
-!   sdescr : smearing scheme description (out,character(256))
+!   sdescr : smearing scheme description (out,character(*))
 ! !DESCRIPTION:
 !   Returns a description of the smearing scheme as string {\tt sdescr} up to
 !   256 characters long.
@@ -84,7 +84,7 @@ subroutine getsdata(stype,sdescr)
 implicit none
 ! arguments
 integer, intent(in) :: stype
-character(256), intent(out) :: sdescr
+character(*), intent(out) :: sdescr
 select case(stype)
 case(0)
   sdescr='Gaussian'

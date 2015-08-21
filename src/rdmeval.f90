@@ -11,9 +11,9 @@ subroutine rdmeval
 use modmain
 use modrdm
 ! !DESCRIPTION:
-!   RDMFT eigenvalues are determined by calculating the derivative of the
-!   total energy with respect to the occupation number at half the maximum
-!   occupancy ($n_{\rm max}/2$).
+!   RDMFT eigenvalues are determined by calculating the derivative of the total
+!   energy with respect to the occupation number at half the maximum occupancy
+!   ($n_{\rm max}/2$).
 !
 ! !REVISION HISTORY:
 !   Created 2009 (Sharma)
@@ -34,7 +34,7 @@ do ik=1,nkpt
     evalsv(ist,ik)=-dedn(ist,ik)
     occsv(ist,ik)=t1
   end do
-  call putevalsv(ik,evalsv(:,ik))
+  call putevalsv(filext,ik,evalsv(:,ik))
 end do
 deallocate(dedn)
 return

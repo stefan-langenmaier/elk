@@ -53,35 +53,35 @@ do ias=1,natmtot
   if (tsh) then
     if (tspc.and.spinpol) then
 ! contract over spin
-      call zfmtmul2(nrc,nrci,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2), &
+      call genzrmt2(nrc,nrci,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2), &
        wfmt2(:,:,ias,1),wfmt2(:,:,ias,2),zfmt)
     else
 ! no spin contraction
-      call zfmtmul1(nrc,nrci,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zfmt)
+      call genzrmt1(nrc,nrci,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zfmt)
     end if
 ! convert to spherical harmonics
     call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ias))
   else
     if (tspc.and.spinpol) then
-      call zfmtmul2(nrc,nrci,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2), &
+      call genzrmt2(nrc,nrci,wfmt1(:,:,ias,1),wfmt1(:,:,ias,2), &
        wfmt2(:,:,ias,1),wfmt2(:,:,ias,2),zrhomt(:,:,ias))
     else
-      call zfmtmul1(nrc,nrci,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zrhomt(:,:,ias))
+      call genzrmt1(nrc,nrci,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zrhomt(:,:,ias))
     end if
   end if
 end do
 if (tsh) deallocate(zfmt)
 ! interstitial part
 if (tspc.and.spinpol) then
-  call zvmul2(ngtot,wfir1(:,1),wfir1(:,2),wfir2(:,1),wfir2(:,2),zrhoir)
+  call zrho2(ngtot,wfir1(:,1),wfir1(:,2),wfir2(:,1),wfir2(:,2),zrhoir)
 else
-  call zvmul1(ngtot,wfir1(:,1),wfir2(:,1),zrhoir)
+  call zrho1(ngtot,wfir1(:,1),wfir2(:,1),zrhoir)
 end if
 return
 
 contains
 
-subroutine zvmul1(n,x,y,z)
+subroutine zrho1(n,x,y,z)
 implicit none
 integer, intent(in) :: n
 complex(8), intent(in) :: x(n),y(n)
@@ -90,7 +90,7 @@ z(:)=conjg(x(:))*y(:)
 return
 end subroutine
 
-subroutine zvmul2(n,x1,x2,y1,y2,z)
+subroutine zrho2(n,x1,x2,y1,y2,z)
 implicit none
 integer, intent(in) :: n
 complex(8), intent(in) :: x1(n),x2(n),y1(n),y2(n)

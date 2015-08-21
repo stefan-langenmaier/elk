@@ -3,22 +3,23 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine writedvs
+subroutine writedvs(fext)
 use modmain
 use modphonon
-use modstore
 implicit none
+! arguments
+character(*), intent(in) :: fext
 ! local variables
 integer is
-open(50,file='DVS'//trim(filext),action='WRITE',form='UNFORMATTED')
+open(50,file='DVS'//trim(fext),action='WRITE',form='UNFORMATTED')
 write(50) version
 write(50) nspecies
 write(50) lmmaxvr
 do is=1,nspecies
-  write(50) natoms0(is)
-  write(50) nrcmt(is)
+  write(50) natoms(is)
+  write(50) nrmt(is)
 end do
-write(50) ngridg0
+write(50) ngridg
 write(50) dvsmt,dvsir
 close(50)
 return

@@ -53,7 +53,7 @@ write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
 write(fnum,*)
 select case(task)
-case(0,1,28,200,201,350,351,440)
+case(0,1,28,29,200,201,350,351,440)
   if (trdstate) then
     write(fnum,'("+------------------------------------------+")')
     write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
@@ -234,9 +234,9 @@ write(fnum,'("Number of G-vectors : ",I8)') ngvec
 write(fnum,*)
 write(fnum,'("Maximum angular momentum used for")')
 write(fnum,'(" APW functions                      : ",I4)') lmaxapw
+write(fnum,'(" H and O matrix elements outer loop : ",I4)') lmaxmat
 write(fnum,'(" potential and density              : ",I4)') lmaxvr
 write(fnum,'(" inner part of muffin-tin           : ",I4)') lmaxinr
-write(fnum,'(" H and O matrix elements outer loop : ",I4)') lmaxmat
 write(fnum,*)
 write(fnum,'("Total nuclear charge    : ",G18.10)') chgzn
 write(fnum,'("Total core charge       : ",G18.10)') chgcrtot

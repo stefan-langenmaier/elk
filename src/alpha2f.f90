@@ -34,10 +34,9 @@ allocate(ev(nbph,nbph),b(nbph,nbph))
 allocate(a2fmq(nbph,nbph,nqpt))
 allocate(a2fmr(nbph,nbph,nqptnr))
 allocate(a2fmp(nbph,nbph))
-! get the eigenvalues and occupancies from file
+! get the eigenvalues from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
 end do
 ! compute the density of states at the Fermi energy
 call occupy

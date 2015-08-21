@@ -42,7 +42,7 @@ end if
 ! OEP, Hartree-Fock, RPA epsilon, TDDFT, BSE or RDMFT
 if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.105).or.(task.eq.180).or. &
  (task.eq.185).or.(task.eq.188).or.(task.eq.300).or.(task.eq.320).or. &
- (task.eq.330)) then
+ (task.eq.330).or.(task.eq.331)) then
   ngridq(:)=ngridk(:)
 end if
 ! allocate the q-point arrays
@@ -92,7 +92,7 @@ call writevars('wqpt',nv=nqpt,rva=wqpt)
 !     OEP, Hartree-Fock, RDMFT and BSE variables     !
 !----------------------------------------------------!
 if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.185).or.(task.eq.300).or. &
- (task.eq.330)) then
+ (task.eq.330).or.(task.eq.331)) then
 ! determine the 1/q^2 integral weights if required
   call genwiq2
 ! output the 1/q^2 integrals to WIQ2.OUT
@@ -116,20 +116,20 @@ if (xctype(1).lt.0) then
       ncrmax=max(ncrmax,ic)
     end do
   end do
-! allocate and zero the complex exchange potential and field
-  if (allocated(zvxmt)) deallocate(zvxmt)
-  allocate(zvxmt(lmmaxvr,nrcmtmax,natmtot))
-  zvxmt(:,:,:)=0.d0
-  if (allocated(zvxir)) deallocate(zvxir)
-  allocate(zvxir(ngtot))
-  zvxir(:)=0.d0
+! allocate and zero the exchange potential and magnetic field
+  if (allocated(vxmt)) deallocate(vxmt)
+  allocate(vxmt(lmmaxvr,nrcmtmax,natmtot))
+  vxmt(:,:,:)=0.d0
+  if (allocated(vxir)) deallocate(vxir)
+  allocate(vxir(ngtot))
+  vxir(:)=0.d0
   if (spinpol) then
-    if (allocated(zbxmt)) deallocate(zbxmt)
-    allocate(zbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-    zbxmt(:,:,:,:)=0.d0
-    if (allocated(zbxir)) deallocate(zbxir)
-    allocate(zbxir(ngtot,ndmag))
-    zbxir(:,:)=0.d0
+    if (allocated(bxmt)) deallocate(bxmt)
+    allocate(bxmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
+    bxmt(:,:,:,:)=0.d0
+    if (allocated(bxir)) deallocate(bxir)
+    allocate(bxir(ngtot,ndmag))
+    bxir(:,:)=0.d0
   end if
 end if
 if (task.eq.300) then

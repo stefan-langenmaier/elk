@@ -50,7 +50,7 @@ complex(8), intent(in) :: zfmt(lmmaxvr,nr)
 integer, intent(in) :: ld
 complex(8), intent(out) :: gzfmt(lmmaxvr,ld,3)
 ! local variables
-integer nr0,ir0,ir,i,j
+integer nro,iro,ir,i,j
 integer lmmax,l,m,lm,lm1
 ! real constant 1/sqrt(2)
 real(8), parameter :: c1=0.7071067811865475244d0
@@ -63,16 +63,18 @@ real(8) clebgor
 external clebgor
 do ir=1,nr
   ri(ir)=1.d0/r(ir)
-  gzfmt(:,ir,:)=0.d0
+end do
+do i=1,3
+  call zfmtzero(nr,nri,gzfmt(:,:,i))
 end do
 lm=0
 do l=0,lmaxvr
   if (l.le.lmaxinr) then
-    nr0=nr
-    ir0=1
+    nro=nr
+    iro=1
   else
-    nr0=nr-nri
-    ir0=nri+1
+    nro=nr-nri
+    iro=nri+1
   end if
   t1=sqrt(dble(l+1)/dble(2*l+3))
   if (l.gt.0) then
@@ -83,10 +85,10 @@ do l=0,lmaxvr
   do m=-l,l
     lm=lm+1
 ! compute the radial derivatives
-    f(ir0:nr)=dble(zfmt(lm,ir0:nr))
-    call fderiv(1,nr0,r(ir0),f(ir0),g1(ir0))
-    f(ir0:nr)=aimag(zfmt(lm,ir0:nr))
-    call fderiv(1,nr0,r(ir0),f(ir0),g2(ir0))
+    f(iro:nr)=dble(zfmt(lm,iro:nr))
+    call fderiv(1,nro,r(iro),f(iro),g1(iro))
+    f(iro:nr)=aimag(zfmt(lm,iro:nr))
+    call fderiv(1,nro,r(iro),f(iro),g2(iro))
     j=1
     do i=-1,1
       if (i.eq.0) j=3
@@ -95,7 +97,7 @@ do l=0,lmaxvr
 ! index to (l,m) is l*(l+1)+m+1, therefore index to (l+1,m+i) is
         lm1=(l+1)*(l+2)+(m+i)+1
         t3=t1*clebgor(l,1,l+1,m,i,m+i)
-        do ir=ir0,nr
+        do ir=iro,nr
           gzfmt(lm1,ir,j)=gzfmt(lm1,ir,j) &
            +t3*(cmplx(g1(ir),g2(ir),8)-dble(l)*ri(ir)*zfmt(lm,ir))
         end do
@@ -104,7 +106,7 @@ do l=0,lmaxvr
 ! index to (l-1,m+i)
         lm1=(l-1)*l+(m+i)+1
         t3=t2*clebgor(l,1,l-1,m,i,m+i)
-        do ir=ir0,nr
+        do ir=iro,nr
           gzfmt(lm1,ir,j)=gzfmt(lm1,ir,j) &
            -t3*(cmplx(g1(ir),g2(ir),8)+dble(l+1)*ri(ir)*zfmt(lm,ir))
         end do

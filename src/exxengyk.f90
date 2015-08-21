@@ -13,7 +13,7 @@ integer jkp,ik,jk
 integer nst1,nst2,ist,jst
 integer is,ia,ias,nrc,nrci
 integer iv(3),ig,iq,igq0,m
-real(8) cfq,v(3),t1
+real(8) ex,cfq,v(3),t1
 complex(8) zrho0,z1
 ! automatic arrays
 integer idx(nstsv)
@@ -43,12 +43,12 @@ allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngtot))
 ! coefficient for long-range term
 cfq=0.5d0*(omega/pi)**2
 ! get the eigenvectors from file for input k-point
-call getevecfv(vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
-call getevecsv(vkl(:,ikp),evecsv)
+call getevecfv(filext,vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
+call getevecsv(filext,vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! equivalent reduced input k-point
-jkp=ikmap(ivk(1,ikp),ivk(2,ikp),ivk(3,ikp))
+jkp=ivkik(ivk(1,ikp),ivk(2,ikp),ivk(3,ikp))
 ! count and index the occupied states
 nst1=0
 do ist=1,nstsv
@@ -62,10 +62,12 @@ allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nst1))
 allocate(wfir1(ngtot,nspinor,nst1))
 call genwfsv(.false.,.false.,nst1,idx,ngk(1,ikp),igkig(:,1,ikp),apwalm,evecfv, &
  evecsv,wfmt1,ngtot,wfir1)
+! zero the local exchange energy variable
+ex=0.d0
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! equivalent reduced k-point
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! determine q-vector
   iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -88,8 +90,8 @@ do ik=1,nkptnr
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! get the eigenvectors from file for non-reduced k-points
-  call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,1,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! count and index the occupied states
   nst2=0
   do jst=1,nstsv
@@ -113,10 +115,9 @@ do ik=1,nkptnr
       call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
       call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
        zrhoir,nrcmtmax,zvclmt,zvclir,zrho0)
-      z1=zfinp(.true.,zrhomt,zrhoir,zvclmt,zvclir)
+      z1=zfinp(zrhomt,zrhoir,zvclmt,zvclir)
       t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
-!$OMP ATOMIC
-      engyx=engyx-0.5d0*occmax*wkpt(ikp)*(wkptnr*dble(z1)+t1)
+      ex=ex-0.5d0*occmax*wkpt(ikp)*(wkptnr*dble(z1)+t1)
     end do
   end do
 ! end loop over non-reduced k-point set
@@ -138,23 +139,21 @@ do is=1,nspecies
     do jst=1,spnst(is)
       if (spcore(jst,is)) then
         do m=-spk(jst,is),spk(jst,is)-1
-! pass m-1/2 to wavefcr
+! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,jst,m,nrcmtmax,wfcr)
           do ist=1,nst1
 ! calculate the complex overlap density in spherical harmonics
             if (spinpol) then
-              call zfmtmul2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
+              call genzrmt2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
                wfmt1(:,:,ias,1,ist),wfmt1(:,:,ias,2,ist),zfmt)
             else
-              call zfmtmul1(nrc,nrci,wfcr(:,:,1),wfmt1(:,:,ias,1,ist),zfmt)
+              call genzrmt1(nrc,nrci,wfcr(:,:,1),wfmt1(:,:,ias,1,ist),zfmt)
             end if
             call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ias))
 ! calculate the Coulomb potential
             call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ias),zvclmt(:,:,ias))
-            z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ias), &
-             zvclmt(:,:,ias))
-!$OMP ATOMIC
-            engyx=engyx-occmax*wkpt(ikp)*dble(z1)
+            z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt(:,:,ias),zvclmt(:,:,ias))
+            ex=ex-occmax*wkpt(ikp)*dble(z1)
           end do
 ! end loop over m
         end do
@@ -164,6 +163,10 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
+! add to global exchange energy
+!$OMP CRITICAL
+engyx=engyx+ex
+!$OMP END CRITICAL
 deallocate(wfmt1,wfir1,wfcr,zfmt)
 deallocate(zrhomt,zrhoir,zvclmt,zvclir)
 return

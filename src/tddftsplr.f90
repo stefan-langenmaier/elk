@@ -56,8 +56,8 @@ call genapwfr
 call genlofr
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! generate the G+q-vectors and related quantities
 allocate(vgqc(3,ngrf),gqc(ngrf))
@@ -187,7 +187,13 @@ if (.not.ncmag) then
   end do
 end if
 if (mp_mpi) then
-! write chi in the 1x3 basis
+! write the complete chi matrix if required
+  if (task.eq.331) then
+    open(50,file='CHI.OUT',action='WRITE',form='UNFORMATTED')
+    write(50) chi
+    close(50)
+  end if
+! write chi for G = G' = 0 in the 1x3 basis
   do i=1,4
     do j=1,4
       write(fname,'("CHI_",2I1,".OUT")') i-1,j-1
@@ -241,6 +247,11 @@ if (mp_mpi) then
     write(*,*)
     write(*,'(" Transverse components corresponding to m_+- = m_x +- im_y")')
     write(*,'(" written to CHI_T.OUT and CHI0_T.OUT")')
+  end if
+  if (task.eq.331) then
+    write(*,*)
+    write(*,'(" Complete response function for all G, G'' written to binary &
+     &file CHI.OUT")')
   end if
 end if
 deallocate(gqc,ylmgq,sfacgq,chi,fxc)

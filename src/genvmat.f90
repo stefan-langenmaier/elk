@@ -17,23 +17,23 @@ integer is,ias,n,lp
 ! automatic arrays
 integer idx(nstsv)
 ! allocatable arrays
-real(8), allocatable :: vmtc(:,:,:),virc(:)
+real(8), allocatable :: vmt1(:,:,:),vir1(:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 ! allocate local arrays
-allocate(vmtc(lmmaxvr,nrcmtmax,natmtot),virc(ngtot))
+allocate(vmt1(lmmaxvr,nrcmtmax,natmtot),vir1(ngtot))
 ! convert muffin-tin potential to spherical coordinates
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  call rbsht(nrcmt(is),nrcmtinr(is),lradstp,vmt(:,:,ias),1,vmtc(:,:,ias))
+  call rbsht(nrcmt(is),nrcmtinr(is),lradstp,vmt(:,:,ias),1,vmt1(:,:,ias))
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-! multiply potential by characteristic function
-virc(:)=vir(:)*cfunir(:)
+! multiply interstitial potential by characteristic function
+vir1(:)=vir(:)*cfunir(:)
 ! index to all states
 do ist=1,nstsv
   idx(ist)=ist
@@ -49,19 +49,19 @@ do ik=1,nkpt
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
   allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-  allocate(wfir(ngtot,nspinor,nstsv))
+  allocate(wfir(ngkmax,nspinor,nstsv))
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
      sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
 ! get the eigenvectors from file
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! calculate the wavefunctions for all states of the input k-point
-  call genwfsv(.false.,.false.,nstsv,idx,ngk(:,ik),igkig(:,:,ik),apwalm, &
-   evecfv,evecsv,wfmt,ngtot,wfir)
-  call genvmatk(vmtc,virc,wfmt,wfir,vmat(:,:,ik))
+  call genwfsv(.false.,.true.,nstsv,idx,ngk(:,ik),igkig(:,:,ik),apwalm, &
+   evecfv,evecsv,wfmt,ngkmax,wfir)
+  call genvmatk(vmt1,vir1,ngk(:,ik),igkig(:,:,ik),wfmt,ngkmax,wfir,vmat(:,:,ik))
   deallocate(apwalm,evecfv,evecsv,wfmt,wfir)
 end do
 !$OMP END DO
@@ -74,7 +74,7 @@ if (np_mpi.gt.1) then
     call mpi_bcast(vmat(:,:,ik),n,mpi_double_complex,lp,mpi_comm_kpt,ierror)
   end do
 end if
-deallocate(vmtc,virc)
+deallocate(vmt1,vir1)
 return
 end subroutine
 

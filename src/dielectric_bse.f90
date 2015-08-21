@@ -17,8 +17,7 @@ complex(8) eta,zv(3),z1
 character(256) fname
 ! allocatable arrays
 real(8), allocatable :: w(:)
-complex(8), allocatable :: pmat(:,:,:)
-complex(8), allocatable :: sigma(:,:,:)
+complex(8), allocatable :: pmat(:,:,:),sigma(:,:,:)
 ! initialise global variables
 call init0
 call init1
@@ -26,7 +25,7 @@ call init1
 call readfermi
 ! get the eigenvalues from file
 do ik1=1,nkpt
-  call getevalsv(vkl(:,ik1),evalsv(:,ik1))
+  call getevalsv(filext,vkl(:,ik1),evalsv(:,ik1))
 end do
 ! generate the BSE state index arrays
 call genidxbse
@@ -57,7 +56,7 @@ read(50) hmlbse
 close(50)
 ! allocate local arrays
 allocate(w(nwplot))
-allocate(pmat(3,nstsv,nstsv))
+allocate(pmat(nstsv,nstsv,3))
 allocate(sigma(3,3,nwplot))
 ! generate energy grid (starting from zero)
 t1=wplot(2)/dble(nwplot)
@@ -73,9 +72,9 @@ do a2=1,nmbse
 ! loop over non-reduced k-points
   do ik1=1,nkptnr
 ! equivalent reduced k-point
-    jk1=ikmap(ivk(1,ik1),ivk(2,ik1),ivk(3,ik1))
+    jk1=ivkik(ivk(1,ik1),ivk(2,ik1),ivk(3,ik1))
 ! read the momentum matrix elements from file
-    call getpmat(vkl(:,ik1),pmat)
+    call getpmat(.false.,vkl(:,ik1),pmat)
     do i1=1,nvbse
       ist1=istbse(i1,ik1)
       do j1=1,ncbse
@@ -83,7 +82,7 @@ do a2=1,nmbse
         a1=ijkbse(i1,j1,ik1)
         eji=evalsv(jst1,jk1)-evalsv(ist1,jk1)
         z1=(e/eji)*hmlbse(a1,a2)
-        zv(:)=zv(:)+z1*pmat(:,ist1,jst1)
+        zv(:)=zv(:)+z1*pmat(ist1,jst1,:)
       end do
     end do
   end do
@@ -125,7 +124,7 @@ do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
 ! write sigma to test file
-call writetest(187,'BSE optical conductivity',nv=nwplot,tol=2.d-2,zva=sigma)
+call writetest(187,'BSE optical conductivity',nv=nwplot,tol=1.d-3,zva=sigma)
 deallocate(w,pmat,sigma)
 ! deallocate global BSE arrays
 deallocate(evalbse,hmlbse)

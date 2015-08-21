@@ -73,7 +73,7 @@ end do
 zsum=zsum*omega/dble(ngtot)
 do ias=1,natmtot
   is=idxis(ias)
-  zsum=zsum+zfmtinp(.true.,nrmt(is),nrmtinr(is),spr(:,is),zvclmt(:,:,ias), &
+  zsum=zsum+zfmtinp(nrmt(is),nrmtinr(is),spr(:,is),zvclmt(:,:,ias), &
    drhomt(:,:,ias))
 end do
 dyn(ipph,iasph)=-zsum
@@ -93,7 +93,7 @@ end do
 zsum=zsum*omega/dble(ngtot)
 do ias=1,natmtot
   is=idxis(ias)
-  zsum=zsum+zfmtinp(.true.,nrmt(is),nrmtinr(is),spr(:,is),zvclmt(:,:,ias), &
+  zsum=zsum+zfmtinp(nrmt(is),nrmtinr(is),spr(:,is),zvclmt(:,:,ias), &
    grhomt(:,:,ias,ipph))
 end do
 dyn(ipph,iasph)=dyn(ipph,iasph)-zsum
@@ -102,7 +102,7 @@ zvclmt(:,:,iasph)=zvnmt(:,:)-zfmt(:,:)
 call gradzf(zvclmt,zvclir,gvclmt,gvclir)
 do ias=1,natmtot
   is=idxis(ias)
-  z1=spzn(is)*gvclmt(1,irfhf(is),ias,ipph)*y00
+  z1=spzn(is)*gvclmt(1,nrnucl(is),ias,ipph)*y00
   dyn(ipph,iasph)=dyn(ipph,iasph)+z1
 end do
 !-------------------------------------------------------------------!
@@ -122,7 +122,7 @@ do ias=1,natmtot
   call gradzfmt(nr,nri,spr(:,is),dvclmt(:,:,ias),nrmtmax,gzfmt)
   do i=1,3
     if ((ias.eq.iasph).and.(i.eq.ipph)) cycle
-    dyn(i,ias)=spzn(is)*gzfmt(1,irfhf(is),i)*y00
+    dyn(i,ias)=spzn(is)*gzfmt(1,nrnucl(is),i)*y00
   end do
 end do
 !--------------------------------------------!
@@ -143,7 +143,7 @@ if (tfibs) then
     nr=nrmt(is)
     nri=nrmtinr(is)
     do i=1,3
-      z1=zfmtinp(.true.,nr,nri,spr(:,is),grhomt(:,:,ias,i),dvsmt(:,:,ias))
+      z1=zfmtinp(nr,nri,spr(:,is),grhomt(:,:,ias,i),dvsmt(:,:,ias))
       dyn(i,ias)=dyn(i,ias)-z1
     end do
 ! convert Kohn-Sham potential to complex spherical harmonics
@@ -155,7 +155,7 @@ if (tfibs) then
 ! compute the gradient of the density derivative
     call gradzfmt(nr,nri,spr(:,is),drhomt(:,:,ias),nrmtmax,gzfmt)
     do i=1,3
-      z1=zfmtinp(.true.,nr,nri,spr(:,is),zfmt,gzfmt(:,:,i))
+      z1=zfmtinp(nr,nri,spr(:,is),zfmt,gzfmt(:,:,i))
       dyn(i,ias)=dyn(i,ias)-z1
     end do
   end do

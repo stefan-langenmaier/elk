@@ -24,17 +24,17 @@ do j=1,n
   if (abs(dble(z1)).gt.eps) then
     if (abs(aimag(z1)).gt.eps) then
 ! complex prefactor
-      a(1:m,j)=a(1:m,j)+z1*conjg(x(1:m))
+      call zaxpy(m,z1,x,1,a(:,j),1)
     else
 ! real prefactor
       a1=dble(z1)
-      a(1:m,j)=a(1:m,j)+a1*conjg(x(1:m))
+      call daxpy(2*m,a1,x,1,a(:,j),1)
     end if
   else
     if (abs(aimag(z1)).gt.eps) then
 ! imaginary prefactor
       b1=aimag(z1)
-      a(1:m,j)=a(1:m,j)+b1*cmplx(aimag(x(1:m)),dble(x(1:m)),8)
+      a(1:m,j)=a(1:m,j)+b1*cmplx(-aimag(x(1:m)),dble(x(1:m)),8)
     end if
   end if
 end do

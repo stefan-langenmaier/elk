@@ -33,12 +33,10 @@ subroutine rdiracdme(sol,m,kpa,e,nr,r,vr,nn,g0,g1,f0,f1)
 implicit none
 ! arguments
 real(8), intent(in) :: sol
-integer, intent(in) :: m
-integer, intent(in) :: kpa
+integer, intent(in) :: m,kpa
 real(8), intent(in) :: e
 integer, intent(in) :: nr
-real(8), intent(in) :: r(nr)
-real(8), intent(in) :: vr(nr)
+real(8), intent(in) :: r(nr),vr(nr)
 integer, intent(out) :: nn
 real(8), intent(out) :: g0(nr),g1(nr)
 real(8), intent(out) :: f0(nr),f1(nr)

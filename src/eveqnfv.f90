@@ -11,10 +11,10 @@ subroutine eveqnfv(nmatp,ngp,igpig,vpc,vgpc,apwalm,evalfv,evecfv)
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   nmatp  : order of overlap and Hamiltonian matrices (in,integer)
-!   ngp    : number of G+k-vectors for augmented plane waves (in,integer)
-!   igpig  : index from G+k-vectors to G-vectors (in,integer(ngkmax))
-!   vpc    : k-vector in Cartesian coordinates (in,real(3))
-!   vgpc   : G+k-vectors in Cartesian coordinates (in,real(3,ngkmax))
+!   ngp    : number of G+p-vectors (in,integer)
+!   igpig  : index from G+p-vectors to G-vectors (in,integer(ngkmax))
+!   vpc    : p-vector in Cartesian coordinates (in,real(3))
+!   vgpc   : G+p-vectors in Cartesian coordinates (in,real(3,ngkmax))
 !   apwalm : APW matching coefficients
 !            (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot))
 !   evalfv : first-variational eigenvalues (out,real(nstfv))
@@ -22,7 +22,7 @@ use modmain
 ! !DESCRIPTION:
 !   Solves the eigenvalue equation,
 !   $$ (H-\epsilon O)b=0, $$
-!   for the all the first-variational states of the input $k$-point.
+!   for the all the first-variational states of the input $p$-point.
 !
 ! !REVISION HISTORY:
 !   Created March 2004 (JKD)
@@ -32,8 +32,7 @@ implicit none
 ! arguments
 integer, intent(in) :: nmatp,ngp
 integer, intent(in) :: igpig(ngkmax)
-real(8), intent(in) :: vpc(3)
-real(8), intent(in) :: vgpc(3,ngkmax)
+real(8), intent(in) :: vpc(3),vgpc(3,ngkmax)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
@@ -72,8 +71,9 @@ end do
 call olpistl(ngp,igpig,nmatp,o)
 !$OMP END PARALLEL SECTIONS
 call timesec(ts1)
-!$OMP ATOMIC
+!$OMP CRITICAL
 timemat=timemat+ts1-ts0
+!$OMP END CRITICAL
 !---------------------------------------!
 !     solve the eigenvalue equation     !
 !---------------------------------------!

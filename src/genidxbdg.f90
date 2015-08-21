@@ -14,7 +14,7 @@ i=0
 ! loop over non-reduced k-points
 do ik=1,nkptnr
 ! equivalent reduced k-point
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
   do ist=1,nstsv
     if (abs(evalsv(ist,jk)-efermi).lt.ewbdg) i=i+1
   end do
@@ -31,7 +31,7 @@ if (allocated(idxbdg)) deallocate(idxbdg)
 allocate(idxbdg(2,nbdg))
 i=0
 do ik=1,nkptnr
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
   do ist=1,nstsv
     if (abs(evalsv(ist,jk)-efermi).lt.ewbdg) then
       i=i+1

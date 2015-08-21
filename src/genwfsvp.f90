@@ -57,10 +57,10 @@ end do
 deallocate(vgpc,gpc,sfacgp)
 ! get the first- and second-variational eigenvectors from file
 allocate(evecfv(nmatmax,nstfv,nspnfv))
-call getevecfv(vpl,vgpl,evecfv)
+call getevecfv(filext,vpl,vgpl,evecfv)
 deallocate(vgpl)
 allocate(evecsv(nstsv,nstsv))
-call getevecsv(vpl,evecsv)
+call getevecsv(filext,vpl,evecsv)
 ! calculate the second-variational wavefunctions
 call genwfsv(tsh,tgp,nst,idx,ngp,igpig,apwalm,evecfv,evecsv,wfmt,ld,wfir)
 deallocate(igpig,apwalm,evecfv,evecsv)

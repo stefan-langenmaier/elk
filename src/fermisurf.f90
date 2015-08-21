@@ -102,8 +102,8 @@ do f=1,nf
     do i3=0,ngridk(3)-1
       do i2=0,ngridk(2)-1
         do i1=0,ngridk(1)-1
-          ik=ikmapnr(i1,i2,i3)
-          jk=ikmap(i1,i2,i3)
+          ik=ivkiknr(i1,i2,i3)
+          jk=ivkik(i1,i2,i3)
           prd=1.d0
           do ist=ist0,ist1
             prd=prd*(evalsv(ist,jk)-efermi)
@@ -118,8 +118,8 @@ do f=1,nf
     do i3=0,ngridk(3)-1
       do i2=0,ngridk(2)-1
         do i1=0,ngridk(1)-1
-          ik=ikmapnr(i1,i2,i3)
-          jk=ikmap(i1,i2,i3)
+          ik=ivkiknr(i1,i2,i3)
+          jk=ivkik(i1,i2,i3)
           write(50,'(3G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
         end do
       end do

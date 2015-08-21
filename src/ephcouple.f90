@@ -10,28 +10,25 @@ use modmpi
 use modstore
 implicit none
 ! local variables
-integer iq,ik,jk,ikq
-integer ist,jst,ip
-integer is,ia,ias,js,ja,jas
-integer nrc,nrci,irc
-integer isym,iv(3),i,j,n
-real(8) vl(3),x
-real(8) t1,t2,t3,t4,t5
+integer iq,ik,jk,jkq
+integer iv(3),ist,jst
+integer is,ia,ias,js,jas
+integer ip,ir,irc,isym,i,j,n
+real(8) vl(3),x,de
+real(8) t1,t2,t3,t4
 complex(8) z1
 ! allocatable arrays
 real(8), allocatable :: wq(:,:),gq(:,:)
-real(8), allocatable :: evalfv(:,:)
-complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 complex(8), allocatable :: dynq(:,:,:),ev(:,:)
 complex(8), allocatable :: dvphmt(:,:,:,:),dvphir(:,:)
 complex(8), allocatable :: zfmt(:,:),gzfmt(:,:,:,:)
 complex(8), allocatable :: ephmat(:,:,:)
 ! external functions
-real(8) sdelta,stheta
-external sdelta,stheta
-! set the inner part of the muffin-tin to zero
-fracinr0=fracinr
-fracinr=0.d0
+real(8) sdelta
+external sdelta
+! increase the angular momentum cut-off on the inner part of the muffin-tin
+lmaxinr0=lmaxinr
+lmaxinr=max(lmaxinr,4)
 ! initialise universal variables
 call init0
 call init1
@@ -48,21 +45,18 @@ if ((iv(1).ne.0).or.(iv(2).ne.0).or.(iv(3).ne.0)) then
 end if
 ! allocate global arrays
 if (allocated(dvsmt)) deallocate(dvsmt)
-allocate(dvsmt(lmmaxvr,nrcmtmax,natmtot))
+allocate(dvsmt(lmmaxvr,nrmtmax,natmtot))
 if (allocated(dvsir)) deallocate(dvsir)
 allocate(dvsir(ngtot))
-!****** remove
 ! allocate local arrays
 allocate(wq(nbph,nqpt),gq(nbph,nqpt))
 allocate(dynq(nbph,nbph,nqpt),ev(nbph,nbph))
 allocate(dvphmt(lmmaxvr,nrcmtmax,natmtot,nbph))
 allocate(dvphir(ngtot,nbph))
-allocate(zfmt(lmmaxvr,nrcmtmax))
-allocate(gzfmt(lmmaxvr,nrcmtmax,3,natmtot))
+allocate(zfmt(lmmaxvr,nrmtmax))
+allocate(gzfmt(lmmaxvr,nrmtmax,3,natmtot))
 ! read in the density and potentials from file
 call readstate
-! read in the Fermi energy
-call readfermi
 ! find the linearisation energies
 call linengy
 ! set the speed of light >> 1 (non-relativistic approximation)
@@ -79,24 +73,8 @@ call olprad
 call hmlrad
 ! generate the spin-orbit coupling radial functions
 call gensocfr
-! begin parallel loop over k-points
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evalfv,evecfv,evecsv)
-!$OMP DO
-do ik=1,nkpt
-! every thread should allocate its own arrays
-  allocate(evalfv(nstfv,nspnfv))
-  allocate(evecfv(nmatmax,nstfv,nspnfv))
-  allocate(evecsv(nstsv,nstsv))
-! solve the first- and second-variational eigenvalue equations
-  call eveqn(ik,evalfv,evecfv,evecsv)
-! write the eigenvectors to file
-  call putevecfv(ik,evecfv)
-  call putevecsv(ik,evecsv)
-  deallocate(evalfv,evecfv,evecsv)
-end do
-!$OMP END DO
-!$OMP END PARALLEL
+! generate the first- and second-variational eigenvectors and eigenvalues
+call genevfsv
 ! restore the speed of light
 solsc=sol
 ! compute the occupancies and density of states at the Fermi energy
@@ -108,12 +86,10 @@ call sumrule(dynq)
 ! loop over all atoms
 do ias=1,natmtot
   is=idxis(ias)
-  nrc=nrcmt(is)
-  nrci=nrcmtinr(is)
 ! convert potential to complex spherical harmonic expansion
-  call rtozfmt(nrc,nrci,lradstp,vsmt(:,:,ias),1,zfmt)
+  call rtozfmt(nrmt(is),nrmtinr(is),1,vsmt(:,:,ias),1,zfmt)
 ! compute the gradients of the Kohn-Sham potential for the rigid-ion term
-  call gradzfmt(nrc,nrci,rcmt(:,is),zfmt,nrcmtmax,gzfmt(:,:,:,ias))
+  call gradzfmt(nrmt(is),nrmtinr(is),spr(:,is),zfmt,nrmtmax,gzfmt(:,:,:,ias))
 end do
 ! loop over phonon q-points
 do iq=1,nqpt
@@ -143,65 +119,58 @@ do iq=1,nqpt
 ! read in the Cartesian change in Kohn-Sham potential
           call readdvs(iq,is,ia,ip)
 ! add the rigid-ion term
-          do irc=1,nrcmt(is)
-            dvsmt(:,irc,ias)=dvsmt(:,irc,ias)-gzfmt(:,irc,ip,ias)
-          end do
+          z1=-1.d0
+          call zfmtadd(nrmt(is),nrmtinr(is),z1,gzfmt(:,:,ip,ias),dvsmt(:,:,ias))
 ! multiply with eigenvector component and add to total phonon potential
           z1=t1*ev(i,j)
-          do js=1,nspecies
-            do ja=1,natoms(js)
-              jas=idxas(ja,js)
-              do irc=1,nrcmt(js)
-                dvphmt(:,irc,jas,j)=dvphmt(:,irc,jas,j)+z1*dvsmt(:,irc,jas)
-              end do
+          do jas=1,natmtot
+            js=idxis(jas)
+            irc=0
+            do ir=1,nrmt(js),lradstp
+              irc=irc+1
+              dvphmt(:,irc,jas,j)=dvphmt(:,irc,jas,j)+z1*dvsmt(:,ir,jas)
             end do
           end do
-          dvphir(:,j)=dvphir(:,j)+z1*dvsir(:)
-!***** remove
+          call zaxpy(ngtot,z1,dvsir,1,dvphir(:,j),1)
         end do
       end do
     end do
   end do
+! energy window for calculating the electron-phonon matrix elements
+  de=10.d0*swidth
 ! zero the phonon linewidths array
   gq(:,iq)=0.d0
 ! begin parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ephmat,jk,vl,isym) &
-!$OMP PRIVATE(ikq,ist,jst,i) &
-!$OMP PRIVATE(x,t1,t2,t3,t4,t5)
+!$OMP PRIVATE(ephmat,jk,vl,isym,jkq) &
+!$OMP PRIVATE(t1,t2,t3,t4,ist,jst,x,i)
 !$OMP DO
   do ik=1,nkptnr
 ! distribute among MPI processes
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
     allocate(ephmat(nstsv,nstsv,nbph))
 ! equivalent reduced k-point
-    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+    jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! compute the electron-phonon coupling matrix elements
-    call genephmat(iq,ik,dvphmt,dvphir,ephmat)
+    call genephmat(iq,ik,de,dvphmt,dvphir,ephmat)
 ! k+q-vector in lattice coordinates
     vl(:)=vkl(:,ik)+vql(:,iq)
 ! index to k+q-vector
-    call findkpt(vl,isym,ikq)
-    t1=twopi*wkptnr*(occmax/2.d0)
+    call findkpt(vl,isym,jkq)
+    t1=twopi*wkptnr*occmax/2.d0
 ! loop over second-variational states
     do ist=1,nstsv
-      x=(evalsv(ist,ikq)-efermi)/swidth
-      t2=1.d0-stheta(stype,x)
+      x=(evalsv(ist,jkq)-efermi)/swidth
+      t2=t1*sdelta(stype,x)/swidth
+      do jst=1,nstsv
+        x=(evalsv(jst,jk)-efermi)/swidth
+        t3=t2*sdelta(stype,x)/swidth
 ! loop over phonon branches
-      do i=1,nbph
-        x=(evalsv(ist,ikq)-efermi+wq(i,iq))/swidth
-        t3=1.d0-stheta(stype,x)
-        do jst=1,nstsv
-          if (wq(i,iq).gt.1.d-8) then
-            t4=(t2-t3)/wq(i,iq)
-          else
-            t4=0.d0
-          end if
-          x=(evalsv(jst,jk)-evalsv(ist,ikq)-wq(i,iq))/swidth
-          t4=t4*sdelta(stype,x)/swidth
-          t5=dble(ephmat(ist,jst,i))**2+aimag(ephmat(ist,jst,i))**2
-!$OMP ATOMIC
-          gq(i,iq)=gq(i,iq)+wq(i,iq)*t1*t4*t5
+        do i=1,nbph
+          t4=dble(ephmat(ist,jst,i))**2+aimag(ephmat(ist,jst,i))**2
+!$OMP CRITICAL
+          gq(i,iq)=gq(i,iq)+wq(i,iq)*t3*t4
+!$OMP END CRITICAL
         end do
       end do
     end do
@@ -228,8 +197,8 @@ end if
 deallocate(wq,gq,dynq,ev)
 deallocate(dvphmt,dvphir)
 deallocate(zfmt,gzfmt)
-! restore fracinr
-fracinr=fracinr0
+! restore lmaxinr
+lmaxinr=lmaxinr0
 return
 end subroutine
 

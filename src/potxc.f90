@@ -52,11 +52,12 @@ if (xcgrad.eq.3) then
 end if
 ! allocate local arrays
 n=lmmaxvr*nrmtmax
-allocate(rho(n),ex(n),ec(n),vxc(n))
+allocate(ex(n),ec(n),vxc(n))
 if (spinpol) then
   allocate(mag(n,3),bxc(n,3))
 end if
 n=max(n,ngtot)
+allocate(rho(n))
 if (spinpol) then
   allocate(rhoup(n),rhodn(n))
   allocate(vxup(n),vxdn(n),vcup(n),vcdn(n))
@@ -126,7 +127,12 @@ do is=1,nspecies
         call xcifc(xctype,n=n,rhoup=rhoup,rhodn=rhodn,ex=ex,ec=ec,vxup=vxup, &
          vxdn=vxdn,vcup=vcup,vcdn=vcdn)
       else if (xcgrad.eq.1) then
-        call ggamt_sp_1(is,rhoup,rhodn,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
+        if (ncgga) then
+          rho(:)=0.5d0*rho(:)
+          call ggamt_sp_1(is,rho,rho,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
+        else
+          call ggamt_sp_1(is,rhoup,rhodn,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
+        end if
         call xcifc(xctype,n=n,rhoup=rhoup,rhodn=rhodn,grho=grho,gup=gup, &
          gdn=gdn,g2up=g2up,g2dn=g2dn,g3rho=g3rho,g3up=g3up,g3dn=g3dn,ex=ex, &
          ec=ec,vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
@@ -244,11 +250,11 @@ if (spinpol) then
     call xcifc(xctype,n=ngtot,rhoup=rhoup,rhodn=rhodn,ex=exir,ec=ecir, &
      vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
   else if (xcgrad.eq.1) then
-    call ggair_sp_1(rhoup,rhodn,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
-! average the second-order gradients for cases which are difficult to converge
     if (ncgga) then
-      g2up(1:ngtot)=0.5d0*(g2up(1:ngtot)+g2dn(1:ngtot))
-      g2dn(1:ngtot)=g2up(1:ngtot)
+      rho(:)=0.5d0*rhoir(:)
+      call ggair_sp_1(rho,rho,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
+    else
+      call ggair_sp_1(rhoup,rhodn,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
     end if
     call xcifc(xctype,n=ngtot,rhoup=rhoup,rhodn=rhodn,grho=grho,gup=gup, &
      gdn=gdn,g2up=g2up,g2dn=g2dn,g3rho=g3rho,g3up=g3up,g3dn=g3dn,ex=exir, &

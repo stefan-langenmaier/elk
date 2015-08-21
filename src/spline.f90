@@ -35,8 +35,7 @@ real(8), intent(out) :: cf(3,n)
 ! local variables
 integer i
 real(8) x0,x1,x2,x3,y0,y1,y2,y3
-real(8) c1,c2,c3
-real(8) t0,t1,t2,t3,t4,t5,t6
+real(8) c1,c2,c3,t0,t1,t2,t3,t4,t5,t6
 if (n.le.0) then
   write(*,*)
   write(*,'("Error(spline): n <= 0 : ",I8)') n

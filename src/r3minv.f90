@@ -9,7 +9,7 @@
 subroutine r3minv(a,b)
 ! !INPUT/OUTPUT PARAMETERS:
 !   a : input matrix (in,real(3,3))
-!   b : output matrix (in,real(3,3))
+!   b : output matrix (out,real(3,3))
 ! !DESCRIPTION:
 !   Computes the inverse of a real $3\times 3$ matrix.
 !

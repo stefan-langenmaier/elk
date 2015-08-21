@@ -17,7 +17,7 @@ use modmain
 !   $$ \tilde{\Theta}_i(G)=\begin{cases}
 !    \frac{4\pi R_i^3}{3 \Omega} & G=0 \\
 !    \frac{4\pi R_i^3}{\Omega}\frac{j_1(GR_i)}{GR_i} & 0<G\le G_{\rm max} \\
-!    0 & G>G_{\rm max}\end{cases}, $$
+!    0 & G>G_{\rm max}\end{cases} $$
 !   where $R_i$ is the muffin-tin radius of the $i$th species and $\Omega$ is
 !   the unit cell volume. Therefore the characteristic function in $G$-space is
 !   $$ \tilde{\Theta}({\bf G})=\delta_{G,0}-\sum_{ij}\exp(-i{\bf G}\cdot

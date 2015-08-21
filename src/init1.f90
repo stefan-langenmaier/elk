@@ -12,6 +12,7 @@ use modmain
 use moddftu
 use modtest
 use modvars
+use modstore
 ! !DESCRIPTION:
 !   Generates the $k$-point set and then allocates and initialises global
 !   variables which depend on the $k$-point set.
@@ -73,8 +74,8 @@ else
   end do
 end if
 if ((task.eq.20).or.(task.eq.21)) then
-! for band structure plots generate k-points along a line
-  call connect(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
+! generate k-points along a line for band structure plots
+  call plotpt1d(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
   nkpt=npp1d
   if (allocated(vkl)) deallocate(vkl)
   allocate(vkl(3,nkpt))
@@ -132,10 +133,10 @@ else
     if (task.ne.102) kptboxl(:,:)=vclp3d(:,:)
   end if
 ! allocate the k-point set arrays
-  if (allocated(ikmap)) deallocate(ikmap)
-  allocate(ikmap(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
-  if (allocated(ikmapnr)) deallocate(ikmapnr)
-  allocate(ikmapnr(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
+  if (allocated(ivkik)) deallocate(ivkik)
+  allocate(ivkik(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
+  if (allocated(ivkiknr)) deallocate(ivkiknr)
+  allocate(ivkiknr(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
   nkptnr=ngridk(1)*ngridk(2)*ngridk(3)
   if (allocated(ivk)) deallocate(ivk)
   allocate(ivk(3,nkptnr))
@@ -147,14 +148,14 @@ else
   allocate(wkpt(nkptnr))
 ! generate the k-point set
   call genppts(.false.,nsymkpt,symkpt,ngridk,nkptnr,epslat,bvec,kptboxl,nkpt, &
-   ikmap,ikmapnr,ivk,vkl,vkc,wkpt,wkptnr)
+   ivkik,ivkiknr,ivk,vkl,vkc,wkpt,wkptnr)
 ! write to VARIABLES.OUT
   call writevars('nsymkpt',iv=nsymkpt)
   call writevars('symkpt',nv=9*nsymkpt,iva=symkpt)
   call writevars('ngridk',nv=3,iva=ngridk)
   call writevars('vkloff',nv=3,rva=vkloff)
   call writevars('nkpt',iv=nkpt)
-  call writevars('ikmap',nv=nkptnr,iva=ikmap)
+  call writevars('ivkik',nv=nkptnr,iva=ivkik)
   call writevars('ivk',nv=3*nkptnr,iva=ivk)
   call writevars('vkl',nv=3*nkptnr,rva=vkl)
   call writevars('wkpt',nv=nkpt,rva=wkpt)
@@ -287,7 +288,7 @@ end if
 !     eigenvalue equation variables     !
 !---------------------------------------!
 ! total number of empty states (M. Meinert)
-nempty=nint(nempty0*natmtot*nspinor)
+nempty=nint(nempty0*nspinor*max(natmtot,1))
 if (nempty.lt.1) nempty=1
 ! number of first-variational states
 nstfv=int(chgval/2.d0)+nempty+1

@@ -25,7 +25,7 @@ end do
 ! frequencies for reponse functions
 nwrf=1
 if (allocated(wrf)) deallocate(wrf)
-if ((task.eq.188).or.(task.eq.320).or.(task.eq.330)) then
+if ((task.eq.188).or.(task.eq.320).or.(task.eq.330).or.(task.eq.331)) then
   nwrf=nwplot
   allocate(wrf(nwrf))
   w1=wplot(1)

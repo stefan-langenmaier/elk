@@ -48,8 +48,7 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ngp
-real(8), intent(in) :: gpc(ngkmax)
-real(8), intent(in) :: tpgpc(2,ngkmax)
+real(8), intent(in) :: gpc(ngkmax),tpgpc(2,ngkmax)
 complex(8), intent(in) :: sfacgp(ngkmax,natmtot)
 complex(8), intent(out) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 ! local variables

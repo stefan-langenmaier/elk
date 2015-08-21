@@ -35,7 +35,7 @@ call rdmdedc(dedc)
 allocate(evecsv(nstsv,nstsv),x(nstsv))
 do ik=1,nkpt
 ! get the eigenvectors from file
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! calculate new evecsv
   evecsv(:,:)=evecsv(:,:)-taurdmc*dedc(:,:,ik)
 ! othogonalise evecsv (Gram-Schmidt)
@@ -50,7 +50,7 @@ do ik=1,nkpt
     evecsv(:,ist)=t1*x(:)
   end do
 ! write new evecsv to file
-  call putevecsv(ik,evecsv)
+  call putevecsv(filext,ik,evecsv)
 ! end loop over k-points
 end do
 deallocate(dedc,evecsv,x)

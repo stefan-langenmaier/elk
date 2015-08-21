@@ -123,7 +123,7 @@ do f=1,nf
         j2=mod(i2,ngridk(2))
         do i3=0,ngridk(3)
           j3=mod(i3,ngridk(3))
-          ik=ikmap(j1,j2,j3)
+          ik=ivkik(j1,j2,j3)
           write(50,'(G18.10)') evalsv(ist,ik)-efermi
         end do
       end do

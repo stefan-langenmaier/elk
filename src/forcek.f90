@@ -50,9 +50,9 @@ allocate(h(nm2),o(nm2),dlh(nm2),dlo(nm2))
 allocate(vh(nmatmax),vo(nmatmax))
 allocate(ffv(nstfv,nstfv),y(nstfv))
 ! get the eigenvalues/vectors from file
-call getevalfv(vkl(:,ik),evalfv)
-call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-call getevecsv(vkl(:,ik),evecsv)
+call getevalfv(filext,vkl(:,ik),evalfv)
+call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+call getevecsv(filext,vkl(:,ik),evecsv)
 ! loop over first-variational spin components
 do jspn=1,nspnfv
   if (spinsprl) then
@@ -147,8 +147,9 @@ do jspn=1,nspnfv
           sum=sum+occsv(j,ik)*dble(ffv(j,j))
         end do
       end if
-!$OMP ATOMIC
+!$OMP CRITICAL
       forceibs(l,ias)=forceibs(l,ias)+wkpt(ik)*sum
+!$OMP END CRITICAL
 ! end loop over Cartesian components
     end do
 ! end loop over atoms and species

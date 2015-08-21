@@ -8,7 +8,7 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: iq
-character(256), intent(out) :: fext
+character(*), intent(out) :: fext
 ! local variables
 integer i,j,m(3),n(3)
 ! external functions

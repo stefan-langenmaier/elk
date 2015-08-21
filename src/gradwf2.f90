@@ -8,10 +8,8 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ik
-complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
-complex(8), intent(in) :: evecsv(nstsv,nstsv)
-real(8), intent(inout) :: gwf2mt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(inout) :: gwf2ir(ngtot)
+complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv)
+real(8), intent(inout) :: gwf2mt(lmmaxvr,nrmtmax,natmtot),gwf2ir(ngtot)
 ! local variables
 integer ist,ispn,jspn
 integer is,ia,ias
@@ -65,8 +63,8 @@ do is=1,nspecies
             if (spinsprl.and.ssdph) z1=z1*zq(ispn)
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
               if (.not.done(ist,jspn)) then
-                call wavefmt(1,lmaxvr,ias,ngk(jspn,ik),apwalm(:,:,:,:,jspn), &
-                 evecfv(:,ist,jspn),lmmaxvr,wfmt1(:,:,ist,jspn))
+                call wavefmt(1,ias,ngk(jspn,ik),apwalm(:,:,:,:,jspn), &
+                 evecfv(:,ist,jspn),wfmt1(:,:,ist,jspn))
                 done(ist,jspn)=.true.
               end if
 ! add to spinor wavefunction
@@ -76,7 +74,7 @@ do is=1,nspecies
         end do
       else
 ! spin-unpolarised wavefunction
-        call wavefmt(1,lmaxvr,ias,ngk(1,ik),apwalm,evecfv(:,j,1),lmmaxvr,wfmt2)
+        call wavefmt(1,ias,ngk(1,ik),apwalm,evecfv(:,j,1),wfmt2)
       end if
 ! compute the gradient of the wavefunction
       do ispn=1,nspinor

@@ -55,8 +55,8 @@ cfq=0.5d0*(omega/pi)**2
 vclcv(:,:,:)=0.d0
 vclvv(:,:)=0.d0
 ! get the eigenvectors from file for input k-point
-call getevecfv(vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
-call getevecsv(vkl(:,ikp),evecsv)
+call getevecfv(filext,vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
+call getevecsv(filext,vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! index to all states
@@ -69,7 +69,7 @@ call genwfsv(.false.,.false.,nstsv,idx,ngk(1,ikp),igkig(:,1,ikp),apwalm, &
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! equivalent reduced k-point
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! determine q-vector
   iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -94,8 +94,8 @@ do ik=1,nkptnr
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! get the eigenvectors from file for non-reduced k-points
-  call getevecfv(vkl(:,ik),vgkl(:,:,1,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,1,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
 ! count and index occupied states
   nst=0
   do ist3=1,nstsv
@@ -124,13 +124,13 @@ do ik=1,nkptnr
           if (spcore(ist1,is)) then
             do m1=-spk(ist1,is),spk(ist1,is)-1
               jc=jc+1
-! pass m-1/2 to wavefcr
+! generate the core wavefunction in spherical coordinates (pass in m-1/2)
               call wavefcr(.false.,lradstp,is,ia,ist1,m1,nrcmtmax,wfcr1)
               if (spinpol) then
-                call zfmtmul2(nrc,nrci,wfmt2(:,:,ias,1,ist3), &
+                call genzrmt2(nrc,nrci,wfmt2(:,:,ias,1,ist3), &
                  wfmt2(:,:,ias,2,ist3),wfcr1(:,:,1),wfcr1(:,:,2),zfmt)
               else
-                call zfmtmul1(nrc,nrci,wfmt2(:,:,ias,1,ist3),wfcr1(:,:,1),zfmt)
+                call genzrmt1(nrc,nrci,wfmt2(:,:,ias,1,ist3),wfcr1(:,:,1),zfmt)
               end if
 ! convert to spherical harmonics
               call zfsht(nrc,nrci,zfmt,zrhomt2(:,:,jc))
@@ -151,7 +151,7 @@ do ik=1,nkptnr
 !----------------------------------------------!
         do ist1=1,nstsv
           if (evalsv(ist1,ikp).lt.efermi) then
-            z1=zfinp(.true.,zrhomt1(:,:,:,ist1),zrhoir1(:,ist1),zvclmt,zvclir)
+            z1=zfinp(zrhomt1(:,:,:,ist1),zrhoir1(:,ist1),zvclmt,zvclir)
 ! compute the density coefficient of the smallest G+q-vector
             call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt1(:,:,:,ist1), &
              zrhoir1(:,ist1),zrho01)
@@ -174,7 +174,7 @@ do ik=1,nkptnr
                 do m1=-spk(ist1,is),spk(ist1,is)-1
                   ic=ic+1
                   jc=jc+1
-                  z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt2(:,:,jc), &
+                  z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt2(:,:,jc), &
                    zvclmt(:,:,ias))
                   vclcv(ic,ias,ist2)=vclcv(ic,ias,ist2)-wkptnr*z1
                 end do
@@ -200,15 +200,15 @@ do is=1,nspecies
     do ist3=1,spnst(is)
       if (spcore(ist3,is)) then
         do m1=-spk(ist3,is),spk(ist3,is)-1
-! pass m-1/2 to wavefcr
+! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,ist3,m1,nrcmtmax,wfcr1)
 ! compute the complex overlap densities for the core-valence states
           do ist1=1,nstsv
             if (spinpol) then
-              call zfmtmul2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2), &
+              call genzrmt2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2), &
                wfmt1(:,:,ias,1,ist1),wfmt1(:,:,ias,2,ist1),zfmt)
             else
-              call zfmtmul1(nrc,nrci,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist1),zfmt)
+              call genzrmt1(nrc,nrci,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist1),zfmt)
             end if
             call zfsht(nrc,nrci,zfmt,zrhomt1(:,:,ias,ist1))
           end do
@@ -219,7 +219,7 @@ do is=1,nspecies
               do m2=-spk(ist1,is),spk(ist1,is)-1
                 ic=ic+1
                 call wavefcr(.false.,lradstp,is,ia,ist1,m2,nrcmtmax,wfcr2)
-                call zfmtmul2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2),wfcr2(:,:,1), &
+                call genzrmt2(nrc,nrci,wfcr1(:,:,1),wfcr1(:,:,2),wfcr2(:,:,1), &
                  wfcr2(:,:,2),zfmt)
                 call zfsht(nrc,nrci,zfmt,zrhomt2(:,:,ic))
               end do
@@ -234,8 +234,7 @@ do is=1,nspecies
 !-------------------------------------------!
               do ist1=1,nstsv
                 if (evalsv(ist1,ikp).lt.efermi) then
-                  z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt1(:,:,ias,ist1), &
-                   zvclmt)
+                  z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt1(:,:,ias,ist1),zvclmt)
                   vclvv(ist1,ist2)=vclvv(ist1,ist2)-z1
                 end if
               end do
@@ -247,8 +246,7 @@ do is=1,nspecies
                 if (spcore(ist1,is)) then
                   do m2=-spk(ist1,is),spk(ist1,is)-1
                     ic=ic+1
-                    z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt2(:,:,ic), &
-                     zvclmt)
+                    z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt2(:,:,ic),zvclmt)
                     vclcv(ic,ias,ist2)=vclcv(ic,ias,ist2)-z1
                   end do
 ! end loop over ist1

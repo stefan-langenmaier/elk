@@ -8,11 +8,11 @@
 ! !INTERFACE:
 subroutine fderiv(m,n,x,f,g)
 ! !INPUT/OUTPUT PARAMETERS:
-!   m  : order of derivative (in,integer)
-!   n  : number of points (in,integer)
-!   x  : abscissa array (in,real(n))
-!   f  : function array (in,real(n))
-!   g  : (anti-)derivative of f (out,real(n))
+!   m : order of derivative (in,integer)
+!   n : number of points (in,integer)
+!   x : abscissa array (in,real(n))
+!   f : function array (in,real(n))
+!   g : (anti-)derivative of f (out,real(n))
 ! !DESCRIPTION:
 !   Given function $f$ defined on a set of points $x_i$ then if $m\ge 0$ this
 !   routine computes the $m$th derivative of $f$ at each point. If $m<0$ the

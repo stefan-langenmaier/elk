@@ -6,12 +6,10 @@
 !BOP
 ! !ROUTINE: zfinp
 ! !INTERFACE:
-complex(8) function zfinp(tsh,zfmt1,zfir1,zfmt2,zfir2)
+complex(8) function zfinp(zfmt1,zfir1,zfmt2,zfir2)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   tsh   : .true. if the muffin-tin functions are in spherical harmonics
-!           (in,logical)
 !   zfmt1 : first complex function in spherical harmonics/coordinates for all
 !           muffin-tins (in,complex(lmmaxvr,nrcmtmax,natmtot))
 !   zfir1 : first complex interstitial function in real-space
@@ -34,26 +32,31 @@ use modmain
 !BOC
 implicit none
 ! arguments
-logical, intent(in) :: tsh
 complex(8), intent(in) :: zfmt1(lmmaxvr,nrcmtmax,natmtot),zfir1(ngtot)
 complex(8), intent(in) :: zfmt2(lmmaxvr,nrcmtmax,natmtot),zfir2(ngtot)
 ! local variables
 integer ias,is,ir
+complex(8) zsum
 ! external functions
 complex(8) zfmtinp
 external zfmtinp
-zfinp=0.d0
+zsum=0.d0
 ! interstitial contribution
 do ir=1,ngtot
-  zfinp=zfinp+cfunir(ir)*conjg(zfir1(ir))*zfir2(ir)
+  zsum=zsum+cfunir(ir)*conjg(zfir1(ir))*zfir2(ir)
 end do
-zfinp=zfinp*(omega/dble(ngtot))
+zsum=zsum*(omega/dble(ngtot))
 ! muffin-tin contribution
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is) REDUCTION(+:zsum)
+!$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  zfinp=zfinp+zfmtinp(tsh,nrcmt(is),nrcmtinr(is),rcmt(:,is),zfmt1(:,:,ias), &
+  zsum=zsum+zfmtinp(nrcmt(is),nrcmtinr(is),rcmt(:,is),zfmt1(:,:,ias), &
    zfmt2(:,:,ias))
 end do
+!$OMP END DO
+!$OMP END PARALLEL
+zfinp=zsum
 return
 end function
 !EOC

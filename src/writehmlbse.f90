@@ -29,8 +29,8 @@ call genapwfr
 call genlofr
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! check if system is metallic
 t1=minval(abs(0.5d0-occsv(:,:)/occmax))
@@ -55,7 +55,7 @@ hmlbse(:,:)=0.d0
 do ik=1,nkptnr
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
   do i=1,nvbse
     ist=istbse(i,ik)
     do j=1,ncbse

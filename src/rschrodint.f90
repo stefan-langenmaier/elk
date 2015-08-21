@@ -31,7 +31,7 @@ subroutine rschrodint(sol,m,l,e,nr,r,vr,nn,p0p,p0,p1,q0,q1)
 !    \frac{d}{dr}Q^{(m)}_l&=-\frac{1}{r}Q^{(m)}_l+\left[\frac{l(l+1)}{2Mr^2}
 !    +(V-E)\right]P^{(m)}_l-mP^{(m-1)}_l,
 !   \end{align*}
-!   where $V$ is the external potential, $E$ is the eigenenergy and
+!   where $V$ is the external potential, $E$ is the eigen energy and
 !   $M=1-V/2c^2$. Following the convention of Koelling and Harmon, {\it J. Phys.
 !   C: Solid State Phys.} {\bf 10}, 3107 (1977), the functions $P_l$ and $Q_l$
 !   are defined by
@@ -51,12 +51,10 @@ subroutine rschrodint(sol,m,l,e,nr,r,vr,nn,p0p,p0,p1,q0,q1)
 implicit none
 ! arguments
 real(8), intent(in) :: sol
-integer, intent(in) :: m
-integer, intent(in) :: l
+integer, intent(in) :: m,l
 real(8), intent(in) :: e
 integer, intent(in) :: nr
-real(8), intent(in) :: r(nr)
-real(8), intent(in) :: vr(nr)
+real(8), intent(in) :: r(nr),vr(nr)
 integer, intent(out) :: nn
 real(8), intent(in) :: p0p(nr)
 real(8), intent(out) :: p0(nr),p1(nr)

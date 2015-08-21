@@ -45,9 +45,9 @@ call timesec(ts0)
 !------------------------------------!
 !     angular momentum variables     !
 !------------------------------------!
-lmmaxvr=(lmaxvr+1)**2
 lmmaxapw=(lmaxapw+1)**2
 lmmaxmat=(lmaxmat+1)**2
+lmmaxvr=(lmaxvr+1)**2
 lmmaxinr=(lmaxinr+1)**2
 if (lmaxvr.gt.lmaxapw) then
   write(*,*)

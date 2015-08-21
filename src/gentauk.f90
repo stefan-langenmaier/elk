@@ -30,8 +30,8 @@ do ispn=1,nspnfv
    sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
 end do
 ! get the eigenvectors from file
-call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-call getevecsv(vkl(:,ik),evecsv)
+call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+call getevecsv(filext,vkl(:,ik),evecsv)
 ! count and index the occupied states
 nst=0
 do ist=1,nstsv

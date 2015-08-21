@@ -18,7 +18,7 @@ integer, intent(in) :: ld
 complex(8), intent(out) :: dmat(ld,nspinor,ld,nspinor,nstsv)
 ! local variables
 integer ist,ispn,jspn,is,ia
-integer nrc,nrci,nrc0,irc0,irc
+integer nrc,nrci,nro,iro,irc
 integer l,m1,m2,lm1,lm2,i,j
 real(8) t1
 complex(8) zq(2),z1
@@ -70,8 +70,8 @@ do j=1,nstsv
         if (spinsprl.and.ssdph) z1=z1*zq(ispn)
         if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
           if (.not.done(ist,jspn)) then
-            call wavefmt(lradstp,lmaxvr,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
-             evecfv(:,ist,jspn),lmmaxvr,wfmt1(:,:,ist,jspn))
+            call wavefmt(lradstp,ias,ngp(jspn),apwalm(:,:,:,:,jspn), &
+             evecfv(:,ist,jspn),wfmt1(:,:,ist,jspn))
             done(ist,jspn)=.true.
           end if
 ! add to spinor wavefunction
@@ -81,33 +81,33 @@ do j=1,nstsv
     end do
   else
 ! spin-unpolarised wavefunction
-    call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm,evecfv(:,j,1),lmmaxvr,wfmt2)
+    call wavefmt(lradstp,ias,ngp,apwalm,evecfv(:,j,1),wfmt2)
   end if
   do ispn=1,nspinor
     do jspn=1,nspinor
       if (tspndg.and.(ispn.ne.jspn)) cycle
       do l=lmin,lmax
         if (l.le.lmaxinr) then
-          nrc0=nrc
-          irc0=1
+          nro=nrc
+          iro=1
         else
-          nrc0=nrc-nrci
-          irc0=nrci+1
+          nro=nrc-nrci
+          iro=nrci+1
         end if
         do m1=-l,l
           lm1=idxlm(l,m1)
           do m2=-l,l
             lm2=idxlm(l,m2)
             if (tlmdg.and.(lm1.ne.lm2)) cycle
-            do irc=irc0,nrc
+            do irc=iro,nrc
               z1=wfmt2(lm1,irc,ispn)*conjg(wfmt2(lm2,irc,jspn))
               t1=rcmt(irc,is)**2
               fr1(irc)=dble(z1)*t1
               fr2(irc)=aimag(z1)*t1
             end do
-            call fderiv(-2,nrc0,rcmt(irc0,is),fr1(irc0),gr(irc0))
+            call fderiv(-2,nro,rcmt(iro,is),fr1(iro),gr(iro))
             t1=gr(nrc)
-            call fderiv(-2,nrc0,rcmt(irc0,is),fr2(irc0),gr(irc0))
+            call fderiv(-2,nro,rcmt(iro,is),fr2(iro),gr(iro))
             dmat(lm1,ispn,lm2,jspn,j)=cmplx(t1,gr(nrc),8)
           end do
         end do

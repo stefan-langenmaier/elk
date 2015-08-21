@@ -7,7 +7,7 @@ subroutine getcf2pt(fname,vpl,ng,m,cf)
 use modmain
 implicit none
 ! arguments
-character(256), intent(in) :: fname
+character(*), intent(in) :: fname
 real(8), intent(in) :: vpl(3)
 integer, intent(in) :: ng,m
 complex(8), intent(out) :: cf(ng,ng,m)

@@ -7,9 +7,10 @@ subroutine wfplot
 use modmain
 implicit none
 ! local variables
-integer ik,ist
+integer ik,ist,ispn
 real(8) x,t1
 ! allocatable arrays
+complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 ! external functions
 real(8) sdelta
@@ -17,8 +18,6 @@ external sdelta
 ! initialise universal variables
 call init0
 call init1
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
 ! read the density and potentials from file
 call readstate
 ! read Fermi energy from file
@@ -54,7 +53,7 @@ else
   t1=1.d0/swidth
   do ik=1,nkpt
 ! get the eigenvalues from file
-    call getevalsv(vkl(:,ik),evalsv(:,ik))
+    call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
     do ist=1,nstsv
       x=(efermi-evalsv(ist,ik))*t1
       occsv(ist,ik)=occmax*wkpt(ik)*sdelta(stype,x)*t1
@@ -65,12 +64,22 @@ end if
 rhomt(:,:,:)=0.d0
 rhoir(:)=0.d0
 ! compute the charge density with the new occupancies
+allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
 do ik=1,nkpt
 ! get the eigenvectors from file
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
-  call rhomagk(ik,evecfv,evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
+! find the matching coefficients
+  do ispn=1,nspnfv
+    call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
+     sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
+  end do
+! add to the density
+  call rhomagk(ngk(:,ik),igkig(:,:,ik),wkpt(ik),occsv(:,ik),apwalm,evecfv, &
+   evecsv)
 end do
+deallocate(apwalm,evecfv,evecsv)
 ! convert muffin-tin density/magnetisation to spherical harmonics
 call rhomagsh
 ! symmetrise the density for the STM plot
@@ -116,7 +125,6 @@ end select
 if (task.ne.162) then
   write(*,'(" for k-point ",I8," and state ",I6)') kstlist(1,1),kstlist(2,1)
 end if
-deallocate(evecfv,evecsv)
 return
 end subroutine
 

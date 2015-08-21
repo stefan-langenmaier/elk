@@ -8,7 +8,7 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: fnum
-character(256), intent(out) :: fext
+character(*), intent(out) :: fext
 ! local variables
 logical exist
 do iqss=1,nqpt

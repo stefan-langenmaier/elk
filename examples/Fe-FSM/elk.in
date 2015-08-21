@@ -8,6 +8,10 @@ tasks
 beta0
   0.05
 
+! FSM step length: reduce to improve convergence
+taufsm
+  0.01
+
 spinpol
  .true.
 

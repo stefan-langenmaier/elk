@@ -17,7 +17,7 @@ do is=1,nspecies
 ! nuclear volume
   vnucl(is)=(4.d0/3.d0)*pi*rnucl(is)**3
 ! number of radial mesh points to nuclear radius
-  nrnucl(is)=nrmt(is)
+  nrnucl(is)=1
   do ir=1,nrmt(is)
     if (spr(ir,is).gt.rnucl(is)) then
       nrnucl(is)=ir
@@ -25,7 +25,7 @@ do is=1,nspecies
     end if
   end do
 ! number of coarse radial mesh points to nuclear radius
-  nrcnucl(is)=nrcmt(is)
+  nrcnucl(is)=1
   do irc=1,nrcmt(is)
     if (rcmt(irc,is).gt.rnucl(is)) then
       nrcnucl(is)=irc

@@ -59,12 +59,11 @@ do is=1,nspecies
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
               if (.not.done(ist)) then
                 if (tsh) then
-                  call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
-                   apwalmq(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
-                   wfmt1(:,:,ist))
+                  call wavefmt(lradstp,ias,ngp(jspn),apwalmq(:,:,:,:,jspn), &
+                   evecfv(:,ist,jspn),wfmt1(:,:,ist))
                 else
-                  call wavefmt(lradstp,lmaxvr,ias,ngp(jspn), &
-                   apwalmq(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt2)
+                  call wavefmt(lradstp,ias,ngp(jspn),apwalmq(:,:,:,:,jspn), &
+                   evecfv(:,ist,jspn),wfmt2)
                   call zbsht(nrc,nrci,wfmt2,wfmt1(:,:,ist))
 !****** fix
                 end if

@@ -18,7 +18,7 @@ use modmain
 ! !DESCRIPTION:
 !   Produces a 1D plot of the real functions contained in arrays {\tt rfmt} and
 !   {\tt rfir} along the lines connecting the vertices in the global array
-!   {\tt vvlp1d}. See routine {\tt rfarray}.
+!   {\tt vvlp1d}. See routine {\tt rfplot}.
 !
 ! !REVISION HISTORY:
 !   Created June 2003 (JKD)
@@ -26,10 +26,8 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: fnum1,fnum2
-integer, intent(in) :: nf
-real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot,nf)
-real(8), intent(in) :: rfir(ngtot,nf)
+integer, intent(in) :: fnum1,fnum2,nf
+real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot,nf),rfir(ngtot,nf)
 ! local variables
 integer i,ip,iv
 real(8) fmin,fmax,t1
@@ -42,11 +40,11 @@ if ((nf.lt.1).or.(nf.gt.4)) then
   stop
 end if
 allocate(fp(npp1d,nf))
-! connect the plotting vertices
-call connect(avec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
+! connect the 1D plotting vertices
+call plotpt1d(avec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
 do i=1,nf
 ! evaluate function at each point
-  call rfarray(npp1d,vplp1d,rfmt(:,:,:,i),rfir(:,i),fp(:,i))
+  call rfplot(npp1d,vplp1d,rfmt(:,:,:,i),rfir(:,i),fp(:,i))
 end do
 fmin=fp(1,1)
 fmax=fp(1,1)

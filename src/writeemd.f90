@@ -37,7 +37,7 @@ call genapwfr
 call genlofr
 ! get the occupancies from file
 do ik=1,nkpt
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! delete existing EMD.OUT
 if (mp_mpi) then
@@ -59,8 +59,7 @@ open(85,file='EMD.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
 do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  allocate(emd(nhkmax))
-  allocate(wfpw(nhkmax,nspinor,nstsv))
+  allocate(emd(nhkmax),wfpw(nhkmax,nspinor,nstsv))
 !$OMP CRITICAL
   write(*,'("Info(writeemd): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL

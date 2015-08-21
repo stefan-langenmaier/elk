@@ -13,13 +13,11 @@ integer istp,jstp,i
 real(8) ds
 ! store original rmtdelta (minimum distance between muffin-tin surfaces)
 rmtdelta0=rmtdelta
-! make rmtdelta large enough to accomodate changes in atomic positions
+! make rmtdelta large enough to accommodate changes in atomic positions
 rmtdelta=0.1d0
-! enable form factor damping
-ffdamp0=ffdamp
-ffdamp=.true.
 ! initialise global variables (and the muffin-tin radii)
 call init0
+call init1
 ! make rmtdelta small so the muffin-tin radii are not subsequently adjusted
 rmtdelta=0.01d0
 ! store orginal volume
@@ -41,7 +39,7 @@ allocate(forcetotp(3,natmtot))
 forcetotp(:,:)=0.d0
 ! initial lattice vector step size
 taulatv(:)=tau0latv
-! initialise previous stress tensor
+! initialise current and previous stress tensor
 stressp(:)=0.d0
 if (mp_mpi) then
 ! open TOTENERGY.OUT
@@ -132,6 +130,8 @@ do istp=1,maxlatvstp
   if (latvopt.eq.0) exit
 ! generate the stress tensor
   call genstress
+! take average of current and previous stress tensors
+  stress(:)=0.5d0*(stress(:)+stressp(:))
 ! check for stop signal
   if (tstop) goto 10
 ! update the lattice vectors
@@ -150,9 +150,14 @@ do istp=1,maxlatvstp
     write(88,'(G18.10)') omega
     call flushifc(88)
   end if
-! check for stress convergence; stress may be non-zero because of volume
-! constraint; checking change in stress tensor components instead
-  ds=sum(abs(stress(1:nstrain)-stressp(1:nstrain)))
+! check for stress convergence
+  if (latvopt.eq.1) then
+    ds=sum(abs(stress(:)))
+  else
+! stress may be non-zero because of volume constraint; check change in stress
+! tensor instead
+    ds=sum(abs(stress(:)-stressp(:)))
+  end if
 ! broadcase ds from master process to all other processes
   call mpi_bcast(ds,1,mpi_double_precision,0,mpi_comm_kpt,ierror)
   if ((istp.ge.3).and.(ds.le.epsstress*tau0latv)) then
@@ -182,7 +187,6 @@ end if
 if (latvopt.ne.0) call gndstate
 ! restore original parameters
 rmtdelta=rmtdelta0
-ffdamp=ffdamp0
 return
 end subroutine
 

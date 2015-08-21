@@ -9,7 +9,7 @@ use modmpi
 implicit none
 ! arguments
 real(8), intent(in) :: zn
-character(256), intent(in) :: symb
+character(*), intent(in) :: symb
 ! local variables
 integer, parameter :: nit=4
 integer nst,ist,jst

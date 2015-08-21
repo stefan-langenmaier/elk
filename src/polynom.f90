@@ -162,7 +162,7 @@ do j=1,np-1
   end do
 end do
 if (m.gt.0) then
-! take the m'th derivative
+! take the m th derivative
   do j=1,m
     do i=m+1,np
       c(i)=c(i)*dble(i-j)

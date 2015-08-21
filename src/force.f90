@@ -93,11 +93,11 @@ allocate(grfmt(lmmaxvr,nrmtmax,3))
 !--------------------------------!
 !     Hellmann-Feynman force     !
 !--------------------------------!
-! compute the gradient of the Coulomb potential at the nucleus
+! compute the gradient of the Coulomb potential at the nuclear surface
 do ias=1,natmtot
   is=idxis(ias)
   call gradrfmt(nrmt(is),nrmtinr(is),spr(:,is),vclmt(:,:,ias),nrmtmax,grfmt)
-  forcehf(:,ias)=-spzn(is)*grfmt(1,irfhf(is),:)*y00
+  forcehf(:,ias)=-spzn(is)*grfmt(1,nrnucl(is),:)*y00
 end do
 ! symmetrise Hellmann-Feynman force
 call symvect(.false.,forcehf)
@@ -129,7 +129,7 @@ if (tfibs) then
     nri=nrmtinr(is)
     call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
     do i=1,3
-      t1=rfmtinp(1,nr,nri,spr(:,is),vsmt(:,:,ias),grfmt(:,:,i))
+      t1=rfmtinp(nr,nri,1,spr(:,is),vsmt(:,:,ias),grfmt(:,:,i))
       forceibs(i,ias)=forceibs(i,ias)+t1
     end do
   end do

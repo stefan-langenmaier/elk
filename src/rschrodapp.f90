@@ -33,10 +33,8 @@ subroutine rschrodapp(sol,l,nr,r,vr,p0,q0,q1,hp0)
 !BOC
 implicit none
 real(8), intent(in) :: sol
-integer, intent(in) :: l
-integer, intent(in) :: nr
-real(8), intent(in) :: r(nr)
-real(8), intent(in) :: vr(nr)
+integer, intent(in) :: l,nr
+real(8), intent(in) :: r(nr),vr(nr)
 real(8), intent(in) :: p0(nr),q0(nr),q1(nr)
 real(8), intent(out) :: hp0(nr)
 ! local variables

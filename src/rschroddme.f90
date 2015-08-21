@@ -31,13 +31,10 @@ subroutine rschroddme(sol,m,l,k,e,nr,r,vr,nn,p0,p1,q0,q1)
 !BOC
 implicit none
 real(8), intent(in) :: sol
-integer, intent(in) :: m
-integer, intent(in) :: l
-integer, intent(in) :: k
+integer, intent(in) :: m,l,k
 real(8), intent(in) :: e
 integer, intent(in) :: nr
-real(8), intent(in) :: r(nr)
-real(8), intent(in) :: vr(nr)
+real(8), intent(in) :: r(nr),vr(nr)
 integer, intent(out) :: nn
 real(8), intent(out) :: p0(nr),p1(nr)
 real(8), intent(out) :: q0(nr),q1(nr)

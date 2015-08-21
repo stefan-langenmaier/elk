@@ -52,11 +52,11 @@ allocate(ddlh(nmatmax,nmatmax),ddlo(nmatmax,nmatmax))
 allocate(vo(nmatmax),dvh(nmatmax),dvo(nmatmax))
 allocate(ffv(nstfv,nstfv),dffv(nstfv,nstfv),y(nstfv),dy(nstfv))
 ! equivalent reduced k-point
-jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! get the eigenvalues/vectors from file
-call getevalfv(vkl(:,ik),evalfv)
-call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-call getevecsv(vkl(:,ik),evecsv)
+call getevalfv(filext,vkl(:,ik),evalfv)
+call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+call getevecsv(filext,vkl(:,ik),evecsv)
 ! get the eigenvalue/vector derivatives from file
 call getdevalfv(ik,iqph,isph,iaph,ipph,devalfv)
 call getdevecfv(ik,iqph,isph,iaph,ipph,devecfv)
@@ -263,8 +263,9 @@ do jspn=1,nspnfv
           zsum=zsum+occsv(j,jk)*dffv(j,j)
         end do
       end if
-!$OMP ATOMIC
+!$OMP CRITICAL
       dyn(l,ias)=dyn(l,ias)-wkptnr*zsum
+!$OMP END CRITICAL
 ! end loop over Cartesian components
     end do
 ! end loop over atoms and species

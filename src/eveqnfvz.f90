@@ -42,8 +42,9 @@ end if
 evalfv(1:nstfv)=w(1:nstfv)
 deallocate(iwork,ifail,w,rwork,work)
 call timesec(ts1)
-!$OMP ATOMIC
+!$OMP CRITICAL
 timefv=timefv+ts1-ts0
+!$OMP END CRITICAL
 return
 end subroutine
 

@@ -78,7 +78,7 @@ integer idx(nstsv),idxq(nstsv)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 complex(8), allocatable :: wfmtq(:,:,:,:,:),wfirq(:,:,:)
 complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
-complex(8), allocatable :: zw(:),zg(:,:)
+complex(8), allocatable :: zrhoig(:,:),zw(:)
 if (.not.spinpol) then
   write(*,*)
   write(*,'("Error(genspchi0): spin-unpolarised calculation")')
@@ -113,13 +113,13 @@ allocate(wfmtq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstq))
 allocate(wfirq(ngtot,nspinor,nstq))
 call genwfsvp(.false.,.false.,nstq,idxq,vkql,wfmtq,ngtot,wfirq)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(zrhomt,zrhoir,zw,zg) &
+!$OMP PRIVATE(zrhomt,zrhoir,zrhoig,zw) &
 !$OMP PRIVATE(jst,kst,lst,t1,eij,iw) &
 !$OMP PRIVATE(i,j,a,b,tz,ig,jg,z1,z2)
 !$OMP DO
 do ist=1,nst
   allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
-  allocate(zw(nwrf),zg(ngrf,4))
+  allocate(zrhoig(ngrf,4),zw(nwrf))
   kst=idx(ist)
   do jst=1,nstq
     lst=idxq(jst)
@@ -156,18 +156,18 @@ do ist=1,nst
         end if
         call genzrho(.true.,.false.,wfmt(:,:,:,a,ist),wfir(:,a,ist), &
          wfmtq(:,:,:,b,jst),wfirq(:,b,jst),zrhomt,zrhoir)
-        call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zg(:,i))
+        call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zrhoig(:,i))
       end do
     end do
 !$OMP CRITICAL
     do j=1,4
       if (tz(j)) cycle
       do jg=1,ngrf
-        z1=conjg(zg(jg,j))
+        z1=conjg(zrhoig(jg,j))
         do i=1,4
           if (tz(i)) cycle
           do ig=1,ngrf
-            z2=zg(ig,i)*z1
+            z2=zrhoig(ig,i)*z1
             call zaxpy(nwrf,z2,zw,1,chi0(:,ig,i,jg,j),1)
           end do
         end do
@@ -176,7 +176,7 @@ do ist=1,nst
 !$OMP END CRITICAL
 ! end loop over jst
   end do
-  deallocate(zrhomt,zrhoir,zw,zg)
+  deallocate(zrhomt,zrhoir,zrhoig,zw)
 ! end loop over ist
 end do
 !$OMP END DO

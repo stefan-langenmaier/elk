@@ -30,7 +30,7 @@ do is=1,nspecies
     do ist3=1,spnst(is)
       if (spcore(ist3,is)) then
         do m=-spk(ist3,is),spk(ist3,is)-1
-! pass m-1/2 to wavefcr
+! generate the core wavefunction in spherical coordinates (pass in m-1/2)
           call wavefcr(.false.,lradstp,is,ia,ist3,m,nrcmtmax,wfcr)
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(zfmt)
 !$OMP DO
@@ -38,10 +38,10 @@ do is=1,nspecies
             allocate(zfmt(lmmaxvr,nrcmtmax))
 ! calculate the complex overlap density in spherical harmonics
             if (spinpol) then
-              call zfmtmul2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
+              call genzrmt2(nrc,nrci,wfcr(:,:,1),wfcr(:,:,2), &
                wfmt(:,:,ias,1,ist1),wfmt(:,:,ias,2,ist1),zfmt)
             else
-              call zfmtmul1(nrc,nrci,wfcr(:,:,1),wfmt(:,:,ias,1,ist1),zfmt)
+              call genzrmt1(nrc,nrci,wfcr(:,:,1),wfmt(:,:,ias,1,ist1),zfmt)
             end if
             call zfsht(nrc,nrci,zfmt,zrhomt(:,:,ist1))
             deallocate(zfmt)
@@ -54,8 +54,7 @@ do is=1,nspecies
             allocate(zfmt(lmmaxvr,nrcmtmax))
             call zpotclmt(nrc,nrci,rcmt(:,is),zrhomt(:,:,ist2),zfmt)
             do ist1=1,ist2
-              z1=zfmtinp(.true.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ist1),zfmt)
-!$OMP ATOMIC
+              z1=zfmtinp(nrc,nrci,rcmt(:,is),zrhomt(:,:,ist1),zfmt)
               vmat(ist1,ist2)=vmat(ist1,ist2)-z1
             end do
             deallocate(zfmt)

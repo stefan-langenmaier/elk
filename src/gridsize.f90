@@ -27,11 +27,8 @@ subroutine gridsize(avec,gmaxvr,ngridg,ngtot,intgv)
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: avec(3,3)
-real(8), intent(in) :: gmaxvr
-integer, intent(out) :: ngridg(3)
-integer, intent(out) :: ngtot
-integer, intent(out) :: intgv(2,3)
+real(8), intent(in) :: avec(3,3),gmaxvr
+integer, intent(out) :: ngridg(3),ngtot,intgv(2,3)
 ! local variables
 real(8), parameter :: pi=3.1415926535897932385d0
 ! find optimal grid size for potential and density

@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 # elk blocks to columns by Markus Meinert
+# update January 2015, fixed a bug related to blank lines
+
 # Usage: blocks2columns.py PDOS_S01_A0001.OUT
 #        blocks2columns.py TDOS.OUT
 #        blocks2columns.py BAND.OUT
@@ -26,6 +28,10 @@ ndatasets = 0
 for line in data:
 	if line.split() == []:
 		ndatasets += 1
+# If last line is not blank, add one to ndatasets and nlines.
+if data[-1].split() != []:
+	ndatasets += 1
+	nlines += 1
 print(" Number of datasets: %i " % ndatasets)
 
 # Number of lines per block is:

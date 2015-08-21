@@ -64,7 +64,7 @@ call gensfacgp(ngp,vgpc,ngkmax,sfacgp)
 ! find the matching coefficients for k-point p
 call match(ngp,gpc,tpgpc,sfacgp,apwalm1)
 ! get the eigenvectors for k-point p
-call getevecfv(vpl,vgpl,evecfv1)
+call getevecfv(filext,vpl,vgpl,evecfv1)
 ! p+q-vector in lattice coordinates
 vpql(:)=vpl(:)+vecql(:)
 ! p+q-vector in Cartesian coordinates
@@ -80,7 +80,7 @@ call gensfacgp(ngpq,vgpqc,ngkmax,sfacgpq)
 ! find the matching coefficients for k-point p+q
 call match(ngpq,gpqc,tpgpqc,sfacgpq,apwalm2)
 ! get the eigenvectors for k-point p+q
-call getevecfv(vpql,vgpql,evecfv2)
+call getevecfv(filext,vpql,vgpql,evecfv2)
 ! set the first-variational matrix element array to zero
 em(:,:)=0.d0
 !------------------------------------!
@@ -93,20 +93,20 @@ do is=1,nspecies
     ias=idxas(ia,is)
     do ist=1,nstfv
 ! calculate the wavefunction for k-point p+q
-      call wavefmt(lradstp,lmaxvr,ias,ngpq,apwalm2,evecfv2(:,ist),lmmaxvr,wfmt1)
+      call wavefmt(lradstp,ias,ngpq,apwalm2,evecfv2(:,ist),wfmt1)
 ! convert from spherical harmonics to spherical coordinates
       call zbsht(nrc,nrci,wfmt1,wfmt2(:,:,ist))
 ! multiply by exp(-iq.r) (conjugate because zfmtinp conjugates first function)
-      call zfmtmul1(nrc,nrci,expmt(:,:,ias),wfmt2(:,:,ist),wfmt1)
+      call genzrmt1(nrc,nrci,expmt(:,:,ias),wfmt2(:,:,ist),wfmt1)
 ! convert from spherical coordinates to spherical harmonics
       call zfsht(nrc,nrci,wfmt1,wfmt2(:,:,ist))
     end do
     do jst=1,nstfv
 ! calculate the wavefunction for k-point p
-      call wavefmt(lradstp,lmaxvr,ias,ngp,apwalm1,evecfv1(:,jst),lmmaxvr,wfmt1)
+      call wavefmt(lradstp,ias,ngp,apwalm1,evecfv1(:,jst),wfmt1)
       do ist=1,nstfv
-        em(ist,jst)=em(ist,jst)+zfmtinp(.true.,nrc,nrci,rcmt(:,is), &
-         wfmt2(:,:,ist),wfmt1)
+        em(ist,jst)=em(ist,jst)+zfmtinp(nrc,nrci,rcmt(:,is),wfmt2(:,:,ist), &
+         wfmt1)
       end do
     end do
 ! end loops over atoms and species
@@ -143,8 +143,8 @@ end do
 !-------------------------------------------!
 if (tevecsv) then
 ! get the second-variational eigenvectors
-  call getevecsv(vpl,evecsv1)
-  call getevecsv(vpql,evecsv2)
+  call getevecsv(filext,vpl,evecsv1)
+  call getevecsv(filext,vpql,evecsv2)
   do i=1,nstsv
     do j=1,nstsv
       zsum=0.d0

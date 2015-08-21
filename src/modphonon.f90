@@ -13,6 +13,8 @@ use modmain
 integer nbph
 ! current phonon q-point, species, atom and polarisation index
 integer iqph,isph,iaph,iasph,ipph
+! tphiq0 is .true. if q = 0
+logical tphiq0
 ! number of vectors for writing out frequencies and eigenvectors
 integer nphwrt
 ! vectors in lattice coordinates for writing out frequencies and eigenvectors
@@ -110,6 +112,10 @@ complex(8), allocatable :: dhlolo(:,:,:,:)
 real(8), allocatable :: gntyyy(:,:,:)
 ! smallest allowed perturbation theory denominator for eigenvector derivatives
 real(8) epsph
+! Fermi energy derivative
+real(8) defermi
+! second-variational occupation number derivatives
+real(8), allocatable :: doccsv(:,:)
 
 end module
 

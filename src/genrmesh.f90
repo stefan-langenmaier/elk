@@ -50,8 +50,8 @@ end do
 ! where rho is calculated with lmaxinr
 do is=1,nspecies
   t1=fracinr*rmt(is)
-  nrmtinr(is)=0
-  nrcmtinr(is)=0
+  nrmtinr(is)=1
+  nrcmtinr(is)=1
   irc=0
   do ir=1,nrmt(is),lradstp
     irc=irc+1
@@ -60,12 +60,6 @@ do is=1,nspecies
       nrmtinr(is)=ir
       nrcmtinr(is)=irc
     end if
-  end do
-end do
-! determine at which radius the Hellmann-Feynman force is to be evaluated
-do is=1,nspecies
-  do ir=1,nrmt(is)
-    if (spr(ir,is).lt.radfhf) irfhf(is)=ir
   end do
 end do
 ! write to VARIABLES.OUT

@@ -13,6 +13,9 @@ rgkmax
 gmaxvr
   0.0
 
+trimvg
+ .true.
+
 maxscl
   1
 

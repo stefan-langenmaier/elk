@@ -86,8 +86,8 @@ call genapwfr
 call genlofr
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  if (dosocc) call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  if (dosocc) call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! generate unitary matrices which convert the (l,m) basis into the irreducible
 ! representation basis of the symmetry group at each atomic site
@@ -127,7 +127,7 @@ do ik=1,nkptnr
   allocate(dmat(lmmax,nspinor,lmmax,nspinor,nstsv))
   allocate(sdmat(nspinor,nspinor,nstsv),a(lmmax,lmmax))
 ! equivalent reduced k-point
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! loop over first-variational spins
   do ispn=1,nspnfv
     vl(:)=vkl(:,ik)
@@ -147,8 +147,8 @@ do ik=1,nkptnr
      sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
 ! get the eigenvectors from file for non-reduced k-point
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
@@ -230,7 +230,7 @@ allocate(f(nstsv,nkptnr),g(nwplot))
 dt(:,:)=0.d0
 do ispn=1,nspinor
   do ik=1,nkptnr
-    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+    jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
     do ist=1,nstsv
 ! subtract the Fermi energy
       e(ist,ik,ispn)=evalsv(ist,jk)-efermi
@@ -244,7 +244,7 @@ do ispn=1,nspinor
     end do
   end do
 ! integrate over the Brillouin zone
-  call brzint(nswplot,ngridk,nsk,ikmapnr,nwplot,wplot,nstsv,nstsv,e(:,:,ispn), &
+  call brzint(nswplot,ngridk,nsk,ivkiknr,nwplot,wplot,nstsv,nstsv,e(:,:,ispn), &
    f,g)
   if (dosssum) then
     dt(:,1)=dt(:,1)+g(:)
@@ -277,7 +277,7 @@ do is=1,nspecies
         allocate(f(nstsv,nkptnr),g(nwplot))
         l=idxil(lm)
         do ik=1,nkptnr
-          jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+          jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
           do ist=1,nstsv
             f(ist,ik)=bc(lm,ispn,ias,ist,ik)
             if (dosocc) then
@@ -287,7 +287,7 @@ do is=1,nspecies
             end if
           end do
         end do
-        call brzint(nswplot,ngridk,nsk,ikmapnr,nwplot,wplot,nstsv,nstsv, &
+        call brzint(nswplot,ngridk,nsk,ivkiknr,nwplot,wplot,nstsv,nstsv, &
          e(:,:,ispn),f,g)
         if (dosmsum) then
           if (dosssum) then

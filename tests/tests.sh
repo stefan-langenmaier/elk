@@ -6,7 +6,7 @@ do
   cd $i
   echo
   echo "Running test in directory $i..."
-  \rm -f *.OUT
+  \rm -f *.OUT gmon.out fort.*
   ../../src/elk > test.log
   NERROR=`grep -c Error test.log`
   if test $NERROR -gt 0
@@ -14,8 +14,7 @@ do
     echo " Failed! See test.log and output files"
   else
     echo " Passed"
-    \rm -f test.log
-    \rm -f *.OUT
+    \rm -f *.OUT test.log
   fi
   cd ..
 done

@@ -7,8 +7,7 @@ subroutine mixerifc(mtype,n,v,dv,nwork,work)
 use modmain
 implicit none
 ! arguments
-integer, intent(in) :: mtype
-integer, intent(in) :: n
+integer, intent(in) :: mtype,n
 real(8), intent(inout) :: v(n)
 real(8), intent(out) :: dv
 integer, intent(inout) :: nwork
@@ -57,7 +56,7 @@ subroutine getmixdata(mtype,mixdescr)
 implicit none
 ! arguments
 integer, intent(in) :: mtype
-character(256), intent(out) :: mixdescr
+character(*), intent(out) :: mixdescr
 select case(mtype)
 case(0)
   mixdescr='Linear mixing'

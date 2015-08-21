@@ -18,9 +18,9 @@ use modmain
 !   rfir1 : first real interstitial function in real-space (in,real(ngtot))
 !   rfir2 : second real interstitial function in real-space (in,real(ngtot))
 ! !DESCRIPTION:
-!   Calculates the inner product of two real fuctions over the entire unit cell.
+!   Calculates the inner product of two real functions over the entire unit cell.
 !   The input muffin-tin functions should have angular momentum cut-off
-!   {\tt lmaxvr}. In the intersitial region, the integrand is multiplied with
+!   {\tt lmaxvr}. In the interstitial region, the integrand is multiplied with
 !   the characteristic function, $\tilde{\Theta}({\bf r})$, to remove the
 !   contribution from the muffin-tin. See routines {\tt rfmtinp} and
 !   {\tt gencfun}.
@@ -52,7 +52,7 @@ sum=sum*omega/dble(ngtot)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  sum=sum+rfmtinp(lrstp,nrmt(is),nrmtinr(is),spr(:,is),rfmt1(:,:,ias), &
+  sum=sum+rfmtinp(nrmt(is),nrmtinr(is),lrstp,spr(:,is),rfmt1(:,:,ias), &
    rfmt2(:,:,ias))
 end do
 !$OMP END DO

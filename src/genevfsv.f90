@@ -25,10 +25,10 @@ do ik=1,nkpt
 ! solve the first- and second-variational eigenvalue equations
   call eveqn(ik,evalfv,evecfv,evecsv)
 ! write the eigenvalues/vectors to file
-  call putevalfv(ik,evalfv)
-  call putevalsv(ik,evalsv(:,ik))
-  call putevecfv(ik,evecfv)
-  call putevecsv(ik,evecsv)
+  call putevalfv(filext,ik,evalfv)
+  call putevalsv(filext,ik,evalsv(:,ik))
+  call putevecfv(filext,ik,evecfv)
+  call putevecsv(filext,ik,evecsv)
   deallocate(evalfv,evecfv,evecsv)
 end do
 !$OMP END DO

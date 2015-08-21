@@ -7,10 +7,8 @@ subroutine hflocal(vmt,vir,bmt,bir)
 use modmain
 implicit none
 ! arguments
-real(8), intent(out) :: vmt(lmmaxvr,nrcmtmax,natmtot)
-real(8), intent(out) :: vir(ngtot)
-real(8), intent(out) :: bmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
-real(8), intent(out) :: bir(ngtot,ndmag)
+real(8), intent(out) :: vmt(lmmaxvr,nrcmtmax,natmtot),vir(ngtot)
+real(8), intent(out) :: bmt(lmmaxvr,nrcmtmax,natmtot,ndmag),bir(ngtot,ndmag)
 ! local variables
 integer idm,is,ias,ir,irc
 ! allocatable arrays

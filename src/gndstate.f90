@@ -165,7 +165,7 @@ do iscl=1,maxscl
   if (mp_mpi) then
 ! write the occupation numbers to file
     do ik=1,nkpt
-      call putoccsv(ik,occsv(:,ik))
+      call putoccsv(filext,ik,occsv(:,ik))
     end do
 ! write eigenvalues to file
     call writeeval

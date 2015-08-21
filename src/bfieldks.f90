@@ -38,17 +38,22 @@ do ias=1,natmtot
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-!--------------------------------------!
-!     interstitial Kohn-Sham field     !
-!--------------------------------------!
+!-----------------------------------------------!
+!     interstitial Kohn-Sham magnetic field     !
+!-----------------------------------------------!
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(t1)
+!$OMP DO
 do idm=1,ndmag
   if (ncmag) then
     t1=cb*bfieldc(idm)
   else
     t1=cb*bfieldc(3)
   end if
+! multiply by characteristic function
   bsir(:,idm)=(bxcir(:,idm)+t1)*cfunir(:)
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 return
 end subroutine
 

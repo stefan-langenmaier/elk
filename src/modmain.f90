@@ -127,7 +127,7 @@ real(8), allocatable :: spvr(:,:)
 !     muffin-tin radial mesh and angular momentum variables     !
 !---------------------------------------------------------------!
 ! scale factor for number of muffin-tin points
-integer nrmtscf
+real(8) nrmtscf
 ! number of muffin-tin radial points for each species
 integer nrmt(maxspecies)
 ! maximum nrmt over all the species
@@ -152,14 +152,14 @@ integer, parameter :: maxlapw=50
 integer lmaxapw
 ! (lmaxapw+1)^2
 integer lmmaxapw
-! maximum angular momentum for potentials and densities
-integer lmaxvr
-! (lmaxvr+1)^2
-integer lmmaxvr
 ! maximum angular momentum used when evaluating the Hamiltonian matrix elements
 integer lmaxmat
 ! (lmaxmat+1)^2
 integer lmmaxmat
+! maximum angular momentum for potentials and densities
+integer lmaxvr
+! (lmaxvr+1)^2
+integer lmmaxvr
 ! maximum angular momentum in the inner part of the muffin-int
 integer lmaxinr
 ! (lmaxinr+1)^2
@@ -330,8 +330,6 @@ complex(8), allocatable :: ylmg(:,:)
 complex(8), allocatable :: sfacg(:,:)
 ! smooth step function form factors for all species and G-vectors
 real(8), allocatable :: ffacg(:,:)
-! ffdamp is .true. if the form factors should be damped to zero at gmaxvr
-logical ffdamp
 ! characteristic function in G-space: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
 ! characteristic function in real-space: 0 inside the muffin-tins and 1 outside
@@ -363,12 +361,12 @@ integer symkpt(3,3,48)
 integer nkpt
 ! total number of non-reduced k-points
 integer nkptnr
-! map from non-reduced grid to reduced index
-integer, allocatable :: ikmap(:,:,:)
-! map from non-reduced grid to non-reduced index
-integer, allocatable :: ikmapnr(:,:,:)
 ! locations of k-points on integer grid
 integer, allocatable :: ivk(:,:)
+! map from (i1,i2,i3) to reduced k-point index
+integer, allocatable :: ivkik(:,:,:)
+! map from (i1,i2,i3) to non-reduced k-point index
+integer, allocatable :: ivkiknr(:,:,:)
 ! k-points in lattice coordinates
 real(8), allocatable :: vkl(:,:)
 ! k-points in Cartesian coordinates
@@ -443,6 +441,13 @@ real(8) wqptnr
 integer iq0
 ! weights associated with the integral of 1/q^2
 real(8), allocatable :: wiq2(:)
+
+!-----------------------------!
+!     ultracell variables     !
+!-----------------------------!
+! kappa-point grid sizes
+integer ngridkpa(3)
+!******
 
 !-----------------------------------------------------!
 !     spherical harmonic transform (SHT) matrices     !
@@ -558,9 +563,9 @@ integer mixsdb
 ! Broyden mixing parameters alpha and w0
 real(8) broydpm(2)
 
-!-------------------------------------!
-!     charge and moment variables     !
-!-------------------------------------!
+!----------------------------------------------!
+!     charge, moment and current variables     !
+!----------------------------------------------!
 ! tolerance for error in total charge
 real(8) epschg
 ! total nuclear charge
@@ -597,6 +602,8 @@ real(8) momir(3)
 real(8), allocatable :: mommt(:,:)
 ! total muffin-tin moment
 real(8) mommttot(3)
+! total current
+real(8) curtot(3)
 
 !-----------------------------------------!
 !     APW and local-orbital variables     !
@@ -663,6 +670,10 @@ real(8) dlefe
 logical lorbcnd
 ! conduction state local-orbital order
 integer lorbordc
+! excess order of the APW and local-orbital functions
+integer nxoapwlo
+! excess local orbitals
+integer nxlo
 
 !-------------------------------------------!
 !     overlap and Hamiltonian variables     !
@@ -809,10 +820,6 @@ real(8) engytot
 logical tforce
 ! tfibs is .true. if the IBS contribution to the force is to be calculated
 logical tfibs
-! radial distance at which Hellmann-Feynman force is to be evaluated
-real(8) radfhf
-! nearest radial mesh point to radfhf
-integer irfhf(maxspecies)
 ! Hellmann-Feynman force on each atom
 real(8), allocatable :: forcehf(:,:)
 ! incomplete basis set (IBS) force on each atom
@@ -944,11 +951,9 @@ integer maxitoep
 real(8) tauoep(3)
 ! magnitude of the OEP residual
 real(8) resoep
-! kinetic matrix elements in the Cartesian basis
-complex(8), allocatable :: kmatc(:,:,:)
-! complex versions of the exchange potential and field
-complex(8), allocatable :: zvxmt(:,:,:),zvxir(:)
-complex(8), allocatable :: zbxmt(:,:,:,:),zbxir(:,:)
+! exchange potential and magnetic field
+real(8), allocatable :: vxmt(:,:,:),vxir(:)
+real(8), allocatable :: bxmt(:,:,:,:),bxir(:,:)
 ! hybrid is .true. if a hybrid functional is to be used
 logical hybrid
 ! hybrid functional mixing coefficient
@@ -1068,6 +1073,8 @@ real(8), parameter :: hbar_si=1.054571726d-34
 real(8), parameter :: e_si=1.602176565d-19
 ! atomic unit of magnetic flux density in SI
 real(8), parameter :: b_si=hbar_si/(e_si*br_si**2)
+! atomic unit of electric field in SI
+real(8), parameter :: ef_si=ha_si/(e_si*br_si)
 ! atomic unit of time in SI
 real(8), parameter :: t_si=hbar_si/ha_si
 ! electron mass in SI (CODATA 2010)
@@ -1082,7 +1089,7 @@ real(8), parameter :: amu=amu_si/em_si
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 2,3,22 /
+data version / 3,0,18 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

@@ -3,10 +3,11 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine getevalsv(vpl,evalsvp)
+subroutine getevalsv(fext,vpl,evalsvp)
 use modmain
 implicit none
 ! arguments
+character(*), intent(in) :: fext
 real(8), intent(in) :: vpl(3)
 real(8), intent(out) :: evalsvp(nstsv)
 ! local variables
@@ -18,7 +19,7 @@ call findkpt(vpl,isym,ik)
 ! find the record length
 inquire(iolength=recl) vkl_,nstsv_,evalsvp
 !$OMP CRITICAL
-open(70,file='EVALSV'//trim(filext),action='READ',form='UNFORMATTED', &
+open(70,file='EVALSV'//trim(fext),action='READ',form='UNFORMATTED', &
  access='DIRECT',recl=recl)
 read(70,rec=ik) vkl_,nstsv_,evalsvp
 close(70)

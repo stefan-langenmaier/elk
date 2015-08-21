@@ -3,10 +3,11 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine getevecsv(vpl,evecsv)
+subroutine getevecsv(fext,vpl,evecsv)
 use modmain
 implicit none
 ! arguments
+character(*), intent(in) :: fext
 real(8), intent(in) :: vpl(3)
 complex(8), intent(out) :: evecsv(nstsv,nstsv)
 ! local variables
@@ -19,7 +20,7 @@ call findkpt(vpl,isym,ik)
 ! find the record length
 inquire(iolength=recl) vkl_,nstsv_,evecsv
 !$OMP CRITICAL
-open(70,file=trim(scrpath)//'EVECSV'//trim(filext),action='READ', &
+open(70,file=trim(scrpath)//'EVECSV'//trim(fext),action='READ', &
  form='UNFORMATTED',access='DIRECT',recl=recl)
 read(70,rec=ik) vkl_,nstsv_,evecsv
 close(70)

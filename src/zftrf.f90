@@ -36,15 +36,13 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: npv
-integer, intent(in) :: ivp(3,npv)
+integer, intent(in) :: npv,ivp(3,npv)
 real(8), intent(in) :: vpc(3,npv)
-real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot)
-real(8), intent(in) :: rfir(ngtot)
+real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot)
 complex(8), intent(out) :: zfp(npv)
 ! local variables
 integer is,ia,ias
-integer nrc,nrci,irc0,irc
+integer nrc,nrci,iro,irc
 integer lmax,l,m,lm
 integer ip,ig,ifg
 real(8) p,tp(2),t0,t1,t2
@@ -107,15 +105,15 @@ do ig=1,ngtot
       lm=0
       do l=0,lmaxvr
         if (l.le.lmaxinr) then
-          irc0=1
+          iro=1
         else
-          irc0=nrci+1
+          iro=nrci+1
         end if
         z2=z1*zil(l)
         do m=-l,l
           lm=lm+1
           z3=z2*ylm(lm)
-          do irc=irc0,nrc
+          do irc=iro,nrc
             zfmt(lm,irc,ias)=zfmt(lm,irc,ias)-z3*jl(l,irc)
           end do
         end do

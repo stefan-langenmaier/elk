@@ -13,11 +13,8 @@ integer isym,n,nsk(3),iw
 real(8) vkql(3),v(3)
 real(8) qc,wd,dw,w,t1
 ! allocatable arrays
-real(8), allocatable :: e(:,:,:)
-real(8), allocatable :: f(:,:,:)
-real(8), allocatable :: ddcs(:)
-complex(8), allocatable :: expmt(:,:,:)
-complex(8), allocatable :: emat(:,:)
+real(8), allocatable :: e(:,:,:),f(:,:,:),ddcs(:)
+complex(8), allocatable :: expmt(:,:,:),emat(:,:)
 ! initialise universal variables
 call init0
 call init1
@@ -49,8 +46,8 @@ call genapwfr
 call genlofr
 ! get the second-variational eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! generate the phase factor function exp(iq.r) in the muffin-tins
 call genexpmt(vecqc,expmt)
@@ -67,7 +64,7 @@ do ik=1,nkptnr
   write(*,'("Info(elnes): ",I6," of ",I6," k-points")') ik,nkptnr
 !$OMP END CRITICAL
 ! equivalent reduced k-point
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! k+q-vector in lattice coordinates
   vkql(:)=vkl(:,ik)+vecql(:)
 ! index to k+q-vector
@@ -92,7 +89,7 @@ end do
 nsk(:)=max(ngrkf/ngridk(:),1)
 n=nstsv*nstsv
 ! integrate over the Brillouin zone
-call brzint(nswplot,ngridk,nsk,ikmapnr,nwplot,wplot,n,n,e,f,ddcs)
+call brzint(nswplot,ngridk,nsk,ivkiknr,nwplot,wplot,n,n,e,f,ddcs)
 qc=sqrt(vecqc(1)**2+vecqc(2)**2+vecqc(3)**2)
 t1=2.d0/(omega*occmax)
 if (qc.gt.epslat) t1=t1/qc**4

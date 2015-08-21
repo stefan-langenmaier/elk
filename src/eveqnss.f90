@@ -8,8 +8,7 @@ use modmain
 use moddftu
 implicit none
 ! arguments
-integer, intent(in) :: ngp(nspnfv)
-integer, intent(in) :: igpig(ngkmax,nspnfv)
+integer, intent(in) :: ngp(nspnfv),igpig(ngkmax,nspnfv)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 real(8), intent(in) :: evalfv(nstfv,nspnfv)
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
@@ -60,8 +59,8 @@ do ias=1,natmtot
   do ispn=1,nspnfv
     if (ispn.eq.2) zq=conjg(zq)
     do ist=1,nstfv
-      call wavefmt(lradstp,lmaxvr,ias,ngp(ispn),apwalm(:,:,:,:,ispn), &
-       evecfv(:,ist,ispn),lmmaxvr,wfmt1(:,:,ist,ispn))
+      call wavefmt(lradstp,ias,ngp(ispn),apwalm(:,:,:,:,ispn), &
+       evecfv(:,ist,ispn),wfmt1(:,:,ist,ispn))
 ! de-phase if required
       if (ssdph) wfmt1(:,1:nrc,ist,ispn)=zq*wfmt1(:,1:nrc,ist,ispn)
     end do
@@ -107,6 +106,8 @@ do ias=1,natmtot
       end do
     end if
 ! second-variational Hamiltonian matrix
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,j,k,ispn)
+!$OMP DO
     do ist=1,nstfv
       do k=1,3
         if (k.eq.1) then
@@ -123,11 +124,13 @@ do ias=1,natmtot
           j=jst+nstfv
         end if
         if (i.le.j) then
-          evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,nrc,nrci,rcmt(:,is), &
+          evecsv(i,j)=evecsv(i,j)+zfmtinp(nrc,nrci,rcmt(:,is), &
            wfmt1(:,:,ist,ispn),wfmt4(:,:,k))
         end if
       end do
     end do
+!$OMP END DO
+!$OMP END PARALLEL
   end do
 end do
 deallocate(wfmt1,wfmt2,wfmt3,wfmt4)
@@ -165,6 +168,8 @@ do jst=1,nstfv
     z(igp,3)=wfir2(ifg)
   end do
 ! add to Hamiltonian matrix
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,j,k,ispn)
+!$OMP DO
   do ist=1,nstfv
     do k=1,3
       if (k.eq.1) then
@@ -185,6 +190,8 @@ do jst=1,nstfv
       end if
     end do
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end do
 deallocate(wfir1,wfir2,z)
 ! add the diagonal first-variational part
@@ -210,8 +217,9 @@ if (info.ne.0) then
 end if
 deallocate(rwork,work)
 call timesec(ts1)
-!$OMP ATOMIC
+!$OMP CRITICAL
 timesv=timesv+ts1-ts0
+!$OMP END CRITICAL
 return
 end subroutine
 

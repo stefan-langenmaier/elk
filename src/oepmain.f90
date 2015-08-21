@@ -8,14 +8,14 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ik,idm,is,ias
-integer nr,nrc,nrci,n,it
+integer ik,idm,is,ias,it
+integer nr,nri,nrc,nrci,n
 real(8) tau,resp,t1
 ! allocatable arrays
-real(8), allocatable :: rfmt1(:,:,:),rfmt2(:,:),rfir(:)
-real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 real(8), allocatable :: dvxmt(:,:,:),dvxir(:)
 real(8), allocatable :: dbxmt(:,:,:,:),dbxir(:,:)
+real(8), allocatable :: rfmt1(:,:,:),rfmt2(:,:),rfir(:)
+real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 complex(8), allocatable :: vclcv(:,:,:,:),vclvv(:,:,:)
 ! external functions
 real(8) rfinp
@@ -26,20 +26,20 @@ allocate(vclcv(ncrmax,natmtot,nstsv,nkpt))
 allocate(vclvv(nstsv,nstsv,nkpt))
 call oepvcl(vclcv,vclvv)
 ! allocate local arrays
-allocate(rfmt1(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot),dvxir(ngtot))
+allocate(rfmt1(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 if (spinpol) then
-  allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag))
-  allocate(rvfir(ngtot,ndmag))
   allocate(dbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
   allocate(dbxir(ngtot,ndmag))
+  allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag))
+  allocate(rvfir(ngtot,ndmag))
 end if
-! set the exchange potential to zero
-zvxmt(:,:,:)=0.d0
-zvxir(:)=0.d0
+! set the exchange potential and magnetic field to zero
+vxmt(:,:,:)=0.d0
+vxir(:)=0.d0
 if (spinpol) then
-  zbxmt(:,:,:,:)=0.d0
-  zbxir(:,:)=0.d0
+  bxmt(:,:,:,:)=0.d0
+  bxir(:,:)=0.d0
 end if
 resp=0.d0
 ! initial step size
@@ -117,7 +117,7 @@ do it=1,maxitoep
     end if
   end if
   resp=resoep
-! update complex potential and field
+! update exchange potential and magnetic field
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(rfmt2,is,nrc,nrci,idm)
 !$OMP DO
@@ -126,39 +126,37 @@ do it=1,maxitoep
     is=idxis(ias)
     nrc=nrcmt(is)
     nrci=nrcmtinr(is)
-! convert residual to spherical coordinates and subtract from complex potential
+! convert residual to spherical coordinates
     call rbsht(nrc,nrci,lradstp,rfmt1(:,:,ias),1,rfmt2)
-    zvxmt(:,1:nrc,ias)=zvxmt(:,1:nrc,ias)-tau*rfmt2(:,1:nrc)
+! subtract from exchange potential
+    call rfmtaddc(nrc,nrci,-tau,rfmt2,vxmt(:,:,ias))
+! repeat for exchange magnetic field
     do idm=1,ndmag
       call rbsht(nrc,nrci,lradstp,rvfmt(:,:,ias,idm),1,rfmt2)
-      zbxmt(:,1:nrc,ias,idm)=zbxmt(:,1:nrc,ias,idm)-tau*rfmt2(:,1:nrc)
+      call rfmtaddc(nrc,nrci,-tau,rfmt2,bxmt(:,:,ias,idm))
     end do
     deallocate(rfmt2)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-  zvxir(:)=zvxir(:)-tau*dvxir(:)
+  vxir(:)=vxir(:)-tau*dvxir(:)
   do idm=1,ndmag
-    zbxir(:,idm)=zbxir(:,idm)-tau*dbxir(:,idm)
+    bxir(:,idm)=bxir(:,idm)-tau*dbxir(:,idm)
   end do
 ! end iteration loop
 end do
-! generate the real potential and field
+! convert the exchange potential and field to spherical harmonics
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(rfmt2,is,nrc,nrci,idm)
+!$OMP PRIVATE(is,nrc,nrci,idm)
 !$OMP DO
 do ias=1,natmtot
-  allocate(rfmt2(lmmaxvr,nrcmtmax))
   is=idxis(ias)
   nrc=nrcmt(is)
   nrci=nrcmtinr(is)
-  rfmt2(:,1:nrc)=dble(zvxmt(:,1:nrc,ias))
-  call rfsht(nrc,nrci,1,rfmt2,lradstp,rfmt1(:,:,ias))
+  call rfsht(nrc,nrci,1,vxmt(:,:,ias),lradstp,rfmt1(:,:,ias))
   do idm=1,ndmag
-    rfmt2(:,1:nrc)=dble(zbxmt(:,1:nrc,ias,idm))
-    call rfsht(nrc,nrci,1,rfmt2,lradstp,rvfmt(:,:,ias,idm))
+    call rfsht(nrc,nrci,1,bxmt(:,:,ias,idm),lradstp,rvfmt(:,:,ias,idm))
   end do
-  deallocate(rfmt2)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -171,14 +169,15 @@ end do
 do ias=1,natmtot
   is=idxis(ias)
   nr=nrmt(is)
-  vxcmt(:,1:nr,ias)=vxcmt(:,1:nr,ias)+rfmt1(:,1:nr,ias)
+  nri=nrmtinr(is)
+  call rfmtadd(nr,nri,1,rfmt1(:,:,ias),vxcmt(:,:,ias))
   do idm=1,ndmag
-    bxcmt(:,1:nr,ias,idm)=bxcmt(:,1:nr,ias,idm)+rvfmt(:,1:nr,ias,idm)
+    call rfmtadd(nr,nri,1,rvfmt(:,:,ias,idm),bxcmt(:,:,ias,idm))
   end do
 end do
-vxcir(:)=vxcir(:)+dble(zvxir(:))
+vxcir(:)=vxcir(:)+dble(vxir(:))
 do idm=1,ndmag
-  bxcir(:,idm)=bxcir(:,idm)+dble(zbxir(:,idm))
+  bxcir(:,idm)=bxcir(:,idm)+dble(bxir(:,idm))
 end do
 ! symmetrise the exchange potential and field
 call symrf(1,vxcmt,vxcir)

@@ -21,8 +21,8 @@ real(8) vcl(ngrf)
 ! allocatable arrays
 real(8), allocatable :: vgqc(:,:),gqc(:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
-complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
-complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
+complex(8), allocatable :: wfmt1(:,:,:,:,:),wfir1(:,:,:)
+complex(8), allocatable :: wfmt2(:,:,:,:,:),wfir2(:,:,:)
 complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
 complex(8), allocatable :: zvv(:,:,:),zcc(:,:,:)
 complex(8), allocatable :: zvc(:,:,:),zcv(:,:,:)
@@ -30,9 +30,9 @@ complex(8), allocatable :: epsinv(:,:,:)
 allocate(vgqc(3,ngvec),gqc(ngvec))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+allocate(wfir1(ngtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
+allocate(wfir2(ngtot,nspinor,nstsv))
 allocate(zvv(ngrf,nvbse,nvbse),zcc(ngrf,ncbse,ncbse))
 allocate(epsinv(ngrf,ngrf,nwrf))
 if (bsefull) then
@@ -73,9 +73,11 @@ do ik1=1,nkptnr
     end if
   end do
 ! compute the <v|exp(-i(G+q).r)|v'> matrix elements
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ist1,ist2,i2)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(zrhomt,zrhoir,ist1,ist2,i2)
 !$OMP DO
   do i1=1,nvbse
+    allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
     ist1=istbse(i1,ik1)
     do i2=1,nvbse
       ist2=istbse(i2,ik2)
@@ -83,13 +85,16 @@ do ik1=1,nkptnr
        wfmt1(:,:,:,:,ist1),wfir1(:,:,ist1),zrhomt,zrhoir)
       call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zvv(:,i1,i2))
     end do
+    deallocate(zrhomt,zrhoir)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! compute the <c|exp(-i(G+q).r)|c'> matrix elements
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(jst1,jst2,j2)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(zrhomt,zrhoir,jst1,jst2,j2)
 !$OMP DO
   do j1=1,ncbse
+    allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
     jst1=jstbse(j1,ik1)
     do j2=1,ncbse
       jst2=jstbse(j2,ik2)
@@ -97,15 +102,18 @@ do ik1=1,nkptnr
        wfmt1(:,:,:,:,jst1),wfir1(:,:,jst1),zrhomt,zrhoir)
       call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zcc(:,j1,j2))
     end do
+    deallocate(zrhomt,zrhoir)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! matrix elements for full BSE kernel if required
   if (bsefull) then
 ! compute the <v|exp(-i(G+q).r)|c'> matrix elements
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ist1,jst2,j2)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(zrhomt,zrhoir,ist1,jst2,j2)
 !$OMP DO
     do i1=1,nvbse
+      allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
       ist1=istbse(i1,ik1)
       do j2=1,ncbse
         jst2=jstbse(j2,ik2)
@@ -113,13 +121,16 @@ do ik1=1,nkptnr
          wfmt1(:,:,:,:,ist1),wfir1(:,:,ist1),zrhomt,zrhoir)
         call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zvc(:,i1,j2))
       end do
+      deallocate(zrhomt,zrhoir)
     end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! compute the <c|exp(-i(G+q).r)|v'> matrix elements
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(jst1,ist2,i2)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(zrhomt,zrhoir,jst1,ist2,i2)
 !$OMP DO
     do j1=1,ncbse
+      allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
       jst1=jstbse(j1,ik1)
       do i2=1,nvbse
         ist2=istbse(i2,ik2)
@@ -127,6 +138,7 @@ do ik1=1,nkptnr
          wfmt1(:,:,:,:,jst1),wfir1(:,:,jst1),zrhomt,zrhoir)
         call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zcv(:,j1,i2))
       end do
+      deallocate(zrhomt,zrhoir)
     end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -175,7 +187,7 @@ do ik1=1,nkptnr
 end do
 deallocate(vgqc,gqc,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2)
-deallocate(zrhomt,zrhoir,zvv,zcc,epsinv)
+deallocate(zvv,zcc,epsinv)
 if (bsefull) deallocate(zvc,zcv)
 return
 end subroutine

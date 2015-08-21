@@ -31,8 +31,8 @@ n2=2*nmatp
 ns=2*nstfv
 if (iscl.ge.2) then
 ! read in the eigenvalues/vectors from file
-  call getevalfv(vpl,evalfv)
-  call getevecfv(vpl,vgpl,evecfv)
+  call getevalfv(filext,vpl,evalfv)
+  call getevecfv(filext,vpl,vgpl,evecfv)
 else
 ! initialise the eigenvectors to canonical basis vectors
   evecfv(1:nmatp,:)=0.d0
@@ -68,8 +68,9 @@ end do
 call olpistl(ngp,igpig,nmatp,o)
 !$OMP END PARALLEL SECTIONS
 call timesec(ts1)
-!$OMP ATOMIC
+!$OMP CRITICAL
 timemat=timemat+ts1-ts0
+!$OMP END CRITICAL
 call timesec(ts0)
 allocate(w(ns),rwork(3*ns))
 allocate(hv(nmatp,nstfv),ov(nmatp,nstfv))
@@ -176,8 +177,9 @@ end do
 deallocate(w,rwork,h,o,hv,ov)
 deallocate(u,hu,ou,hs,os,work)
 call timesec(ts1)
-!$OMP ATOMIC
+!$OMP CRITICAL
 timefv=timefv+ts1-ts0
+!$OMP END CRITICAL
 return
 end subroutine
 

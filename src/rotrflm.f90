@@ -30,10 +30,8 @@ subroutine rotrflm(rot,lmax,n,ld,rflm1,rflm2)
 implicit none
 ! arguments
 real(8), intent(in) :: rot(3,3)
-integer, intent(in) :: lmax
-integer, intent(in) :: n
-integer, intent(in) :: ld
-real(8), intent(out) :: rflm1(ld,*)
+integer, intent(in) :: lmax,n,ld
+real(8), intent(in) :: rflm1(ld,*)
 real(8), intent(out) :: rflm2(ld,*)
 ! local variables
 integer lmmax,l,lm,nm,p

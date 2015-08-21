@@ -29,7 +29,7 @@ call sumrule(dynq)
 ! Fourier transform the dynamical matrices to real-space
 call dynqtor(dynq,dynr)
 ! generate a set of q-point vectors along a path in the Brillouin zone
-call connect(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
+call plotpt1d(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
 wmin=0.d0
 wmax=0.d0
 ! compute the phonon frequencies along the path

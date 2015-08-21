@@ -62,8 +62,8 @@ call gensocfr
 call genevfsv
 ! find the occupation numbers and Fermi energy
 call occupy
-! generate the kinetic matrix elements in the Cartesian basis
-call genkmatc(.true.)
+! generate the kinetic matrix elements in the first-variational basis
+call genkmat(.true.,.true.)
 ! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
@@ -101,12 +101,12 @@ do iscl=1,maxscl
 ! distribute among MPI processes
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
     allocate(evecsv(nstsv,nstsv))
-    call getevecsv(vkl(:,ik),evecsv)
+    call getevecsv(filext,vkl(:,ik),evecsv)
 ! solve the Hartree-Fock eigenvalue equation
     call eveqnhf(ik,vmt,vir,bmt,bir,evecsv)
 ! write the eigenvalues/vectors to file
-    call putevalsv(ik,evalsv(:,ik))
-    call putevecsv(ik,evecsv)
+    call putevalsv(filext,ik,evalsv(:,ik))
+    call putevecsv(filext,ik,evecsv)
     deallocate(evecsv)
   end do
 !$OMP END DO
@@ -124,7 +124,7 @@ do iscl=1,maxscl
   if (mp_mpi) then
 ! write the occupation numbers to file
     do ik=1,nkpt
-      call putoccsv(ik,occsv(:,ik))
+      call putoccsv(filext,ik,occsv(:,ik))
     end do
 ! write out the eigenvalues and occupation numbers
     call writeeval

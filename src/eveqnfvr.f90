@@ -11,8 +11,8 @@ subroutine eveqnfvr(nmatp,ngp,vpc,h,o,evalfv,evecfv)
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   nmatp  : order of overlap and Hamiltonian matrices (in,integer)
-!   ngp    : number of G+k-vectors for augmented plane waves (in,integer)
-!   vpc    : k-vector in Cartesian coordinates (in,real(3))
+!   ngp    : number of G+p-vectors (in,integer)
+!   vpc    : p-vector in Cartesian coordinates (in,real(3))
 !   h,o    : Hamiltonian and overlap matrices in packed or upper triangular
 !            form (in,complex(*))
 !   evalfv : first-variational eigenvalues (out,real(nstfv))
@@ -279,8 +279,9 @@ end do
 deallocate(iwork,ifail,w,rv,work)
 deallocate(tr,tp,idx,s,map,rh,ro,zp)
 call timesec(ts1)
-!$OMP ATOMIC
+!$OMP CRITICAL
 timefv=timefv+ts1-ts0
+!$OMP END CRITICAL
 return
 end subroutine
 !EOC

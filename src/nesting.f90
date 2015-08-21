@@ -24,7 +24,7 @@ call init2
 call readfermi
 ! get the eigenvalues from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
 end do
 allocate(nq(nqpt))
 t1=1.d0/swidth
@@ -39,10 +39,10 @@ do iq=1,nqpt
 !$OMP END CRITICAL
   sum1=0.d0
   do ik=1,nkptnr
-    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+    jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
     ivkq(:)=ivk(:,ik)+ivq(:,iq)
     ivkq(:)=mod(ivkq(:),ngridk(:))
-    jkq=ikmap(ivkq(1),ivkq(2),ivkq(3))
+    jkq=ivkik(ivkq(1),ivkq(2),ivkq(3))
     sum2=0.d0
     do ist=1,nstsv
       x=(efermi-evalsv(ist,jk))*t1

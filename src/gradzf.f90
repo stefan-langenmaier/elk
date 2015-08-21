@@ -28,7 +28,7 @@ end do
 deallocate(gzfmt1)
 ! interstitial gradient
 allocate(zfft(ngtot))
-zfft(:)=zfir(:)
+call zcopy(ngtot,zfir,1,zfft,1)
 call zfftifc(3,ngridg,-1,zfft)
 do i=1,3
   gzfir(:,i)=0.d0

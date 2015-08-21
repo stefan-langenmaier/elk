@@ -8,8 +8,9 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ik,idm,n
+integer ik,ispn,idm,n
 ! allocatable arrays
+complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 ! set the charge density and magnetisation to zero
 rhomt(:,:,:)=0.d0
@@ -19,19 +20,26 @@ if (spinpol) then
   magir(:,:)=0.d0
 end if
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv)
+!$OMP PRIVATE(apwalm,evecfv,evecsv,ispn)
 !$OMP DO
 do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
 ! get the eigenvectors from file
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
+  call getevecfv(filext,vkl(:,ik),vgkl(:,:,:,ik),evecfv)
+  call getevecsv(filext,vkl(:,ik),evecsv)
+! find the matching coefficients
+  do ispn=1,nspnfv
+    call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
+     sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
+  end do
 ! add to the density and magnetisation
-  call rhomagk(ik,evecfv,evecsv)
-  deallocate(evecfv,evecsv)
+  call rhomagk(ngk(:,ik),igkig(:,:,ik),wkpt(ik),occsv(:,ik),apwalm,evecfv, &
+   evecsv)
+  deallocate(apwalm,evecfv,evecsv)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

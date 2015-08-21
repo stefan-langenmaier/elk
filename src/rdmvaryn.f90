@@ -33,8 +33,7 @@ real(8), parameter :: eps=1.d-12
 real(8) tau,sum,gs,gsp,dgs
 real(8) kapa,dkapa,t1
 ! allocatable arrays
-real(8), allocatable :: dedn(:,:)
-real(8), allocatable :: gamma(:,:)
+real(8), allocatable :: dedn(:,:),gamma(:,:)
 ! add constant to occupancies for charge conservation
 sum=0.d0
 do ik=1,nkpt
@@ -158,7 +157,7 @@ do ik=1,nkpt
   do ist=1,nstsv
     occsv(ist,ik)=occsv(ist,ik)+tau*gamma(ist,ik)
   end do
-  call putoccsv(ik,occsv(:,ik))
+  call putoccsv(filext,ik,occsv(:,ik))
 end do
 deallocate(gamma)
 return

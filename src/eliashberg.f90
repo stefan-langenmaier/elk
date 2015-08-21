@@ -52,12 +52,15 @@ call mcmillan(w,a2f,lambda,wlog,wrms,tc)
 wfmax=20.d0*wrms
 ! minumum temperature
 tmin=tc/6.d0
+if (tmin.lt.1.d-2) tmin=0.1d0
 ! maximum temperature
 tmax=3.d0*tc
+if (tmax.lt.1.d0) tmax=1.d0
 ! temperature step size
 dtemp=(tmax-tmin)/dble(ntemp)
 ! maximum number of fermionic Matsubara frequencies
 nwf=nint(wfmax/(twopi*kboltz*dtemp))
+if (nwf.lt.1) nwf=1
 if (nwf.gt.maxwf) nwf=maxwf
 allocate(wf(-nwf:nwf))
 allocate(l(-2*nwf:2*nwf))
@@ -87,6 +90,7 @@ write(62,'("Number of output frequencies : ",I8)') nout
 write(62,'("Fermionic Matsubara frequency cut-off")')
 write(62,'(" phonons : ",G18.10)') wfmax
 write(62,'(" Coulomb : ",G18.10)') wrms
+call flushifc(62)
 d0(:)=1.d-4
 z0(:)=1.d0
 ! main loop over temperature
@@ -100,8 +104,8 @@ do itemp=1,ntemp
   nwf=nint(wfmax/(2.d0*t0))
   if (nwf.gt.maxwf) nwf=maxwf
   nwfcl=nint(wrms/(2.d0*t0))
-  if (nwfcl.gt.nwf) nwfcl=nwf
   if (nwfcl.lt.1) nwfcl=1
+  if (nwfcl.gt.nwf) nwfcl=nwf
   write(62,'("Number of Matsubara frequencies")')
   write(62,'(" phonons : ",I8)') nwf
   write(62,'(" Coulomb : ",I8)') nwfcl

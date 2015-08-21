@@ -26,7 +26,7 @@ real(8), optional, intent(in) :: rva(*)
 complex(8), optional, intent(in) :: zv
 complex(8), optional, intent(in) :: zva(*)
 ! local variables
-integer i
+integer j
 character(256) fname
 if (.not.test) return
 if (.not.mp_mpi) return
@@ -75,20 +75,20 @@ else if (present(zv)) then
   write(90,'(I8,2G22.12)') 1,dble(zv),aimag(zv)
 else if (present(iva)) then
   write(90,'(2I8)') 1,nv
-  do i=1,nv
-    write(90,'(2I8)') i,iva(i)
+  do j=1,nv
+    write(90,'(2I8)') j,iva(j)
   end do
 else if (present(rva)) then
   write(90,'(2I8)') 2,nv
   write(90,'(G22.12)') tol
-  do i=1,nv
-    write(90,'(I8,G22.12)') i,rva(i)
+  do j=1,nv
+    write(90,'(I8,G22.12)') j,rva(j)
   end do
 else if (present(zva)) then
   write(90,'(2I8)') 3,nv
   write(90,'(G22.12)') tol
-  do i=1,nv
-    write(90,'(I8,2G22.12)') i,dble(zva(i)),aimag(zva(i))
+  do j=1,nv
+    write(90,'(I8,2G22.12)') j,dble(zva(j)),aimag(zva(j))
   end do
 end if
 close(90)

@@ -11,7 +11,7 @@ module modstore
 use modmain
 
 real(8) avec0(3,3)
-real(8) binv0(3,3)
+real(8) bvec0(3,3),binv0(3,3)
 real(8) omega0
 logical tshift0
 logical primcell0
@@ -21,6 +21,7 @@ real(8) atposl0(3,maxatoms,maxspecies)
 real(8) atposc0(3,maxatoms,maxspecies)
 real(8) rmtdelta0
 integer ngridg0(3),ngtot0
+integer, allocatable :: ivg0(:,:),igfft0(:)
 logical spinpol0,spinorb0,cmagz0
 real(8) bfieldc00(3)
 real(8) bfcmt00(3,maxatoms,maxspecies)
@@ -33,8 +34,7 @@ logical autokpt0
 integer ngridk0(3)
 real(8) vkloff0(3)
 logical ptnucl0
-logical ffdamp0
-real(8) fracinr0
+integer lmaxinr0
 
 end module
 

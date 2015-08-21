@@ -10,7 +10,7 @@ implicit none
 ! local variables
 integer i,j,iq,iv
 integer lwork,info
-real(8) gmin,gmax
+real(8) gmin,gmax,t1
 ! allocatable arrays
 real(8), allocatable :: wq(:),gq(:,:),gp(:,:)
 real(8), allocatable :: rwork(:)
@@ -43,8 +43,9 @@ do iq=1,nqpt
 ! construct a complex matrix from the phonon eigenvectors such that its
 ! eigenvalues squared are the phonon linewidths
   do i=1,nbph
+    t1=sqrt(abs(gq(i,iq)))
     do j=1,nbph
-      b(i,j)=sqrt(abs(gq(i,iq)))*conjg(ev(j,i))
+      b(i,j)=t1*conjg(ev(j,i))
     end do
   end do
   call zgemm('N','N',nbph,nbph,nbph,zone,ev,nbph,b,nbph,zzero,gmq(:,:,iq),nbph)
@@ -52,7 +53,7 @@ end do
 ! Fourier transform the gamma matrices to real-space
 call dynqtor(gmq,gmr)
 ! generate a set of q-point vectors along a path in the Brillouin zone
-call connect(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
+call plotpt1d(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
 gmin=1.d8
 gmax=0.d0
 ! compute the linewidths along the path

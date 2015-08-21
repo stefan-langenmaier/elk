@@ -63,7 +63,7 @@ a=0
 ! loop over non-reduced k-points
 do ik=1,nkptnr
 ! equivalent reduced k-point
-  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+  jk=ivkik(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! index for sorting the eigenvalues into ascending order
   call sortidx(nstsv,evalsv(:,jk),idx)
 ! find the topmost occupied band

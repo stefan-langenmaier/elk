@@ -8,7 +8,7 @@ use modmain
 use modtddft
 implicit none
 ! local variables
-integer its,iostat
+integer its,its_,iostat
 open(50,file='AFIELDT.OUT',action='READ',form='FORMATTED',status='OLD', &
  iostat=iostat)
 if (iostat.ne.0) then
@@ -29,7 +29,15 @@ allocate(times(ntimes))
 if (allocated(afieldt)) deallocate(afieldt)
 allocate(afieldt(3,ntimes))
 do its=1,ntimes
-  read(50,*) times(its),afieldt(:,its)
+  read(50,*) its_,times(its),afieldt(:,its)
+  if (its.ne.its_) then
+    write(*,*)
+    write(*,'("Error(readafieldt): time step number mismatch")')
+    write(*,'(" internal    : ",I8)') its
+    write(*,'(" AFIELDT.OUT : ",I8)') its_
+    write(*,*)
+    stop
+  end if
 end do
 return
 end subroutine

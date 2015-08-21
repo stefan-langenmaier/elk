@@ -20,17 +20,18 @@ use modrdm
 !BOC
 implicit none
 ! allocatable arrays
-complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: evecsv(:,:),kmat(:,:)
 integer ik
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecsv)
+!$OMP PRIVATE(evecsv,kmat)
 !$OMP DO
 do ik=1,nkpt
-  allocate(evecsv(nstsv,nstsv))
-  call getevecsv(vkl(:,ik),evecsv)
-  call zgemm('N','N',nstsv,nstsv,nstsv,zone,kmatc(:,:,ik),nstsv,evecsv,nstsv, &
-   zzero,dkdc(:,:,ik),nstsv)
-  deallocate(evecsv)
+  allocate(evecsv(nstsv,nstsv),kmat(nstsv,nstsv))
+  call getevecsv(filext,vkl(:,ik),evecsv)
+  call getkmat(ik,kmat)
+  call zgemm('N','N',nstsv,nstsv,nstsv,zone,kmat,nstsv,evecsv,nstsv,zzero, &
+   dkdc(:,:,ik),nstsv)
+  deallocate(evecsv,kmat)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

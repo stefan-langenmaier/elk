@@ -107,7 +107,7 @@ complex(8), intent(inout) :: zvclmt(lmmaxvr,ld2,natmtot)
 complex(8), intent(out) :: zvclir(ngtot)
 complex(8), intent(out) :: zrho0
 ! local variables
-integer is,ia,ias,ir0,ir
+integer is,ia,ias,iro,ir
 integer l,m,lm,ig,ifg
 real(8) t0,t1,t2,t3
 complex(8) zsum1,zsum2,z1,z2
@@ -255,9 +255,9 @@ do is=1,nspecies
     lm=0
     do l=0,lmaxvr
       if (l.le.lmaxinr) then
-        ir0=1
+        iro=1
       else
-        ir0=nri(is)+1
+        iro=nri(is)+1
       end if
       do m=-l,l
         lm=lm+1
@@ -266,10 +266,10 @@ do is=1,nspecies
 ! matrix calculation
         if (tphdyn) then
           if (ias.eq.iasph) then
-            zvnmt(lm,ir0:nr(is))=z1*rl(ir0:nr(is),l)
+            zvnmt(lm,iro:nr(is))=z1*rl(iro:nr(is),l)
           end if
         end if
-        do ir=ir0,nr(is)
+        do ir=iro,nr(is)
           zvclmt(lm,ir,ias)=zvclmt(lm,ir,ias)+z1*rl(ir,l)
         end do
       end do

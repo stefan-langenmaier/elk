@@ -28,8 +28,7 @@ integer ik1,ik2,jk,iv(3)
 integer ist1,ist2,ist3,ist4
 real(8) t1,t2,t3
 ! allocatable arrays
-complex(8), allocatable :: vclijjk(:,:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: vclijjk(:,:,:,:),evecsv(:,:)
 if (rdmxctype.eq.0) return
 ! calculate the prefactor
 if (rdmxctype.eq.1) then
@@ -56,11 +55,11 @@ do ik1=1,nkptnr
   call getvclijjk(ik1,vclijjk)
 ! find the equivalent reduced k-point
   iv(:)=ivk(:,ik1)
-  jk=ikmap(iv(1),iv(2),iv(3))
+  jk=ivkik(iv(1),iv(2),iv(3))
 ! start loop over reduced k-points
   do ik2=1,nkpt
 ! get the eigenvectors from file
-    call getevecsv(vkl(:,ik2),evecsv)
+    call getevecsv(filext,vkl(:,ik2),evecsv)
     do ist4=1,nstsv
       do ist3=1,nstsv
         do ist2=1,nstsv

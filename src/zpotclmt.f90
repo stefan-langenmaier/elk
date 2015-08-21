@@ -35,7 +35,7 @@ real(8), intent(in) :: r(nr)
 complex(8), intent(in) :: zrhomt(lmmaxvr,nr)
 complex(8), intent(out) :: zvclmt(lmmaxvr,nr)
 ! local variables
-integer nr0,ir0,ir
+integer nro,iro,ir
 integer l,m,lm
 real(8) t1,t2,t3,t4
 ! automatic arrays
@@ -53,15 +53,15 @@ end do
 lm=0
 do l=0,lmaxvr
   if (l.le.lmaxinr) then
-    nr0=nr
-    ir0=1
+    nro=nr
+    iro=1
   else
-    nr0=nr-nri
-    ir0=nri+1
+    nro=nr-nri
+    iro=nri+1
   end if
   do m=-l,l
     lm=lm+1
-    do ir=ir0,nr
+    do ir=iro,nr
       t1=dble(zrhomt(lm,ir))
       t2=aimag(zrhomt(lm,ir))
       fr1(ir)=t1*rl3(ir)
@@ -69,13 +69,13 @@ do l=0,lmaxvr
       fr3(ir)=t1*rl4(ir)
       fr4(ir)=t2*rl4(ir)
     end do
-    call fderiv(-1,nr0,r(ir0),fr1(ir0),fr5(ir0))
-    call fderiv(-1,nr0,r(ir0),fr2(ir0),fr1(ir0))
-    call fderiv(-1,nr0,r(ir0),fr3(ir0),fr2(ir0))
-    call fderiv(-1,nr0,r(ir0),fr4(ir0),fr3(ir0))
+    call fderiv(-1,nro,r(iro),fr1(iro),fr5(iro))
+    call fderiv(-1,nro,r(iro),fr2(iro),fr1(iro))
+    call fderiv(-1,nro,r(iro),fr3(iro),fr2(iro))
+    call fderiv(-1,nro,r(iro),fr4(iro),fr3(iro))
     t1=fr2(nr)
     t2=fr3(nr)
-    do ir=ir0,nr
+    do ir=iro,nr
       t3=rl2(ir)*fr5(ir)+rl1(ir)*(t1-fr2(ir))
       t4=rl2(ir)*fr1(ir)+rl1(ir)*(t2-fr3(ir))
       zvclmt(lm,ir)=cmplx(t3,t4,8)
@@ -83,7 +83,7 @@ do l=0,lmaxvr
   end do
   if (l.lt.lmaxvr) then
     t1=fourpi/dble(2*(l+1)+1)
-    do ir=ir0,nr
+    do ir=iro,nr
       rl1(ir)=rl1(ir)*r(ir)
       rl2(ir)=rl2(ir)*ri(ir)
       t2=t1*r(ir)**2

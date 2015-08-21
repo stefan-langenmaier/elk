@@ -50,8 +50,8 @@ call genapwfr
 call genlofr
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+  call getevalsv(filext,vkl(:,ik),evalsv(:,ik))
+  call getoccsv(filext,vkl(:,ik),occsv(:,ik))
 end do
 ! generate the G+q-vectors and related quantities
 allocate(vgqc(3,ngrf),gqc(ngrf))

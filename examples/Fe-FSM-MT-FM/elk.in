@@ -12,6 +12,10 @@ fsmtype
 mommtfix
   1 1   0.0 0.0 1.0     : ia, is, mommtfix
 
+! FSM step length: reduce to improve convergence
+taufsm
+  0.01
+
 lmaxapw
   10
 

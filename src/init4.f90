@@ -21,8 +21,9 @@ external gaunt
 !---------------------------!
 !     H+k-vector arrays     !
 !---------------------------!
-if (task.eq.135) then
-  hkmax=0.5d0*gmaxvr-epslat
+if ((task.eq.135).or.(task.eq.170).or.(task.eq.171).or.(task.eq.172).or. &
+ (task.eq.173)) then
+  if (task.eq.135) hkmax=0.5d0*gmaxvr-epslat
   call findngkmax(nkpt,vkc,nspnfv,vqcss,ngvec,vgc,hkmax,nhkmax)
 ! allocate the H+k-vector arrays
   if (allocated(nhk)) deallocate(nhk)
@@ -78,7 +79,7 @@ end if
 !-----------------------------!
 !     G+k+q-vector arrays     !
 !-----------------------------!
-if (task.eq.205) then
+if ((task.eq.205).or.(task.eq.240)) then
   if (allocated(vkql)) deallocate(vkql)
   allocate(vkql(3,nkptnr))
   if (allocated(vkqc)) deallocate(vkqc)
@@ -102,7 +103,7 @@ end if
 !---------------------------!
 !     G+q-vector arrays     !
 !---------------------------!
-if (task.eq.205) then
+if ((task.eq.205).or.(task.eq.240)) then
   if (allocated(vgqc)) deallocate(vgqc)
   allocate(vgqc(3,ngtot))
   if (allocated(gqc)) deallocate(gqc)
@@ -184,6 +185,8 @@ if (task.eq.205) then
       end do
     end do
   end do
+  if (allocated(doccsv)) deallocate(doccsv)
+  allocate(doccsv(nstsv,nkptnr))
 end if
 
 return
