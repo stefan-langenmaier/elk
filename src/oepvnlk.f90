@@ -99,7 +99,7 @@ do ik=1,nkptnr
     if (evalsv(ist3,jk).lt.efermi) then
 ! compute the complex overlap densities for all valence-valence states
       do ist1=1,nstsv
-        call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
+        call genzrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
          wfir2(:,:,ist3),wfir1(:,:,ist1),zrhomt1(:,:,:,ist1),zrhoir1(:,ist1))
       end do
 ! compute the complex overlap densities for all valence-core states
@@ -264,27 +264,6 @@ deallocate(wfmt1,wfmt2,wfir1,wfir2,wfcr1,wfcr2)
 deallocate(zrhomt1,zrhomt2,zrhoir1)
 deallocate(zvclmt,zvclir,zfmt)
 return
-
-contains
-
-subroutine zvmul1(n,a,b,c)
-implicit none
-integer, intent(in) :: n
-complex(8), intent(in) :: a(n),b(n)
-complex(8), intent(out) :: c(n)
-c(:)=conjg(a(:))*b(:)
-return
-end subroutine
-
-subroutine zvmul2(n,a1,b1,a2,b2,c)
-implicit none
-integer, intent(in) :: n
-complex(8), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-complex(8), intent(out) :: c(n)
-c(:)=conjg(a1(:))*b1(:)+conjg(a2(:))*b2(:)
-return
-end subroutine
-
 end subroutine
 !EOC
 

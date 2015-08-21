@@ -113,8 +113,7 @@ else if (task.eq.25) then
 else
 ! determine the k-point grid automatically from radkpt if required
   if (autokpt) then
-    t1=radkpt/twopi
-    ngridk(:)=int(t1*sqrt(bvec(1,:)**2+bvec(2,:)**2+bvec(3,:)**2))+1
+    ngridk(:)=int(radkpt/sqrt(avec(1,:)**2+avec(2,:)**2+avec(3,:)**2))+1
   end if
 ! setup the default k-point box
   kptboxl(:,1)=vkloff(:)/dble(ngridk(:))
@@ -155,7 +154,6 @@ call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
 !     G+k-vectors     !
 !---------------------!
 if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.10).or.(task.eq.300)) then
-!****** scdft
   nppt=nkptnr
 else
   nppt=nkpt

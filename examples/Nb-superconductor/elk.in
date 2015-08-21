@@ -67,7 +67,7 @@ nempty
 ! this is an important parameter which fixes the k-point density irrespective
 ! of the size of the phonon supercell
 radkpt
-  50.0
+  60.0
 
 
 

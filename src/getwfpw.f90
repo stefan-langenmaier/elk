@@ -27,10 +27,10 @@ lspl=lsplsymc(isym)
 ! find the record length
 inquire(iolength=recl) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
 !$OMP CRITICAL
-open(105,file='WFPW.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
+open(80,file='WFPW.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
  recl=recl)
-read(105,rec=ik) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
-close(105)
+read(80,rec=ik) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
+close(80)
 !$OMP END CRITICAL
 t1=abs(vkl(1,ik)-vkl_(1))+abs(vkl(2,ik)-vkl_(2))+abs(vkl(3,ik)-vkl_(3))
 if (t1.gt.epslat) then

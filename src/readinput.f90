@@ -12,10 +12,7 @@ use modmain
 use modldapu
 use modrdm
 use modphonon
-use modmpi
 use modtest
-use modrandom
-use modscdft
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
 !   values for the input parameters.
@@ -26,11 +23,10 @@ use modscdft
 !BOC
 implicit none
 ! local variables
-logical highq
 integer is,js,ia,ias
-integer i,j,k,l,iv,iostat
+integer i,l,k,iv,iostat
 real(8) sc,sc1,sc2,sc3
-real(8) solscf,v(3),t1
+real(8) solscf,v(3)
 character(256) block,str
 
 !------------------------!
@@ -52,7 +48,7 @@ tshift=.true.
 ngridk(:)=1
 vkloff(:)=0.d0
 autokpt=.false.
-radkpt=40.d0
+radkpt=42.0
 reducek=1
 ngridq(:)=1
 reduceq=1
@@ -61,6 +57,8 @@ gmaxvr=12.d0
 lmaxapw=8
 lmaxvr=7
 lmaxmat=5
+lmaxinr=2
+fracinr=0.25d0
 trhonorm=.true.
 xctype(1)=3
 xctype(2)=0
@@ -166,6 +164,8 @@ ssdph=.true.
 vqlss(:)=0.d0
 nwrite=0
 tevecsv=.false.
+
+! LDA+U defaults
 ldapu=0
 inptypelu=1
 llu(:)=-1
@@ -177,6 +177,8 @@ ulufix(:)=0.d0
 lambdalu0(:)=0.d0
 tmomlu=.false.
 readalu=.false.
+
+! reduced density matrix functional theory (RMDFT) defaults
 rdmxctype=2
 rdmmaxscl=2
 maxitn=200
@@ -186,6 +188,7 @@ taurdmc=0.25d0
 rdmalpha=0.565d0
 rdmbeta=0.25d0
 rdmtemp=0.d0
+
 reducebf=1.d0
 ptnucl=.true.
 tseqr=.true.
@@ -215,7 +218,8 @@ esccut=-0.4d0
 gmaxrpa=3.d0
 ntemp=20
 trimvg=.false.
-taubdg=0.1d0
+
+! BSE defaults
 nvbse0=2
 ncbse0=3
 nvxbse=0
@@ -223,16 +227,11 @@ ncxbse=0
 bsefull=.false.
 hxbse=.true.
 hdbse=.true.
-fxctype=0
+
+! TDDFT defaults
+fxctype=1
 fxclrc(1)=0.d0
 fxclrc(2)=0.d0
-rndatposc=0.d0
-rndbfcmt=0.d0
-rndavec=0.d0
-ewbdg=0.5d0
-c_tb09=0.d0
-tc_tb09=.false.
-rndachi=0.1d0
 
 !--------------------------!
 !     read from elk.in     !
@@ -276,9 +275,7 @@ case('tasks')
   write(*,*)
   stop
 case('species')
-  if (mp_mpi) call genspecies(50)
-! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
+  call genspecies(50)
 case('avec')
   read(50,*,err=20) avec(:,1)
   read(50,*,err=20) avec(:,2)
@@ -377,13 +374,15 @@ case('lmaxmat')
     stop
   end if
 case('lmaxinr')
-  read(50,*,err=20)
-  write(*,*)
-  write(*,'("Info(readinput): variable ''lmaxinr'' is no longer used")')
+  read(50,*,err=20) lmaxinr
+  if (lmaxinr.lt.0) then
+    write(*,*)
+    write(*,'("Error(readinput): lmaxinr < 0 : ",I8)') lmaxinr
+    write(*,*)
+    stop
+  end if
 case('fracinr')
-  read(50,*,err=20)
-  write(*,*)
-  write(*,'("Info(readinput): variable ''fracinr'' is no longer used")')
+  read(50,*,err=20) fracinr
 case('trhonorm')
   read(50,*,err=20) trhonorm
 case('spinpol')
@@ -1131,9 +1130,7 @@ case('gmaxrpa')
     stop
   end if
 case('fxctype')
-  read(50,'(A256)',err=20) str
-  str=trim(str)//' 0 0'
-  read(str,*,err=20) fxctype
+  read(50,*,err=20) fxctype
 case('fxclrc')
   read(50,'(A256)',err=20) str
   str=trim(str)//' 0.0'
@@ -1148,51 +1145,6 @@ case('ntemp')
   end if
 case('trimvg')
   read(50,*,err=20) trimvg
-case('rndseed')
-  read(50,*,err=20) i
-! set random number generator state with seed
-  rndstate(0)=abs(i)
-case('taubdg')
-  read(50,*,err=20) taubdg
-case('rndatposc')
-  read(50,*,err=20) rndatposc
-case('rndbfcmt')
-  read(50,*,err=20) rndbfcmt
-case('rndavec')
-  read(50,*,err=20) rndavec
-case('ewbdg')
-  read(50,*,err=20) ewbdg
-  if (ewbdg.le.0.d0) then
-    write(*,*)
-    write(*,'("Error(readinput): ewbdg <= 0 : ",G18.10)') ewbdg
-    write(*,*)
-    stop
-  end if
-case('c_tb09')
-  read(50,*,err=20) c_tb09
-! set flag to indicate Tran-Blaha constant has been read in
-  tc_tb09=.true.
-case('rndachi')
-  read(50,*,err=20) rndachi
-case('highq')
-  read(50,*,err=20) highq
-! parameter set for high-quality calculation
-  if (highq) then
-    rgkmax=7.5d0
-    gmaxvr=16.d0
-    lmaxapw=10
-    lmaxvr=8
-    lmaxmat=7
-    autoswidth=.true.
-    radkpt=60.d0
-    autokpt=.true.
-    vkloff(:)=0.d0
-    nempty=40
-    lradstp=2
-    epspot=1.d-7
-    epsengy=1.d-5
-    epsforce=1.d-4
-  end if
 case('')
   goto 10
 case default
@@ -1218,15 +1170,6 @@ avec(:,1)=sc1*avec(:,1)
 avec(:,2)=sc2*avec(:,2)
 avec(:,3)=sc3*avec(:,3)
 avec(:,:)=sc*avec(:,:)
-! randomise lattice vectors if required
-if (rndavec.gt.0.d0) then
-  do i=1,3
-    do j=1,3
-      t1=rndavec*(randomu()-0.5d0)
-      avec(i,j)=avec(i,j)+t1
-    end do
-  end do
-end if
 ! case of isolated molecule
 if (molecule) then
 ! convert atomic positions from Cartesian to lattice coordinates
@@ -1237,35 +1180,6 @@ if (molecule) then
       atposl(:,ia,is)=v(:)
     end do
   end do
-end if
-! randomise atomic positions if required
-if (rndatposc.gt.0.d0) then
-  call r3minv(avec,ainv)
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      call r3mv(avec,atposl(:,ia,is),v)
-      do i=1,3
-        t1=rndatposc*(randomu()-0.5d0)
-        v(i)=v(i)+t1
-      end do
-      call r3mv(ainv,v,atposl(:,ia,is))
-    end do
-  end do
-end if
-! randomise the muffin-tin magnetic fields if required
-if (rndbfcmt.gt.0.d0) then
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      do i=1,3
-        t1=rndbfcmt*(randomu()-0.5d0)
-        bfcmt0(i,ia,is)=bfcmt0(i,ia,is)+t1
-      end do
-    end do
-  end do
-end if
-! set fxctype to fxctype if required
-if (fxctype(1).eq.-1) then
-  fxctype(:)=xctype(:)
 end if
 ! find primitive cell if required
 if (primcell) call findprim

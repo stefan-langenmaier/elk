@@ -183,7 +183,7 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist=1,spnst(is)
-      if (spcore(ist,is)) evalsum=evalsum+occcr(ist,ias)*evalcr(ist,ias)
+      if (spcore(ist,is)) evalsum=evalsum+spocc(ist,is)*evalcr(ist,ias)
     end do
   end do
 end do

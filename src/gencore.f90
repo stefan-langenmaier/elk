@@ -106,10 +106,10 @@ do is=1,nspecies
             else
               evalcr(ist,ias)=0.5d0*(evalcr(ist,ias)+eval(ist))
             end if
-            t1=0.5d0*occcr(ist,ias)
+            t1=0.5d0*spocc(ist,is)
           else
             evalcr(ist,ias)=eval(ist)
-            t1=occcr(ist,ias)
+            t1=spocc(ist,is)
           end if
 ! add to the core density
 !$OMP CRITICAL

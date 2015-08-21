@@ -9,8 +9,7 @@ implicit none
 ! local variables
 logical trhonorm0
 integer is,ia,ias,ist,ik
-! allocatable arrays
-real(8), allocatable :: occcr0(:,:)
+real(8) spocc0(maxspst,maxspecies)
 ! initialise universal variables
 call init0
 call init1
@@ -19,8 +18,7 @@ call readstate
 ! use existing density if wsfac is default
 if ((wsfac(1).le.-1.d6).or.(wsfac(2).ge.1.d6)) goto 10
 ! make a copy of the core state occupancies
-allocate(occcr0(spnstmax,natmtot))
-occcr0(:,:)=occcr(:,:)
+spocc0(:,:)=spocc(:,:)
 ! zero the core state occupancies for eigenvalues not in energy window
 do is=1,nspecies
   do ia=1,natoms(is)
@@ -28,7 +26,7 @@ do is=1,nspecies
     do ist=1,spnst(is)
       if (spcore(ist,is)) then
         if ((evalcr(ist,ias).lt.wsfac(1)).or.(evalcr(ist,ias).gt.wsfac(2))) then
-          occcr(ist,ias)=0.d0
+          spocc(ist,is)=0.d0
         end if
       end if
     end do
@@ -37,8 +35,7 @@ end do
 ! generate the core wavefunctions and densities
 call gencore
 ! restore the core state occupancies
-occcr(:,:)=occcr0(:,:)
-deallocate(occcr0)
+spocc(:,:)=spocc0(:,:)
 ! find the new linearisation energies
 call linengy
 ! generate the APW radial functions

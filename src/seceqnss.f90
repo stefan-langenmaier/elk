@@ -22,9 +22,16 @@ real(8) cb,t1
 real(8) ts0,ts1
 complex(8) zq
 ! allocatable arrays
-real(8), allocatable :: bir(:,:),rwork(:)
-complex(8), allocatable :: wfmt1(:,:,:,:),wfmt2(:,:,:),wfmt3(:,:),wfmt4(:,:,:)
-complex(8), allocatable :: wfir1(:,:),wfir2(:),zv(:,:),work(:)
+real(8), allocatable :: bir(:,:)
+real(8), allocatable :: rwork(:)
+complex(8), allocatable :: wfmt1(:,:,:,:)
+complex(8), allocatable :: wfmt2(:,:,:)
+complex(8), allocatable :: wfmt3(:,:)
+complex(8), allocatable :: wfmt4(:,:,:)
+complex(8), allocatable :: wfir1(:,:)
+complex(8), allocatable :: wfir2(:)
+complex(8), allocatable :: zv(:,:)
+complex(8), allocatable :: work(:)
 ! external functions
 complex(8) zdotc,zfmtinp
 external zdotc,zfmtinp

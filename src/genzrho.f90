@@ -6,13 +6,12 @@
 !BOP
 ! !ROUTINE: genzrho
 ! !INTERFACE:
-subroutine genzrho(tsh,tspc,wfmt1,wfmt2,wfir1,wfir2,zrhomt,zrhoir)
+subroutine genzrho(tsh,wfmt1,wfmt2,wfir1,wfir2,zrhomt,zrhoir)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   tsh    : .true. if the muffin-tin density is to be in spherical harmonics
 !            (in,logical)
-!   tspc   : .true. if the density should be contracted over spin (in,logical)
 !   wfmt1  : muffin-tin part of wavefunction 1 in spherical coordinates
 !            (in,complex(lmmaxvr,nrcmtmax,natmtot,nspinor))
 !   wfmt2  : muffin-tin part of wavefunction 2 in spherical coordinates
@@ -37,11 +36,10 @@ use modmain
 implicit none
 ! arguments
 logical, intent(in) :: tsh
-logical, intent(in) :: tspc
-complex(8), intent(in) ::  wfmt1(lmmaxvr,nrcmtmax,natmtot,*)
-complex(8), intent(in) ::  wfmt2(lmmaxvr,nrcmtmax,natmtot,*)
-complex(8), intent(in) ::  wfir1(ngrtot,*)
-complex(8), intent(in) ::  wfir2(ngrtot,*)
+complex(8), intent(in) ::  wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor)
+complex(8), intent(in) ::  wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor)
+complex(8), intent(in) ::  wfir1(ngrtot,nspinor)
+complex(8), intent(in) ::  wfir2(ngrtot,nspinor)
 complex(8), intent(out) :: zrhomt(lmmaxvr,nrcmtmax,natmtot)
 complex(8), intent(out) :: zrhoir(ngrtot)
 ! local variables
@@ -56,19 +54,17 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     if (tsh) then
-      if (tspc) then
-! contract over spin
+      if (spinpol) then
         call zvmul2(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),wfmt1(:,:,ias,2), &
          wfmt2(:,:,ias,2),zfmt)
       else
-! no spin contraction
         call zvmul1(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),zfmt)
       end if
 ! convert to spherical harmonics
       call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt, &
        lmmaxvr,zzero,zrhomt(:,:,ias),lmmaxvr)
     else
-      if (tspc) then
+      if (spinpol) then
         call zvmul2(n,wfmt1(:,:,ias,1),wfmt2(:,:,ias,1),wfmt1(:,:,ias,2), &
          wfmt2(:,:,ias,2),zrhomt(:,:,ias))
       else
@@ -79,33 +75,14 @@ do is=1,nspecies
 end do
 if (tsh) deallocate(zfmt)
 ! interstitial part
-if (tspc) then
+if (spinpol) then
+! spin-polarised
   call zvmul2(ngrtot,wfir1(:,1),wfir2(:,1),wfir1(:,2),wfir2(:,2),zrhoir)
 else
+! spin-unpolarised
   call zvmul1(ngrtot,wfir1(:,1),wfir2(:,1),zrhoir)
 end if
 return
-
-contains
-
-subroutine zvmul1(n,a,b,c)
-implicit none
-integer, intent(in) :: n
-complex(8), intent(in) :: a(n),b(n)
-complex(8), intent(out) :: c(n)
-c(:)=conjg(a(:))*b(:)
-return
-end subroutine
-
-subroutine zvmul2(n,a1,b1,a2,b2,c)
-implicit none
-integer, intent(in) :: n
-complex(8), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-complex(8), intent(out) :: c(n)
-c(:)=conjg(a1(:))*b1(:)+conjg(a2(:))*b2(:)
-return
-end subroutine
-
 end subroutine
 !EOC
 

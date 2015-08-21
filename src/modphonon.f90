@@ -11,18 +11,6 @@ use modmain
 !--------------------------!
 ! current phonon q-point, species, atom and polarisation index
 integer iqph,isph,iaph,ipph
-! number of vectors for writing out frequencies and eigenvectors
-integer nphwrt
-! vectors in lattice coordinates for writing out frequencies and eigenvectors
-real(8), allocatable :: vqlwrt(:,:)
-! Coulomb pseudopotential
-real(8) mustar
-! number of temperatures for the Eliashberg equations and thermal properties
-integer ntemp
-
-!------------------------------------!
-!     phonon supercell variables     !
-!------------------------------------!
 ! number of primitive unit cells in phonon supercell
 integer nphsc
 ! Cartesian offset vectors for each primitive cell in the supercell
@@ -45,33 +33,13 @@ integer ngrid0(3),ngrtot0
 ! G-vector classification index which allows the Hamiltonian to be rearranged in
 ! banded diagonal form
 integer, allocatable :: igph(:)
-
-!------------------------------------------!
-!     phonon linear-response variables     !
-!------------------------------------------!
-! derivative of density w.r.t. atomic displacement
-complex(8), allocatable :: drhomt(:,:,:),drhoir(:)
-! derivative of magnetisation w.r.t. atomic displacement
-complex(8), allocatable :: dmagmt(:,:,:,:),dmagir(:,:)
-! derivative of the effective potential
-complex(8), allocatable :: dveffmt(:,:,:),dveffir(:)
-! derivative of the exchange-correlation magnetic field
-complex(8), allocatable :: dbxcmt(:,:,:,:),dbxcir(:,:)
-! plane wave part of the spinor effective potential
-complex(8), allocatable :: dveffpw(:,:,:)
-! k+q-vectors in lattice and Catesian coordinates
-real(8), allocatable :: vkql(:,:),vkqc(:,:)
-! number of G+k+q-vectors for each k-point
-integer, allocatable :: ngkq(:,:)
-! index from G+k+q-vectors to G-vectors
-integer, allocatable :: igkqig(:,:,:)
-! G+k+q-vectors in lattice and Cartesian coordinates
-real(8), allocatable :: vgkql(:,:,:,:),vgkqc(:,:,:,:)
-! G+k+q-vector lengths
-real(8), allocatable :: gkqc(:,:,:)
-! (theta, phi) coordinates of G+k+q-vectors
-real(8), allocatable :: tpgkqc(:,:,:,:)
-! structure factors for the G+k+q-vectors
-complex(8), allocatable :: sfacgkq(:,:,:,:)
+! number of vectors for writing out frequencies and eigenvectors
+integer nphwrt
+! vectors in lattice coordinates for writing out frequencies and eigenvectors
+real(8), allocatable :: vqlwrt(:,:)
+! Coulomb pseudopotential
+real(8) mustar
+! number of temperatures for the Eliashberg equations and therman properties
+integer ntemp
 
 end module

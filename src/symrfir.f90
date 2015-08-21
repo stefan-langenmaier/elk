@@ -28,7 +28,6 @@ implicit none
 integer, intent(in) :: ngv
 real(8), intent(inout) :: rfir(ngrtot)
 ! local variables
-logical tvz
 integer isym,lspl,ilspl,sym(3,3)
 integer iv(3),ig,ifg,jfg
 real(8) vtc(3),t1
@@ -49,9 +48,8 @@ do isym=1,nsymcrys
 ! inverse rotation required for rotation of G-vectors
   ilspl=isymlat(lspl)
   sym(:,:)=symlat(:,:,ilspl)
-! zero translation vector flag
-  tvz=tvzsymc(isym)
   do ig=1,ngv
+    ifg=igfft(ig)
 ! multiply the transpose of the inverse symmetry matrix with the G-vector
     iv(1)=sym(1,1)*ivg(1,ig)+sym(2,1)*ivg(2,ig)+sym(3,1)*ivg(3,ig)
     iv(2)=sym(1,2)*ivg(1,ig)+sym(2,2)*ivg(2,ig)+sym(3,2)*ivg(3,ig)
@@ -59,17 +57,11 @@ do isym=1,nsymcrys
     if ((iv(1).ge.intgv(1,1)).and.(iv(1).le.intgv(1,2)).and. &
         (iv(2).ge.intgv(2,1)).and.(iv(2).le.intgv(2,2)).and. &
         (iv(3).ge.intgv(3,1)).and.(iv(3).le.intgv(3,2))) then
-      ifg=igfft(ig)
       jfg=igfft(ivgig(iv(1),iv(2),iv(3)))
-      if (tvz) then
-! zero translation vector
-        zfft2(jfg)=zfft2(jfg)+zfft1(ifg)
-      else
 ! complex phase factor for translation
-        t1=-(vgc(1,ig)*vtc(1)+vgc(2,ig)*vtc(2)+vgc(3,ig)*vtc(3))
-        zt1=cmplx(cos(t1),sin(t1),8)
-        zfft2(jfg)=zfft2(jfg)+zt1*zfft1(ifg)
-      end if
+      t1=-(vgc(1,ig)*vtc(1)+vgc(2,ig)*vtc(2)+vgc(3,ig)*vtc(3))
+      zt1=cmplx(cos(t1),sin(t1),8)
+      zfft2(jfg)=zfft2(jfg)+zt1*zfft1(ifg)
     end if
   end do
 end do

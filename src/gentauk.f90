@@ -8,93 +8,68 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ik
-real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
-real(8), intent(inout) :: tauir(ngrtot,nspinor)
+real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot)
+real(8), intent(inout) :: tauir(ngrtot)
 ! local variables
-integer ispn,jspn,ist
-integer is,ias,igk,ifg
-integer nr,nrc,ir,irc,i
-real(8) wo,t1
+integer ist,is,ias,ispn,jspn
+integer ir,irc,itp,igk,ifg
+real(8) wo,t0,t1
+complex(8) zt1
 ! allocatable arrays
-complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
-complex(8), allocatable :: gzfmt(:,:,:),zfmt(:,:),zfft(:)
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
+complex(8), allocatable :: zfir(:)
 allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir(ngkmax,nspinor,nstsv))
-allocate(gzfmt(lmmaxvr,nrcmtmax,3),zfmt(lmmaxvr,nrcmtmax))
-allocate(zfft(ngrtot))
-! find the matching coefficients
-do ispn=1,nspnfv
-  call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
-   sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
-end do
-! get the eigenvectors from file
-call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-call getevecsv(vkl(:,ik),evecsv)
-! calculate the second-variational wavefunctions for all states
-call genwfsv(.true.,.true.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik), &
- apwalm,evecfv,evecsv,wfmt,ngkmax,wfir)
-!-------------------------!
-!     muffin-tin part     !
-!-------------------------!
+allocate(zfir(ngrtot))
+! generate the second-variational wavefunctions for all states
+call genwfsvp(.false.,.true.,vkl(:,ik),wfmt,ngkmax,wfir)
+! loop over states
 do ist=1,nstsv
   wo=wkpt(ik)*occsv(ist,ik)
   if (abs(wo).lt.epsocc) cycle
-  do ispn=1,nspinor
-    do ias=1,natmtot
-      is=idxis(ias)
-      nr=nrmt(is)
-      nrc=nrcmt(is)
-! compute the gradient of the wavefunction
-      call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax, &
-       wfmt(:,:,ias,ispn,ist),gzfmt)
-      do i=1,3
-! convert gradient to spherical coordinates
-        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-         gzfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
-! add to total taumt
-!$OMP CRITICAL
-        irc=0
-        do ir=1,nr,lradstp
-          irc=irc+1
-          taumt(:,ir,ias,ispn)=taumt(:,ir,ias,ispn) &
-           +wo*(dble(zfmt(:,irc))**2+aimag(zfmt(:,irc))**2)
+  t0=wo*evalsv(ist,ik)
+!---------------------------------!
+!     muffin-tin contribution     !
+!---------------------------------!
+  do ias=1,natmtot
+    is=idxis(ias)
+    do ispn=1,nspinor
+      irc=0
+      do ir=1,nrmt(is),lradstp
+        irc=irc+1
+        do itp=1,lmmaxvr
+          zt1=wfmt(itp,irc,ias,ispn,ist)
+          t1=dble(zt1)**2+aimag(zt1)**2
+          taumt(itp,ir,ias)=taumt(itp,ir,ias)+t0*t1
         end do
-!$OMP END CRITICAL
       end do
     end do
   end do
-end do
-!---------------------------!
-!     interstitial part     !
-!---------------------------!
-do ist=1,nstsv
-  wo=wkpt(ik)*occsv(ist,ik)
-  if (abs(wo).lt.epsocc) cycle
-  t1=wo/omega
+!-----------------------------------!
+!     interstitial contribution     !
+!-----------------------------------!
+  t0=t0/omega
   do ispn=1,nspinor
-    jspn=jspnfv(ispn)
-    do i=1,3
-      zfft(:)=0.d0
-      do igk=1,ngk(jspn,ik)
-        ifg=igfft(igkig(igk,jspn,ik))
-        zfft(ifg)=vgkc(i,igk,jspn,ik) &
-         *cmplx(-aimag(wfir(igk,ispn,ist)),dble(wfir(igk,ispn,ist)),8)
-      end do
-      call zfftifc(3,ngrid,1,zfft)
-!$OMP CRITICAL
-      do ir=1,ngrtot
-        tauir(ir,ispn)=tauir(ir,ispn)+t1*(dble(zfft(ir))**2+aimag(zfft(ir))**2)
-      end do
-!$OMP END CRITICAL
+    if (spinsprl) then
+      jspn=ispn
+    else
+      jspn=1
+    end if
+    zfir(:)=0.d0
+    do igk=1,ngk(jspn,ik)
+      ifg=igfft(igkig(igk,jspn,ik))
+      zfir(ifg)=wfir(igk,ispn,ist)
+    end do
+! Fourier transform to real-space
+    call zfftifc(3,ngrid,1,zfir)
+    do ir=1,ngrtot
+      t1=dble(zfir(ir))**2+aimag(zfir(ir))**2
+      tauir(ir)=tauir(ir)+t0*t1
     end do
   end do
+! end loop over states
 end do
-deallocate(apwalm,evecfv,evecsv)
-deallocate(wfmt,wfir,gzfmt,zfmt,zfft)
+deallocate(wfmt,wfir,zfir)
 return
 end subroutine
 

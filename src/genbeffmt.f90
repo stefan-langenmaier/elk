@@ -23,8 +23,7 @@ ld=lmmaxvr*lradstp
 !$OMP PRIVATE(vr,drv,irc,ir,rm)
 !$OMP DO
 do ias=1,natmtot
-  is=idxis(ias)
-  ia=idxia(ias)
+  is=idxis(ias); ia=idxia(ias)
   nrc=nrcmt(is)
 ! exchange-correlation magnetic field in spherical coordinates
   do i=1,ndmag

@@ -10,7 +10,7 @@ subroutine getvnlijji(ikp,vnlijji)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   ikp     : k-point from non-reduced set (in,integer)
+!   ikp     : k-point from non-reduced k-point set (in,integer)
 !   vnlijji : non-local Coulomb matrix elements (out,real(nstsv,nstsv,nkpt))
 ! !DESCRIPTION:
 !   Gets non-local Coulomb matrix elements of the type $(i-jj-i)$ from the file

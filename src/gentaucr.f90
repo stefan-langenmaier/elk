@@ -7,50 +7,49 @@ subroutine gentaucr(taumt)
 use modmain
 implicit none
 ! arguments
-real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
+real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot)
 ! local variables
-integer is,ia,ias,nr,i
-integer ist,m,ispn,jspn
+integer is,ia,ias,ist,m,ispn
+integer nr,nrc,ir,irc,itp
+real(8) t0,t1
 ! allocatable arrays
 complex(8), allocatable :: wfcr(:,:,:)
-complex(8), allocatable :: gzfmt(:,:,:),zfmt(:,:)
+complex(8), allocatable :: zfmt(:,:)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(wfcr,gzfmt,zfmt) &
-!$OMP PRIVATE(is,ia,nr,ist,m) &
-!$OMP PRIVATE(ispn,jspn,i)
+!$OMP PRIVATE(wfcr,zfmt,is,ia) &
+!$OMP PRIVATE(nr,nrc,ist,m,t0,t1) &
+!$OMP PRIVATE(ispn,irc,ir,itp)
 !$OMP DO
 do ias=1,natmtot
-  allocate(wfcr(lmmaxvr,nrmtmax,2))
-  allocate(gzfmt(lmmaxvr,nrmtmax,3),zfmt(lmmaxvr,nrmtmax))
+  allocate(wfcr(lmmaxvr,nrcmtmax,2))
+  allocate(zfmt(lmmaxvr,nrcmtmax))
   is=idxis(ias)
   ia=idxia(ias)
   nr=nrmt(is)
+  nrc=nrcmt(is)
   do ist=1,spnst(is)
     if (spcore(ist,is)) then
       do m=-spk(ist,is),spk(ist,is)-1
-! generate the core wavefunction in spherical harmonics
-        call wavefcr(.true.,1,is,ia,ist,m,nrmtmax,wfcr)
+        t0=evalcr(ist,ias)
+! generate the core wavefunction
+        call wavefcr(.true.,lradstp,is,ia,ist,m,nrcmtmax,wfcr)
         do ispn=1,2
-          if (spinpol) then
-            jspn=ispn
-          else
-            jspn=1
-          end if
-! compute the gradient
-          call gradzfmt(lmaxvr,nr,spr(:,is),lmmaxvr,nrmtmax,wfcr(:,:,ispn), &
-           gzfmt)
-          do i=1,3
-! convert gradient to spherical coordinates
-            call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
-             gzfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
-            taumt(:,1:nr,ias,jspn)=taumt(:,1:nr,ias,jspn) &
-             +dble(zfmt(:,1:nr))**2+aimag(zfmt(:,1:nr))**2
+! convert to spherical coordinates
+          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
+           wfcr(:,:,ispn),lmmaxvr,zzero,zfmt,lmmaxvr)
+          irc=0
+          do ir=1,nr,lradstp
+            irc=irc+1
+            do itp=1,lmmaxvr
+              t1=dble(zfmt(itp,irc))**2+aimag(zfmt(itp,irc))**2
+              taumt(itp,ir,ias)=taumt(itp,ir,ias)+t0*t1
+            end do
           end do
         end do
       end do
     end if
   end do
-  deallocate(wfcr,gzfmt,zfmt)
+  deallocate(wfcr,zfmt)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

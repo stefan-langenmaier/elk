@@ -6,17 +6,17 @@
 !BOP
 ! !ROUTINE: genpmat
 ! !INTERFACE:
-subroutine genpmat(ngp,igpig,vgpc,wfmt,wfir,pmat)
+subroutine genpmat(ngp,igpig,vgpc,apwalm,evecfv,evecsv,pmat)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   ngp    : number of G+p-vectors (in,integer(nspnfv))
 !   igpig  : index from G+p-vectors to G-vectors (in,integer(ngkmax,nspnfv))
 !   vgpc   : G+p-vectors in Cartesian coordinates (in,real(3,ngkmax,nspnfv))
-!   wfmt   : muffin-tin wavefunction in spherical harmonics
-!            (in,complex(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-!   wfir   : interstitial wavefunction in plane wave basis
-!            (in,complex(ngkmax,nspinor,nstsv))
+!   apwalm : APW matching coefficients
+!            (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+!   evecfv : first-variational eigenvector (in,complex(nmatmax,nstfv))
+!   evecsv : second-variational eigenvectors (in,complex(nstsv,nstsv))
 !   pmat   : momentum matrix elements (out,complex(3,nstsv,nstsv))
 ! !DESCRIPTION:
 !   Calculates the momentum matrix elements
@@ -37,8 +37,9 @@ implicit none
 integer, intent(in) :: ngp(nspnfv)
 integer, intent(in) :: igpig(ngkmax,nspnfv)
 real(8), intent(in) :: vgpc(3,ngkmax,nspnfv)
-complex(8), intent(in) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
-complex(8), intent(in) :: wfir(ngkmax,nspinor,nstsv)
+complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
+complex(8), intent(in) :: evecfv(nmatmax,nstfv)
+complex(8), intent(in) :: evecsv(nstsv,nstsv)
 complex(8), intent(out) :: pmat(3,nstsv,nstsv)
 ! local variables
 integer ispn,jspn,ist,jst
@@ -46,6 +47,8 @@ integer is,ia,ias,nrc,ir,irc
 integer igp,ifg,itp,i
 complex(8) z11,z12,z21,z22,z31,z32,zt1,zt2
 ! allocatable arrays
+complex(8), allocatable :: wfmt(:,:,:,:,:)
+complex(8), allocatable :: wfir(:,:,:)
 complex(8), allocatable :: gwfmt(:,:,:,:)
 complex(8), allocatable :: gwfir(:,:)
 complex(8), allocatable :: gvmt(:,:,:)
@@ -55,6 +58,11 @@ complex(8), allocatable :: zv(:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
+allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+allocate(wfir(ngkmax,nspinor,nstsv))
+! calculate the second-variational wavefunctions for all states
+call genwfsv(.true.,.true.,.false.,ngp,igpig,evalsv,apwalm,evecfv,evecsv,wfmt, &
+ ngkmax,wfir)
 ! zero the momentum matrix elements array
 pmat(:,:,:)=0.d0
 !---------------------------------!
@@ -146,7 +154,11 @@ if (spinorb) deallocate(gvmt,zfmt1,zfmt2)
 allocate(gwfir(ngrtot,3),zv(ngkmax))
 do jst=1,nstsv
   do ispn=1,nspinor
-    jspn=jspnfv(ispn)
+    if (spinsprl) then
+      jspn=ispn
+    else
+      jspn=1
+    end if
 ! compute the gradient
     gwfir(:,:)=0.d0
     do igp=1,ngp(jspn)
@@ -186,6 +198,7 @@ do ist=1,nstsv
     end do
   end do
 end do
+deallocate(wfmt,wfir)
 return
 end subroutine
 !EOC

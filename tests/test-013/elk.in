@@ -1,5 +1,5 @@
 
-! Force test with spin-orbit coupling and removal of the source term from B_xc
+! Force test with spin-polarisation and spin-orbit coupling.
 
 tasks
  0
@@ -8,10 +8,10 @@ tasks
 test
  .true.
 
-spinorb
- .true.
+spinpol
+  .true.
 
-nosource
+spinorb
  .true.
 
 tforce

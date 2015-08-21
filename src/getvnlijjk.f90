@@ -10,7 +10,7 @@ subroutine getvnlijjk(ikp,vnlijjk)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   ikp     : k-point from non-reduced set (in,integer)
+!   ikp     : k-point from non-reduced k-point set (in,integer)
 !   vnlijjk : non-local Coulomb matrix elements
 !             (out,complex(nstsv,nstsv,nstsv,nkpt))
 ! !DESCRIPTION:

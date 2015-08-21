@@ -6,9 +6,6 @@ tasks
 test
  .true.
 
-xctype
- 21
-
 maxscl
  10
 

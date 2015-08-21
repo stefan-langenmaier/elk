@@ -38,7 +38,7 @@ do is=1,nspecies
       end do
     end do
   end do
-! convert to spherical coordinates
+! convert to spherical harmonics
   call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1,lmmaxvr, &
    zzero,zfmt2,lmmaxvr)
 ! mutiply by phase factors and store for all atoms

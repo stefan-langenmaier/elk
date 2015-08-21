@@ -19,16 +19,17 @@ real(8) vkl_(3),si(3,3)
 real(8) v(3),det,th,t1
 complex(8) su2(2,2),zt1,zt2
 ! allocatable arrays
-complex(8), allocatable :: zflm1(:,:,:),zflm2(:,:)
+complex(8), allocatable :: zflm1(:,:,:)
+complex(8), allocatable :: zflm2(:,:)
 ! find the equivalent k-point number and crystal symmetry element
 call findkpt(vpl,isym,ik)
 ! find the record length
 inquire(iolength=recl) vkl_,lmmaxvr_,nrcmtmax_,natmtot_,nspinor_,nstsv_,wfpwh
 !$OMP CRITICAL
-open(105,file='WFPWH.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
+open(80,file='WFPWH.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
  recl=recl)
-read(105,rec=ik) vkl_,lmmaxvr_,nrcmtmax_,natmtot_,nspinor_,nstsv_,wfpwh
-close(105)
+read(80,rec=ik) vkl_,lmmaxvr_,nrcmtmax_,natmtot_,nspinor_,nstsv_,wfpwh
+close(80)
 !$OMP END CRITICAL
 t1=abs(vkl(1,ik)-vkl_(1))+abs(vkl(2,ik)-vkl_(2))+abs(vkl(3,ik)-vkl_(3))
 if (t1.gt.epslat) then

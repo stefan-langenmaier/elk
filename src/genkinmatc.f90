@@ -12,6 +12,7 @@ integer ld,is,ias
 integer ik,ispn,ist,n,lp
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:)
+real(8), allocatable :: evalfv(:,:)
 complex(8), allocatable :: evecfv(:,:)
 complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
@@ -38,22 +39,25 @@ end do
 call genbeffmt
 ! loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv,apwalm) &
+!$OMP PRIVATE(evalfv,evecfv,evecsv,apwalm) &
 !$OMP PRIVATE(wfmt,wfir,c,bmat,ispn,ist)
 !$OMP DO
 do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
+  allocate(evalfv(nstfv,nspnfv))
   allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
+! solve the first- and second-variational secular equations
+  call seceqn(ik,evalfv,evecfv,evecsv)
+! write the first variational eigenvalues/vectors to file (this ensures the
+! phase in eigenvectors is the same for subsequent matrix element evaluations)
+  call putevalfv(ik,evalfv)
+  call putevecfv(ik,evecfv)
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
   allocate(wfir(ngrtot,nspinor,nstsv))
   allocate(c(nstsv,nstsv))
   if (spinpol) allocate(bmat(nstsv,nstsv))
-! get the eigenvalues/vectors from file for input k-point
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-  call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -79,7 +83,7 @@ do ik=1,nkpt
    nstsv,zzero,c,nstsv)
   call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,c,nstsv,zzero, &
    kinmatc(:,:,ik),nstsv)
-  deallocate(evecfv,evecsv)
+  deallocate(evalfv,evecfv,evecsv)
   deallocate(apwalm,wfmt,wfir,c)
   if (spinpol) deallocate(bmat)
 end do

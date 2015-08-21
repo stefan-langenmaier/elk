@@ -3,7 +3,7 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine phdveff(p,veffmt1,veffir1)
+subroutine phdveff(p,veffmt1,veffir1,dveffmt,dveffir)
 use modmain
 use modphonon
 implicit none
@@ -11,6 +11,8 @@ implicit none
 integer, intent(in) :: p
 real(8), intent(in) :: veffmt1(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: veffir1(ngrtot)
+complex(8), intent(inout) :: dveffmt(lmmaxvr,nrcmtmax,natmtot0)
+complex(8), intent(inout) :: dveffir(ngrtot0)
 ! local variables
 integer is,ia,ja,ias,jas
 integer ir,irc,i1,i2,i3,i

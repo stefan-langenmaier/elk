@@ -10,7 +10,7 @@ subroutine genvnlijji(ikp,vnlijji)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   ikp     : k-point from non-reduced set (in,integer)
+!   ikp     : k-point from non-reduced k-point set (in,integer)
 !   vnlijji : non-local Coulomb matrix elements (out,real(nstsv,nstsv,nkpt))
 ! !DESCRIPTION:
 !   Calculates the non-local Coulomb matrix elements of the type $(i-jj-i)$.
@@ -97,7 +97,7 @@ do ik=1,nkpt
   do ist1=1,nstsv
     do ist2=1,nstsv
 ! calculate the complex overlap density
-      call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
+      call genzrho(.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
        wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
 ! compute the potential and G=0 coefficient of the density
       call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)

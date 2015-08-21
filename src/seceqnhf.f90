@@ -161,7 +161,7 @@ do ik=1,nkptnr
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
       do ist1=1,nstsv
-        call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
+        call genzrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
          wfir2(:,:,ist3),wfir1(:,:,ist1),zrhomt(:,:,:,ist1),zrhoir(:,ist1))
       end do
 !$OMP END DO

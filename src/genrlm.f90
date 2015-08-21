@@ -36,16 +36,18 @@ integer, intent(in) :: lmax
 real(8), intent(in) :: tp(2)
 real(8), intent(out) :: rlm(*)
 ! local variables
-integer l,m,lm
+integer lmmax,l,m,lm
 real(8), parameter :: sqtwo=1.4142135623730950488d0
-! automatic arrays
-complex(8) ylm((lmax+1)**2)
+! allocatable arrays
+complex(8), allocatable :: ylm(:)
 if ((lmax.lt.0).or.(lmax.gt.50)) then
   write(*,*)
   write(*,'("Error(genrlm): lmax out of range : ",I8)') lmax
   write(*,*)
   stop
 end if
+lmmax=(lmax+1)**2
+allocate(ylm(lmmax))
 ! generate complex spherical harmonics
 call genylm(lmax,tp,ylm)
 ! convert to real spherical harmonics
@@ -62,6 +64,7 @@ do l=0,lmax
     rlm(lm)=sqtwo*dble(ylm(lm))
   end do
 end do
+deallocate(ylm)
 return
 end subroutine
 !EOC

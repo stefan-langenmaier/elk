@@ -32,8 +32,7 @@ integer, intent(in) :: lrstp
 real(8), intent(inout) :: rfmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(inout) :: rfir(ngrtot)
 ! local variables
-integer is,ia,ja,ias,jas
-integer nrc,ld,ir
+integer is,ia,ja,ias,jas,ir
 integer isym,lspl,ilspl
 real(8) t1
 ! automatic arrays
@@ -47,8 +46,6 @@ allocate(rfmt1(lmmaxvr,nrmtmax,natmmax))
 allocate(rfmt2(lmmaxvr,nrmtmax))
 t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
-  ld=lmmaxvr*lrstp
-  nrc=(nrmt(is)-1)/lrstp+1
 ! make a copy of the input function
   do ia=1,natoms(is)
     ias=idxas(ia,is)
@@ -71,7 +68,7 @@ do is=1,nspecies
 ! equivalent atom index (symmetry rotates atom ja into atom ia)
       ja=ieqatom(ia,is,isym)
 ! apply the rotation to the muffin-tin function
-      call rotrflm(symlatc(:,:,lspl),lmaxvr,nrc,ld,rfmt1(:,:,ja),rfmt2)
+      call symrfmt(lrstp,is,symlatc(:,:,lspl),rfmt1(:,:,ja),rfmt2)
 ! accumulate in original function array
       do ir=1,nrmt(is),lrstp
         rfmt(:,ir,ias)=rfmt(:,ir,ias)+rfmt2(:,ir)
@@ -91,8 +88,7 @@ do is=1,nspecies
 ! inverse symmetry (which rotates atom ia into atom ja)
         ilspl=isymlat(lspl)
 ! rotate symmetrised function into equivalent muffin-tin
-        call rotrflm(symlatc(:,:,ilspl),lmaxvr,nrc,ld,rfmt(:,:,ias), &
-         rfmt(:,:,jas))
+        call symrfmt(lrstp,is,symlatc(:,:,ilspl),rfmt(:,:,ias),rfmt(:,:,jas))
         done(ja)=.true.
       end if
     end do

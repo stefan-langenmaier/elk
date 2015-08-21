@@ -9,10 +9,10 @@ use libxcifc
 
 contains
 
-subroutine fxcifc(fxctype,n,rho,rhoup,rhodn,fxc,fxcuu,fxcud,fxcdd)
+subroutine fxcifc(xctype,n,rho,rhoup,rhodn,fxc,fxcuu,fxcud,fxcdd)
 implicit none
 ! mandatory arguments
-integer, intent(in) :: fxctype(3)
+integer, intent(in) :: xctype(3)
 integer, intent(in) :: n
 ! optional arguments
 real(8), optional, intent(in) :: rho(n)
@@ -30,7 +30,7 @@ if (n.le.0) then
   write(*,*)
   stop
 end if
-select case(abs(fxctype(1)))
+select case(abs(xctype(1)))
 case(3)
 ! Perdew-Wang-Ceperley-Alder
   if (present(rhoup).and.present(rhodn).and.present(fxcuu).and.present(fxcud) &
@@ -39,9 +39,9 @@ case(3)
     call fxc_pwca(n,rhoup,rhodn,fxcuu,fxcud,fxcdd)
   else if (present(rho).and.present(fxc)) then
 ! divide spin-unpolarised density into up and down
-    allocate(ra(n,4))
+    allocate(ra(n,3))
     ra(:,1)=0.5d0*rho(:)
-    call fxc_pwca(n,ra(:,1),ra(:,1),ra(:,2),ra(:,3),ra(:,4))
+    call fxc_pwca(n,ra(:,1),ra(:,1),ra(:,2),ra(:,3),ra(:,2))
     fxc(:)=0.5d0*(ra(:,2)+ra(:,3))
     deallocate(ra)
   else
@@ -49,8 +49,8 @@ case(3)
   end if
 case default
   write(*,*)
-  write(*,'("Error(fxcifc): response function unavailable for fxctype ",I8)') &
-   fxctype
+  write(*,'("Error(fxcifc): response function unavailable for xctype ",I8)') &
+   xctype
   write(*,*)
   stop
 end select
@@ -58,7 +58,7 @@ return
 10 continue
 write(*,*)
 write(*,'("Error(fxcifc): missing arguments for exchange-correlation type ",&
- &3I6)') fxctype(:)
+ &3I6)') xctype(:)
 write(*,*)
 stop
 end subroutine

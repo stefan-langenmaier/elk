@@ -18,13 +18,11 @@
 ! Example by Markus Meinert.
 
 tasks
- 0      ! ground-state calculation
- 120    ! compute momentum matrix elements
- 121    ! compute RPA dielectric function without local field contributions
- 180    ! generate RPA dielectric function with local field contributions
- 185    ! write the BSE Hamiltonian matrix to file
- 186    ! diagonalise BSE matrix
- 187    ! compute BSE dielectric function
+ 0	! ground-state calculation
+ 120	! compute momentum matrix elements
+ 121	! compute RPA dielectric function without local field contributions
+ 180	! generate RPA dielectric function with local field contributions
+ 185	! compute BSE dielectric function
 
 ! do not include valence bands right below E_F
 nvbse

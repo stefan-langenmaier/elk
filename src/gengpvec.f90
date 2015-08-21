@@ -28,7 +28,8 @@ use modmain
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: vpl(3),vpc(3)
+real(8), intent(in) :: vpl(3)
+real(8), intent(in) :: vpc(3)
 integer, intent(out) :: ngp
 integer, intent(out) :: igpig(ngkmax)
 real(8), intent(out) :: vgpl(3,ngkmax)

@@ -44,6 +44,7 @@ call timesec(ts0)
 lmmaxvr=(lmaxvr+1)**2
 lmmaxapw=(lmaxapw+1)**2
 lmmaxmat=(lmaxmat+1)**2
+lmmaxinr=(lmaxinr+1)**2
 if (lmaxvr.gt.lmaxapw) then
   write(*,*)
   write(*,'("Error(init0): lmaxvr > lmaxapw : ",2I8)') lmaxvr,lmaxapw
@@ -127,16 +128,11 @@ else
   nspinor=1
   occmax=2.d0
 end if
-! number of spin-dependent first-variational functions per state and map from
-! second- to first-variational spin index
+! number of spin-dependent first-variational functions per state
 if (spinsprl) then
   nspnfv=2
-  jspnfv(1)=1
-  jspnfv(2)=2
 else
   nspnfv=1
-  jspnfv(1)=1
-  jspnfv(2)=1
 end if
 ! spin-polarised calculations require second-variational eigenvectors
 if (spinpol) tevecsv=.true.
@@ -187,29 +183,12 @@ if (ndmag.eq.3) then
 else
   ncmag=.false.
 end if
-! check for meta-GGA with non-collinearity
-if ((xcgrad.eq.3).and.ncmag) then
-  write(*,*)
-  write(*,'("Error(init0): meta-GGA is not valid for non-collinear magnetism")')
-  write(*,*)
-  stop
-end if
 ! spin-polarised cores
 if (.not.spinpol) spincore=.false.
 ! set fixed spin moment effective field to zero
 bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero
 bfsmcmt(:,:,:)=0.d0
-! number of independent spin components of the f_xc spin tensor
-if (spinpol) then
-  if (ncmag) then
-    nscfxc=10
-  else
-    nscfxc=3
-  end if
-else
-  nscfxc=1
-end if
 
 !----------------------------------!
 !     crystal structure set up     !
@@ -368,16 +347,13 @@ call gencfun
 !-------------------------!
 ! solve the Kohn-Sham-Dirac equations for all atoms
 call allatoms
-! allocate core state occupancy and eigenvalue arrays and set to default
-if (allocated(occcr)) deallocate(occcr)
-allocate(occcr(spnstmax,natmtot))
+! allocate core state eigenvalue array and set to default
 if (allocated(evalcr)) deallocate(evalcr)
 allocate(evalcr(spnstmax,natmtot))
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     do ist=1,spnst(is)
-      occcr(ist,ias)=spocc(ist,is)
       evalcr(ist,ias)=speval(ist,is)
     end do
   end do
@@ -496,7 +472,7 @@ end if
 !-----------------------!
 !     miscellaneous     !
 !-----------------------!
-! Poisson solver pseudocharge density constant
+! Poisson solver pseudocharge density constant l + n(l)
 if (nspecies.gt.0) then
   t1=0.5d0*gmaxvr*maxval(rmt(1:nspecies))
 else
@@ -523,6 +499,8 @@ iscl=0
 tlast=.false.
 ! set the Fermi energy to zero
 efermi=0.d0
+! set the Tran-Blaha '09 constant c to zero
+c_tb09=0.d0
 
 call timesec(ts1)
 timeinit=timeinit+ts1-ts0

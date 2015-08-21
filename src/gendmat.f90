@@ -67,7 +67,11 @@ do j=1,nstsv
     wfmt2(:,:,:)=0.d0
     i=0
     do ispn=1,nspinor
-      jspn=jspnfv(ispn)
+      if (spinsprl) then
+        jspn=ispn
+      else
+        jspn=1
+      end if
       do ist=1,nstfv
         i=i+1
         zt1=evecsv(i,j)

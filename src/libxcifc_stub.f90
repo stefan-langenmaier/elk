@@ -10,8 +10,8 @@ module libxcifc
 contains
 
 subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
- gup2,gdn2,gupdn,tau,tauup,taudn,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2, &
- dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
+ gup2,gdn2,gupdn,tau,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2,dxdgd2, &
+ dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
 implicit none
 ! mandatory arguments
 integer xctype(3),n
@@ -28,8 +28,6 @@ real(8), optional :: gup2(n)
 real(8), optional :: gdn2(n)
 real(8), optional :: gupdn(n)
 real(8), optional :: tau(n)
-real(8), optional :: tauup(n)
-real(8), optional :: taudn(n)
 real(8), optional :: ex(n)
 real(8), optional :: ec(n)
 real(8), optional :: vx(n)

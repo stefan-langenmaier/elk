@@ -95,7 +95,7 @@ do ik1=1,nkptnr
         ist2=istbse(i2,ik2)
 ! note that the complex conjugate of the density is found because zfinp
 ! conjugates the first function
-        call genzrho(.false.,spinpol,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
+        call genzrho(.false.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
          wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt(:,:,:,i1),zrhoir(:,i1))
         zvv(ig,i1,i2)=zfinp(.false.,zrhomt(:,:,:,i1),expgqmt,zrhoir(:,i1), &
          expgir(:,ig))
@@ -110,7 +110,7 @@ do ik1=1,nkptnr
       jst1=jstbse(j1,ik1)
       do j2=1,ncbse
         jst2=jstbse(j2,ik2)
-        call genzrho(.false.,spinpol,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,jst1), &
+        call genzrho(.false.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,jst1), &
          wfir2(:,:,jst2),wfir1(:,:,jst1),zrhomt(:,:,:,j1),zrhoir(:,j1))
         zcc(ig,j1,j2)=zfinp(.false.,zrhomt(:,:,:,j1),expgqmt,zrhoir(:,j1), &
          expgir(:,ig))
@@ -127,9 +127,8 @@ do ik1=1,nkptnr
         ist1=istbse(i1,ik1)
         do j2=1,ncbse
           jst2=jstbse(j2,ik2)
-          call genzrho(.false.,spinpol,wfmt2(:,:,:,:,jst2), &
-           wfmt1(:,:,:,:,ist1),wfir2(:,:,jst2),wfir1(:,:,ist1), &
-           zrhomt(:,:,:,i1),zrhoir(:,i1))
+          call genzrho(.false.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,ist1), &
+           wfir2(:,:,jst2),wfir1(:,:,ist1),zrhomt(:,:,:,i1),zrhoir(:,i1))
           zvc(ig,i1,j2)=zfinp(.false.,zrhomt(:,:,:,i1),expgqmt,zrhoir(:,i1), &
            expgir(:,ig))
         end do
@@ -143,9 +142,8 @@ do ik1=1,nkptnr
         jst1=jstbse(j1,ik1)
         do i2=1,nvbse
           ist2=istbse(i2,ik2)
-          call genzrho(.false.,spinpol,wfmt2(:,:,:,:,ist2), &
-           wfmt1(:,:,:,:,jst1),wfir2(:,:,ist2),wfir1(:,:,jst1), &
-           zrhomt(:,:,:,j1),zrhoir(:,j1))
+          call genzrho(.false.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,jst1), &
+           wfir2(:,:,ist2),wfir1(:,:,jst1),zrhomt(:,:,:,j1),zrhoir(:,j1))
           zcv(ig,j1,i2)=zfinp(.false.,zrhomt(:,:,:,j1),expgqmt,zrhoir(:,j1), &
            expgir(:,ig))
         end do

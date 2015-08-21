@@ -27,10 +27,14 @@ use modldapu
 implicit none
 ! local variables
 logical exist
-integer ik,nwork,n
+integer ik,nwork,lp,n
 real(8) dv,etp,de,timetot
 ! allocatable arrays
-real(8), allocatable :: v(:),work(:)
+real(8), allocatable :: v(:)
+real(8), allocatable :: work(:)
+real(8), allocatable :: evalfv(:,:)
+complex(8), allocatable :: evecfv(:,:,:)
+complex(8), allocatable :: evecsv(:,:)
 ! initialise global variables
 call init0
 call init1
@@ -146,8 +150,36 @@ do iscl=1,maxscl
   call hmlrad
 ! generate muffin-tin effective magnetic fields and s.o. coupling functions
   call genbeffmt
-! generate the first- and second-variational eigenvectors and eigenvalues
-  call genevfsv
+! begin parallel loop over k-points
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(evalfv,evecfv,evecsv)
+!$OMP DO
+  do ik=1,nkpt
+! distribute among MPI processes
+    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
+! every thread should allocate its own arrays
+    allocate(evalfv(nstfv,nspnfv))
+    allocate(evecfv(nmatmax,nstfv,nspnfv))
+    allocate(evecsv(nstsv,nstsv))
+! solve the first- and second-variational secular equations
+    call seceqn(ik,evalfv,evecfv,evecsv)
+! write the eigenvalues/vectors to file
+    call putevalfv(ik,evalfv)
+    call putevalsv(ik,evalsv(:,ik))
+    call putevecfv(ik,evecfv)
+    call putevecsv(ik,evecsv)
+    deallocate(evalfv,evecfv,evecsv)
+  end do
+!$OMP END DO
+!$OMP END PARALLEL
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
+! broadcast eigenvalue array to every process
+  do ik=1,nkpt
+    lp=mod(ik-1,np_mpi)
+    call mpi_bcast(evalsv(:,ik),nstsv,mpi_double_precision,lp,mpi_comm_world, &
+     ierror)
+  end do
 ! find the occupation numbers and Fermi energy
   call occupy
   if (autoswidth.and.mp_mpi) then
@@ -164,8 +196,6 @@ do iscl=1,maxscl
 ! write the Fermi energy to file
     call writefermi
   end if
-! synchronise MPI processes
-  call mpi_barrier(mpi_comm_world,ierror)
 ! generate the density and magnetisation
   call rhomag
 ! LDA+U
@@ -208,14 +238,13 @@ do iscl=1,maxscl
   end if
 ! compute the energy components
   call energy
-  if (mp_mpi) then
 ! output energy components
+  if (mp_mpi) then
     call writeengy(60)
     write(60,*)
     write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
     write(60,'(" (states/Hartree/unit cell)")')
     write(60,'("Estimated indirect band gap : ",G18.10)') bandgap
-    write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
 ! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)

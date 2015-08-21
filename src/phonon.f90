@@ -1,5 +1,5 @@
 
-! Copyright (C) 2010 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
+! Copyright (C) 2002-2008 J. K. Dewhurst, S. Sharma and C. Ambrosch-Draxl.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -8,116 +8,143 @@ use modmain
 use modphonon
 implicit none
 ! local variables
-integer ik,ispn,igkq
-real(8) vl(3),vc(3)
-character(256) fext
+integer is,ia,ja,ias,jas
+integer ip,nph,i,p
+real(8) dph,a,b,t1
+real(8) forcetot1(3,maxatoms*maxspecies)
+complex(8) zt1,zt2
+complex(8) dyn(3,maxatoms,maxspecies)
 ! allocatable arrays
-complex(8), allocatable :: dwfmt(:,:,:,:,:),dwfir(:,:,:)
+real(8), allocatable :: veffmt1(:,:,:),veffir1(:)
+complex(8), allocatable :: dveffmt(:,:,:),dveffir(:)
+!------------------------!
+!     initialisation     !
+!------------------------!
+! require forces
+tforce=.true.
+! no shifting of atomic basis allowed
+tshift=.false.
+! determine k-point grid size from radkpt
+autokpt=.true.
 ! initialise universal variables
 call init0
-call init1
+! initialise q-point dependent variables
 call init2
-! read density and potential from file
-call readstate
-! read Fermi energy from file
-call readfermi
-! find the new linearisation energies
-call linengy
-! generate the APW radial functions
-call genapwfr
-! generate the local-orbital radial functions
-call genlofr
-! read in the eigenvalues and occupancies
-do ik=1,nkpt
-  call getevalsv(vkl(:,ik),evalsv(:,ik))
-  call getoccsv(vkl(:,ik),occsv(:,ik))
+! allocate the effective potential derivative arrays
+allocate(dveffmt(lmmaxvr,nrcmtmax,natmtot),dveffir(ngrtot))
+! store original parameters
+natoms0(1:nspecies)=natoms(1:nspecies)
+natmtot0=natmtot
+avec0(:,:)=avec(:,:)
+ainv0(:,:)=ainv(:,:)
+binv0(:,:)=binv(:,:)
+atposc0(:,:,:)=0.d0
+do is=1,nspecies
+  do ia=1,natoms(is)
+    atposc0(:,ia,is)=atposc(:,ia,is)
+  end do
 end do
-! allocate global arrays
-if (allocated(vkql)) deallocate(vkql)
-allocate(vkql(3,nkptnr))
-if (allocated(vkqc)) deallocate(vkqc)
-allocate(vkqc(3,nkptnr))
-if (allocated(ngkq)) deallocate(ngkq)
-allocate(ngkq(nspnfv,nkptnr))
-if (allocated(igkqig)) deallocate(igkqig)
-allocate(igkqig(ngkmax,nspnfv,nkptnr))
-if (allocated(vgkql)) deallocate(vgkql)
-allocate(vgkql(3,ngkmax,nspnfv,nkptnr))
-if (allocated(vgkqc)) deallocate(vgkqc)
-allocate(vgkqc(3,ngkmax,nspnfv,nkptnr))
-if (allocated(gkqc)) deallocate(gkqc)
-allocate(gkqc(ngkmax,nspnfv,nkptnr))
-if (allocated(tpgkqc)) deallocate(tpgkqc)
-allocate(tpgkqc(2,ngkmax,nspnfv,nkptnr))
-if (allocated(sfacgkq)) deallocate(sfacgkq)
-allocate(sfacgkq(ngkmax,natmtot,nspnfv,nkptnr))
-if (allocated(drhomt)) deallocate(drhomt)
-allocate(drhomt(lmmaxvr,nrcmtmax,natmtot))
-if (allocated(drhoir)) deallocate(drhoir)
-allocate(drhoir(ngrtot))
-if (allocated(dmagmt)) deallocate(dmagmt)
-if (allocated(dmagir)) deallocate(dmagir)
-if (spinpol) then
-  allocate(dmagmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
-  allocate(dmagir(ngrtot,ndmag))
-end if
-if (allocated(dveffpw)) deallocate(dveffpw)
-allocate(dveffpw(nspinor,nspinor,ngrtot))
-! allocate local arrays
-allocate(dwfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(dwfir(ngrtot,nspinor,nstsv))
+ngrid0(:)=ngrid(:)
+ngrtot0=ngrtot
+!---------------------------------------!
+!     compute dynamical matrix rows     !
+!---------------------------------------!
 10 continue
-call dyntask(80,fext)
-if (iqph.eq.0) return
-!****** dellocate
-write(*,'("Info(phonon): working on ",A)') 'DYN'//trim(fext)
-! loop over non-reduced k-point set
-do ik=1,nkptnr
-! k+q-vectors in lattice and Cartesian coordinates
-  vkql(:,ik)=vkl(:,ik)+vql(:,iqph)
-  vkqc(:,ik)=vkc(:,ik)+vqc(:,iqph)
-  do ispn=1,nspnfv
-    vl(:)=vkql(:,ik)
-    vc(:)=vkqc(:,ik)
-! spin-spiral case
-    if (spinsprl) then
-      if (ispn.eq.1) then
-        vl(:)=vl(:)+0.5d0*vqlss(:)
-        vc(:)=vc(:)+0.5d0*vqcss(:)
-      else
-        vl(:)=vl(:)-0.5d0*vqlss(:)
-        vc(:)=vc(:)-0.5d0*vqcss(:)
-      end if
-    end if
-! generate the G+k+q-vectors
-    call gengpvec(vl,vc,ngkq(ispn,ik),igkqig(:,ispn,ik),vgkql(:,:,ispn,ik), &
-     vgkqc(:,:,ispn,ik))
-! generate the spherical coordinates of the G+k+q-vectors
-    do igkq=1,ngkq(ispn,ik)
-      call sphcrd(vgkqc(:,igkq,ispn,ik),gkqc(igkq,ispn,ik), &
-       tpgkqc(:,igkq,ispn,ik))
+natoms(1:nspecies)=natoms0(1:nspecies)
+! find a dynamical matrix to calculate
+call dyntask(80)
+! if nothing more to do then reset input values and return
+if (iqph.eq.0) then
+  call readinput
+  return
+end if
+write(*,'("Info(phonon): working on ",A)') 'DYN'//trim(filext)
+! phonon dry run: just generate empty DYN files
+if (task.eq.205) goto 10
+dyn(:,:,:)=0.d0
+dveffmt(:,:,:)=0.d0
+dveffir(:)=0.d0
+! check to see if mass is considered infinite
+if (spmass(isph).le.0.d0) goto 20
+! loop over phases: 0 = cos and 1 = sin displacements
+if ((ivq(1,iqph).eq.0).and.(ivq(2,iqph).eq.0).and.(ivq(3,iqph).eq.0)) then
+  nph=0
+else
+  nph=1
+end if
+! initial supercell density constructed from atomic densities
+trdstate=.false.
+! loop over cos and sin displacements
+do p=0,nph
+! restore input values
+  natoms(1:nspecies)=natoms0(1:nspecies)
+  avec(:,:)=avec0(:,:)
+  atposc(:,:,:)=atposc0(:,:,:)
+! generate the supercell
+  call genphsc(p,deltaph)
+! run the ground-state calculation
+  call gndstate
+! subsequent calculations will read in this supercell potential
+  trdstate=.true.
+! store the total force for the first displacement
+  do ias=1,natmtot
+    forcetot1(:,ias)=forcetot(:,ias)
+  end do
+! store the effective potential for the first displacement
+  allocate(veffmt1(lmmaxvr,nrmtmax,natmtot),veffir1(ngrtot))
+  veffmt1(:,:,:)=veffmt(:,:,:)
+  veffir1(:)=veffir(:)
+! restore input values
+  natoms(1:nspecies)=natoms0(1:nspecies)
+  avec(:,:)=avec0(:,:)
+  atposc(:,:,:)=atposc0(:,:,:)
+! generate the supercell again with twice the displacement
+  dph=deltaph+deltaph
+  call genphsc(p,dph)
+! run the ground-state calculation again
+  call gndstate
+! compute the complex effective potential derivative with implicit q-phase
+  call phdveff(p,veffmt1,veffir1,dveffmt,dveffir)
+  deallocate(veffmt1,veffir1)
+! Fourier transform the force differences to obtain the dynamical matrix
+  zt1=1.d0/(dble(nphsc)*deltaph)
+! multiply by i for sin-like displacement
+  if (p.eq.1) zt1=zt1*zi
+  jas=0
+  do is=1,nspecies
+    ja=0
+    do ia=1,natoms0(is)
+      do i=1,nphsc
+        ja=ja+1
+        jas=jas+1
+        t1=-dot_product(vqc(:,iqph),vphsc(:,i))
+        zt2=zt1*cmplx(cos(t1),sin(t1),8)
+        do ip=1,3
+          t1=-(forcetot(ip,jas)-forcetot1(ip,jas))
+          dyn(ip,ia,is)=dyn(ip,ia,is)+zt2*t1
+        end do
+      end do
     end do
-! generate structure factors for the G+k+q-vectors
-    call gensfacgp(ngkq(ispn,ik),vgkqc(:,:,ispn,ik),ngkmax,sfacgkq(:,:,ispn,ik))
   end do
 end do
-! begin the self-consistent loop
-do iscl=1,maxscl
-! zero the density and magnetisation derivatives
-  drhomt(:,:,:)=0.d0
-  drhoir(:)=0.d0
-  if (spinpol) then
-    dmagmt(:,:,:,:)=0.d0
-    dmagir(:,:)=0.d0
-  end if
-! loop over non-reduced k-points
-  do ik=1,nkptnr
-! compute the first-order change in the wavefunction
-    call phdwfsv(ik,dwfmt,dwfir)
+20 continue
+! write dynamical matrix row to file
+do is=1,nspecies
+  do ia=1,natoms0(is)
+    do ip=1,3
+      a=dble(dyn(ip,ia,is))
+      b=aimag(dyn(ip,ia,is))
+      if (abs(a).lt.1.d-12) a=0.d0
+      if (abs(b).lt.1.d-12) b=0.d0
+      write(80,'(2G18.10," : is = ",I4,", ia = ",I4,", ip = ",I4)') a,b,is,ia,ip
+    end do
   end do
-! end the self-consistent loop
 end do
+close(80)
+! write the complex effective potential derivative to file
+call writedveff(dveffmt,dveffir)
+! delete the non-essential files
+call phdelete
 goto 10
-return
 end subroutine
 

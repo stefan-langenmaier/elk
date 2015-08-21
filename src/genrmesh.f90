@@ -11,7 +11,8 @@ subroutine genrmesh
 use modmain
 ! !DESCRIPTION:
 !   Generates the coarse and fine radial meshes for each atomic species in the
-!   crystal.
+!   crystal. Also determines which points are in the inner part of the
+!   muffin-tin using the value of {\tt radfinr}.
 !
 ! !REVISION HISTORY:
 !   Created September 2002 (JKD)
@@ -43,6 +44,18 @@ do is=1,nspecies
   do ir=1,spnr(is)
     spr(ir,is)=sprmin(is)*exp(dble(ir-1)*t1*t2)
   end do
+end do
+! find the inner part of the muffin-tin (where rho is calculated with lmaxinr)
+do is=1,nspecies
+  t1=fracinr*rmt(is)
+  nrmtinr(is)=nrmt(is)
+  do ir=1,nrmt(is)
+    if (spr(ir,is).gt.t1) then
+      nrmtinr(is)=ir
+      goto 10
+    end if
+  end do
+10 continue
 end do
 ! set up the coarse radial meshes
 do is=1,nspecies

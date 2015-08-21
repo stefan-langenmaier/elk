@@ -46,7 +46,8 @@ implicit none
 integer, intent(in) :: lmax
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
-integer, intent(in) :: ld1,ld2
+integer, intent(in) :: ld1
+integer, intent(in) :: ld2
 complex(8), intent(in) :: zfmt(ld1,nr)
 complex(8), intent(out) :: gzfmt(ld1,ld2,3)
 ! local variables

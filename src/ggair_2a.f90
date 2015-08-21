@@ -29,7 +29,7 @@ allocate(zfft1(ngrtot),zfft2(ngrtot))
 ! Fourier transform density to G-space
 zfft1(:)=rhoir(:)
 call zfftifc(3,ngrid,-1,zfft1)
-! grad^2 rho
+! compute grad^2 rho
 zfft2(:)=0.d0
 do ig=1,ngvec
   ifg=igfft(ig)
@@ -37,7 +37,8 @@ do ig=1,ngvec
 end do
 call zfftifc(3,ngrid,1,zfft2)
 g2rho(:)=dble(zfft2(:))
-! grad rho
+! compute grad rho and (grad rho)^2
+grho2(:)=0.d0
 do i=1,3
   zfft2(:)=0.d0
   do ig=1,ngvec
@@ -46,9 +47,8 @@ do i=1,3
   end do
   call zfftifc(3,ngrid,1,zfft2)
   gvrho(:,i)=dble(zfft2(:))
+  grho2(:)=grho2(:)+gvrho(:,i)**2
 end do
-! (grad rho)^2
-grho2(:)=gvrho(:,1)**2+gvrho(:,2)**2+gvrho(:,3)**2
 deallocate(zfft1,zfft2)
 return
 end subroutine

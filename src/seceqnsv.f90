@@ -24,10 +24,17 @@ real(8) ts0,ts1
 ! automatic arrays
 complex(8) zlflm(lmmaxvr,3)
 ! allocatable arrays
-real(8), allocatable :: bir(:,:),rwork(:)
-complex(8), allocatable :: wfmt1(:,:,:),wfmt2(:,:),wfmt3(:,:),wfmt4(:,:,:)
-complex(8), allocatable :: gwfmt(:,:,:),wfir1(:),wfir2(:)
-complex(8), allocatable :: zv(:,:),work(:)
+real(8), allocatable :: bir(:,:)
+real(8), allocatable :: rwork(:)
+complex(8), allocatable :: wfmt1(:,:,:)
+complex(8), allocatable :: wfmt2(:,:)
+complex(8), allocatable :: wfmt3(:,:)
+complex(8), allocatable :: wfmt4(:,:,:)
+complex(8), allocatable :: gwfmt(:,:,:)
+complex(8), allocatable :: wfir1(:)
+complex(8), allocatable :: wfir2(:)
+complex(8), allocatable :: zv(:,:)
+complex(8), allocatable :: work(:)
 ! external functions
 complex(8) zdotc,zfmtinp
 external zdotc,zfmtinp
@@ -80,8 +87,8 @@ do is=1,nspecies
 ! begin loop over states
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(wfmt2,wfmt3,wfmt4,gwfmt) &
-!$OMP PRIVATE(irc,zlflm,t1,l,nm,lm) &
-!$OMP PRIVATE(i,j,k,ispn,jspn,ist)
+!$OMP PRIVATE(irc,t1,lm,l,nm,i,j,k) &
+!$OMP PRIVATE(zlflm,ispn,jspn,ist)
 !$OMP DO
     do jst=1,nstfv
       allocate(wfmt2(lmmaxvr,nrcmtmax))
@@ -92,9 +99,8 @@ do is=1,nspecies
 ! convert wavefunction to spherical coordinates
         call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
          wfmt1(:,:,jst),lmmaxvr,zzero,wfmt2,lmmaxvr)
-! apply effective magnetic field
+! apply effective magnetic field and convert to spherical harmonics
         wfmt3(:,1:nrc)=wfmt2(:,1:nrc)*beffmt(:,1:nrc,ias,ndmag)
-! conver to spherical harmonics and store in wfmt4
         call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
          wfmt3,lmmaxvr,zzero,wfmt4(:,:,1),lmmaxvr)
         wfmt4(:,1:nrc,2)=-wfmt4(:,1:nrc,1)
@@ -204,7 +210,8 @@ if (spinpol) then
 !$OMP PRIVATE(igk,ifg,t1,ist,i,j,k)
 !$OMP DO
   do jst=1,nstfv
-    allocate(wfir1(ngrtot),wfir2(ngrtot))
+    allocate(wfir1(ngrtot))
+    allocate(wfir2(ngrtot))
     allocate(zv(ngkmax,nsc))
     wfir1(:)=0.d0
     do igk=1,ngk(1,ik)

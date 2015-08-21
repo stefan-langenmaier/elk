@@ -38,8 +38,7 @@ complex(8), intent(inout) :: h(*)
 integer ld,iv(3),jv(3),ig,i,j,k
 real(8) vj(3),t1
 ld=ngp+nlotot
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(k,jv,vj,i,iv,ig,t1)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,jv,vj,i,iv,ig,t1)
 !$OMP DO
 do j=1,ngp
   k=(j-1)*ld

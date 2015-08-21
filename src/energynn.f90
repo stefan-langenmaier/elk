@@ -43,10 +43,12 @@ call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
  zvclir,zrho0)
 ! compute the nuclear-nuclear energy
 engynn=0.d0
-do ias=1,natmtot
-  is=idxis(ias)
-  t1=dble(zvclmt(1,1,ias))*y00-vn0(is)
-  engynn=engynn+spzn(is)*t1
+do is=1,nspecies
+  do ia=1,natoms(is)
+    ias=idxas(ia,is)
+    t1=dble(zvclmt(1,1,ias))*y00-vn0(is)
+    engynn=engynn+spzn(is)*t1
+  end do
 end do
 engynn=0.5d0*engynn
 deallocate(jlgr,zrhoir,zvclmt,zvclir)

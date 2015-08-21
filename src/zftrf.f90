@@ -6,28 +6,26 @@
 !BOP
 ! !ROUTINE: zftrf
 ! !INTERFACE:
-subroutine zftrf(npv,ivp,vpc,rfmt,rfir,zfp)
+subroutine zftrf(rfmt,rfir,zfh)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   npv  : number of P-vectors (in,integer)
-!   ivp  : integer coordinates of the P-vectors (in,integer(3,npv))
-!   vpc  : P-vectors in Cartesian coordinates (in,real(3,npv))
 !   rfmt : real muffin-tin function (in,real(lmmaxvr,nrmtmax,natmtot))
 !   rfir : real interstitial function (in,real(ngrtot))
-!   zfp  : Fourier expansion coefficients of the real-space function
-!          (out,complex(npv))
+!   zfh  : Fourier expansion coefficients of the real-space function
+!          (out,complex(nhv))
 ! !DESCRIPTION:
-!   Given a real function periodic in the unit cell, $f({\bf r})$, this routine
-!   calculates its complex Fourier expansion coefficients:
-!   $$ f({\bf P})=\frac{1}{\Omega}\int d^3r\,f({\bf r})\tilde{\Theta}({\bf r})
-!    e^{-i{\bf P}\cdot{\bf r}}
-!    +\frac{4\pi}{\Omega}\sum_{\alpha}e^{-i{\bf P}\cdot{\bf R}_{\alpha}}
-!    \sum_{lm}(-i)^l Y_{lm}(\hat{\bf P})
-!    \int_{0}^{R_{\alpha}}dr\,r^2 j_{l}(|{\bf P}|r)f_{lm}^{\alpha}(r), $$
+!   Given a real function, $f({\bf r})$, this routine calculates its complex
+!   Fourier expansion coefficients:
+!   $$ f({\bf H})=\frac{1}{\Omega}\int d^3r\,f({\bf r})\tilde{\Theta}({\bf r})
+!    e^{-i{\bf H}\cdot{\bf r}}
+!    +\frac{4\pi}{\Omega}\sum_{\alpha}e^{-i{\bf H}\cdot{\bf R}_{\alpha}}
+!    \sum_{lm}(-i)^l Y_{lm}(\hat{\bf H})
+!    \int_{0}^{R_{\alpha}}dr\,r^2 j_{l}(|{\bf H}|r)f_{lm}^{\alpha}(r), $$
 !   where $\tilde{\Theta}$ is the smooth characteristic function of the
 !   interstitial region, $\Omega$ is the unit cell volume and $R_{\alpha}$ is
-!   the muffin-tin radius of atom $\alpha$.
+!   the muffin-tin radius of atom $\alpha$. The $\bf H$-vectors are stored in
+!   the global array {\tt ivh}. See also {\tt genhvec}.
 !
 ! !REVISION HISTORY:
 !   Created July 2010 (Alexey I. Baranov)
@@ -36,18 +34,15 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: npv
-integer, intent(in) :: ivp(3,npv)
-real(8), intent(in) :: vpc(3,npv)
 real(8), intent(in) :: rfmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: rfir(ngrtot)
-complex(8), intent(out) :: zfp(npv)
+complex(8), intent(out) :: zfh(nhvec)
 ! local variables
 integer is,ia,ias
 integer nrc,irc,ir
-integer ip,ig,l,m,lm
-real(8) x,p,tp(2)
-real(8) t0,t1,t2
+integer ih,ig,l,m,lm
+real(8) vhl(3),vhc(3),hc
+real(8) tp(2),x,t1,t2
 complex(8) zsum1,zsum2
 complex(8) zt1,zt2,zt3
 ! automatic arrays
@@ -55,11 +50,12 @@ real(8) jl(0:lmaxvr,nrcmtmax)
 real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 complex(8) ylm(lmmaxvr)
 ! allocatable arrays
-complex(8), allocatable :: zfft(:),zfmt(:,:,:)
+complex(8), allocatable :: zfft(:)
+complex(8), allocatable :: zfmt(:,:,:)
 allocate(zfft(ngrtot))
 allocate(zfmt(lmmaxvr,nrcmtmax,natmtot))
 ! zero the coefficients
-zfp(:)=0.d0
+zfh(:)=0.d0
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
@@ -67,24 +63,26 @@ zfp(:)=0.d0
 zfft(:)=rfir(:)
 call zfftifc(3,ngrid,-1,zfft)
 ! find coefficients for all required input vectors
-do ip=1,npv
-  if ((ivp(1,ip).ge.intgv(1,1)).and.(ivp(1,ip).le.intgv(1,2)).and. &
-      (ivp(2,ip).ge.intgv(2,1)).and.(ivp(2,ip).le.intgv(2,2)).and. &
-      (ivp(3,ip).ge.intgv(3,1)).and.(ivp(3,ip).le.intgv(3,2))) then
-    ig=ivgig(ivp(1,ip),ivp(2,ip),ivp(3,ip))
-    zfp(ip)=zfft(igfft(ig))
+do ih=1,nhvec
+  if ((ivh(1,ih).ge.intgv(1,1)).and.(ivh(1,ih).le.intgv(1,2)).and. &
+      (ivh(2,ih).ge.intgv(2,1)).and.(ivh(2,ih).le.intgv(2,2)).and. &
+      (ivh(3,ih).ge.intgv(3,1)).and.(ivh(3,ih).le.intgv(3,2))) then
+    ig=ivgig(ivh(1,ih),ivh(2,ih),ivh(3,ih))
+    zfh(ih)=zfft(igfft(ig))
   end if
 end do
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
 ! convert function from real to complex spherical harmonic expansion
-do ias=1,natmtot
-  is=idxis(ias)
-  irc=0
-  do ir=1,nrmt(is),lradstp
-    irc=irc+1
-    call rtozflm(lmaxvr,rfmt(:,ir,ias),zfmt(:,irc,ias))
+do is=1,nspecies
+  do ia=1,natoms(is)
+    ias=idxas(ia,is)
+    irc=0
+    do ir=1,nrmt(is),lradstp
+      irc=irc+1
+      call rtozflm(lmaxvr,rfmt(:,ir,ias),zfmt(:,irc,ias))
+    end do
   end do
 end do
 ! remove continuation of interstitial function into muffin-tin
@@ -98,7 +96,7 @@ do ig=1,ngvec
     end do
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-      zt1=fourpi*zfft(igfft(ig))*sfacg(ig,ias)
+      zt1=zfft(igfft(ig))*fourpi*sfacg(ig,ias)
       lm=0
       do l=0,lmaxvr
         zt2=zt1*zil(l)
@@ -111,24 +109,23 @@ do ig=1,ngvec
     end do
   end do
 end do
-t0=fourpi/omega
-! loop over input P-vectors
-do ip=1,npv
-! generate the spherical coordinates of P
-  call sphcrd(vpc(:,ip),p,tp)
-! generate the spherical harmonics Y_lm(P)
+! loop over input H-vectors
+do ih=1,nhvec
+  vhl(:)=dble(ivh(:,ih))
+  call r3mv(bvec,vhl,vhc)
+  call sphcrd(vhc,hc,tp)
   call genylm(lmaxvr,tp,ylm)
   do is=1,nspecies
     nrc=nrcmt(is)
 ! generate spherical Bessel functions
     do irc=1,nrc
-      x=p*rcmt(irc,is)
+      x=hc*rcmt(irc,is)
       call sbessel(lmaxvr,x,jl(:,irc))
     end do
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-! conjugate structure factor
-      t1=-dot_product(vpc(:,ip),atposc(:,ia,is))
+! structure factor
+      t1=dot_product(vhc,atposc(:,ia,is))
       zt1=cmplx(cos(t1),sin(t1),8)
       do irc=1,nrc
         zsum1=0.d0
@@ -149,7 +146,7 @@ do ip=1,npv
       t1=gr(nrc)
       call fderiv(-1,nrc,rcmt(:,is),fr2,gr)
       t2=gr(nrc)
-      zfp(ip)=zfp(ip)+t0*zt1*cmplx(t1,t2,8)
+      zfh(ih)=zfh(ih)+(fourpi/omega)*conjg(zt1)*cmplx(t1,t2,8)
     end do
   end do
 end do

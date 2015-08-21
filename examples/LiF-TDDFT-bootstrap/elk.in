@@ -15,14 +15,14 @@ tasks
 
 ! scissor shift
 scissor
-  0.192
+ 0.192
 
 xctype
-  3
+ 3
 
 ! bootstrap kernel
 fxctype
-  210
+  2
 
 ! G-vector cut-off of exchange-correlation kernel and response function
 gmaxrpa

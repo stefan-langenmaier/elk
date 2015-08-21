@@ -30,8 +30,12 @@ real(8) function wigner3j(j1,j2,j3,m1,m2,m3)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: j1,j2,j3
-integer, intent(in) :: m1,m2,m3
+integer, intent(in) :: j1
+integer, intent(in) :: j2
+integer, intent(in) :: j3
+integer, intent(in) :: m1
+integer, intent(in) :: m2
+integer, intent(in) :: m3
 ! local variables
 integer k,k1,k2,l1,l2,l3,n1,n2
 real(8) sgn,sum,t1

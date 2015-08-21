@@ -26,7 +26,7 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer n,nr,ir,idm,i
-real(8) t1,t2,t3,t4
+real(8) bext(3),t1,t2,t3,t4
 ! allocatable arrays
 real(8), allocatable :: rho(:),rhoup(:),rhodn(:)
 real(8), allocatable :: gvrho(:),gvup(:),gvdn(:)
@@ -34,7 +34,7 @@ real(8), allocatable :: grho(:),gup(:),gdn(:)
 real(8), allocatable :: g2rho(:),g2up(:),g2dn(:)
 real(8), allocatable :: g3rho(:),g3up(:),g3dn(:)
 real(8), allocatable :: grho2(:),gup2(:),gdn2(:),gupdn(:)
-real(8), allocatable :: taumt(:,:,:,:),tauir(:,:)
+real(8), allocatable :: taumt(:,:,:),tauir(:)
 real(8), allocatable :: ex(:),ec(:),vxc(:)
 real(8), allocatable :: vx(:),vxup(:),vxdn(:)
 real(8), allocatable :: vc(:),vcup(:),vcdn(:)
@@ -44,8 +44,8 @@ real(8), allocatable :: mag(:,:),bxc(:,:)
 ! meta-GGA variables if required
 if (xcgrad.eq.3) then
 ! generate the kinetic energy density if required
-  allocate(taumt(lmmaxvr,nrmtmax,natmtot,nspinor))
-  allocate(tauir(ngrtot,nspinor))
+  allocate(taumt(lmmaxvr,nrmtmax,natmtot))
+  allocate(tauir(ngrtot))
   call gentau(taumt,tauir)
 ! compute the Tran-Blaha '09 constant c
   call xc_c_tb09
@@ -107,10 +107,15 @@ do is=1,nspecies
          magmt(:,:,ias,idm),lmmaxvr,0.d0,mag(:,idm),lmmaxvr)
       end do
       if (ncmag) then
+        bext(:)=bfieldc(:)+bfcmt(:,ia,is)
 ! non-collinear (use Kubler's trick)
         do i=1,n
-! compute rhoup=(rho+|m|)/2 and rhodn=(rho-|m|)/2
+! compute rhoup=(rho+sgn(m.B_ext)|m|)/2 and rhodn=(rho-sgn(m.B_ext)|m|)/2
           t1=sqrt(mag(i,1)**2+mag(i,2)**2+mag(i,3)**2)
+          if (xcgrad.ne.0) then
+            t2=mag(i,1)*bext(1)+mag(i,2)*bext(2)+mag(i,3)*bext(3)
+            if (t2.lt.0.d0) t1=-t1
+          end if
           rhoup(i)=0.5d0*(rho(i)+t1)
           rhodn(i)=0.5d0*(rho(i)-t1)
         end do
@@ -142,8 +147,8 @@ do is=1,nspecies
       else if (xcgrad.eq.3) then
         call ggamt_sp_2a(is,rhoup,rhodn,g2up,g2dn,gvup,gvdn,gup2,gdn2,gupdn)
         call xcifc(xctype,n=n,c_tb09=c_tb09,rhoup=rhoup,rhodn=rhodn,g2up=g2up, &
-         g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tauup=taumt(:,:,ias,1), &
-         taudn=taumt(:,:,ias,2),vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
+         g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tau=taumt(:,:,ias), &
+         vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
         ex(1:n)=0.d0; ec(1:n)=0.d0
       end if
       if (ncmag) then
@@ -154,7 +159,6 @@ do is=1,nspecies
           vxc(i)=0.5d0*(t1+t2)
 ! determine the exchange-correlation magnetic field
           t3=0.5d0*(t1-t2)
-! |m| = rhoup - rhodn
           t4=rhoup(i)-rhodn(i)
           if (abs(t4).gt.1.d-8) t4=t3/t4
           bxc(i,1:3)=mag(i,1:3)*t4
@@ -191,7 +195,7 @@ do is=1,nspecies
       else if (xcgrad.eq.3) then
         call ggamt_2a(ias,g2rho,gvrho,grho2)
         call xcifc(xctype,n=n,c_tb09=c_tb09,rho=rho,g2rho=g2rho,grho2=grho2, &
-         tau=taumt(:,:,ias,1),vx=vx,vc=vc)
+         tau=taumt(:,:,ias),vx=vx,vc=vc)
         ex(1:n)=0.d0; ec(1:n)=0.d0
       end if
 ! exchange-correlation potential
@@ -218,6 +222,10 @@ if (spinpol) then
 ! non-collinear
     do ir=1,ngrtot
       t1=sqrt(magir(ir,1)**2+magir(ir,2)**2+magir(ir,3)**2)
+      if (xcgrad.ne.0) then
+        t2=magir(ir,1)*bfieldc(1)+magir(ir,2)*bfieldc(2)+magir(ir,3)*bfieldc(3)
+        if (t2.lt.0.d0) t1=-t1
+      end if
       rhoup(ir)=0.5d0*(rhoir(ir)+t1)
       rhodn(ir)=0.5d0*(rhoir(ir)-t1)
     end do
@@ -240,15 +248,15 @@ if (spinpol) then
     call ggair_sp_2a(rhoup,rhodn,g2up,g2dn,gvup,gvdn,gup2,gdn2,gupdn)
     call xcifc(xctype,n=ngrtot,rhoup=rhoup,rhodn=rhodn,gup2=gup2,gdn2=gdn2, &
      gupdn=gupdn,ex=exir,ec=ecir,vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn, &
-     dxdgu2=dxdgu2,dxdgd2=dxdgd2,dxdgud=dxdgud,dcdgu2=dcdgu2,dcdgd2=dcdgd2, &
+     dxdgu2=dxdgu2,dxdgd2=dxdgd2,dxdgud=dxdgud,dcdgu2=dxdgu2,dcdgd2=dcdgd2, &
      dcdgud=dcdgud)
     call ggair_sp_2b(g2up,g2dn,gvup,gvdn,vxup,vxdn,vcup,vcdn,dxdgu2,dxdgd2, &
      dxdgud,dcdgu2,dcdgd2,dcdgud)
   else if (xcgrad.eq.3) then
     call ggair_sp_2a(rhoup,rhodn,g2up,g2dn,gvup,gvdn,gup2,gdn2,gupdn)
     call xcifc(xctype,n=ngrtot,c_tb09=c_tb09,rhoup=rhoup,rhodn=rhodn, &
-     g2up=g2up,g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tauup=tauir(:,1), &
-     taudn=tauir(:,2),vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
+     g2up=g2up,g2dn=g2dn,gup2=gup2,gdn2=gdn2,gupdn=gupdn,tau=tauir,vxup=vxup, &
+     vxdn=vxdn,vcup=vcup,vcdn=vcdn)
     ex(1:n)=0.d0; ec(1:n)=0.d0
   end if
   if (ncmag) then
@@ -290,7 +298,7 @@ else
   else if (xcgrad.eq.3) then
     call ggair_2a(g2rho,gvrho,grho2)
     call xcifc(xctype,n=ngrtot,c_tb09=c_tb09,rho=rhoir,g2rho=g2rho, &
-     grho2=grho2,tau=tauir(:,1),vx=vx,vc=vc)
+     grho2=grho2,tau=tauir,vx=vx,vc=vc)
     ex(1:n)=0.d0; ec(1:n)=0.d0
   end if
   vxcir(1:ngrtot)=vx(1:ngrtot)+vc(1:ngrtot)

@@ -5,7 +5,6 @@
 
 subroutine ephcouple
 use modmain
-use modphonon
 use modmpi
 implicit none
 ! local variables
@@ -13,7 +12,7 @@ integer is,ia,ias,js,ja,jas
 integer nb,ip,iv(3),i,j,n
 integer iq,ik,jk,isym,ikq
 integer ist,jst,ir,irc
-real(8) vl(3),x
+real(8) vkql(3),x
 real(8) t1,t2,t3,t4,t5
 complex(8) zt1
 ! allocatable arrays
@@ -22,7 +21,7 @@ real(8), allocatable :: evalfv(:,:)
 complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 complex(8), allocatable :: dynq(:,:,:),ev(:,:)
 complex(8), allocatable :: dvphmt(:,:,:,:),dvphir(:,:)
-complex(8), allocatable :: zfmt(:,:),gzfmt(:,:,:,:)
+complex(8), allocatable :: zfmt(:,:,:),gzfmt(:,:,:,:),zfir(:)
 complex(8), allocatable :: ephmat(:,:,:)
 ! external functions
 real(8) sdelta,stheta
@@ -42,18 +41,14 @@ if ((iv(1).ne.0).or.(iv(2).ne.0).or.(iv(3).ne.0)) then
   stop
 end if
 nb=3*natmtot
-! allocate global arrays
-if (allocated(dveffmt)) deallocate(dveffmt)
-allocate(dveffmt(lmmaxvr,nrcmtmax,natmtot))
-if (allocated(dveffir)) deallocate(dveffir)
-allocate(dveffir(ngrtot))
 ! allocate local arrays
 allocate(wq(nb,nqpt),gq(nb,nqpt))
 allocate(dynq(nb,nb,nqpt),ev(nb,nb))
 allocate(dvphmt(lmmaxvr,nrcmtmax,natmtot,nb))
 allocate(dvphir(ngrtot,nb))
-allocate(zfmt(lmmaxvr,nrcmtmax))
+allocate(zfmt(lmmaxvr,nrcmtmax,natmtot))
 allocate(gzfmt(lmmaxvr,nrcmtmax,3,natmtot))
+allocate(zfir(ngrtot))
 ! read in the density and potentials from file
 call readstate
 ! read in the Fermi energy
@@ -61,7 +56,7 @@ call readfermi
 ! find the linearisation energies
 call linengy
 ! set the speed of light >> 1 (non-relativistic approximation)
-solsc=sol*100.d0
+solsc=sol*40.d0
 ! new file extension for eigenvector files with c >> 1
 filext='_EPH.OUT'
 ! generate the APW radial functions
@@ -92,7 +87,7 @@ do ik=1,nkpt
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-! restore the speed of light
+! reset the speed of light
 solsc=sol
 ! compute the occupancies and density of states at the Fermi energy
 call occupy
@@ -100,18 +95,21 @@ call occupy
 call readdyn(dynq)
 ! apply the acoustic sum rule
 call sumrule(dynq)
-! loop over all atoms
-do ias=1,natmtot
-  is=idxis(ias)
+! loop over species
+do is=1,nspecies
+! loop over atoms
+  do ia=1,natoms(is)
+    ias=idxas(ia,is)
 ! convert potential to complex spherical harmonic expansion
-  irc=0
-  do ir=1,nrmt(is),lradstp
-    irc=irc+1
-    call rtozflm(lmaxvr,veffmt(:,ir,ias),zfmt(:,irc))
-  end do
+    irc=0
+    do ir=1,nrmt(is),lradstp
+      irc=irc+1
+      call rtozflm(lmaxvr,veffmt(:,ir,ias),zfmt(:,irc,ias))
+    end do
 ! compute the gradients of the effective potential for the rigid-ion term
-  call gradzfmt(lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,nrcmtmax,zfmt, &
-   gzfmt(:,:,:,ias))
+    call gradzfmt(lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,nrcmtmax,zfmt(:,:,ias), &
+     gzfmt(:,:,:,ias))
+  end do
 end do
 ! loop over phonon q-points
 do iq=1,nqpt
@@ -139,10 +137,10 @@ do iq=1,nqpt
         do ip=1,3
           i=i+1
 ! read in the Cartesian change in effective potential
-          call readdveff(iq,is,ia,ip)
+          call readdveff(iq,is,ia,ip,zfmt,zfir)
 ! add the rigid-ion term
           do irc=1,nrcmt(is)
-            dveffmt(:,irc,ias)=dveffmt(:,irc,ias)-gzfmt(:,irc,ip,ias)
+            zfmt(:,irc,ias)=zfmt(:,irc,ias)-gzfmt(:,irc,ip,ias)
           end do
 ! multiply with eigenvector component and add to total phonon potential
           zt1=t1*ev(i,j)
@@ -150,11 +148,11 @@ do iq=1,nqpt
             do ja=1,natoms(js)
               jas=idxas(ja,js)
               do irc=1,nrcmt(js)
-                dvphmt(:,irc,jas,j)=dvphmt(:,irc,jas,j)+zt1*dveffmt(:,irc,jas)
+                dvphmt(:,irc,jas,j)=dvphmt(:,irc,jas,j)+zt1*zfmt(:,irc,jas)
               end do
             end do
           end do
-          dvphir(:,j)=dvphir(:,j)+zt1*dveffir(:)
+          dvphir(:,j)=dvphir(:,j)+zt1*zfir(:)
         end do
       end do
     end do
@@ -163,7 +161,7 @@ do iq=1,nqpt
   gq(:,iq)=0.d0
 ! begin parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ephmat,jk,vl,isym) &
+!$OMP PRIVATE(ephmat,jk,vkql,isym) &
 !$OMP PRIVATE(ikq,ist,jst,i) &
 !$OMP PRIVATE(x,t1,t2,t3,t4,t5)
 !$OMP DO
@@ -176,9 +174,9 @@ do iq=1,nqpt
 ! compute the electron-phonon coupling matrix elements
     call genephmat(iq,ik,dvphmt,dvphir,ephmat)
 ! k+q-vector in lattice coordinates
-    vl(:)=vkl(:,ik)+vql(:,iq)
+    vkql(:)=vkl(:,ik)+vql(:,iq)
 ! index to k+q-vector
-    call findkpt(vl,isym,ikq)
+    call findkpt(vkql,isym,ikq)
     t1=twopi*wkptnr*(occmax/2.d0)
 ! loop over second-variational states
     do ist=1,nstsv
@@ -225,7 +223,7 @@ if (mp_mpi) then
 end if
 deallocate(wq,gq,dynq,ev)
 deallocate(dvphmt,dvphir)
-deallocate(zfmt,gzfmt)
+deallocate(zfmt,gzfmt,zfir)
 return
 end subroutine
 

@@ -13,8 +13,8 @@ contains
 ! !ROUTINE: xcifc_libxc
 ! !INTERFACE:
 subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
- gup2,gdn2,gupdn,tau,tauup,taudn,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2, &
- dxdgd2,dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
+ gup2,gdn2,gupdn,tau,ex,ec,vx,vc,vxup,vxdn,vcup,vcdn,dxdg2,dxdgu2,dxdgd2, &
+ dxdgud,dcdg2,dcdgu2,dcdgd2,dcdgud)
 ! !INPUT/OUTPUT PARAMETERS:
 !   xctype : type of exchange-correlation functional (in,integer(3))
 !   n      : number of density points (in,integer)
@@ -30,8 +30,6 @@ subroutine xcifc_libxc(xctype,n,c_tb09,rho,rhoup,rhodn,g2rho,g2up,g2dn,grho2, &
 !   gdn2   : |grad rhodn|^2 (in,real(n),optional)
 !   gupdn  : (grad rhoup).(grad rhodn) (in,real(n),optional)
 !   tau    : kinetic energy density (in,real(n),optional)
-!   tauup  : spin-up kinetic energy density (in,real(n),optional)
-!   taudn  : spin-down kinetic energy density (in,real(n),optional)
 !   ex     : exchange energy density (out,real(n),optional)
 !   ec     : correlation energy density (out,real(n),optional)
 !   vx     : spin-unpolarised exchange potential (out,real(n),optional)
@@ -77,8 +75,6 @@ real(8), optional, intent(in) :: gup2(n)
 real(8), optional, intent(in) :: gdn2(n)
 real(8), optional, intent(in) :: gupdn(n)
 real(8), optional, intent(in) :: tau(n)
-real(8), optional, intent(in) :: tauup(n)
-real(8), optional, intent(in) :: taudn(n)
 real(8), optional, intent(out) :: ex(n)
 real(8), optional, intent(out) :: ec(n)
 real(8), optional, intent(out) :: vx(n)
@@ -189,9 +185,7 @@ do k=2,3
 !------------------------------!
       call xc_f90_func_init(p,info,id,nspin)
 ! set Tran-Blaha '09 constant if required
-      if (id.eq.XC_MGGA_X_TB09) then
-        if (present(c_tb09)) call xc_f90_mgga_x_tb09_set_par(p,c_tb09)
-      end if
+      if (present(c_tb09)) call xc_f90_mgga_x_tb09_set_par(p,c_tb09)
       if (k.eq.2) then
 ! exchange
         if (present(rho)) then
@@ -205,7 +199,7 @@ do k=2,3
           r(1,:)=rhoup(:); r(2,:)=rhodn(:)
           sigma(1,:)=gup2(:); sigma(2,:)=gupdn(:); sigma(3,:)=gdn2(:)
           lapl(1,:)=g2up(:); lapl(2,:)=g2dn(:)
-          t(1,:)=tauup(:); t(2,:)=taudn(:)
+          t(1,:)=0.5d0*tau(:); t(2,:)=t(1,:)
           call xc_f90_mgga_vxc(p,n,r(1,1),sigma(1,1),lapl(1,1),t(1,1), &
            vrho(1,1),vsigma(1,1),vlapl(1,1),vtau(1,1))
           vxup(:)=vrho(1,:); vxdn(:)=vrho(2,:)
@@ -225,7 +219,7 @@ do k=2,3
           r(1,:)=rhoup(:); r(2,:)=rhodn(:)
           sigma(1,:)=gup2(:); sigma(2,:)=gupdn(:); sigma(3,:)=gdn2(:)
           lapl(1,:)=g2up(:); lapl(2,:)=g2dn(:)
-          t(1,:)=tauup(:); t(2,:)=taudn(:)
+          t(1,:)=0.5d0*tau(:); t(2,:)=t(1,:)
           call xc_f90_mgga_vxc(p,n,r(1,1),sigma(1,1),lapl(1,1),t(1,1), &
            vrho(1,1),vsigma(1,1),vlapl(1,1),vtau(1,1))
           vcup(:)=vrho(1,:); vcdn(:)=vrho(2,:)

@@ -21,8 +21,8 @@ real(8) function stheta_mp(n,x)
 !     e^{-x^2},\\
 !    S_0(x)&=\frac{1}{2}(1-{\rm erf}(x))
 !   \end{align*}
-!   and $H_j$ is the $j$th-order Hermite polynomial. This procedure is
-!   numerically stable and accurate to near machine precision for $N\le 10$.
+!   and $H_j$ is the $j$th-order Hermite polynomial. This procedure is numerically
+!   stable and accurate to near machine precision for $N\le 10$.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)

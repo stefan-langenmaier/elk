@@ -10,8 +10,6 @@ module modmain
 !----------------------------!
 ! lattice vectors stored column-wise
 real(8) avec(3,3)
-! magnitude of random displacements added to lattice vectors
-real(8) rndavec
 ! inverse of lattice vector matrix
 real(8) ainv(3,3)
 ! reciprocal lattice vectors
@@ -53,8 +51,6 @@ logical primcell
 real(8) atposl(3,maxatoms,maxspecies)
 ! atomic positions in Cartesian coordinates
 real(8) atposc(3,maxatoms,maxspecies)
-! magnitude of random displacements added to the atomic positions
-real(8) rndatposc
 
 !----------------------------------!
 !     atomic species variables     !
@@ -152,6 +148,14 @@ integer lmmaxvr
 integer lmaxmat
 ! (lmaxmat+1)^2
 integer lmmaxmat
+! fraction of muffin-tin radius which constitutes the inner part
+real(8) fracinr
+! maximum angular momentum in the inner part of the muffin-int
+integer lmaxinr
+! (lmaxinr+1)^2
+integer lmmaxinr
+! number of radial points to the inner part of the muffin-tin
+integer nrmtinr(maxspecies)
 ! index to (l,m) pairs
 integer, allocatable :: idxlm(:,:)
 ! inverse index to (l,m) pairs
@@ -190,8 +194,6 @@ real(8) bfieldc0(3)
 real(8) bfcmt(3,maxatoms,maxspecies)
 ! initial field
 real(8) bfcmt0(3,maxatoms,maxspecies)
-! magnitude of random vectors added to muffin-tin fields
-real(8) rndbfcmt
 ! external magnetic fields are multiplied by reducebf after each s.c. loop
 real(8) reducebf
 ! spinsprl is .true. if a spin-spiral is to be calculated
@@ -200,8 +202,6 @@ logical spinsprl
 logical ssdph
 ! number of spin-dependent first-variational functions per state
 integer nspnfv
-! map from second- to first-variational spin index
-integer jspnfv(2)
 ! spin-spiral q-vector in lattice coordinates
 real(8) vqlss(3)
 ! spin-spiral q-vector in Cartesian coordinates
@@ -276,9 +276,9 @@ integer ngrtot
 integer intgv(3,2)
 ! number of G-vectors with G < gmaxvr
 integer ngvec
-! G-vector integer coordinates (i1,i2,i3)
+! G-vector integer coordinates
 integer, allocatable :: ivg(:,:)
-! map from (i1,i2,i3) to G-vector index
+! map from integer grid to G-vector array
 integer, allocatable :: ivgig(:,:,:)
 ! map from G-vector array to FFT array
 integer, allocatable :: igfft(:)
@@ -365,7 +365,7 @@ real(8), allocatable :: vgkc(:,:,:,:)
 real(8), allocatable :: gkc(:,:,:)
 ! (theta, phi) coordinates of G+k-vectors
 real(8), allocatable :: tpgkc(:,:,:,:)
-! structure factors for the G+k-vectors
+! structure factor for the G+k-vectors
 complex(8), allocatable :: sfacgk(:,:,:,:)
 
 !-------------------------------!
@@ -425,10 +425,10 @@ character(512) xcdescr
 integer xcspin
 ! exchange-correlation functional density gradient requirement
 integer xcgrad
-! Tran-Blaha '09 constant c [Phys. Rev. Lett. 102, 226401 (2009)]
+! exchange-correlation functional kinetic energy density requirement
+integer xctau
+! Tran-Blaha '09 constant c
 real(8) c_tb09
-! tc_tb09 is .true. if the Tran-Blaha constant has been read in
-logical tc_tb09
 ! muffin-tin charge density
 real(8), allocatable :: rhomt(:,:,:)
 ! interstitial real-space charge density
@@ -661,10 +661,8 @@ real(8) efermi
 real(8) scissor
 ! density of states at the Fermi energy
 real(8) fermidos
-! estimated indirect band gap
+! estimated band gap
 real(8) bandgap
-! k-points of indirect gap
-integer ikgap(2)
 ! error tolerance for the first-variational eigenvalues
 real(8) evaltol
 ! second-variational eigenvalues
@@ -681,8 +679,6 @@ integer kstlist(2,maxkst)
 !------------------------------!
 !     core state variables     !
 !------------------------------!
-! occupancies for core states
-real(8), allocatable :: occcr(:,:)
 ! eigenvalues for core states
 real(8), allocatable :: evalcr(:,:)
 ! radial wavefunctions for core states
@@ -816,18 +812,12 @@ real(8) emaxelnes
 real(8) hmax
 ! H-vector transformation matrix
 real(8) vhmat(3,3)
-! integer grid intervals for each direction
-integer inthv(3,2)
 ! number of H-vectors
 integer nhvec
-! H-vector integer coordinates (i1,i2,i3)
+! H-vector integer coordinates
 integer, allocatable :: ivh(:,:)
-! map from (i1,i2,i3) to H-vector index
-integer, allocatable :: ivhih(:,:,:)
 ! H-vector multiplicity
 integer, allocatable :: mulh(:)
-! H-vectors in Cartesian coordinates
-real(8), allocatable :: vhc(:,:)
 ! structure factor energy window
 real(8) wsfac(2)
 ! reduceh is .true. if the H-vectors are reduced with the crystal symmetries
@@ -937,11 +927,9 @@ logical hxbse,hdbse
 !     Time-dependent density functional theory (TDDFT) variables     !
 !--------------------------------------------------------------------!
 ! exchange-correlation kernel type
-integer fxctype(3)
+integer fxctype
 ! parameters for long range correction (LRC) kernel
 real(8) fxclrc(2)
-! number of independent spin components of the f_xc spin tensor
-integer nscfxc
 
 !--------------------------!
 !     timing variables     !
@@ -1010,7 +998,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,4,22 /
+data version / 1,4,5 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks
