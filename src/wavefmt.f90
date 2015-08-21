@@ -30,12 +30,12 @@ use modmain
 !    +\sum_{j=1}^{N^{\alpha}}b^{i{\bf p}}_{(\alpha,j,m)}v^{\alpha}_j(r)
 !    \delta_{l,l_j}, $$
 !   where $b^{i{\bf p}}$ is the $i$th eigenvector returned from routine
-!   {\tt seceqn}; $A^{\alpha}_{jlm}({\bf G+p})$ is the matching coefficient;
+!   {\tt eveqn}; $A^{\alpha}_{jlm}({\bf G+p})$ is the matching coefficient;
 !   $M^{\alpha}_l$ is the order of the APW; $u^{\alpha}_{jl}$ is the APW radial
 !   function; $N^{\alpha}$ is the number of local-orbitals; $v^{\alpha}_j$ is
 !   the $j$th local-orbital radial function; and $(\alpha,j,m)$ is a compound
 !   index for the location of the local-orbital in the eigenvector. See routines
-!   {\tt genapwfr}, {\tt genlofr}, {\tt match} and {\tt seceqn}.
+!   {\tt genapwfr}, {\tt genlofr}, {\tt match} and {\tt eveqn}.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)

@@ -1,8 +1,8 @@
  'Po'                                       : spsymb
  'polonium'                                 : spname
   -84.0000                                  : spzn
-   380983.6932                              : spmass
-  0.218218E-06    2.8000   45.3179   700    : sprmin, rmt, sprmax, nrmt
+   380983.6933                              : spmass
+  0.218218E-06    2.8000   44.2691   700    : sprmin, rmt, sprmax, nrmt
   24                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -29,23 +29,23 @@
    6   1   1   2.00000    F
    6   1   2   2.00000    F
    1                                        : apword
-  0.1500   0  F                             : apwe0, apwdm, apwve
+    0.1500   0  F                           : apwe0, apwdm, apwve
    0                                        : nlx
    5                                        : nlorb
    0   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    1   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    2   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    2   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -1.1481   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -1.1481   0  T
    0   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -0.6144   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -0.6144   0  T

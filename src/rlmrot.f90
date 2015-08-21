@@ -6,15 +6,13 @@
 !BOP
 ! !ROUTINE: rlmrot
 ! !INTERFACE:
-subroutine rlmrot(p,alpha,beta,gamma,lmax,ld,d)
+subroutine rlmrot(p,ang,lmax,ld,d)
 ! !INPUT/OUTPUT PARAMETERS:
-!   p     : if p=-1 then the rotation matrix is improper (in,integer)
-!   alpha : first Euler angle (in,real)
-!   beta  : second Euler angle (in,real)
-!   gamma : third Euler angle (in,real)
-!   lmax  : maximum angular momentum (in,integer)
-!   ld    : leading dimension (in,integer)
-!   d     : real spherical harmonic rotation matrix (out,real(ld,*))
+!   p    : if p=-1 then the rotation matrix is improper (in,integer)
+!   ang  : Euler angles; alpha, beta, gamma (in,real(3))
+!   lmax : maximum angular momentum (in,integer)
+!   ld   : leading dimension (in,integer)
+!   d    : real spherical harmonic rotation matrix (out,real(ld,*))
 ! !DESCRIPTION:
 !   Returns the rotation matrix in the basis of real spherical harmonics given
 !   the three Euler angles, $(\alpha,\beta,\gamma)$, and the parity, $p$, of the
@@ -38,7 +36,7 @@ subroutine rlmrot(p,alpha,beta,gamma,lmax,ld,d)
 !   \end{align*}
 !   where $d_A\equiv d^l_{-m_1-m_2}$, $d_B\equiv(-1)^{m_1}d^l_{m_1-m_2}$ and
 !   $d$ is the rotation matrix about the $y$-axis for complex spherical
-!   harmonics. See the routines {\tt genrlm}, {\tt euler} and {\tt ylmroty}.
+!   harmonics. See the routines {\tt genrlm}, {\tt roteuler} and {\tt ylmroty}.
 !
 ! !REVISION HISTORY:
 !   Created December 2008 (JKD)
@@ -47,9 +45,7 @@ subroutine rlmrot(p,alpha,beta,gamma,lmax,ld,d)
 implicit none
 ! arguments
 integer, intent(in) :: p
-real(8), intent(in) :: alpha
-real(8), intent(in) :: beta
-real(8), intent(in) :: gamma
+real(8), intent(in) :: ang(3)
 integer, intent(in) :: lmax
 integer, intent(in) :: ld
 real(8), intent(out) :: d(ld,*)
@@ -71,12 +67,12 @@ end if
 lmmax=(lmax+1)**2
 allocate(dy(lmmax,lmmax))
 ! generate the complex spherical harmonic rotation matrix about the y-axis
-call ylmroty(beta,lmax,lmmax,dy)
+call ylmroty(ang(2),lmax,lmmax,dy)
 do m1=1,lmax
-  ca(m1)=cos(dble(m1)*alpha)
-  sa(m1)=sin(dble(m1)*alpha)
-  cg(m1)=cos(dble(m1)*gamma)
-  sg(m1)=sin(dble(m1)*gamma)
+  ca(m1)=cos(dble(m1)*ang(1))
+  sa(m1)=sin(dble(m1)*ang(1))
+  cg(m1)=cos(dble(m1)*ang(3))
+  sg(m1)=sin(dble(m1)*ang(3))
 end do
 lm=0
 do l=0,lmax

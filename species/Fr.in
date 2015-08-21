@@ -1,8 +1,8 @@
  'Fr'                                       : spsymb
  'francium'                                 : spname
   -87.0000                                  : spzn
-   406504.1320                              : spmass
-  0.214423E-06    3.0000   59.6337   800    : sprmin, rmt, sprmax, nrmt
+   406504.1321                              : spmass
+  0.214423E-06    3.0000   66.1011   800    : sprmin, rmt, sprmax, nrmt
   25                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -28,29 +28,29 @@
    6   0   1   2.00000    F
    6   1   1   2.00000    F
    6   1   2   4.00000    F
-   7   0   1   1.00000    F
+   7   0   1  1.000000    F
    1                                        : apword
-  0.1500   0  F                             : apwe0, apwdm, apwve
+    0.1500   0  F                           : apwe0, apwdm, apwve
    0                                        : nlx
    6                                        : nlorb
    0   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    1   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    2   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    2   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -2.0328   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -2.0328   0  T
    0   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -1.0471   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -1.0471   0  T
    1   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -0.4089   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -0.4089   0  T

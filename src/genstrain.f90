@@ -7,43 +7,32 @@ subroutine genstrain
 use modmain
 implicit none
 ! local variables
-integer i,j,k,l
-real(8) e(3,3,12),a(3,3),t1
+integer i,j,k
+real(8) a(3,3),b(3,3),t1
 ! external functions
 real(8) ddot,dnrm2
 external ddot,dnrm2
-! store rotations around x, y and z
-e(:,:,:)=0.d0
-t1=1.d0/sqrt(2.d0)
-e(2,3,1)=t1
-e(3,2,1)=-t1
-e(1,3,2)=t1
-e(3,1,2)=-t1
-e(1,2,3)=t1
-e(2,1,3)=-t1
-k=3
 nstrain=0
 do i=1,3
   do j=1,3
-! set strain tensor to delta_ij
+! set strain tensor in lattice coordinates to delta_ij
     a(:,:)=0.d0
     a(i,j)=1.d0
 ! symmetrise strain tensor
     call symmat(a)
+! convert to mixed Cartesian-lattice coordinates
+    call r3mtm(ainv,a,b)
 ! orthogonalise strain tensor to previous tensors
-    do l=1,k
-      t1=-ddot(9,e(:,:,l),1,a,1)
-      call daxpy(9,t1,e(:,:,l),1,a,1)
+    do k=1,nstrain
+      t1=-ddot(9,strain(:,:,k),1,b,1)
+      call daxpy(9,t1,strain(:,:,k),1,b,1)
     end do
 ! compute the norm
-    t1=dnrm2(9,a,1)
+    t1=dnrm2(9,b,1)
     if (t1.lt.epslat) cycle
-! normalise tensor
-    k=k+1
-    e(:,:,k)=a(:,:)/t1
-! store the strain tensor in global array
-    nstrain=k-3
-    strain(:,:,nstrain)=e(:,:,k)
+! normalise tensor and store in global array
+    nstrain=nstrain+1
+    strain(:,:,nstrain)=b(:,:)/t1
   end do
 end do
 ! zero small components

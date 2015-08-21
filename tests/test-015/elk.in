@@ -14,9 +14,9 @@ maxscl
 test
  .true.
 
-lda+u
-  1 5         : ldapu,inptypelu
-  1 2 0.29399 : is,llu(is), ulufix(is)
+dft+u
+  1 5            : dftu, inpdftu
+  1 2 0.29399    : is, l, U fixed
 
 swidth
  0.05

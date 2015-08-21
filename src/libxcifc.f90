@@ -329,7 +329,7 @@ integer j,k,id
 integer fmly,flg
 character(256) name
 type(xc_f90_pointer_t) p,info
-! check version is compatible
+! check version is compatible (2.x)
 call xc_f90_version(j,k)
 if (j.ne.2) then
   write(*,*)

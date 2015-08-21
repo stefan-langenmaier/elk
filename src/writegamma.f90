@@ -5,9 +5,10 @@
 
 subroutine writegamma(gq)
 use modmain
+use modphonon
 implicit none
 ! arguments
-real(8), intent(in) :: gq(3*natmtot,nqpt)
+real(8), intent(in) :: gq(nbph,nqpt)
 ! local variables
 integer iq,i
 open(50,file='GAMMAQ.OUT',action='WRITE',form='FORMATTED')
@@ -19,7 +20,7 @@ do iq=1,nqpt
   write(50,'(I6," : q-point")') iq
   write(50,'(3G18.10," : q-vector (lattice coordinates)")') vql(:,iq)
   write(50,'(3G18.10," : q-vector (Cartesian coordinates)")') vqc(:,iq)
-  do i=1,3*natmtot
+  do i=1,nbph
     write(50,'(I4,G18.10)') i,gq(i,iq)
   end do
   write(50,*)

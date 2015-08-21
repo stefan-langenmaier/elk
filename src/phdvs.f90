@@ -14,12 +14,13 @@ real(8), intent(in) :: vsmt1(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: vsir1(ngtot)
 ! local variables
 integer is,ia,ja,ias,jas
-integer ir,irc,i1,i2,i3,i
+integer nrc,nrci,ir,irc
+integer i1,i2,i3,i
 real(8) v1(3),v2(3),v3(3),t1,t2
 complex(8) z1,z2
-! automatic arrays
-real(8) rflm(lmmaxvr)
-complex(8) zflm(lmmaxvr)
+! allocatable arrays
+real(8), allocatable :: rfmt(:,:)
+complex(8), allocatable :: zfmt(:,:)
 ! external functions
 real(8) rfirvec
 external rfirvec
@@ -30,34 +31,36 @@ if (p.eq.1) z1=z1*zi
 !------------------------------!
 !     muffin-tin potential     !
 !------------------------------!
+allocate(rfmt(lmmaxvr,nrcmtmax),zfmt(lmmaxvr,nrcmtmax))
 ias=0
 jas=0
 do is=1,nspecies
+  nrc=nrcmt(is)
+  nrci=nrcmtinr(is)
   ja=0
   do ia=1,natoms0(is)
     ias=ias+1
     do i=1,nscph
       ja=ja+1
       jas=jas+1
-! important: the muffin-tin potential should have an *explicit* phase exp(iq.r)
-      t1=-dot_product(vqc(:,iqph),atposc(:,ja,is))
-      z2=z1*cmplx(cos(t1),sin(t1),8)
-! loop over radial points
+! compute the difference between the perturbed and unperturbed potentials
       irc=0
       do ir=1,nrmt(is),lradstp
         irc=irc+1
-! compute the difference between the perturbed and unperturbed potentials
-        rflm(:)=vsmt(:,ir,jas)-vsmt1(:,ir,jas)
-! convert real potential to a complex spherical harmonic expansion
-        call rtozflm(lmaxvr,rflm,zflm)
-! add to total
-        dvsmt(:,irc,ias)=dvsmt(:,irc,ias)+z2*zflm(:)
-! end loop over radial points
+        rfmt(:,irc)=vsmt(:,ir,jas)-vsmt1(:,ir,jas)
       end do
+! convert real potential difference to a complex spherical harmonic expansion
+      call rtozfmt(nrc,nrci,1,rfmt,1,zfmt)
+! important: the muffin-tin potential should have an *explicit* phase exp(iq.r)
+      t1=-dot_product(vqc(:,iqph),atposc(:,ja,is))
+      z2=z1*cmplx(cos(t1),sin(t1),8)
+! add to total
+      call zfmtadd(nrc,nrci,z2,zfmt,dvsmt(:,:,ias))
     end do
 ! end loop over atoms and species
   end do
 end do
+deallocate(rfmt,zfmt)
 !--------------------------------!
 !     interstitial potential     !
 !--------------------------------!

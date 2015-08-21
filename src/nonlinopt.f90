@@ -24,7 +24,6 @@ implicit none
 ! local variables
 integer ik,jk,ist,jst,kst
 integer iw,a,b,c,l
-integer recl,iostat
 ! smallest eigenvalue difference allowed in denominator
 real(8), parameter :: etol=1.d-4
 real(8) eji,eki,ekj,t1
@@ -34,8 +33,7 @@ character(256) fname
 ! allocatable arrays
 real(8), allocatable :: w(:)
 complex(8), allocatable :: pmat(:,:,:)
-complex(8), allocatable :: chiw(:,:)
-complex(8), allocatable :: chi2w(:,:)
+complex(8), allocatable :: chiw(:,:),chi2w(:,:)
 ! initialise universal variables
 call init0
 call init1
@@ -52,18 +50,6 @@ t1=wplot(2)/dble(nwplot)
 do iw=1,nwplot
   w(iw)=t1*dble(iw-1)
 end do
-! find the record length for momentum matrix element file
-allocate(pmat(3,nstsv,nstsv))
-inquire(iolength=recl) pmat
-deallocate(pmat)
-open(50,file='PMAT.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
- recl=recl,iostat=iostat)
-if (iostat.ne.0) then
-  write(*,*)
-  write(*,'("Error(nonlinopt): error opening PMAT.OUT")')
-  write(*,*)
-  stop
-end if
 ! allocate response function arrays
 allocate(chiw(nwplot,3))
 allocate(chi2w(nwplot,2))
@@ -254,7 +240,6 @@ do l=1,noptcomp
   close(51); close(52); close(53); close(54); close(55)
 ! end loop over components
 end do
-close(50)
 write(*,*)
 write(*,'("Info(nonlinopt):")')
 write(*,'(" susceptibility tensor written to CHI_abc.OUT")')

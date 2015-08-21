@@ -16,6 +16,7 @@ real(8) vl(3),vc(3),t0,t1,t2
 complex(8) zsum
 character(256) fname
 ! automatic arrays
+integer idx(nstsv)
 real(8) vcl(ngrf)
 ! allocatable arrays
 real(8), allocatable :: vgqc(:,:),gqc(:)
@@ -38,14 +39,18 @@ if (bsefull) then
   allocate(zvc(ngrf,nvbse,ncbse))
   allocate(zcv(ngrf,ncbse,nvbse))
 end if
+! index to all states
+do ist1=1,nstsv
+  idx(ist1)=ist1
+end do
 ! generate the wavefunctions for all states of k-point ik2
-call genwfsvp(.false.,.false.,.false.,vkl(:,ik2),wfmt2,ngtot,wfir2)
+call genwfsvp(.false.,.false.,nstsv,idx,vkl(:,ik2),wfmt2,ngtot,wfir2)
 ! filename for inverse dielectric function
 fname='EPSINV_RPA.OUT'
 ! begin loop over ik1
 do ik1=1,nkptnr
 ! generate the wavefunctions for all states of k-point ik1
-  call genwfsvp(.false.,.false.,.false.,vkl(:,ik1),wfmt1,ngtot,wfir1)
+  call genwfsvp(.false.,.false.,nstsv,idx,vkl(:,ik1),wfmt1,ngtot,wfir1)
 ! determine equivalent q-vector in first Brillouin zone
   iv(:)=ivk(:,ik1)-ivk(:,ik2)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -74,8 +79,8 @@ do ik1=1,nkptnr
     ist1=istbse(i1,ik1)
     do i2=1,nvbse
       ist2=istbse(i2,ik2)
-      call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
-       wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
+      call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfir2(:,:,ist2), &
+       wfmt1(:,:,:,:,ist1),wfir1(:,:,ist1),zrhomt,zrhoir)
       call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zvv(:,i1,i2))
     end do
   end do
@@ -88,8 +93,8 @@ do ik1=1,nkptnr
     jst1=jstbse(j1,ik1)
     do j2=1,ncbse
       jst2=jstbse(j2,ik2)
-      call genzrho(.true.,.true.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,jst1), &
-       wfir2(:,:,jst2),wfir1(:,:,jst1),zrhomt,zrhoir)
+      call genzrho(.true.,.true.,wfmt2(:,:,:,:,jst2),wfir2(:,:,jst2), &
+       wfmt1(:,:,:,:,jst1),wfir1(:,:,jst1),zrhomt,zrhoir)
       call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zcc(:,j1,j2))
     end do
   end do
@@ -104,8 +109,8 @@ do ik1=1,nkptnr
       ist1=istbse(i1,ik1)
       do j2=1,ncbse
         jst2=jstbse(j2,ik2)
-        call genzrho(.true.,.true.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,ist1), &
-         wfir2(:,:,jst2),wfir1(:,:,ist1),zrhomt,zrhoir)
+        call genzrho(.true.,.true.,wfmt2(:,:,:,:,jst2),wfir2(:,:,jst2), &
+         wfmt1(:,:,:,:,ist1),wfir1(:,:,ist1),zrhomt,zrhoir)
         call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zvc(:,i1,j2))
       end do
     end do
@@ -118,8 +123,8 @@ do ik1=1,nkptnr
       jst1=jstbse(j1,ik1)
       do i2=1,nvbse
         ist2=istbse(i2,ik2)
-        call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,jst1), &
-         wfir2(:,:,ist2),wfir1(:,:,jst1),zrhomt,zrhoir)
+        call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfir2(:,:,ist2), &
+         wfmt1(:,:,:,:,jst1),wfir1(:,:,jst1),zrhomt,zrhoir)
         call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zcv(:,j1,i2))
       end do
     end do

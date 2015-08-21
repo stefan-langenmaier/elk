@@ -8,7 +8,7 @@ tasks
 test
  .true.
 
-tseqit
+tefvit
  .true.
 
 maxscl

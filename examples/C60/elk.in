@@ -10,8 +10,8 @@
 tasks
   0
 
-! use iterative diagonalisation
-tseqit
+! use iterative diagonalisation for the first-variational step
+tefvit
  .true.
 
 ! molecule calculation

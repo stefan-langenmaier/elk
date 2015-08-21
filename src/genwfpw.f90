@@ -32,6 +32,7 @@ real(8) t0,t1,t2
 complex(8) zsum1,zsum2
 complex(8) z1,z2,z3,z4
 ! automatic arrays
+integer idx(nstsv)
 real(8) fr1(nrcmtmax),fr2(nrcmtmax),gr(nrcmtmax)
 complex(8) ylm(lmmaxvr)
 ! allocatable arrays
@@ -51,8 +52,12 @@ do ispn=1,nspnfv
   call match(ngp(ispn),gpc(:,ispn),tpgpc(:,:,ispn),sfacgp(:,:,ispn), &
    apwalm(:,:,:,:,ispn))
 end do
+! index to all states
+do ist=1,nstsv
+  idx(ist)=ist
+end do
 ! calculate the second-variational wavefunctions for all states
-call genwfsv(.true.,.true.,.false.,ngp,igpig,occsv,apwalm,evecfv,evecsv,wfmt, &
+call genwfsv(.true.,.true.,nstsv,idx,ngp,igpig,apwalm,evecfv,evecsv,wfmt, &
  ngkmax,wfir)
 deallocate(apwalm,evecfv,evecsv)
 ! zero the plane wave coefficients

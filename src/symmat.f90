@@ -3,23 +3,25 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine symmat(ac)
+subroutine symmat(al)
 use modmain
 implicit none
 ! arguments
-real(8), intent(inout) :: ac(3,3)
+real(8), intent(inout) :: al(3,3)
 ! local variables
-integer isym,lsp
-real(8) as(3,3),b(3,3),c(3,3),t1
+integer isym,lspl
+real(8) as(3,3),s(3,3)
+real(8) b(3,3),c(3,3),t1
 as(:,:)=0.d0
 do isym=1,nsymcrys
-  lsp=lsplsymc(isym)
-  call r3mm(symlatc(:,:,lsp),ac,b)
-  call r3mmt(b,symlatc(:,:,lsp),c)
+  lspl=lsplsymc(isym)
+  s(:,:)=dble(symlat(:,:,lspl))
+  call r3mtm(s,al,b)
+  call r3mm(b,s,c)
   as(:,:)=as(:,:)+c(:,:)
 end do
 t1=1.d0/dble(nsymcrys)
-ac(:,:)=t1*as(:,:)
+al(:,:)=t1*as(:,:)
 return
 end subroutine
 

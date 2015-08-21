@@ -24,7 +24,7 @@ call mpi_comm_rank(mpi_comm_kpt,lp_mpi,ierror)
 if (lp_mpi.eq.0) then
   mp_mpi=.true.
   write(*,*)
-  write(*,'("Elk code started")')
+  write(*,'("Elk code version ",I1.1,".",I1.1,".",I2.2," started")') version
   if (np_mpi.gt.1) then
     write(*,*)
     write(*,'("Using MPI, number of processes : ",I8)') np_mpi
@@ -92,7 +92,7 @@ do itask=1,ntasks
     call bandstr
   case(25)
     call effmass
-  case(28)
+  case(28,29)
     call mae
   case(31,32,33)
     call rhoplot
@@ -179,9 +179,13 @@ do itask=1,ntasks
   case(350,351,352)
     call spiralsc
   case(400)
-    call writetensmom
+    call writetmdu
   case(440)
     call writestress
+  case(450)
+    call genafieldt
+  case(460)
+    call tddft
   case(500)
     call testcheck
   case default
@@ -203,7 +207,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.2.9}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.3.22}\\ \vskip 20pt \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -232,13 +236,14 @@ end program
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich, Torbj\"{o}rn
 !   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr,
-!   Vladimir Nazarov, Kevin Krieger, Pink Floyd, Arkardy Davydov, Florian Eich
-!   and Aldo Romero Castro. Special mention of David Singh's very useful book on
-!   the LAPW method\footnote{ D. J. Singh, {\it Planewaves, Pseudopotentials
-!   and the LAPW Method} (Kluwer Academic Publishers, Boston, 1994).} must also
-!   be made. Finally we would like to acknowledge the generous support of
-!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
-!   Training Networks initiative.
+!   Vladimir Nazarov, Kevin Krieger, Pink Floyd, Arkardy Davydov, Florian Eich,
+!   Aldo Romero Castro, Koichi Kitahara, James Glasbrenner, Konrad Bussmann,
+!   Igor Mazin and Matthieu Verstraete. Special mention of David Singh's very
+!   useful book on the LAPW method\footnote{D. J. Singh, {\it Planewaves,
+!   Pseudopotentials and the LAPW Method} (Kluwer Academic Publishers, Boston,
+!   1994).} must also be made. Finally we would like to acknowledge the generous
+!   support of Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie
+!   Research Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -250,7 +255,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, November 2013
+!   Halle and Uppsala, May 2014
 !   \newpage
 !
 !   \section{Units}
@@ -258,10 +263,10 @@ end program
 !   $\hbar=1$, the electron mass $m=1$, the Bohr radius $a_0=1$ and the electron
 !   charge $e=1$ (note that the electron charge is positive, so that the atomic
 !   numbers $Z$ are negative). Thus, the atomic unit of length is
-!   0.52917720859(36) \AA, and the atomic unit of energy is the Hartree which
-!   equals 27.21138386(68) eV. The unit of the external magnetic fields is
+!   0.52917721092(17) \AA, and the atomic unit of energy is the Hartree which
+!   equals 27.21138505(60) eV. The unit of the external magnetic fields is
 !   defined such that one unit of magnetic field in {\tt elk.in} equals
-!   1715.255397557 Tesla.
+!   1715.2554659 Tesla.
 !
 !   \section{Compiling and running Elk}
 !   \subsection{Compiling the code}
@@ -317,20 +322,19 @@ end program
 !    \item
 !    The message passing interface (MPI) is particularly suitable for running
 !    Elk across multiple nodes of a cluster, with scaling to hundreds of
-!    processors possible. To enable MPI, comment out the indicated line in
-!    {\tt elk/src/Makefile} and set the variable {\tt F90} in {\tt elk/make.inc}
-!    to the MPI version of Fortran 90 (usually {\tt mpif90}). Then run
-!    {\tt make clean} followed by {\tt make}. If y is the number of nodes and x
-!    is the number of cores per node, then at runtime envoke
+!    processors possible. To enable MPI, comment out the lines indicated in
+!    {\tt elk/make.inc}. Then run {\tt make clean} followed by {\tt make}. If
+!    $y$ is the number of nodes and $x$ is the number of cores per node, then at
+!    runtime envoke
 !    \begin{verbatim}
 !     mpirun -np z ./elk
 !    \end{verbatim}
-!    where ${\tt z}={\tt x}\cdot{\tt y}$ is the total number of cores available
-!    on the machine. Highest efficiency is obtained by using hybrid parallelism
-!    with OpenMP on each node and MPI across nodes. This can be done by
-!    compiling the code using the MPI Fortran compiler in combination with the
-!    OpenMP command-line option. At runtime set {\tt export OMP\_NUM\_THREADS=x}
-!    and start the MPI run with {\em one process per node} as follows
+!    where $z=x y$ is the total number of cores available on the machine.
+!    Highest efficiency is obtained by using hybrid parallelism with OpenMP on
+!    each node and MPI across nodes. This can be done by compiling the code
+!    using the MPI Fortran compiler in combination with the OpenMP command-line
+!    option. At runtime set {\tt export OMP\_NUM\_THREADS=x} and start the MPI
+!    run with {\em one process per node} as follows
 !    \begin{verbatim}
 !     mpirun -pernode -np y ./elk
 !    \end{verbatim}
@@ -351,20 +355,21 @@ end program
 !    {\tt DYN} file and rerun Elk.
 !   \end{enumerate}
 !
-!   \subsection{Linking with the libxc functional library}
+!   \subsection{Linking with the Libxc functional library}
 !   Libxc is the ETSF library of exchange-correlation functionals. Elk can use
-!   the complete set of LDA and GGA functionals available in libxc. In order to
-!   do this, first download and compile libxc. This should have produced the
-!   file {\tt libxc.a}. Copy this file to the {\tt elk/src} directory and then
-!   uncomment the lines indicated for libxc in the file {\tt elk/src/Makefile}.
-!   Once this is done, run {\tt make clean} followed by {\tt make}. To select a
-!   particular functional of libxc, use the block
+!   the complete set of LDA and GGA functionals available in Libxc as well as
+!   the potential-only metaGGA's. In order to enable this, first download and
+!   compile Libxc version 2.2.$x$. This should have produced the files
+!   {\tt libxc.a} and {\tt libxcf90.a}. Copy these files to the {\tt elk/src}
+!   directory and then uncomment the lines indicated for Libxc in the file
+!   {\tt elk/make.inc}. Once this is done, run {\tt make clean} followed by
+!   {\tt make}. To select a particular functional of Libxc, use the block
 !   \begin{verbatim}
 !     xctype
 !      100 nx nc
 !   \end{verbatim}
 !   where {\tt nx} and {\tt nc} are, respectively, the numbers of the exchange
-!   and correlation functionals in the libxc library. See the file
+!   and correlation functionals in the Libxc library. See the file
 !   {\tt elk/src/libxc\_funcs.f90} for a list of the functionals and their
 !   associated numbers.
 !
@@ -499,14 +504,14 @@ end program
 !   \block{atoms}{
 !   {\tt nspecies} & number of species & integer & 0 \\
 !   \hline
-!   {\tt spfname(i)} & species filename for species {\tt i} & string & - \\
+!   {\tt spfname(i)} & species filename for species $i$ & string & - \\
 !   \hline
-!   {\tt natoms(i)} & number of atoms for species {\tt i} & integer & - \\
+!   {\tt natoms(i)} & number of atoms for species $i$ & integer & - \\
 !   \hline
-!   {\tt atposl(j,i)} & atomic position in lattice coordinates for atom {\tt j}
+!   {\tt atposl(j,i)} & atomic position in lattice coordinates for atom $j$
 !    & real(3) & - \\
 !   {\tt bfcmt(j,i)} & muffin-tin external magnetic field in Cartesian
-!    coordinates for atom {\tt j} & real(3) & -}
+!    coordinates for atom $j$ & real(3) & -}
 !   Defines the atomic species as well as their positions in the unit cell and
 !   the external magnetic field applied throughout the muffin-tin. These fields
 !   are used to break spin symmetry and should be considered infinitesimal as
@@ -598,6 +603,14 @@ end program
 !   maintain neutrality. It can be set positive or negative depending on whether
 !   electron or hole doping is required.
 !
+!   \block{cmagz}{
+!   {\tt cmagz} & .true. if $z$-axis collinear magnetism is to be enforced &
+!    logical & {\tt .false.}}
+!   This variable can be set to .true. in cases where the magnetism is
+!   predominantly collinear in the $z$-direction, for example a ferromagnet with
+!   spin-orbit coupling. This will make the calculation considerably faster at
+!   the slight expense of precision.
+!
 !   \block{deltaem}{
 !   {\tt deltaem} & the size of the ${\bf k}$-vector displacement used when
 !    calculating numerical derivatives for the effective mass tensor & real &
@@ -622,6 +635,41 @@ end program
 !   where $dt$ is an infinitesimal equal in practice to {\tt deltast} and $e_i$
 !   is the $i^{\rm th}$ strain tensor. Numerical finite differences are used to
 !   compute the stress tensor as the derivative of the total energy $dE_i/dt$.
+!
+!   \block{dft+u}{
+!   {\tt dftu} & type of DFT+$U$ calculation & integer & 0 \\
+!   {\tt inpdftu} & type of input for DFT+U calculation & integer & 1 \\
+!   \hline
+!   {\tt is} & species number & integer & - \\
+!   {\tt l} & angular momentum value & integer & -1 \\
+!   {\tt u} & the desired $U$ value & real & $0.0$ \\
+!   {\tt j} & the desired $J$ value & real & $0.0$}
+!   This block contains the parameters required for an DFT+$U$ calculation, with
+!   the list of parameters for each species terminated with a blank line. The
+!   type of double counting required is set with the parameter {\tt dftu}.
+!   Currently implemented are:
+!   \vskip 6pt
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!    0 & No DFT+$U$ calculation \\
+!    1 & Fully localised limit (FLL) \\
+!    2 & Around mean field (AFM) \\
+!    3 & An interpolation between FLL and AFM \\
+!   \end{tabularx}
+!   \vskip 6pt
+!   The type of input parameters is set with the parameter {\tt inpdftu}.
+!   The current possibilities are:
+!   \vskip 6pt
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!    1 & U and J \\
+!    2 & Slater parameters \\
+!    3 & Racah parameters \\
+!    4 & Yukawa screening length \\
+!    5 & U and determination of corresponding Yukawa screening length
+!   \end{tabularx}
+!   \vskip 6pt
+!   See (amongst others) {\it Phys. Rev. B} {\bf 67}, 153106 (2003),
+!   {\it Phys. Rev. B} {\bf 52}, R5467 (1995), {\it Phys. Rev. B} {\bf 60},
+!   10763 (1999), and {\it Phys. Rev. B} {\bf 80}, 035121 (2009).
 !
 !   \block{dlefe}{
 !   {\tt dlefe} & difference between the fixed linearisation energy and the
@@ -665,7 +713,7 @@ end program
 !
 !   \block{epsforce}{
 !   {\tt epsforce} & convergence tolerance for the forces during a geometry
-!    optimisation run & real & $5\times 10^{-4}$}
+!    optimisation run & real & $2\times 10^{-3}$}
 !   If the mean absolute value of the atomic forces is less than {\tt epsforce}
 !   then the geometry optimisation run is ended. See also {\tt tasks} and
 !   {\tt latvopt}.
@@ -694,7 +742,7 @@ end program
 !   \block{epsstress}{
 !   {\tt epsstress} & convergence tolerance for the stress tensor during a
 !    geometry optimisation run with lattice vector relaxation & real &
-!    $5\times 10^{-3}$}
+!    $5\times 10^{-4}$}
 !   See also {\tt epsforce} and {\tt latvopt}.
 !
 !   \block{emaxelnes}{
@@ -720,17 +768,24 @@ end program
 !   $|\varepsilon_{i{\bf k}}-\varepsilon_{\rm Fermi}|<{\tt emaxrf}$. Reducing
 !   this can result in a faster calculation at the expense of accuracy.
 !
-!   \block{fixspin}{
-!   {\tt fixspin} & 0 for no fixed spin moment (FSM), 1 for total FSM, 2 for
+!   \block{fracinr}{
+!   {\tt fracinr} & fraction of the muffin-tin radius up to which {\tt lmaxinr}
+!    is used as the angular momentum cut-off & real & $0.1$}
+!   See {\tt lmaxinr}.
+!
+!   \block{fsmtype}{
+!   {\tt fsmtype} & 0 for no fixed spin moment (FSM), 1 for total FSM, 2 for
 !    local muffin-tin FSM, and 3 for both total and local FSM & integer & 0}
 !   Set to 1, 2 or 3 for fixed spin moment calculations. To fix only the
 !   direction and not the magnitude set to $-1$, $-2$ or $-3$. See also
 !   {\tt momfix}, {\tt mommtfix}, {\tt taufsm} and {\tt spinpol}.
 !
-!   \block{fracinr}{
-!   {\tt fracinr} & fraction of the muffin-tin radius up to which {\tt lmaxinr}
-!    is used as the angular momentum cut-off & real & $0.25$}
-!   See {\tt lmaxinr}.
+!   \block{ftmtype}{
+!   {\tt ftmtype} & 1 to enable a fixed tensor moment (FTM) calculation,
+!    0 otherwise & integer & 0}
+!   If {\tt ftmtype} is $-1$ then the symmetry corresponding to the tensor
+!   moment is broken but no FTM calculation is performed. See {\it Phys. Rev.
+!   Lett.} {\bf 103}, 107202 (2009) and also {\tt tmomfix}.
 !
 !   \block{fxclrc}{
 !   {\tt fxclrc} & parameters for the dynamical long-range contribution (LRC) to
@@ -744,7 +799,7 @@ end program
 !   {\tt fxctype} & integer defining the type of exchange-correlation kernel
 !    $f_{\rm xc}$ & integer & -1}
 !   The acceptable values are:
-!
+!   \vskip 6pt
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   $-1$ & $f_{\rm xc}$ defined by {\tt xctype} \\
 !   0,1 & RPA ($f_{\rm xc}=0$) \\
@@ -771,7 +826,7 @@ end program
 !    Hamiltonian & logical & {\tt .true.}}
 !
 !   \block{highq}{
-!   {\tt highq} & {\tt .true.} if a high quality parameter set should be used &
+!   {\tt highq} & {\tt .true.} if a high-quality parameter set should be used &
 !    logical & {\tt .false.}}
 !   Setting this to {\tt .true.} results in some default parameters being
 !   changed to ensure good convergence in most situations. See the subroutine
@@ -827,39 +882,6 @@ end program
 !   default (${\tt latvopt}=0$) no lattice vector optimisation is performed
 !   during structural relaxation. See also {\tt tau0latv}.
 !
-!   \block{lda+u}{
-!   {\tt ldapu} & type of LDA+$U$ calculation & integer & 0 \\
-!   {\tt inptypelu} & type of input for LDA+U calculation & integer & 1 \\
-!   \hline
-!   {\tt is} & species number & integer & - \\
-!   {\tt l} & angular momentum value & integer & -1 \\
-!   {\tt u} & the desired $U$ value & real & $0.0$ \\
-!   {\tt j} & the desired $J$ value & real & $0.0$}
-!   This block contains the parameters required for an LDA+$U$ calculation, with
-!   the list of parameters for each species terminated with a blank line. The
-!   type of double counting required is set with the parameter {\tt ldapu}.
-!   Currently implemented are:
-!
-!   \begin{tabularx}{\textwidth}[h]{lX}
-!   0 & No LDA+$U$ calculation \\
-!   1 & Fully localised limit (FLL) \\
-!   2 & Around mean field (AFM) \\
-!   3 & An interpolation between FLL and AFM \\
-!   \end{tabularx}\vskip 0.25cm
-!   The type of input parameters is set with the parameter {\tt inptypelu}.
-!   The current possibilities are:
-!
-!   \begin{tabularx}{\textwidth}[h]{lX}
-!   1 & U and J \\
-!   2 & Slater parameters \\
-!   3 & Racah parameters \\
-!   4 & Yukawa screening length \\
-!   5 & U and determination of corresponding Yukawa screening length
-!   \end{tabularx}\vskip 0.25cm
-!   See (amongst others) {\it Phys. Rev. B} {\bf 67}, 153106 (2003),
-!   {\it Phys. Rev. B} {\bf 52}, R5467 (1995), {\it Phys. Rev. B} {\bf 60},
-!   10673 (1999), and {\it Phys. Rev. B} {\bf 80}, 035121 (2009).
-!
 !   \block{lmaxapw}{
 !   {\tt lmaxapw} & angular momentum cut-off for the APW functions & integer &
 !    $8$}
@@ -877,7 +899,7 @@ end program
 !
 !   \block{lmaxmat}{
 !   {\tt lmaxmat} & angular momentum cut-off for the outer-most loop in the
-!    hamiltonian and overlap matrix setup & integer & 5}
+!    hamiltonian and overlap matrix set up & integer & 6}
 !
 !   \block{lmaxvr}{
 !   {\tt lmaxvr} & angular momentum cut-off for the muffin-tin density and
@@ -930,7 +952,7 @@ end program
 !   \block{mixtype}{
 !   {\tt mixtype } & type of mixing required for the potential & integer & 1}
 !   Currently implemented are:
-!
+!   \vskip 6pt
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   1 & Adaptive linear mixing \\
 !   2 & Pulay mixing, {\it Chem. Phys. Lett.} {\bf 73}, 393 (1980) \\
@@ -956,7 +978,7 @@ end program
 !   {\tt momfix} & the desired total moment for a FSM calculation &
 !    real(3) & $(0.0,0.0,0.0)$}
 !   Note that all three components must be specified (even for collinear
-!   calculations). See {\tt fixspin}, {\tt taufsm} and {\tt spinpol}.
+!   calculations). See {\tt fsmtype}, {\tt taufsm} and {\tt spinpol}.
 !
 !   \block{mommtfix}{
 !   {\tt is} & species number & integer & 0 \\
@@ -965,7 +987,7 @@ end program
 !    real(3) & $(0.0,0.0,0.0)$}
 !   The local muffin-tin moments are specified for a subset of atoms, with the
 !   list terminated with a blank line. Note that all three components must be
-!   specified (even for collinear calculations). See {\tt fixspin}, {\tt taufsm}
+!   specified (even for collinear calculations). See {\tt fsmtype}, {\tt taufsm}
 !   and {\tt spinpol}.
 !
 !   \block{mstar}{
@@ -987,6 +1009,14 @@ end program
 !   {\tt ncbse} & number of conduction states to be used for BSE calculations &
 !    integer & 3}
 !   See also {\tt nvbse}.
+!
+!   \block{ncgga}{
+!   {\tt ncgga} & set to {\tt .true.} for non-collinear GGA calculations which
+!    are difficult to converge & logical & {\tt .false.}}
+!   Setting this variable to {\tt .true.} results in the second-order
+!   gradients of the spin-density in the intersitial being averaged. This can
+!   improve convergence for non-collinear GGA calculations, but necessarily
+!   makes the exchange-correlation potential non-variational.
 !
 !   \block{ndspem}{
 !   {\tt ndspem} & the number of {\bf k}-vector displacements in each direction
@@ -1030,10 +1060,22 @@ end program
 !   The block should be terminated with a blank line, and no line should exceed
 !   80 characters.
 !
-!   \block{nseqit}{
-!   {\tt nseqit} & number of iterations per self-consistent loop using the
-!    iterative first-variational secular equation solver & integer & 30}
-!   See {\tt tseqit}.
+!   \block{npmae}{
+!   {\tt npmae } & number or distribution of directions for MAE calculations &
+!    integer & $-1$}
+!   Automatic determination of the magnetic anisotropy energy (MAE) requires
+!   that the total energy is determined for a set of directions of the total
+!   magnetic moment. This variable controls the number or distribution of these
+!   directions. The convention is:
+!   \vskip 6pt
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!   $-4,-3,-2,-1$ & Cardinal directions given by the primitive translation
+!    vectors $n_1{\bf A}_1+n_2{\bf A}_2+n_3{\bf A}_3$, where
+!    $1\le n_i\le|{\tt npmae}|$ \\
+!   2 & Cartesian $x$ and $z$ directions \\
+!   3 & Cartesian $x$, $y$ and $z$ directions \\
+!   $4,5,\ldots$ & Even distribution of {\tt npmae} directions
+!   \end{tabularx}
 !
 !   \block{ntemp}{
 !   {\tt ntemp} & number of temperature steps & integer & 20}
@@ -1076,7 +1118,7 @@ end program
 !   {\tt nvp1d} & number of vertices & integer & 2 \\
 !   {\tt npp1d} & number of plotting points & integer & 200 \\
 !   \hline
-!   {\tt vvlp1d(i)} & lattice coordinates for vertex {\tt i} & real(3) &
+!   {\tt vvlp1d(i)} & lattice coordinates for vertex $i$ & real(3) &
 !    $(0.0,0.0,0.0)\rightarrow(1.0,1.0,1.0)$}
 !   Defines the path in either real or reciprocal space along which the 1D plot
 !   is to be produced. The user should provide {\tt nvp1d} vertices in lattice
@@ -1123,17 +1165,17 @@ end program
 !   $n_i=R_k|{\bf B}_i|+1$, where ${\bf B}_i$ are the primitive reciprocal
 !   lattice vectors.
 !
-!   \block{readalu}{
-!   {\tt readalu} & set to {\tt .true.} if the interpolation constant for
-!    LDA+$U$ should be read from file rather than calculated & logical &
+!   \block{readadu}{
+!   {\tt readadu} & set to {\tt .true.} if the interpolation constant for
+!    DFT+$U$ should be read from file rather than calculated & logical &
 !    {\tt .false.}}
-!   When {\tt ldapu}=3, the LDA+$U$ energy and potential are interpolated
+!   When {\tt dftu}=3, the DFT+$U$ energy and potential are interpolated
 !   between FLL and AFM. The interpolation constant, $\alpha$, is normally
 !   calculated from the density matrix, but can also be read in from the file
-!   {\tt ALPHALU.OUT}. This allows the user to fix $\alpha$, but is also
+!   {\tt ALPHADU.OUT}. This allows the user to fix $\alpha$, but is also
 !   necessary when calculating forces, since the contribution of the potential
 !   of the variation of $\alpha$ with respect to the density matrix is not
-!   computed. See {\tt lda+u}.
+!   computed. See {\tt dft+u}.
 !
 !   \block{reducebf}{
 !   {\tt reducebf} & reduction factor for the external magnetic fields & real &
@@ -1152,13 +1194,14 @@ end program
 !   \block{reducek}{
 !   {\tt reducek} & type of reduction of the $k$-point set & integer & 1}
 !   Types of reduction are defined by the symmetry group used:
-!
+!   \vskip 6pt
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   0 & no reduction \\
 !   1 & reduce with full crystal symmetry group (including non-symmorphic
 !    symmetries) \\
 !   2 & reduce with symmorphic symmetries only
-!   \end{tabularx}\vskip 0.25cm
+!   \end{tabularx}
+!   \vskip 6pt
 !   See also {\tt ngridk} and {\tt vkloff}.
 !
 !   \block{reduceq}{
@@ -1170,6 +1213,14 @@ end program
 !    real & $7.0$}
 !   This sets the maximum length for the ${\bf G}+{\bf k}$ vectors, defined as
 !   {\tt rgkmax} divided by the average muffin-tin radius. See {\tt isgkmax}.
+!
+!   \block{rotavec}{
+!   {\tt axang} & axis-angle representation of lattice vector rotation &
+!    real(4) & $(0.0,0.0,0.0,0.0)$}
+!   This determines the rotation matrix which is applied to the lattice vectors
+!   prior to any calculation. The first three components specify the axis and
+!   the last component is the angle in degrees. The `right-hand rule' convention
+!   is followed.
 !
 !   \block{scale}{
 !   {\tt scale } & lattice vector scaling factor & real & $1.0$}
@@ -1192,6 +1243,12 @@ end program
 !   network then {\tt scrpath} can be set to a directory on the local disk, for
 !   example {\tt /tmp/}. Note that the forward slash {\tt /} at the end of the
 !   path must be included.
+!
+!   \block{socscf}{
+!   {\tt socscf} & scaling factor for the spin-orbit coupling term in the
+!    Hamiltonian & real & $1.0$}
+!   This can be used to enhance the effect of spin-orbit coupling in order to
+!   accurately determine the magnetic anisotropy energy (MAE).
 !
 !   \block{spincore}{
 !   {\tt spincore} & set to {\tt .true.} if the core should be spin-polarised
@@ -1239,13 +1296,14 @@ end program
 !   A smooth approximation to the Dirac delta function is needed to compute the
 !   occupancies of the Kohn-Sham states. The variable {\tt swidth} determines
 !   the width of the approximate delta function. Currently implemented are
-!
+!   \vskip 6pt
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   0 & Gaussian \\
 !   1 & Methfessel-Paxton order 1, Phys. Rev. B {\bf 40}, 3616 (1989) \\
 !   2 & Methfessel-Paxton order 2 \\
 !   3 & Fermi-Dirac
 !   \end{tabularx}
+!   \vskip 6pt
 !   See also {\tt autoswidth} and {\tt swidth}.
 !
 !   \block{swidth}{
@@ -1259,7 +1317,7 @@ end program
 !   A list of tasks for the code to perform sequentially. The list should be
 !   terminated with a blank line. Each task has an associated integer as
 !   follows:
-!
+!   \vskip 6pt
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   -1 & Write out the version number of the code. \\
 !   0 & Ground state run starting from the atomic densities. \\
@@ -1350,7 +1408,7 @@ end program
 !    dielectric response function including microscopic contributions. \\
 !   330 & TDDFT calculation of the spin-polarised response function for
 !    arbitrary ${\bf q}$-vectors. \\
-!   400 & Calculation of tensor moments and corresponding LDA+U Hartree-Fock
+!   400 & Calculation of tensor moments and corresponding DFT+$U$ Hartree-Fock
 !    energy contributions.
 !   \end{tabularx}
 !
@@ -1367,7 +1425,7 @@ end program
 !
 !   \block{tau0latv}{
 !   {\tt tau0latv} & the step size to be used for lattice vector optimisation &
-!    real & $0.01$}
+!    real & $0.5$}
 !   This parameter is used for lattice vector optimisation in a procedure
 !   identical to that for atomic position optimisation. See {\tt tau0atp} and
 !   {\tt latvopt}.
@@ -1390,7 +1448,7 @@ end program
 !   moment calculated in the $i$th self-consistent loop and the required moment:
 !   $$ {\bf B}_{\rm FSM}^{i+1}={\bf B}_{\rm FSM}^i+\lambda\left({\bf M}^i
 !    -{\bf M}_{\rm FSM}\right), $$
-!   where $\lambda$ is proportional to {\tt taufsm}. See also {\tt fixspin},
+!   where $\lambda$ is proportional to {\tt taufsm}. See also {\tt fsmtype},
 !   {\tt momfix} and {\tt spinpol}.
 !
 !   \block{tfibs}{
@@ -1408,13 +1466,13 @@ end program
 !   This variable is automatically set to {\tt .true.} when performing geometry
 !   optimisation.
 !
-!   \block{tmomlu}{
-!   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the
-!    corresponding decomposition of LDA+U energy should be calculated
+!   \block{tmwrite}{
+!   {\tt tmwrite} & set to {\tt .true.} if the tensor moments and the
+!    corresponding decomposition of DFT+$U$ energy should be calculated
 !    at every loop of the self-consistent cycle & logical & {\tt .false.}}
 !   This variable is useful to check the convergence of the tensor moments in
-!   LDA+U caculations. Alternatively, with {\tt task} equal to 400, one can
-!   calculate the tensor moments and corresponding LDA+U energy contributions
+!   DFT+$U$ caculations. Alternatively, with {\tt task} equal to 400, one can
+!   calculate the tensor moments and corresponding DFT+$U$ energy contributions
 !   from a given density matrix and set of Slater parameters at the end of the
 !   self-consistent cycle.
 !
@@ -1425,19 +1483,40 @@ end program
 !   This fixes stability problems which can occur for large {\tt rgkmax}. Should
 !   be used only in conjunction with large {\tt gmaxvr}.
 !
-!   \block{tseqit}{
-!   {\tt tseqit} & set to {\tt .true.} if the first-variational secular equation
-!    should be solved iteratively & logical & {\tt .false.}}
-!   See also {\tt nseqit}.
+!   \block{tefvit}{
+!   {\tt tefvit} & set to {\tt .true.} if the first-variational eigenvalue
+!    equation should be solved iteratively & logical & {\tt .false.}}
 !
-!   \block{tseqr}{
-!   {\tt tseqr} & set to {\tt .true.} if a real symmetric eigenvalue solver
+!   \block{tefvr}{
+!   {\tt tefvr} & set to {\tt .true.} if a real symmetric eigenvalue solver
 !    should be used for crystals which have inversion symmetry & logical &
 !    {\tt .true.}}
 !   For crystals with inversion symmetry, the first-variational Hamiltonian and
 !   overlap matrices can be made real by using appropriate transformations. In
 !   this case, a real symmetric (instead of complex Hermitian) eigenvalue solver
 !   can be used. This makes the calculation about three times faster.
+!
+!   \block{tmomfix}{
+!   {\tt ntmfix} & number of tensor moments (TM) to be fixed & integer & 0 \\
+!   \hline
+!   {\tt is(i)} & species number for entry $i$ & integer & - \\
+!   {\tt ia(i)} & atom number & integer & - \\
+!   {\tt (l, n)(i)} & $l$ and $n$ indices of TM & integer & - \\
+!   \hline
+!   {\tt (k, p, x, y)(i)} or & & & \\
+!    {\tt (k, p, r, t)(i)} & indices for the 2-index or 3-index TM,
+!    respectively & integer & - \\
+!   \hline
+!   {\tt z(i)} & complex TM value & complex & - \\
+!   \hline
+!   {\tt p(i)} & parity of spatial rotation & integer & - \\
+!   {\tt aspl(i)} & Euler angles of spatial rotation & real(3) & - \\
+!   {\tt aspn(i)} & Euler angles of spin rotation & real(3) & - }
+!   This block sets up the fixed tensor moment (FTM). There should be as many
+!   TM entries as {\tt ntmfix}. See {\it Phys. Rev. Lett.} {\bf 103}, 107202
+!   (2009) for the tensor moment indexing convention. This is a highly
+!   complicated feature of the code, and should only be attempted with a full
+!   understanding of tensor moments.
 !
 !   \block{tshift}{
 !   {\tt tshift} & set to {\tt .true.} if the crystal can be shifted so that the
@@ -1514,7 +1593,7 @@ end program
 !    to be used & integer(3) & $(3,0,0)$}
 !   Normally only the first value is used to define the functional type. The
 !   other value may be used for external libraries. Currently implemented are:
-!
+!   \vskip 6pt
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   $-n$ & Exact-exchange optimised effective potential (EXX-OEP) method with
 !    correlation energy and potential given by functional number $n$ \\
@@ -1535,8 +1614,8 @@ end program
 !    {\bf 73}, 235116 (2006) \\
 !   30 & GGA, Armiento-Mattsson (AM05) spin-unpolarised functional,
 !    {\it Phys. Rev. B} {\bf 72}, 085108 (2005) \\
-!   100 & {\tt libxc} functionals, the second and third values of {\tt xctype}
-!    define the exchange and correlation functionals in the {\tt libxc} library,
+!   100 & Libxc functionals; the second and third values of {\tt xctype} define
+!    the exchange and correlation functionals in the Libxc library,
 !    respectively \\
 !   \end{tabularx}
 !

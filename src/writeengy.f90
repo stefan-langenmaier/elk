@@ -5,7 +5,7 @@
 
 subroutine writeengy(fnum)
 use modmain
-use modldapu
+use moddftu
 implicit none
 ! arguments
 integer, intent(in) :: fnum
@@ -28,8 +28,8 @@ if (spinpol) then
 end if
 write(fnum,'(" exchange",T30,": ",G22.12)') engyx
 write(fnum,'(" correlation",T30,": ",G22.12)') engyc
-if (ldapu.ne.0) then
-  write(fnum,'(" LDA+U",T30,": ",G22.12)') engylu
+if (dftu.ne.0) then
+  write(fnum,'(" DFT+U",T30,": ",G22.12)') engydu
 end if
 if (stype.eq.3) then
   write(fnum,'(" electron entropic",T30,": ",G22.12)') engyts

@@ -45,7 +45,7 @@ reducebf
  0.85
 
 ! define a fixed spin direction in the muffin-tin
-fixspin
+fsmtype
  -2
 
 mommtfix

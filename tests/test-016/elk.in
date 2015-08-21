@@ -17,9 +17,9 @@ test
 swidth
  0.05
 
-lda+u
-  3 5            : ldapu,inptypelu
-  1 3 0.1469972  : is,llu(is),ulufix(is)
+dft+u
+  3 5             : dftu,inpdftu
+  1 3 0.1469972   : is, l, U fixed
 
 spinpol
  .true.

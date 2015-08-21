@@ -245,11 +245,20 @@ if (spinpol) then
      vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
   else if (xcgrad.eq.1) then
     call ggair_sp_1(rhoup,rhodn,grho,gup,gdn,g2up,g2dn,g3rho,g3up,g3dn)
+! average the second-order gradients for cases which are difficult to converge
+    if (ncgga) then
+      g2up(1:ngtot)=0.5d0*(g2up(1:ngtot)+g2dn(1:ngtot))
+      g2dn(1:ngtot)=g2up(1:ngtot)
+    end if
     call xcifc(xctype,n=ngtot,rhoup=rhoup,rhodn=rhodn,grho=grho,gup=gup, &
      gdn=gdn,g2up=g2up,g2dn=g2dn,g3rho=g3rho,g3up=g3up,g3dn=g3dn,ex=exir, &
      ec=ecir,vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn)
   else if (xcgrad.eq.2) then
     call ggair_sp_2a(rhoup,rhodn,g2up,g2dn,gvup,gvdn,gup2,gdn2,gupdn)
+    if (ncgga) then
+      g2up(1:ngtot)=0.5d0*(g2up(1:ngtot)+g2dn(1:ngtot))
+      g2dn(1:ngtot)=g2up(1:ngtot)
+    end if
     call xcifc(xctype,n=ngtot,rhoup=rhoup,rhodn=rhodn,gup2=gup2,gdn2=gdn2, &
      gupdn=gupdn,ex=exir,ec=ecir,vxup=vxup,vxdn=vxdn,vcup=vcup,vcdn=vcdn, &
      dxdgu2=dxdgu2,dxdgd2=dxdgd2,dxdgud=dxdgud,dcdgu2=dcdgu2,dcdgd2=dcdgd2, &

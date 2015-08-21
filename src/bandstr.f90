@@ -41,7 +41,7 @@ call init1
 ! allocate array for storing the eigenvalues
 allocate(e(nstsv,nkpt))
 ! maximum angular momentum for band character
-lmax=min(3,lmaxapw)
+lmax=min(3,lmaxvr)
 lmmax=(lmax+1)**2
 if (task.eq.21) then
   allocate(bc(0:lmax,natmtot,nstsv,nkpt))
@@ -77,8 +77,8 @@ do ik=1,nkpt
 !$OMP CRITICAL
   write(*,'("Info(bandstr): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL
-! solve the first- and second-variational secular equations
-  call seceqn(ik,evalfv,evecfv,evecsv)
+! solve the first- and second-variational eigenvalue equations
+  call eveqn(ik,evalfv,evecfv,evecsv)
   do ist=1,nstsv
 ! subtract the Fermi energy
     e(ist,ik)=evalsv(ist,ik)-efermi
@@ -89,7 +89,7 @@ do ik=1,nkpt
   end do
 ! compute the band characters if required
   if (task.eq.21) then
-    allocate(dmat(lmmax,lmmax,nspinor,nspinor,nstsv))
+    allocate(dmat(lmmax,nspinor,lmmax,nspinor,nstsv))
     allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
 ! find the matching coefficients
     do ispn=1,nspnfv
@@ -107,7 +107,7 @@ do ik=1,nkpt
           do m=-l,l
             lm=idxlm(l,m)
             do ispn=1,nspinor
-              sum=sum+dble(dmat(lm,lm,ispn,ispn,ist))
+              sum=sum+dble(dmat(lm,ispn,lm,ispn,ist))
             end do
           end do
           bc(l,ias,ist,ik)=real(sum)

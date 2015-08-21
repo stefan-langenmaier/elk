@@ -100,10 +100,9 @@ do i=1,nsymlat
     md=symlatd(1)
     symlatd(1)=symlatd(i)
     symlatd(i)=md
-    goto 20
+    exit
   end if
 end do
-20 continue
 ! index to the inverse of each operation
 do i=1,nsymlat
   call i3minv(symlat(:,:,i),sym)

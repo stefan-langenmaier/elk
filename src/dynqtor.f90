@@ -5,10 +5,11 @@
 
 subroutine dynqtor(dynq,dynr)
 use modmain
+use modphonon
 implicit none
 ! arguments
-complex(8), intent(in) :: dynq(3*natmtot,3*natmtot,nqpt)
-complex(8), intent(out) :: dynr(3*natmtot,3*natmtot,nqptnr)
+complex(8), intent(in) :: dynq(nbph,nbph,nqpt)
+complex(8), intent(out) :: dynr(nbph,nbph,nqptnr)
 ! local variables
 integer ir,iq,i,j,n
 integer isym,lspl
@@ -18,7 +19,7 @@ real(8) s(3,3),t1
 complex(8) z1
 ! allocatable arrays
 complex(8), allocatable :: dyns(:,:)
-allocate(dyns(3*natmtot,3*natmtot))
+allocate(dyns(nbph,nbph))
 dynr(:,:,:)=0.d0
 ! loop over q-vectors
 do j1=0,ngridq(1)-1
@@ -62,8 +63,8 @@ do j1=0,ngridq(1)-1
             ir=ir+1
             t1=twopi*(v1(1)*dble(i1)+v1(2)*dble(i2)+v1(3)*dble(i3))
             z1=cmplx(cos(t1),sin(t1),8)
-            do i=1,3*natmtot
-              do j=1,3*natmtot
+            do i=1,nbph
+              do j=1,nbph
                 dynr(i,j,ir)=dynr(i,j,ir)+z1*dyns(i,j)
               end do
             end do

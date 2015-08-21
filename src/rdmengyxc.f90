@@ -23,7 +23,7 @@ integer ik1,ik2,jk,iv(3)
 integer ist1,ist2
 real(8) t1,t2,t3,t4
 ! allocatable arays
-real(8), allocatable :: vnlijji(:,:,:)
+real(8), allocatable :: vclijji(:,:,:)
 ! calculate the prefactor
 if (rdmxctype.eq.0) then
   engyx=0.d0
@@ -46,10 +46,10 @@ else
 end if
 ! exchange-correlation energy
 engyx=0.d0
-allocate(vnlijji(nstsv,nstsv,nkpt))
+allocate(vclijji(nstsv,nstsv,nkpt))
 ! start loop over non-reduced k-points
 do ik1=1,nkptnr
-  call getvnlijji(ik1,vnlijji)
+  call getvclijji(ik1,vclijji)
 ! find the equivalent reduced k-point
   iv(:)=ivk(:,ik1)
   jk=ikmap(iv(1),iv(2),iv(3))
@@ -70,12 +70,12 @@ do ik1=1,nkptnr
             t2=t1*wkpt(ik2)*(t3**rdmalpha)
           end if
         end if
-        engyx=engyx-t2*vnlijji(ist2,ist1,ik2)
+        engyx=engyx-t2*vclijji(ist2,ist1,ik2)
       end do
     end do
   end do
 end do
-deallocate(vnlijji)
+deallocate(vclijji)
 return
 end subroutine
 !EOC

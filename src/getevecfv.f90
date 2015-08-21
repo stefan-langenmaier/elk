@@ -26,8 +26,7 @@ use modmain
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: vpl(3)
-real(8), intent(in) :: vgpl(3,ngkmax,nspnfv)
+real(8), intent(in) :: vpl(3),vgpl(3,ngkmax,nspnfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv,nspnfv)
 ! local variables
 integer isym,lspl,ilspl

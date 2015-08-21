@@ -5,11 +5,12 @@
 
 subroutine dynrtoq(vpl,dynr,dynp)
 use modmain
+use modphonon
 implicit none
 ! arguments
 real(8), intent(in) :: vpl(3)
-complex(8), intent(in) :: dynr(3*natmtot,3*natmtot,nqptnr)
-complex(8), intent(out) :: dynp(3*natmtot,3*natmtot)
+complex(8), intent(in) :: dynr(nbph,nbph,nqptnr)
+complex(8), intent(out) :: dynp(nbph,nbph)
 ! local variables
 integer i1,i2,i3,ir,i,j
 real(8) t1
@@ -23,8 +24,8 @@ do i3=ngridq(3)/2-ngridq(3)+1,ngridq(3)/2
       ir=ir+1
       t1=-twopi*(vpl(1)*dble(i1)+vpl(2)*dble(i2)+vpl(3)*dble(i3))
       z1=cmplx(cos(t1),sin(t1),8)
-      do i=1,3*natmtot
-        do j=1,3*natmtot
+      do i=1,nbph
+        do j=1,nbph
           dynp(i,j)=dynp(i,j)+z1*dynr(i,j,ir)
         end do
       end do

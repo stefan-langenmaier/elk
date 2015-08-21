@@ -12,20 +12,17 @@ integer ispn,is,ia,ias
 real(8) xl(3),xs(3),t1
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: dmat1(:,:,:,:,:)
-complex(8), allocatable :: dmat2(:,:,:,:,:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
+complex(8), allocatable :: dmat1(:,:,:,:,:),dmat2(:,:,:,:,:)
 complex(8), allocatable :: zlflm(:,:)
 ! initialise universal variables
 call init0
 call init1
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-allocate(evecfv(nmatmax,nstfv,nspnfv))
-allocate(evecsv(nstsv,nstsv))
-allocate(dmat1(lmmaxapw,lmmaxapw,nspinor,nspinor,natmtot))
-allocate(dmat2(lmmaxapw,lmmaxapw,nspinor,nspinor,nstsv))
-allocate(zlflm(lmmaxapw,3))
+allocate(evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv))
+allocate(dmat1(lmmaxvr,nspinor,lmmaxvr,nspinor,natmtot))
+allocate(dmat2(lmmaxvr,nspinor,lmmaxvr,nspinor,nstsv))
+allocate(zlflm(lmmaxvr,3))
 ! read density and potentials from file
 call readstate
 ! find the new linearisation energies
@@ -52,8 +49,8 @@ if (task.eq.15) then
       do ia=1,natoms(is)
         ias=idxas(ia,is)
 ! generate the density matrix
-        call gendmat(.false.,.false.,0,lmaxapw,ias,ngk(:,ik),apwalm,evecfv, &
-         evecsv,lmmaxapw,dmat2)
+        call gendmat(.false.,.false.,0,lmaxvr,ias,ngk(:,ik),apwalm,evecfv, &
+         evecsv,lmmaxvr,dmat2)
         do ist=1,nstsv
           t1=wkpt(ik)*occsv(ist,ik)
           dmat1(:,:,:,:,ias)=dmat1(:,:,:,:,ias)+t1*dmat2(:,:,:,:,ist)
@@ -63,7 +60,7 @@ if (task.eq.15) then
 ! end loop over k-points
   end do
 ! symmetrise the density matrix
-  call symdmat(lmaxapw,lmmaxapw,dmat1)
+  call symdmat(lmaxvr,lmmaxvr,dmat1)
   open(50,file='LSJ.OUT',action='WRITE',form='FORMATTED')
   write(50,*)
   write(50,'("Expectation values are computed only over the muffin-tin")')
@@ -76,18 +73,18 @@ if (task.eq.15) then
 ! compute tr(LD)
       xl(:)=0.d0
       do ispn=1,nspinor
-        do lm=1,lmmaxapw
-          call lopzflm(lmaxapw,dmat1(:,lm,ispn,ispn,ias),lmmaxapw,zlflm)
+        do lm=1,lmmaxvr
+          call lopzflm(lmaxvr,dmat1(:,ispn,lm,ispn,ias),lmmaxvr,zlflm)
           xl(:)=xl(:)+dble(zlflm(lm,:))
         end do
       end do
 ! compute tr(sigma D)
       xs(:)=0.d0
       if (spinpol) then
-        do lm=1,lmmaxapw
-          xs(1)=xs(1)+dble(dmat1(lm,lm,2,1,ias)+dmat1(lm,lm,1,2,ias))
-          xs(2)=xs(2)+dble(-zi*dmat1(lm,lm,2,1,ias)+zi*dmat1(lm,lm,1,2,ias))
-          xs(3)=xs(3)+dble(dmat1(lm,lm,1,1,ias)-dmat1(lm,lm,2,2,ias))
+        do lm=1,lmmaxvr
+          xs(1)=xs(1)+dble(dmat1(lm,2,lm,1,ias)+dmat1(lm,1,lm,2,ias))
+          xs(2)=xs(2)+dble(-zi*dmat1(lm,2,lm,1,ias)+zi*dmat1(lm,1,lm,2,ias))
+          xs(3)=xs(3)+dble(dmat1(lm,1,lm,1,ias)-dmat1(lm,2,lm,2,ias))
         end do
       end if
 ! S = 1/2 sigma
@@ -137,23 +134,23 @@ else
       do ia=1,natoms(is)
         ias=idxas(ia,is)
 ! generate the density matrix
-        call gendmat(.false.,.false.,0,lmaxapw,ias,ngk(:,ik),apwalm,evecfv, &
-         evecsv,lmmaxapw,dmat2)
+        call gendmat(.false.,.false.,0,lmaxvr,ias,ngk(:,ik),apwalm,evecfv, &
+         evecsv,lmmaxvr,dmat2)
 ! compute tr(LD)
         xl(:)=0.d0
         do ispn=1,nspinor
-          do lm=1,lmmaxapw
-            call lopzflm(lmaxapw,dmat2(:,lm,ispn,ispn,ist),lmmaxapw,zlflm)
+          do lm=1,lmmaxvr
+            call lopzflm(lmaxvr,dmat2(:,ispn,lm,ispn,ist),lmmaxvr,zlflm)
             xl(:)=xl(:)+dble(zlflm(lm,:))
           end do
         end do
 ! compute tr(sigma D)
         xs(:)=0.d0
         if (spinpol) then
-          do lm=1,lmmaxapw
-            xs(1)=xs(1)+dble(dmat2(lm,lm,2,1,ist)+dmat2(lm,lm,1,2,ist))
-            xs(2)=xs(2)+dble(-zi*dmat2(lm,lm,2,1,ist)+zi*dmat2(lm,lm,1,2,ist))
-            xs(3)=xs(3)+dble(dmat2(lm,lm,1,1,ist)-dmat2(lm,lm,2,2,ist))
+          do lm=1,lmmaxvr
+            xs(1)=xs(1)+dble(dmat2(lm,2,lm,1,ist)+dmat2(lm,1,lm,2,ist))
+            xs(2)=xs(2)+dble(-zi*dmat2(lm,2,lm,1,ist)+zi*dmat2(lm,1,lm,2,ist))
+            xs(3)=xs(3)+dble(dmat2(lm,1,lm,1,ist)-dmat2(lm,2,lm,2,ist))
           end do
         else
           xs(3)=1.d0

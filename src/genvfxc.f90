@@ -5,6 +5,7 @@
 
 subroutine genvfxc(gqc,vchi0,eps0,eps,vfxc)
 use modmain
+use modtddft
 implicit none
 ! arguments
 real(8), intent(in) :: gqc(ngrf)

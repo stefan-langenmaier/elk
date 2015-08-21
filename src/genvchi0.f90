@@ -18,9 +18,12 @@ complex(8), intent(in) :: sfacgq(ngrf,natmtot)
 complex(8), intent(inout) :: vchi0(nwrf,ngrf,ngrf)
 ! local variables
 integer isym,jkp,jkpq,iw
-integer ig,jg,ist,jst
+integer nst,nstq,ist,jst
+integer kst,lst,ig,jg
 real(8) vkql(3),eij,t1,t2
 complex(8) z1,z2
+! automatic arrays
+integer idx(nstsv),idxq(nstsv)
 ! allocatable arrays
 complex(8), allocatable :: pmat(:,:,:)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
@@ -32,13 +35,28 @@ vkql(:)=vkl(:,ikp)+vqpl(:)
 ! equivalent reduced k-points for k and k+q
 call findkpt(vkl(:,ikp),isym,jkp)
 call findkpt(vkql,isym,jkpq)
-! generate the wavefunctions for all states at k and k+q
-allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir(ngtot,nspinor,nstsv))
-call genwfsvp(.false.,.false.,.false.,vkl(:,ikp),wfmt,ngtot,wfir)
-allocate(wfmtq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfirq(ngtot,nspinor,nstsv))
-call genwfsvp(.false.,.false.,.false.,vkql,wfmtq,ngtot,wfirq)
+! count and index states at k and k+q in energy window
+nst=0
+do ist=1,nstsv
+  if (abs(evalsv(ist,jkp)-efermi).lt.emaxrf) then
+    nst=nst+1
+    idx(nst)=ist
+  end if
+end do
+nstq=0
+do jst=1,nstsv
+  if (abs(evalsv(jst,jkpq)-efermi).lt.emaxrf) then
+    nstq=nstq+1
+    idxq(nstq)=jst
+  end if
+end do
+! generate the wavefunctions for all states at k and k+q in energy window
+allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst))
+allocate(wfir(ngtot,nspinor,nst))
+call genwfsvp(.false.,.false.,nst,idx,vkl(:,ikp),wfmt,ngtot,wfir)
+allocate(wfmtq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstq))
+allocate(wfirq(ngtot,nspinor,nstq))
+call genwfsvp(.false.,.false.,nstq,idxq,vkql,wfmtq,ngtot,wfirq)
 ! read the momentum matrix elements from file
 allocate(pmat(3,nstsv,nstsv))
 call getpmat(vkl(:,ikp),pmat)
@@ -47,18 +65,18 @@ t1=1.d0/omega
 pmat(:,:,:)=t1*pmat(:,:,:)
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(zrhomt,zrhoir,zw,zg) &
-!$OMP PRIVATE(jst,t1,t2,eij) &
+!$OMP PRIVATE(jst,kst,lst,t1,t2,eij) &
 !$OMP PRIVATE(iw,ig,jg,z1,z2)
 !$OMP DO
-do ist=1,nstsv
-  if (abs(evalsv(ist,jkp)-efermi).gt.emaxrf) cycle
+do ist=1,nst
   allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
   allocate(zw(nwrf),zg(ngrf))
-  do jst=1,nstsv
-    if (abs(evalsv(jst,jkpq)-efermi).gt.emaxrf) cycle
-    t1=wkptnr*omega*(occsv(ist,jkp)-occsv(jst,jkpq))
+  kst=idx(ist)
+  do jst=1,nstq
+    lst=idxq(jst)
+    t1=wkptnr*omega*(occsv(kst,jkp)-occsv(lst,jkpq))
     if (abs(t1).lt.1.d-8) cycle
-    eij=evalsv(ist,jkp)-evalsv(jst,jkpq)
+    eij=evalsv(kst,jkp)-evalsv(lst,jkpq)
 ! scissor operator
     if (abs(scsr).gt.1.d-8) then
       t2=eij
@@ -69,15 +87,15 @@ do ist=1,nstsv
       end if
       t2=eij/t2
 ! scale the momentum matrix elements
-      pmat(:,ist,jst)=t2*pmat(:,ist,jst)
+      pmat(:,kst,lst)=t2*pmat(:,kst,lst)
     end if
 ! frequency-dependent part in response function formula for all frequencies
     do iw=1,nwrf
       zw(iw)=t1/(eij+wrf(iw))
     end do
 ! compute the complex density in G+q-space
-    call genzrho(.true.,.true.,wfmt(:,:,:,:,ist),wfmtq(:,:,:,:,jst), &
-     wfir(:,:,ist),wfirq(:,:,jst),zrhomt,zrhoir)
+    call genzrho(.true.,.true.,wfmt(:,:,:,:,ist),wfir(:,:,ist), &
+     wfmtq(:,:,:,:,jst),wfirq(:,:,jst),zrhomt,zrhoir)
     call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zg)
 !$OMP CRITICAL
 !------------------------!
@@ -100,10 +118,10 @@ do ist=1,nstsv
 !----------------------------------------!
       if (icmp.eq.0) then
 ! trace of dielectric tensor
-        t1=sum(dble(pmat(:,ist,jst))**2+aimag(pmat(:,ist,jst))**2)/3.d0
+        t1=sum(dble(pmat(:,kst,lst))**2+aimag(pmat(:,kst,lst))**2)/3.d0
       else
 ! particular macroscopic component
-        t1=dble(pmat(icmp,ist,jst))**2+aimag(pmat(icmp,ist,jst))**2
+        t1=dble(pmat(icmp,kst,lst))**2+aimag(pmat(icmp,kst,lst))**2
       end if
       t1=fourpi*t1/eij**2
       vchi0(:,igq0,igq0)=vchi0(:,igq0,igq0)+t1*zw(:)
@@ -112,9 +130,9 @@ do ist=1,nstsv
 !-------------------------!
       t1=-fourpi/eij
       if (icmp.eq.0) then
-        z1=(t1/3.d0)*(pmat(1,ist,jst)+pmat(2,ist,jst)+pmat(3,ist,jst))
+        z1=(t1/3.d0)*(pmat(1,kst,lst)+pmat(2,kst,lst)+pmat(3,kst,lst))
       else
-        z1=t1*pmat(icmp,ist,jst)
+        z1=t1*pmat(icmp,kst,lst)
       end if
 ! G = q = 0
       do ig=2,ngrf

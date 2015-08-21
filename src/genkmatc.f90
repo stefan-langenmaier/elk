@@ -3,21 +3,23 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genkmatc(tvnlcr)
+subroutine genkmatc(tvclcr)
 use modmain
 use modmpi
 implicit none
 ! arguments
-logical, intent(in) :: tvnlcr
+logical, intent(in) :: tvclcr
 ! local variables
 integer ik,ist,ispn
 integer is,ias,n,lp
+! automatic arrays
+integer idx(nstsv)
 ! allocatable arrays
 real(8), allocatable :: vmt(:,:,:),vir(:)
-complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
+complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
-complex(8), allocatable :: c(:,:)
+complex(8), allocatable :: a(:,:)
 ! allocate global kinetic matrix elements array
 if (allocated(kmatc)) deallocate(kmatc)
 allocate(kmatc(nstsv,nstsv,nkpt))
@@ -35,19 +37,23 @@ end do
 vir(:)=vsir(:)*cfunir(:)
 ! generate the spin-orbit coupling radial functions
 call gensocfr
+! index to all states
+do ist=1,nstsv
+  idx(ist)=ist
+end do
 ! loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv,apwalm) &
-!$OMP PRIVATE(wfmt,wfir,c,ispn,ist)
+!$OMP PRIVATE(apwalm,evecfv,evecsv) &
+!$OMP PRIVATE(wfmt,wfir,a,ispn,ist)
 !$OMP DO
 do ik=1,nkpt
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+  allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
   allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
   allocate(wfir(ngtot,nspinor,nstsv))
-  allocate(c(nstsv,nstsv))
+  allocate(a(nstsv,nstsv))
 ! get the eigenvalues/vectors from file for input k-point
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
@@ -58,7 +64,7 @@ do ik=1,nkpt
      sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
 ! calculate the wavefunctions for all states of the input k-point
-  call genwfsv(.false.,.false.,.false.,ngk(:,ik),igkig(:,:,ik),occsv,apwalm, &
+  call genwfsv(.false.,.false.,nstsv,idx,ngk(:,ik),igkig(:,:,ik),apwalm, &
    evecfv,evecsv,wfmt,ngtot,wfir)
 ! compute Kohn-Sham potential matrix elements
   call genvmatk(vmt,vir,wfmt,wfir,kmatc(:,:,ik))
@@ -69,21 +75,21 @@ do ik=1,nkpt
   end do
 ! compute the exchange-correlation magnetic field matrix elements
   if (spinpol) then
-    call genbmatk(bsmt,bsir,wfmt,wfir,c)
-    kmatc(:,:,ik)=kmatc(:,:,ik)-c(:,:)
+    call genbmatk(bsmt,bsir,wfmt,wfir,a)
+    kmatc(:,:,ik)=kmatc(:,:,ik)-a(:,:)
   end if
-! add the non-local Coulomb core matrix elements if required
-  if (tvnlcr) then
-    call vnlcore(wfmt,c)
-    kmatc(:,:,ik)=kmatc(:,:,ik)+c(:,:)
+! add the Coulomb core matrix elements if required
+  if (tvclcr) then
+    call vclcore(wfmt,a)
+    kmatc(:,:,ik)=kmatc(:,:,ik)+a(:,:)
   end if
 ! rotate kinetic matrix elements to Cartesian basis
   call zgemm('N','C',nstsv,nstsv,nstsv,zone,kmatc(:,:,ik),nstsv,evecsv,nstsv, &
-   zzero,c,nstsv)
-  call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,c,nstsv,zzero, &
+   zzero,a,nstsv)
+  call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,a,nstsv,zzero, &
    kmatc(:,:,ik),nstsv)
-  deallocate(evecfv,evecsv)
-  deallocate(apwalm,wfmt,wfir,c)
+  deallocate(apwalm,evecfv,evecsv)
+  deallocate(wfmt,wfir,a)
 end do
 !$OMP END DO
 !$OMP END PARALLEL

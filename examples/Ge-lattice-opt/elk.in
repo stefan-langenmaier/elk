@@ -21,6 +21,7 @@ tasks
 latvopt
   1
 
+! PBE exchange-correlation functional
 xctype
   20
 
@@ -43,5 +44,4 @@ atoms
   0.25 0.25 0.25   0.0 0.0 0.0
 
 ngridk
-  2  2  2
-
+  4  4  4

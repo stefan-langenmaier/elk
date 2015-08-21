@@ -39,10 +39,14 @@ if (trimvg) then
 ! Fourier transform back to real-space
   call zfftifc(3,ngridg,1,zfft)
 ! multiply trimmed potential by characteristic function in real-space
+!$OMP PARALLEL WORKSHARE
   zfft(:)=dble(zfft(:))*cfunir(:)
+!$OMP END PARALLEL WORKSHARE
 else
 ! multiply potential by characteristic function in real-space
+!$OMP PARALLEL WORKSHARE
   zfft(:)=vsir(:)*cfunir(:)
+!$OMP END PARALLEL WORKSHARE
 end if
 ! Fourier transform to G-space
 call zfftifc(3,ngridg,-1,zfft)

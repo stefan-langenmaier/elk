@@ -37,10 +37,10 @@ implicit none
 logical tsqaz
 integer nsk(3),ik,jk,ist,iw
 integer nsd,ispn,jspn,is,ia,ias
-integer lmmax,l0,l1,l,m,lm
+integer lmmax,l0,l1,l,m,lm,ld
 real(8) dw,th,sps(2),vl(3),vc(3)
 real(8) v1(3),v2(3),v3(3),t1
-complex(8) su2(2,2),dm1(2,2),dm2(2,2)
+complex(8) su2(2,2),b(2,2),c(2,2)
 character(256) fname
 ! low precision for band/spin character array saves memory
 real(4), allocatable :: bc(:,:,:,:,:),sc(:,:,:)
@@ -48,17 +48,16 @@ real(8), allocatable :: w(:),e(:,:,:),f(:,:)
 real(8), allocatable :: g(:),dt(:,:),dp(:,:,:)
 real(8), allocatable :: elm(:,:)
 complex(8), allocatable :: ulm(:,:,:),a(:,:)
-complex(8), allocatable :: dmat(:,:,:,:,:)
-complex(8), allocatable :: sdmat(:,:,:)
+complex(8), allocatable :: dmat(:,:,:,:,:),sdmat(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 ! always use the second-variational states (avoids confusion for RDMFT)
 tevecsv=.true.
 ! initialise universal variables
 call init0
 call init1
 lmmax=(lmaxdos+1)**2
+ld=lmmax*nspinor
 if (dosssum) then
   nsd=1
 else
@@ -118,17 +117,15 @@ else
 end if
 ! begin parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(apwalm,evecfv,evecsv) &
-!$OMP PRIVATE(dmat,sdmat,a,jk,ispn,jspn) &
-!$OMP PRIVATE(vl,vc,is,ia,ias) &
-!$OMP PRIVATE(ist,lm,dm1,dm2,t1)
+!$OMP PRIVATE(apwalm,evecfv,evecsv,dmat,sdmat,a) &
+!$OMP PRIVATE(jk,ispn,jspn,vl,vc) &
+!$OMP PRIVATE(is,ia,ias,ist,lm,b,c,t1)
 !$OMP DO
 do ik=1,nkptnr
   allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv,nspnfv),evecsv(nstsv,nstsv))
-  allocate(dmat(lmmax,lmmax,nspinor,nspinor,nstsv))
-  allocate(sdmat(nspinor,nspinor,nstsv))
-  allocate(a(lmmax,lmmax))
+  allocate(dmat(lmmax,nspinor,lmmax,nspinor,nstsv))
+  allocate(sdmat(nspinor,nspinor,nstsv),a(lmmax,lmmax))
 ! equivalent reduced k-point
   jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! loop over first-variational spins
@@ -164,9 +161,9 @@ do ik=1,nkptnr
           do ispn=1,nspinor
             do jspn=1,nspinor
               call zgemm('N','N',lmmax,lmmax,lmmax,zone,ulm(:,:,ias),lmmax, &
-               dmat(:,:,ispn,jspn,ist),lmmax,zzero,a,lmmax)
+               dmat(:,ispn,1,jspn,ist),ld,zzero,a,lmmax)
               call zgemm('N','C',lmmax,lmmax,lmmax,zone,a,lmmax,ulm(:,:,ias), &
-               lmmax,zzero,dmat(:,:,ispn,jspn,ist),lmmax)
+               lmmax,zzero,dmat(:,ispn,1,jspn,ist),ld)
             end do
           end do
         end do
@@ -175,10 +172,10 @@ do ik=1,nkptnr
       if (spinpol.and.(.not.tsqaz)) then
         do ist=1,nstsv
           do lm=1,lmmax
-            dm1(:,:)=dmat(lm,lm,:,:,ist)
-            call z2mm(su2,dm1,dm2)
-            call z2mmct(dm2,su2,dm1)
-            dmat(lm,lm,:,:,ist)=dm1(:,:)
+            b(:,:)=dmat(lm,:,lm,:,ist)
+            call z2mm(su2,b,c)
+            call z2mmct(c,su2,b)
+            dmat(lm,:,lm,:,ist)=b(:,:)
           end do
         end do
       end if
@@ -186,7 +183,7 @@ do ik=1,nkptnr
       do ist=1,nstsv
         do ispn=1,nspinor
           do lm=1,lmmax
-            t1=dble(dmat(lm,lm,ispn,ispn,ist))
+            t1=dble(dmat(lm,ispn,lm,ispn,ist))
             bc(lm,ispn,ias,ist,ik)=real(t1)
           end do
         end do
@@ -198,8 +195,8 @@ do ik=1,nkptnr
 ! spin rotate the density matrices to desired spin-quantisation axis
   if (spinpol.and.(.not.tsqaz)) then
     do ist=1,nstsv
-      call z2mm(su2,sdmat(:,:,ist),dm1)
-      call z2mmct(dm1,su2,sdmat(:,:,ist))
+      call z2mm(su2,sdmat(:,:,ist),b)
+      call z2mmct(b,su2,sdmat(:,:,ist))
     end do
   end if
   do ist=1,nstsv

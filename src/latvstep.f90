@@ -9,7 +9,7 @@ use modmpi
 use modstore
 implicit none
 integer i
-real(8) a(3,3),t1
+real(8) t1
 do i=1,nstrain
 ! compute product of current and previous stress tensor components
   t1=stress(i)*stressp(i)
@@ -20,14 +20,15 @@ do i=1,nstrain
     taulatv(i)=tau0latv
   end if
   t1=taulatv(i)*(stress(i)+stressp(i))
-  call r3mm(avec,strain(:,:,i),a)
-  avec(:,:)=avec(:,:)-t1*a(:,:)
+  avec(:,:)=avec(:,:)-t1*strain(:,:,i)
 end do
+! compute the new unit cell volume
+call reciplat
 ! scale the vectors to conserve volume if required
 if (latvopt.eq.2) then
-  call reciplat
   t1=(omega0/omega)**(1.d0/3.d0)
   avec(:,:)=t1*avec(:,:)
+  omega=omega0
 end if
 ! each MPI process should have identical lattice vectors
 call mpi_bcast(avec,9,mpi_double_precision,0,mpi_comm_kpt,ierror)

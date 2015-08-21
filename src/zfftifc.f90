@@ -27,58 +27,8 @@ integer, intent(in) :: nd
 integer, intent(in) :: n(nd)
 integer, intent(in) :: sgn
 complex(8), intent(inout) :: z(*)
-
-!----------------------------------------!
-!     interface to modified FFTPACK5     !
-!----------------------------------------!
+! interface to modified FFTPACK5
 call cfftnd(nd,n,sgn,z)
-
-!-------------------------------------!
-!     interface to FFTW version 3     !
-!-------------------------------------!
-!integer, parameter :: FFTW_ESTIMATE=64
-!integer i,p
-!integer(8) plan
-!real(8) t1
-!!$OMP CRITICAL
-!call dfftw_plan_dft(plan,nd,n,z,z,sgn,FFTW_ESTIMATE)
-!!$OMP END CRITICAL
-!call dfftw_execute(plan)
-!!$OMP CRITICAL
-!call dfftw_destroy_plan(plan)
-!!$OMP END CRITICAL
-!if (sgn.eq.-1) then
-!  p=1
-!  do i=1,nd
-!    p=p*n(i)
-!  end do
-!  t1=1.d0/dble(p)
-!  call zdscal(p,t1,z,1)
-!end if
-
-!----------------------------------!
-!     interface to MKL 8.1/9.1     !
-!----------------------------------!
-! (with thanks to Torbjorn Bjorkman)
-!use MKL_DFTI ! this module required by MKL
-!integer status,i,p
-!real(8) t1
-!type(DFTI_DESCRIPTOR), POINTER :: handle
-!p=1
-!do i=1,nd
-!  p=p*n(i)
-!end do
-!t1=1.d0/dble(p)
-!status=DftiCreateDescriptor(handle,DFTI_DOUBLE,DFTI_COMPLEX,nd,n)
-!status=DftiSetValue(handle,DFTI_FORWARD_SCALE,t1)
-!status=DftiCommitDescriptor(handle)
-!if (sgn.eq.-1) then
-!  status=DftiComputeForward(handle,z)
-!else
-!  status=DftiComputeBackward(handle,z)
-!end if
-!status=DftiFreeDescriptor(handle)
-
 return
 end subroutine
 !EOC

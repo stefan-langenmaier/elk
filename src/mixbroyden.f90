@@ -6,15 +6,10 @@
 subroutine mixbroyden(iscl,n,msd,alpha,w0,nu,mu,f,df,u,a,d)
 implicit none
 ! arguments
-integer, intent(in) :: iscl
-integer, intent(in) :: n
-integer, intent(in) :: msd
-real(8), intent(in) :: alpha
-real(8), intent(in) :: w0
-real(8), intent(inout) :: nu(n)
-real(8), intent(inout) :: mu(n,2)
-real(8), intent(inout) :: f(n,2)
-real(8), intent(inout) :: df(n,msd)
+integer, intent(in) :: iscl,n,msd
+real(8), intent(in) :: alpha,w0
+real(8), intent(inout) :: nu(n),mu(n,2)
+real(8), intent(inout) :: f(n,2),df(n,msd)
 real(8), intent(inout) :: u(n,msd)
 real(8), intent(inout) :: a(msd,msd)
 real(8), intent(out) :: d
@@ -41,9 +36,10 @@ if (msd.lt.2) then
   write(*,*)
   stop
 end if
-if (iscl.le.1) then
-  mu(:,1)=nu(:)
-  mu(:,2)=nu(:)
+! initialise mixer
+if (iscl.le.0) then
+  call dcopy(n,nu,1,mu(:,1),1)
+  call dcopy(n,nu,1,mu(:,2),1)
   f(:,1)=0.d0
   df(:,1)=0.d0
   u(:,1)=0.d0
@@ -52,20 +48,20 @@ if (iscl.le.1) then
   return
 end if
 ! current subspace dimension
-m=min(iscl,msd)
+m=min(iscl+1,msd)
 ! current index modulo m
-jc=mod(iscl-1,m)+1
+jc=mod(iscl,m)+1
 ! previous index modulo 2
-kp=mod(iscl-2,2)+1
+kp=mod(iscl-1,2)+1
 ! current index modulo 2
-kc=mod(iscl-1,2)+1
+kc=mod(iscl,2)+1
 f(:,kc)=nu(:)-mu(:,kp)
 d=sum(f(:,kc)**2)
 d=sqrt(d/dble(n))
 df(:,jc)=f(:,kc)-f(:,kp)
 t1=dnrm2(n,df(:,jc),1)
 if (t1.gt.1.d-8) t1=1.d0/t1
-df(:,jc)=t1*df(:,jc)
+call dscal(n,t1,df(:,jc),1)
 u(:,jc)=alpha*df(:,jc)+t1*(mu(:,kp)-mu(:,kc))
 do k=1,m
   c(k)=ddot(n,df(:,k),1,f(:,kc),1)
@@ -95,10 +91,9 @@ do l=1,m
 end do
 nu(:)=mu(:,kp)+alpha*f(:,kc)
 do l=1,m
-  t1=-gamma(l)
-  nu(:)=nu(:)+t1*u(:,l)
+  call daxpy(n,-gamma(l),u(:,l),1,nu,1)
 end do
-mu(:,kc)=nu(:)
+call dcopy(n,nu,1,mu(:,kc),1)
 return
 end subroutine
 

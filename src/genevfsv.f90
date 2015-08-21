@@ -22,8 +22,8 @@ do ik=1,nkpt
   allocate(evalfv(nstfv,nspnfv))
   allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
-! solve the first- and second-variational secular equations
-  call seceqn(ik,evalfv,evecfv,evecsv)
+! solve the first- and second-variational eigenvalue equations
+  call eveqn(ik,evalfv,evecfv,evecsv)
 ! write the eigenvalues/vectors to file
   call putevalfv(ik,evalfv)
   call putevalsv(ik,evalsv(:,ik))

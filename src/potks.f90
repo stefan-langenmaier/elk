@@ -28,6 +28,9 @@ call potcoul
 ! compute the exchange-correlation potential and fields
 call potxc
 ! effective potential from sum of Coulomb and exchange-correlation potentials
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(is,ir)
+!$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
 ! inner part of muffin-tin: l <= lmaxinr
@@ -40,7 +43,11 @@ do ias=1,natmtot
     vsmt(:,ir,ias)=vclmt(:,ir,ias)+vxcmt(:,ir,ias)
   end do
 end do
+!$OMP END DO
+!$OMP END PARALLEL
+!$OMP PARALLEL WORKSHARE
 vsir(:)=vclir(:)+vxcir(:)
+!$OMP END PARALLEL WORKSHARE
 ! generate the Kohn-Sham effective magnetic fields
 call bfieldks
 call timesec(ts1)

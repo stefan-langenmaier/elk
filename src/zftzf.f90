@@ -12,8 +12,7 @@ real(8), intent(in) :: gpc(ngp)
 complex(8), intent(in) :: ylmgp(lmmaxvr,ngp)
 integer, intent(in) :: ld
 complex(8), intent(in) :: sfacgp(ld,natmtot)
-complex(8), intent(in) :: zfmt(lmmaxvr,nrcmtmax,natmtot)
-complex(8), intent(in) :: zfir(ngtot)
+complex(8), intent(in) :: zfmt(lmmaxvr,nrcmtmax,natmtot),zfir(ngtot)
 complex(8), intent(out) :: zfgp(ngp)
 ! local variables
 integer is,ia,ias,ig
@@ -46,8 +45,13 @@ do ig=1,ngp
     nrci=nrcmtinr(is)
 ! generate spherical Bessel functions
     do irc=1,nrc
+      if (irc.le.nrci) then
+        lmax=lmaxinr
+      else
+        lmax=lmaxvr
+      end if
       t1=gpc(ig)*rcmt(irc,is)
-      call sbessel(lmaxvr,t1,jl(:,irc))
+      call sbessel(lmax,t1,jl(:,irc))
     end do
     do ia=1,natoms(is)
       ias=idxas(ia,is)

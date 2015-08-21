@@ -1,0 +1,100 @@
+
+! Input file for a very well convered hcp osmium calculation. This is the result
+! of very careful comparisons with Wien2k to determine the true GGA equilibrium
+! volume and bulk modulus. With thanks to Maric Dulak.
+
+! See: https://sourceforge.net/p/elk/discussion/897820/thread/aecdbcf1/#cb4d
+
+tasks
+ 0
+
+spinorb
+ .true.
+
+mixtype
+ 3
+
+epspot
+ 1.e-7
+
+xctype
+ 20
+
+rgkmax
+ 8.5
+
+gmaxvr
+ 18.0
+
+lmaxapw
+ 10
+
+lmaxvr
+ 8
+
+lmaxmat
+ 10
+
+fracinr
+ 0.01
+
+ngridk
+ 12 12 12
+
+swidth
+ 0.001
+
+stype
+ 1
+
+! parameters used on Elk forum
+avec
+ 5.21365943 0.00000000 0.00000000
+ 2.60682972 4.51516152 0.00000000
+ 0.00000000 0.00000000 8.23342262
+
+! Journal of Physics: Conference Series 410 (2013) 012049
+!avec
+! 5.23321858 0.00000000 0.00000000
+! 2.61660929 4.53210023 0.00000000
+! 0.00000000 0.00000000 8.25356786
+
+atoms
+ 1
+ 'Os.in'
+ 2
+ 0.00000000000000 0.00000000000000 0.0
+ 0.33333333333333 0.33333333333333 0.5
+
+ecvcut
+ -3.5
+
+species
+  76
+ 'Os' 'osmium'
+  190.23
+  2.4
+  22
+  1  0  1  2
+  2  0  1  2
+  2  1  1  2
+  2  1  2  4
+  3  0  1  2
+  3  1  1  2
+  3  1  2  4
+  3  2  2  4
+  3  2  3  6
+  4  0  1  2
+  4  1  1  2
+  4  1  2  4
+  4  2  2  4
+  4  2  3  6
+  4  3  3  6
+  4  3  4  8
+  5  0  1  2
+  5  1  1  2
+  5  1  2  4
+  5  2  2  4
+  5  2  3  2
+  6  0  1  2
+

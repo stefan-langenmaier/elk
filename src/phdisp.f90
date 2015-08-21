@@ -5,9 +5,10 @@
 
 subroutine phdisp
 use modmain
+use modphonon
 implicit none
 ! local variables
-integer nb,iq,i,iv
+integer iq,i,iv
 real(8) wmin,wmax
 ! allocatable arrays
 real(8), allocatable :: wp(:,:)
@@ -16,12 +17,11 @@ complex(8), allocatable :: dynp(:,:),ev(:,:)
 ! initialise universal variables
 call init0
 call init2
-nb=3*natmtot
-allocate(wp(nb,npp1d))
-allocate(dynq(nb,nb,nqpt))
-allocate(dynr(nb,nb,nqptnr))
-allocate(dynp(nb,nb))
-allocate(ev(nb,nb))
+allocate(wp(nbph,npp1d))
+allocate(dynq(nbph,nbph,nqpt))
+allocate(dynr(nbph,nbph,nqptnr))
+allocate(dynp(nbph,nbph))
+allocate(ev(nbph,nbph))
 ! read in the dynamical matrices
 call readdyn(dynq)
 ! apply the acoustic sum rule
@@ -37,9 +37,9 @@ do iq=1,npp1d
 ! compute the dynamical matrix at this particular q-point
   call dynrtoq(vplp1d(:,iq),dynr,dynp)
 ! find the phonon frequencies and eigenvectors
-  call dyndiag(dynp,wp(:,iq),ev)
+  call dynev(dynp,wp(:,iq),ev)
   wmin=min(wmin,wp(1,iq))
-  wmax=max(wmax,wp(nb,iq))
+  wmax=max(wmax,wp(nbph,iq))
 end do
 wmax=wmax+(wmax-wmin)*0.5d0
 wmin=wmin-(wmax-wmin)*0.5d0
@@ -53,7 +53,7 @@ end do
 close(50)
 ! output the phonon dispersion
 open(50,file='PHDISP.OUT',action='WRITE',form='FORMATTED')
-do i=1,nb
+do i=1,nbph
   do iq=1,npp1d
     write(50,'(2G18.10)') dpp1d(iq),wp(i,iq)
   end do

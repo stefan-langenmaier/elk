@@ -11,10 +11,12 @@ integer, intent(in) :: ik
 real(8), intent(inout) :: taumt(lmmaxvr,nrmtmax,natmtot,nspinor)
 real(8), intent(inout) :: tauir(ngtot,nspinor)
 ! local variables
-integer ispn,jspn,ist,is,ias
-integer nr,nri,nrc,nrci
+integer ispn,jspn,nst,ist,jst
+integer is,ias,nr,nri,nrc,nrci
 integer ir,irc,igk,ifg,i
 real(8) t0
+! automatic arrays
+integer idx(nstsv)
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
@@ -22,10 +24,6 @@ complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 complex(8), allocatable :: gzfmt(:,:,:),zfmt(:,:),zfft(:)
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
-allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir(ngkmax,nspinor,nstsv))
-allocate(gzfmt(lmmaxvr,nrcmtmax,3),zfmt(lmmaxvr,nrcmtmax))
-allocate(zfft(ngtot))
 ! find the matching coefficients
 do ispn=1,nspnfv
   call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -34,15 +32,27 @@ end do
 ! get the eigenvectors from file
 call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
 call getevecsv(vkl(:,ik),evecsv)
+! count and index the occupied states
+nst=0
+do ist=1,nstsv
+  if (abs(occsv(ist,ik)).gt.epsocc) then
+    nst=nst+1
+    idx(nst)=ist
+  end if
+end do
 ! calculate the second-variational wavefunctions for all states
-call genwfsv(.true.,.true.,.true.,ngk(:,ik),igkig(:,:,ik),occsv(:,ik), &
- apwalm,evecfv,evecsv,wfmt,ngkmax,wfir)
+allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst))
+allocate(wfir(ngkmax,nspinor,nst))
+call genwfsv(.true.,.true.,nst,idx,ngk(:,ik),igkig(:,:,ik),apwalm,evecfv, &
+ evecsv,wfmt,ngkmax,wfir)
+deallocate(apwalm,evecfv,evecsv)
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
-do ist=1,nstsv
-  if (abs(occsv(ist,ik)).lt.epsocc) cycle
-  t0=0.5d0*wkpt(ik)*occsv(ist,ik)
+allocate(gzfmt(lmmaxvr,nrcmtmax,3),zfmt(lmmaxvr,nrcmtmax))
+do ist=1,nst
+  jst=idx(ist)
+  t0=0.5d0*wkpt(ik)*occsv(jst,ik)
   do ispn=1,nspinor
     do ias=1,natmtot
       is=idxis(ias)
@@ -75,12 +85,14 @@ do ist=1,nstsv
     end do
   end do
 end do
+deallocate(wfmt,gzfmt,zfmt)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
-do ist=1,nstsv
-  if (abs(occsv(ist,ik)).lt.epsocc) cycle
-  t0=0.5d0*wkpt(ik)*occsv(ist,ik)/omega
+allocate(zfft(ngtot))
+do ist=1,nst
+  jst=idx(ist)
+  t0=0.5d0*wkpt(ik)*occsv(jst,ik)/omega
   do ispn=1,nspinor
     jspn=jspnfv(ispn)
     do i=1,3
@@ -99,8 +111,7 @@ do ist=1,nstsv
     end do
   end do
 end do
-deallocate(apwalm,evecfv,evecsv)
-deallocate(wfmt,wfir,gzfmt,zfmt,zfft)
+deallocate(wfir,zfft)
 return
 end subroutine
 

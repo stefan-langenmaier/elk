@@ -52,7 +52,7 @@ if ((present(iva)).or.(present(rva)).or.(present(zva)).or.(present(sva))) then
     end if
   end if
 end if
-open(90,file='VARIABLES.OUT',access='APPEND',form='FORMATTED')
+open(90,file='VARIABLES.OUT',position='APPEND',form='FORMATTED')
 write(90,*)
 write(90,'(A)',advance='NO') trim(vname)
 if (present(l)) write(90,'(I8)',advance='NO') l

@@ -20,8 +20,7 @@ real(8) function factr(n,d)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: n
-integer, intent(in) :: d
+integer, intent(in) :: n,d
 ! local variables
 integer i
 ! external functions

@@ -10,7 +10,7 @@ subroutine writeinfo(fnum)
 ! !USES:
 use modmain
 use modmpi
-use modldapu
+use moddftu
 use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   fnum : unit specifier for INFO.OUT file (in,integer)
@@ -20,7 +20,7 @@ use modrdm
 !
 ! !REVISION HISTORY:
 !   Created January 2003 (JKD)
-!   Updated with LDA+U quantities July 2009 (FC)
+!   Updated with DFT+U quantities July 2009 (FC)
 !EOP
 !BOC
 implicit none
@@ -147,17 +147,17 @@ if (spinsprl) then
   write(fnum,'("  q-vector length      : ",G18.10)') sqrt(vqcss(1)**2 &
    +vqcss(2)**2+vqcss(3)**2)
 end if
-if (fixspin.ne.0) then
-  write(fnum,'(" fixed spin moment (FSM) calculation, type : ",I4)') fixspin
-  if (fixspin.lt.0) then
+if (fsmtype.ne.0) then
+  write(fnum,'(" fixed spin moment (FSM) calculation, type : ",I4)') fsmtype
+  if (fsmtype.lt.0) then
     write(fnum,'("  only moment direction is fixed")')
   end if
 end if
-if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
+if ((abs(fsmtype).eq.1).or.(abs(fsmtype).eq.3)) then
   write(fnum,'("  fixing total moment to (Cartesian) :")')
   write(fnum,'("  ",3G18.10)') momfix
 end if
-if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
+if ((abs(fsmtype).eq.2).or.(abs(fsmtype).eq.3)) then
   write(fnum,'("  fixing local muffin-tin moments to (Cartesian) :")')
   do is=1,nspecies
     write(fnum,'("  species : ",I4," (",A,")")') is,trim(spsymb(is))
@@ -165,6 +165,10 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
       write(fnum,'("   ",I4,3G18.10)') ia,mommtfix(:,ia,is)
     end do
   end do
+end if
+if (ftmtype.ne.0) then
+  write(fnum,*)
+  write(fnum,'(" fixed tensor moment (FTM) calculation, type : ",I4)') ftmtype
 end if
 if (efieldpol) then
   write(fnum,*)
@@ -179,7 +183,7 @@ if (tsyminv) then
 else
   write(fnum,'("Crystal has no inversion symmetry")')
 end if
-if (tseqr) then
+if (tefvr) then
   write(fnum,'("Real symmetric eigensolver will be used")')
 else
   write(fnum,'("Complex Hermitian eigensolver will be used")')
@@ -250,10 +254,10 @@ if (lorbcnd) then
   write(fnum,'("Conduction state local-orbitals added automatically")')
 end if
 write(fnum,'("Total number of local-orbitals : ",I4)') nlotot
-if (tseqit) then
+if (tefvit) then
   write(fnum,*)
   write(fnum,'("Using iterative diagonalisation for the first-variational &
-   &secular equation")')
+   &eigenvalue equation")')
 end if
 write(fnum,*)
 if (task.eq.5) then
@@ -278,59 +282,58 @@ else if ((xcgrad.eq.1).or.(xcgrad.eq.2)) then
 else if (xcgrad.eq.3) then
   write(fnum,'(" meta-GGA; using kinetic energy density")')
 end if
-if (ldapu.ne.0) then
+if (dftu.ne.0) then
   write(fnum,*)
-  write(fnum,'("LDA+U calculation")')
-  if (ldapu.eq.1) then
+  write(fnum,'("DFT+U calculation")')
+  if (dftu.eq.1) then
     write(fnum,'(" fully localised limit (FLL)")')
     write(fnum,'(" see Phys. Rev. B 52, R5467 (1995)")')
-  else if (ldapu.eq.2) then
+  else if (dftu.eq.2) then
     write(fnum,'(" around mean field (AMF)")')
     write(fnum,'(" see Phys. Rev. B 49, 14211 (1994)")')
-  else if (ldapu.eq.3) then
+  else if (dftu.eq.3) then
     write(fnum,'(" interpolation between FLL and AMF")')
     write(fnum,'(" see Phys. Rev. B 67, 153106 (2003)")')
   else
     write(*,*)
-    write(*,'("Error(writeinfo): ldapu not defined : ",I8)') ldapu
+    write(*,'("Error(writeinfo): dftu not defined : ",I8)') dftu
     write(*,*)
     stop
   end if
-  do is=1,nspecies
-    l=llu(is)
-    if (l.ge.0) then
-      if (inptypelu.eq.1) then
-        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2,", U = ",F12.8, &
-         &", J = ",F12.8)') is,trim(spsymb(is)),llu(is),ujlu(1,is),ujlu(2,is)
-      else if (inptypelu.eq.2) then
-        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
-         trim(spsymb(is)),llu(is)
-        write(fnum,'(" Slater integrals are provided as input")')
-        do k=0,2*l,2
-          write(fnum,'(" F^(",I1,") = ",F12.8)') k,flu(k,is)
-        end do
-      else if (inptypelu.eq.3) then
-        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
-         trim(spsymb(is)),llu(is)
-        write(fnum,'(" Racah parameters are provided as input")')
-        do k=0,l
-          write(fnum,'(" E^(",I1,") = ",F12.8)') k,elu(k,is)
-        end do
-      else if (inptypelu.eq.4) then
-        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
-         trim(spsymb(is)),llu(is)
-        write(fnum,'(" Slater integrals are calculated by means of &
-         &Yukawa potential")')
-        write(fnum,'(" Yukawa potential screening length (a.u^-1) : ",F12.8)') &
-         lambdalu(is)
-      else if(inptypelu.eq.5) then
-        write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
-         trim(spsymb(is)),llu(is)
-        write(fnum,'(" Slater integrals are calculated by means of &
-         &Yukawa potential")')
-        write(fnum,'(" Yukawa potential screening length corresponds to &
-         &U = ",F12.8)') ulufix(is)
-      end if
+  do i=1,ndftu
+    is=idftu(1,i)
+    l=idftu(2,i)
+    if (inpdftu.eq.1) then
+      write(fnum,'(" species : ",I4," (",A,")",", l = ",I2,", U = ",F12.8, &
+       &", J = ",F12.8)') is,trim(spsymb(is)),l,ujdu(1,i),ujdu(2,i)
+    else if (inpdftu.eq.2) then
+      write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+       trim(spsymb(is)),l
+      write(fnum,'(" Slater integrals are provided as input")')
+      do k=0,2*l,2
+        write(fnum,'(" F^(",I1,") = ",F12.8)') k,fdu(k,i)
+      end do
+    else if (inpdftu.eq.3) then
+      write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+       trim(spsymb(is)),l
+      write(fnum,'(" Racah parameters are provided as input")')
+      do k=0,l
+        write(fnum,'(" E^(",I1,") = ",F12.8)') k,edu(k,i)
+      end do
+    else if (inpdftu.eq.4) then
+      write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+       trim(spsymb(is)),l
+      write(fnum,'(" Slater integrals are calculated by means of Yukawa &
+       &potential")')
+      write(fnum,'(" Yukawa potential screening length (a.u^-1) : ",F12.8)') &
+       lambdadu(i)
+    else if(inpdftu.eq.5) then
+      write(fnum,'(" species : ",I4," (",A,")",", l = ",I2)') is, &
+       trim(spsymb(is)),l
+      write(fnum,'(" Slater integrals are calculated by means of Yukawa &
+       &potential")')
+      write(fnum,'(" Yukawa potential screening length corresponds to U = ",&
+       &F12.8)') udufix(i)
     end if
   end do
 end if

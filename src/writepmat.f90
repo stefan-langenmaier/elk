@@ -20,12 +20,12 @@ use modmpi
 !BOC
 implicit none
 ! local variables
-integer ik,ispn,recl
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+integer ik,ist,ispn,recl
+! allocatable arrays
+integer, allocatable :: idx(:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: wfmt(:,:,:,:,:)
-complex(8), allocatable :: wfir(:,:,:)
+complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
 ! initialise universal variables
 call init0
@@ -38,6 +38,11 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
+! index to all states
+allocate(idx(nstsv))
+do ist=1,nstsv
+  idx(ist)=ist
+end do
 ! delete existing PMAT.OUT
 if (mp_mpi) then
   open(85,file='PMAT.OUT')
@@ -75,8 +80,8 @@ do ik=1,nkpt
      sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
   end do
 ! calculate the wavefunctions for all states
-  call genwfsv(.true.,.true.,.false.,ngk(:,ik),igkig(:,:,ik),occsv,apwalm, &
-   evecfv,evecsv,wfmt,ngkmax,wfir)
+  call genwfsv(.true.,.true.,nstsv,idx,ngk(:,ik),igkig(:,:,ik),apwalm,evecfv, &
+   evecsv,wfmt,ngkmax,wfir)
 ! calculate the momentum matrix elements
   call genpmat(ngk(:,ik),igkig(:,:,ik),vgkc(:,:,:,ik),wfmt,wfir,pmat)
 ! write the matrix elements to direct-access file
@@ -95,6 +100,7 @@ if (mp_mpi) then
   write(*,'("Info(writepmat):")')
   write(*,'(" momentum matrix elements written to file PMAT.OUT")')
 end if
+deallocate(idx)
 return
 end subroutine
 !EOC

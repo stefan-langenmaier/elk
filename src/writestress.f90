@@ -21,7 +21,7 @@ if (mp_mpi) then
   write(50,*)
   write(50,'("Lattice vector matrix, A, changed by")')
   write(50,*)
-  write(50,'("     A --> (1 + dt e_i) A,")')
+  write(50,'("     A --> A + e_i dt,")')
   write(50,*)
   write(50,'("where dt is an infinitesimal scalar and e_i is a strain tensor")')
   write(50,*)

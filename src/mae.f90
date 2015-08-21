@@ -9,52 +9,82 @@ use modmpi
 use modstore
 implicit none
 ! local variables
-integer itp,im(2)
-real(8), parameter :: bfm=2.d0
-real(8) em(2),de
-! automatic arrays
-real(8) tp(2,npmae)
+integer i,im(2)
+real(8) v(3),th,em(2),de
+real(8) a(3,3),b(3,3),c(3,3)
+! initialise global variables
+call init0
 ! store original parameters
+avec0(:,:)=avec(:,:)
 spinpol0=spinpol
 spinorb0=spinorb
+cmagz0=cmagz
 bfieldc00(:)=bfieldc0(:)
 reducebf0=reducebf
-fixspin0=fixspin
-momfix0(:)=momfix(:)
-! generate a spherical cover
-call sphcover(npmae,tp)
-! initialise from atomic densities for all ground-state runs
-trdstate=.false.
-! spin-orbit coupling must be enabled
+fsmtype0=fsmtype
+ptnucl0=ptnucl
+vkloff0(:)=vkloff(:)
+! enable spin-orbit coupling
 spinorb=.true.
+! enforce collinear magnetism in the z-direction
+cmagz=.true.
+! no fixed spin moment calculation: the crystal is rotated instead
+fsmtype=0
+! if task=28 then start from atomic densities; if task=29 read STATE.OUT
+if (task.eq.28) then
+  trdstate=.false.
+else
+  trdstate=.true.
+end if
+! finite nuclear radius
+ptnucl=.false.
+! zero k-point offset
+vkloff(:)=0.d0
+! start with large magnetic field
+bfieldc0(1:2)=0.d0
+bfieldc0(3)=-2.d0
 ! reduce the external magnetic field after each s.c. loop
 reducebf=0.75d0
-! global fixed spin moment direction
-fixspin=-1
+! generate the spin moment directions in (theta,phi) coordinates
+call gentpmae
 ! open MAE_INFO.OUT
-if (mp_mpi) open(71,file='MAE_INFO.OUT',action='WRITE',form='FORMATTED')
+if (mp_mpi) then
+  open(71,file='MAE_INFO.OUT',action='WRITE',form='FORMATTED')
+  write(71,*)
+  write(71,'("Scale factor of spin-orbit coupling term : ",G18.10)') socscf
+end if
 im(:)=1
 em(1)=1.d8
 em(2)=-1.d8
 ! loop over points on sphere
-do itp=1,npmae
+do i=1,npmae
   if (mp_mpi) then
-    write(*,'("Info(findmae): fixed spin moment direction ",I6," of ",I6)') &
-     itp,npmae
+    write(*,'("Info(mae): fixed spin moment direction ",I6," of ",I6)') i,npmae
   end if
-! set fixed spin moment direction
-  momfix(1)=sin(tp(1,itp))*cos(tp(2,itp))
-  momfix(2)=sin(tp(1,itp))*sin(tp(2,itp))
-  momfix(3)=cos(tp(1,itp))
-! large magnetic field in the opposite direction as fixed moment
-  bfieldc0(:)=-bfm*momfix(:)
+! rotate lattice vectors instead of moment (thanks to J. Glasbrenner,
+! K. Bussmann and I. Mazin)
+! first by -theta around the y-axis
+  v(:)=0.d0
+  v(2)=1.d0
+  th=-tpmae(1,i)
+  call axangrot(v,th,a)
+! then by -phi around the z-axis
+  v(:)=0.d0
+  v(3)=1.d0
+  th=-tpmae(2,i)
+  call axangrot(v,th,b)
+  call r3mm(b,a,c)
+  call r3mm(c,avec0,avec)
 ! run the ground-state calculation
   call gndstate
+! subsequent calculations should read the previous density
+  trdstate=.true.
+! make external magnetic field small
+  bfieldc0=0.01d0
   if (mp_mpi) then
     write(71,*)
-    write(71,'("Fixed spin moment direction point ",I6," of ",I6)') itp,npmae
-    write(71,'("Spherical coordinates of direction : ",2G18.10)') tp(:,itp)
-    write(71,'("Direction vector : ",3G18.10)') momfix(:)
+    write(71,'("Fixed spin moment direction point ",I6," of ",I6)') i,npmae
+    write(71,'("Spherical coordinates of direction : ",2G18.10)') tpmae(:,i)
     write(71,'("Calculated total moment magnitude : ",G18.10)') momtotm
     write(71,'("Total energy : ",G22.12)') engytot
     call flushifc(71)
@@ -62,12 +92,14 @@ do itp=1,npmae
 ! check for minimum and maximum total energy
   if (engytot.lt.em(1)) then
     em(1)=engytot
-    im(1)=itp
+    im(1)=i
   end if
   if (engytot.gt.em(2)) then
     em(2)=engytot
-    im(2)=itp
+    im(2)=i
   end if
+! delete the eigenvector files
+  call delevec
 end do
 ! magnetic anisotropy energy
 de=em(2)-em(1)
@@ -96,12 +128,15 @@ if (mp_mpi) then
   write(*,'(" Additional information written to MAE_INFO.OUT")')
 end if
 ! restore original input parameters
+avec(:,:)=avec0(:,:)
 spinpol=spinpol0
 spinorb=spinorb0
+cmagz=cmagz0
+fsmtype=fsmtype0
 bfieldc0(:)=bfieldc00(:)
 reducebf=reducebf0
-fixspin=fixspin0
-momfix(:)=momfix0(:)
+ptnucl=ptnucl0
+vkloff(:)=vkloff0(:)
 return
 end subroutine
 

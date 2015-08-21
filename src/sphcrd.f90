@@ -23,8 +23,7 @@ subroutine sphcrd(v,r,tp)
 implicit none
 ! arguments
 real(8), intent(in) :: v(3)
-real(8), intent(out) :: r
-real(8), intent(out) :: tp(2)
+real(8), intent(out) :: r,tp(2)
 ! local variables
 real(8), parameter :: pi=3.1415926535897932385d0
 real(8), parameter :: eps=1.d-14

@@ -70,7 +70,7 @@ use modmpi
 !   where $c^{l{\bf k}}$ are the second-variational coefficients, $w_{\bf k}$
 !   are the $k$-point weights, $n_{l{\bf k}}$ are the occupancies. See routines
 !   {\tt hmlaa}, {\tt olpaa}, {\tt hmlalo}, {\tt olpalo}, {\tt energy},
-!   {\tt seceqn} and {\tt gencfun}.
+!   {\tt eveqn} and {\tt gencfun}.
 !
 ! !REVISION HISTORY:
 !   Created January 2004 (JKD)
@@ -166,7 +166,7 @@ deallocate(grfmt)
 call timesec(ts1)
 timefor=timefor+ts1-ts0
 ! write total forces to test file
-call writetest(750,'total forces',nv=3*natmtot,tol=1.d-4,rva=forcetot)
+call writetest(750,'total forces',nv=3*natmtot,tol=1.d-3,rva=forcetot)
 return
 end subroutine
 !EOC

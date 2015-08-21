@@ -1,9 +1,9 @@
 
 ! FeAl in CsCl (B2) structure using LDA+U and interpolation between AMF and
-! FLL double counting (ldapu=3). Compare the total DOS and partial DOS with 
-! the one calculated with bare LDA. Note the opening of a gap and the increased
+! FLL double counting (dftu=3). Compare the total DOS and partial DOS with the
+! one calculated with bare LDA. Note the opening of a gap and the increased
 ! localization of Fe d-electrons. Note the interpolation factor in file
-! ALPHALU.OUT about 0.1, this  value is a sign of a weakly correlated compound
+! ALPHADU.OUT about 0.1, this  value is a sign of a weakly correlated compound
 ! (see PRB 67, 153106 (2003)).
 ! Example created by Fredrik Bultmark, Francesco Cricchio and Lars Nordstrom.
 
@@ -11,20 +11,17 @@ tasks
   0
   10
 
-! LDA+U block
-! here an interpolation between AMF and FLL double counting is used (ldapu=3)
-! inptypelu=1 corresponds to provide U and J as input
-! llu(is) represents the l-shell we would like to apply LDA+U
-! ujlu(1,is) is U in htr
-! ujlu(2,is) is J in htr
-lda+u
-  3 1                      : ldapu,inptypelu
-  1 2  0.183 0.034911967   : is,llu(is),ujlu(1,is),ujlu(2,is)
+! DFT+U block
+! here an interpolation between AMF and FLL double counting is used (dftu=3)
+! inpdftu=1 corresponds to provide U and J as input
+dft+u
+  3 1                      : dftu,inpdftu
+  1 2  0.183 0.034911967   : is, l, U, J
 
 spinpol
   .true.
 
-! small field along z to break symmetry 
+! small field along z to break symmetry
 bfieldc
   0.0 0.0 -0.01
 

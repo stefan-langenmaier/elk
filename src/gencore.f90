@@ -61,13 +61,8 @@ do is=1,nspecies
     end if
 ! loop over spin channels
     do ispn=1,nspncr
-      if (frozencr) then
-! use atomic potential for the frozen core approximation
-        vr(1:nr)=spvr(1:nr,is)
-      else
-! else use the spherical part of the crystal Kohn-Sham potential
-        vr(1:nr)=vsmt(1,1:nr,ias)*y00
-      end if
+! use the spherical part of the crystal Kohn-Sham potential
+      vr(1:nr)=vsmt(1,1:nr,ias)*y00
 ! spin-up and -down potentials for polarised core
       if (spincore) then
         if (ispn.eq.1) then

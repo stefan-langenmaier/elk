@@ -11,7 +11,7 @@
 !
 ! Similarly, the real parts of the epsilon and sigma tensor are related to the
 ! Faraday effect. A much larger number of k-points is necessary for a well
-! converged spectrum. 
+! converged spectrum.
 
 ! Example by Markus Meinert.
 

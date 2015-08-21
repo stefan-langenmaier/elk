@@ -67,9 +67,8 @@ do is=1,nspecies
     ias=idxas(ia,is)
     do ig=1,ngvec
       ifg=igfft(ig)
-!$OMP CRITICAL
+!$OMP ATOMIC
       zfft(ifg)=zfft(ifg)+ffg(ig)*conjg(sfacg(ig,ias))
-!$OMP END CRITICAL
     end do
   end do
   deallocate(fr,gr,ffg)

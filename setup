@@ -18,14 +18,18 @@ GETSYS ()
   clear
   echo "Choose compiler:"
   echo
-  echo " 1. Intel Fortran (ifort) with OpenMP"
-  echo " 2. GNU Fortran (gfortran) with OpenMP"
-  echo " 3. Portland Group Fortran (pgf90) with OpenMP"
-  echo " 4. G95 (g95)"
-  echo " 5. NAG Fortran (nagfor)"
-  echo " 6. IBM Fortran (xlf90_r) with OpenMP"
+  echo "  1. Intel Fortran (ifort) with OpenMP"
+  echo "  2. GNU Fortran (gfortran) with OpenMP"
+  echo "  3. Portland Group Fortran (pgf90) with OpenMP"
+  echo "  4. G95 (g95)"
+  echo "  5. NAG Fortran (nagfor)"
+  echo "  6. IBM Fortran (xlf90_r) with OpenMP"
   echo
-  echo " o. Other       x. Exit"
+  echo " 20. Intel Fortran profiling (debug only)"
+  echo " 21. GNU Fortran code check (debug only)"
+  echo " 22. G95 code check (debug only)"
+  echo
+  echo "  o. Other       x. Exit"
   echo
   read SYS
   if [ "$SYS" = x ] ; then
@@ -69,6 +73,21 @@ GETSYS ()
     F90_OPTS="-O3 -qsmp=omp"
     F77=$F90
     F77_OPTS=$F90_OPTS
+  elif [ "$SYS" = 20 ] ; then
+    F90="ifort"
+    F90_OPTS="-O3 -ip -unroll -no-prec-div -g -p"
+    F77=$F90
+    F77_OPTS=$F90_OPTS
+  elif [ "$SYS" = 21 ] ; then
+    F90="gfortran"
+    F90_OPTS="-O3 -fopenmp -fcheck=all -finit-real=snan -Wextra -Wall"
+    F77=$F90
+    F77_OPTS=$F90_OPTS
+  elif [ "$SYS" = 22 ] ; then
+    F90="g95"
+    F90_OPTS="-O3 -Wall -std=f95 -pedantic -fbounds-check -fno-second-underscore -ftrace=full"
+    F77=$F90
+    F77_OPTS="-O3 -fno-second-underscore"
   else
     GETSYS
   fi
@@ -77,19 +96,22 @@ GETSYS ()
 GETSYS
 
 # produce the make.inc file
-echo "MAKE = $MAKE" > make.inc
+echo > make.inc
+echo "MAKE = $MAKE" >> make.inc
 echo "F90 = $F90" >> make.inc
 echo "F90_OPTS = $F90_OPTS" >> make.inc
 echo "F77 = $F77" >> make.inc
 echo "F77_OPTS = $F77_OPTS" >> make.inc
 echo "AR = $AR" >> make.inc
 echo "LIB_SYS = $LIB_SYS" >> make.inc
+echo "# LAPACK and BLAS libraries" >> make.inc
 echo "LIB_LPK = $LIB_LPK" >> make.inc
 echo "LIB_FFT = $LIB_FFT" >> make.inc
+cat make.def >> make.inc
 
 echo
-echo "You can now edit the compiler options in 'make.inc' to include optimised"
-echo "BLAS/LAPACK/FFT libraries, as well as enabling MPI parallelisation."
+echo "You can now edit the compiler options in 'make.inc' to use optimised"
+echo "BLAS/LAPACK/FFT libraries, MPI parallelisation and Libxc."
 echo "See the Elk manual for details."
 echo
 echo "Then run 'make' to compile the code."

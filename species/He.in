@@ -1,21 +1,21 @@
  'He'                                       : spsymb
  'helium'                                   : spname
   -2.00000                                  : spzn
-   7296.297093                              : spmass
-  0.141421E-05    1.4000   22.5572   200    : sprmin, rmt, sprmax, nrmt
+   7296.297095                              : spmass
+  0.141421E-05    1.4000   24.1776   200    : sprmin, rmt, sprmax, nrmt
    1                                        : spnst
    1   0   1   2.00000    F                 : spn, spl, spk, spocc, spcore
    1                                        : apword
-  0.1500   0  F                             : apwe0, apwdm, apwve
+    0.1500   0  F                           : apwe0, apwdm, apwve
    0                                        : nlx
    3                                        : nlorb
    0   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    1   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    0   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -0.5703   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -0.5703   0  T

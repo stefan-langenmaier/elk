@@ -5,12 +5,13 @@
 
 subroutine dynsymapp(isym,vpl,dyn,dyns)
 use modmain
+use modphonon
 implicit none
 ! arguments
 integer, intent(in) :: isym
 real(8), intent(in) :: vpl(3)
-complex(8), intent(in) :: dyn(3*natmtot,3*natmtot)
-complex(8), intent(inout) :: dyns(3*natmtot,3*natmtot)
+complex(8), intent(in) :: dyn(nbph,nbph)
+complex(8), intent(inout) :: dyns(nbph,nbph)
 ! local variables
 integer is,ia,ja,ias,jas
 integer lspl,ilspl,i,j,k,l,m,n

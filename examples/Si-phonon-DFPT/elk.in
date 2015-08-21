@@ -7,7 +7,7 @@
 ! assembles all the pieces to construct the dynamical matrices throughout the
 ! Brillouin zone.
 
-! The final output (PHDISP.OUT and PHDLINES.OUT) is included for this example.
+! The final output (PHDISP.OUT and PHDLINES.OUT) is included with this example.
 
 tasks
   0
@@ -17,7 +17,7 @@ tasks
 ! scale the number of radial mesh points in the muffin-tins; this is so that
 ! gradients are accurately calculated
 nrmtscf
-  2
+  4
 
 ! limit the maximum number of self-consistent loops
 maxscl
@@ -25,7 +25,7 @@ maxscl
 
 ! phonon q-point grid
 ngridq
-  2  2  2
+  4  4  4
 
 ! k-point grid should be commensurate with the q-point grid
 ngridk

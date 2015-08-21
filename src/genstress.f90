@@ -10,39 +10,40 @@ use modstore
 implicit none
 ! local variables
 integer i
-real(8) a(3,3),et1,t1
+real(8) et0,t1
 ! store original parameters
 avec0(:,:)=avec(:,:)
-tshift0=tshift
-tshift=.false.
 tforce0=tforce
 tforce=.false.
-! generate the strain tensor
+! restore original symmetries
+call symmetry
+! generate the strain tensors
 call genstrain
+! zero the stress matrix
+stress(:)=0.d0
+! run the ground-state calculation
+call gndstate
+! check for stop signal
+if (tstop) goto 10
+! store the total energy
+et0=engytot
+! subsequent calculations will read STATE.OUT
+trdstate=.true.
 ! loop over strain tensors
 do i=1,nstrain
   if (mp_mpi) then
-    write(*,'("Info(genstress): strain tensor : ",I1)') i
+    write(*,'("Info(genstress): strain tensor ",I1," of ",I1)') i,nstrain
   end if
-! restore orginal lattice vectors and symmetries
-  avec(:,:)=avec0(:,:)
-  call symmetry
 ! displace lattice vectors
-  call r3mm(strain(:,:,i),avec,a)
-  avec(:,:)=avec(:,:)+deltast*a(:,:)
+  avec(:,:)=avec0(:,:)+deltast*strain(:,:,i)
 ! run the ground-state calculation
   call gndstate
-! subsequent calculations will read STATE.OUT
-  trdstate=.true.
-! store the total energy for the first displacement
-  et1=engytot
-! displace the lattice vector again
-  avec(:,:)=avec(:,:)+deltast*a(:,:)
-! run the ground-state calculation again
-  call gndstate
+! check for stop signal
+  if (tstop) goto 10
 ! compute the stress tensor component
-  stress(i)=(engytot-et1)/deltast
+  stress(i)=(engytot-et0)/deltast
 end do
+10 continue
 ! compute the maximum stress magnitude over all lattice vectors
 stressmax=0.d0
 do i=1,nstrain
@@ -51,7 +52,6 @@ do i=1,nstrain
 end do
 ! restore original parameters
 avec(:,:)=avec0(:,:)
-tshift=tshift0
 tforce=tforce0
 return
 end subroutine

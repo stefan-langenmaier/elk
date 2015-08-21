@@ -5,9 +5,10 @@
 
 subroutine phlwidth
 use modmain
+use modphonon
 implicit none
 ! local variables
-integer nb,i,j,iq,iv
+integer i,j,iq,iv
 integer lwork,info
 real(8) gmin,gmax
 ! allocatable arrays
@@ -20,17 +21,14 @@ complex(8), allocatable :: gmp(:,:),work(:)
 ! initialise universal variables
 call init0
 call init2
-nb=3*natmtot
-allocate(wq(nb))
-allocate(gq(nb,nqpt))
-allocate(gp(nb,npp1d))
-allocate(rwork(3*nb))
-allocate(dynq(nb,nb,nqpt))
-allocate(ev(nb,nb),b(nb,nb))
-allocate(gmq(nb,nb,nqpt))
-allocate(gmr(nb,nb,nqptnr))
-allocate(gmp(nb,nb))
-lwork=2*nb
+allocate(wq(nbph),gq(nbph,nqpt),gp(nbph,npp1d))
+allocate(rwork(3*nbph))
+allocate(dynq(nbph,nbph,nqpt))
+allocate(ev(nbph,nbph),b(nbph,nbph))
+allocate(gmq(nbph,nbph,nqpt))
+allocate(gmr(nbph,nbph,nqptnr))
+allocate(gmp(nbph,nbph))
+lwork=2*nbph
 allocate(work(lwork))
 ! read in the dynamical matrices
 call readdyn(dynq)
@@ -41,15 +39,15 @@ call readgamma(gq)
 ! loop over phonon q-points
 do iq=1,nqpt
 ! diagonalise the dynamical matrix
-  call dyndiag(dynq(:,:,iq),wq,ev)
+  call dynev(dynq(:,:,iq),wq,ev)
 ! construct a complex matrix from the phonon eigenvectors such that its
 ! eigenvalues squared are the phonon linewidths
-  do i=1,nb
-    do j=1,nb
+  do i=1,nbph
+    do j=1,nbph
       b(i,j)=sqrt(abs(gq(i,iq)))*conjg(ev(j,i))
     end do
   end do
-  call zgemm('N','N',nb,nb,nb,zone,ev,nb,b,nb,zzero,gmq(:,:,iq),nb)
+  call zgemm('N','N',nbph,nbph,nbph,zone,ev,nbph,b,nbph,zzero,gmq(:,:,iq),nbph)
 end do
 ! Fourier transform the gamma matrices to real-space
 call dynqtor(gmq,gmr)
@@ -62,11 +60,11 @@ do iq=1,npp1d
 ! compute the gamma matrix at this particular q-point
   call dynrtoq(vplp1d(:,iq),gmr,gmp)
 ! diagonalise the gamma matrix
-  call zheev('N','U',nb,gmp,nb,gp(:,iq),work,lwork,rwork,info)
+  call zheev('N','U',nbph,gmp,nbph,gp(:,iq),work,lwork,rwork,info)
 ! square the eigenvalues to recover the linewidths
   gp(:,iq)=gp(:,iq)**2
   gmin=min(gmin,gp(1,iq))
-  gmax=max(gmax,gp(nb,iq))
+  gmax=max(gmax,gp(nbph,iq))
 end do
 gmax=gmax+(gmax-gmin)*0.5d0
 gmin=gmin-(gmax-gmin)*0.5d0
@@ -80,7 +78,7 @@ end do
 close(50)
 ! output the phonon linewidth dispersion
 open(50,file='PHLWIDTH.OUT',action='WRITE',form='FORMATTED')
-do i=1,nb
+do i=1,nbph
   do iq=1,npp1d
     write(50,'(2G18.10)') dpp1d(iq),gp(i,iq)
   end do

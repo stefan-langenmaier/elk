@@ -12,8 +12,11 @@ implicit none
 real(8), intent(in) :: vmt(lmmaxvr,nrmtmax,natmtot),vir(ngtot)
 complex(8), intent(out) :: vmat(nstsv,nstsv,nkpt)
 ! local variables
-integer ik,ispn,is,ias,n,lp
-! local arrays
+integer ik,ist,ispn
+integer is,ias,n,lp
+! automatic arrays
+integer idx(nstsv)
+! allocatable arrays
 real(8), allocatable :: vmtc(:,:,:),virc(:)
 complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
@@ -31,6 +34,10 @@ end do
 !$OMP END PARALLEL
 ! multiply potential by characteristic function
 virc(:)=vir(:)*cfunir(:)
+! index to all states
+do ist=1,nstsv
+  idx(ist)=ist
+end do
 ! loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(apwalm,evecfv,evecsv) &
@@ -52,7 +59,7 @@ do ik=1,nkpt
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! calculate the wavefunctions for all states of the input k-point
-  call genwfsv(.false.,.false.,.false.,ngk(:,ik),igkig(:,:,ik),occsv,apwalm, &
+  call genwfsv(.false.,.false.,nstsv,idx,ngk(:,ik),igkig(:,:,ik),apwalm, &
    evecfv,evecsv,wfmt,ngtot,wfir)
   call genvmatk(vmtc,virc,wfmt,wfir,vmat(:,:,ik))
   deallocate(apwalm,evecfv,evecsv,wfmt,wfir)

@@ -44,9 +44,13 @@ if (spinpol) call symrvf(lradstp,magmt,magir)
 ! convert the density from a coarse to a fine radial mesh
 call rfmtctof(rhomt)
 ! convert the magnetisation from a coarse to a fine radial mesh
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
 do idm=1,ndmag
   call rfmtctof(magmt(:,:,:,idm))
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! add densities from each process and redistribute
 if (np_mpi.gt.1) then
   n=lmmaxvr*nrmtmax*natmtot

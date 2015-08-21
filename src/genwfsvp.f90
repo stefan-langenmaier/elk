@@ -3,17 +3,18 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genwfsvp(tsh,tgp,tocc,vpl,wfmt,ld,wfir)
+subroutine genwfsvp(tsh,tgp,nst,idx,vpl,wfmt,ld,wfir)
 use modmain
 implicit none
 ! arguments
-logical, intent(in) :: tsh,tgp,tocc
+logical, intent(in) :: tsh,tgp
+integer, intent(in) :: nst,idx(nst)
 real(8), intent(in) :: vpl(3)
-complex(8), intent(out) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
+complex(8), intent(out) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst)
 integer, intent(in) :: ld
-complex(8), intent(out) :: wfir(ld,nspinor,nstsv)
+complex(8), intent(out) :: wfir(ld,nspinor,nst)
 ! local variables
-integer ispn,igp,isym,ik
+integer ispn,igp
 real(8) vl(3),vc(3)
 ! automatic arrays
 integer ngp(nspnfv)
@@ -60,15 +61,8 @@ call getevecfv(vpl,vgpl,evecfv)
 deallocate(vgpl)
 allocate(evecsv(nstsv,nstsv))
 call getevecsv(vpl,evecsv)
-! find the equivalent reduced k-point if required
-if (tocc) then
-  call findkpt(vpl,isym,ik)
-else
-  ik=1
-end if
 ! calculate the second-variational wavefunctions
-call genwfsv(tsh,tgp,tocc,ngp,igpig,occsv(:,ik),apwalm,evecfv,evecsv,wfmt,ld, &
- wfir)
+call genwfsv(tsh,tgp,nst,idx,ngp,igpig,apwalm,evecfv,evecsv,wfmt,ld,wfir)
 deallocate(igpig,apwalm,evecfv,evecsv)
 return
 end subroutine

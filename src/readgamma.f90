@@ -5,9 +5,10 @@
 
 subroutine readgamma(gq)
 use modmain
+use modphonon
 implicit none
 ! arguments
-real(8), intent(out) :: gq(3*natmtot,nqpt)
+real(8), intent(out) :: gq(nbph,nqpt)
 ! local variables
 integer iq,i
 integer natmtot_,nqpt_,iq_,i_
@@ -64,7 +65,7 @@ do iq=1,nqpt
     write(*,*)
     stop
   end if
-  do i=1,3*natmtot
+  do i=1,nbph
     read(50,*) i_,gq(i,iq)
     if (i.ne.i_) then
       write(*,*)

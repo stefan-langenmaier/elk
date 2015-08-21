@@ -41,20 +41,18 @@ subroutine mixadapt(iscl,beta0,betamax,n,nu,mu,beta,f,d)
 implicit none
 ! arguments
 integer, intent(in) :: iscl
-real(8), intent(in) :: beta0
-real(8), intent(in) :: betamax
+real(8), intent(in) :: beta0,betamax
 integer, intent(in) :: n
-real(8), intent(inout) :: nu(n)
-real(8), intent(inout) :: mu(n)
-real(8), intent(inout) :: beta(n)
-real(8), intent(inout) :: f(n)
+real(8), intent(inout) :: nu(n),mu(n)
+real(8), intent(inout) :: beta(n),f(n)
 real(8), intent(out) :: d
 ! local variables
 integer i
 real(8) t1
 if (n.le.0) return
-if (iscl.le.1) then
-  mu(:)=nu(:)
+! initialise mixer
+if (iscl.le.0) then
+  call dcopy(n,nu,1,mu,1)
   f(:)=0.d0
   beta(:)=beta0
   d=1.d0

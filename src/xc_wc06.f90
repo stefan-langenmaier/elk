@@ -19,7 +19,6 @@ real(8), intent(out) :: vc(n)
 integer i
 real(8), parameter :: pi=3.1415926535897932385d0
 real(8), parameter :: thrd=1.d0/3.d0
-real(8), parameter :: thrd2=2.d0/3.d0
 ! default PBE beta
 real(8), parameter :: beta=0.06672455060314922d0
 ! maximum allowed |grad rho|

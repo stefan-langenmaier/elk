@@ -1,5 +1,5 @@
 
-! Copyright (C) 2009  F. Bultmark, F. Cricchio, L. Nordstrom and J. K. Dewhurst
+! Copyright (C) 2009 F. Bultmark, F. Cricchio, L. Nordstrom and J. K. Dewhurst.
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
@@ -47,8 +47,8 @@ integer, intent(in) :: k1,k2,k3
 integer n0,n1,n
 real(8) sum,t1,t2
 ! external functions
-real(8) factr,factnm,triangle
-external factr,factnm,triangle
+real(8) triangle,factnm,factr
+external triangle,factnm,factr
 wigner6j=0.d0
 if ((abs(j1-j2).gt.j3).or.((j1+j2).lt.j3)) return
 if ((abs(j1-k2).gt.k3).or.((j1+k2).lt.k3)) return
@@ -85,8 +85,8 @@ implicit none
 ! arguments
 integer, intent(in) :: a,b,c
 ! external functions
-real(8) factr,factnm
-external factr,factnm
+real(8) factnm,factr
+external factnm,factr
 triangle=factr(a+b-c,a+b+c+1)*factnm(a-b+c,1)*factnm(-a+b+c,1)
 return
 end function

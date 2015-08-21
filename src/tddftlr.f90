@@ -5,6 +5,7 @@
 
 subroutine tddftlr
 use modmain
+use modtddft
 use modmpi
 implicit none
 ! local variables
@@ -129,6 +130,7 @@ if (fxctype(1).eq.210) then
   end if
   if (mod(it,10).eq.0) then
     write(*,'("Info(tddftlr): done ",I4," bootstrap iterations")') it
+    write(*,'(" head of matrix v.f_xc : ",2G18.10)') vfxc(1,1,1)
   end if
 ! check for convergence
   t1=abs(vfxcp)-abs(vfxc(1,1,1))

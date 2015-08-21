@@ -21,7 +21,7 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,ia,ias,nr,ir
+integer is,ia,ias,nr
 real(8) t1
 complex(8) zrho0
 ! automatic arrays
@@ -30,13 +30,17 @@ real(8) vn(nrmtmax)
 complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
 complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
 allocate(zrhomt(lmmaxvr,nrmtmax,natmtot))
-allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
 ! convert real muffin-tin charge density to complex spherical harmonic expansion
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
+!$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
   call rtozfmt(nrmt(is),nrmtinr(is),1,rhomt(:,:,ias),1,zrhomt(:,:,ias))
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! solve the complex Poisson's equation in the muffin-tins
+allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
 call genzvclmt(nrmt,nrmtinr,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
 deallocate(zrhomt)
 ! add the nuclear monopole potentials
@@ -46,9 +50,7 @@ do is=1,nspecies
   call potnucl(ptnucl,nr,spr(:,is),spzn(is),vn)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    do ir=1,nr
-      zvclmt(1,ir,ias)=zvclmt(1,ir,ias)+t1*vn(ir)
-    end do
+    zvclmt(1,1:nr,ias)=zvclmt(1,1:nr,ias)+t1*vn(1:nr)
   end do
 end do
 ! store real interstitial charge density in complex array
@@ -59,12 +61,16 @@ allocate(zvclir(ngtot))
 call zpotcoul(nrmt,nrmtinr,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax, &
  zvclmt,zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
+!$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
   call ztorfmt(nrmt(is),nrmtinr(is),1,zvclmt(:,:,ias),1,vclmt(:,:,ias))
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! store complex interstitial potential in real array
-vclir(:)=dble(zvclir(:))
+call dcopy(ngtot,zvclir,2,vclir,1)
 deallocate(zrhoir,zvclmt,zvclir)
 ! apply constant electric field if required
 if (efieldpol) call potefield

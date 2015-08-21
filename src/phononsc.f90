@@ -11,7 +11,7 @@ implicit none
 ! local variables
 integer is,ia,ja,ias,jas
 integer ip,nph,i,p
-real(8) dph,a,b,t1
+real(8) a,b,t1
 real(8) ft1(3,maxatoms*maxspecies)
 complex(8) z1,z2
 ! allocatable arrays
@@ -100,8 +100,8 @@ else
 end if
 ! loop over cos and sin displacements
 do p=0,nph
-! generate the supercell
-  call genscph(p,deltaph)
+! generate the supercell with negative displacement
+  call genscph(p,-deltaph)
 ! run the ground-state calculation
   call gndstate
 ! subsequent calculations will read in this supercell potential
@@ -114,16 +114,15 @@ do p=0,nph
   allocate(vsmt1(lmmaxvr,nrmtmax,natmtot),vsir1(ngtot))
   vsmt1(:,:,:)=vsmt(:,:,:)
   vsir1(:)=vsir(:)
-! generate the supercell again with twice the displacement
-  dph=deltaph+deltaph
-  call genscph(p,dph)
+! generate the supercell again with positive displacement
+  call genscph(p,deltaph)
 ! run the ground-state calculation again
   call gndstate
 ! compute the complex Kohn-Sham potential derivative with implicit q-phase
   call phdvs(p,vsmt1,vsir1)
   deallocate(vsmt1,vsir1)
 ! Fourier transform the force differences to obtain the dynamical matrix
-  z1=1.d0/(dble(nscph)*deltaph)
+  z1=1.d0/(dble(nscph)*2.d0*deltaph)
 ! multiply by i for sin-like displacement
   if (p.eq.1) z1=z1*zi
   ias=0

@@ -10,26 +10,28 @@ subroutine genpmat(ngp,igpig,vgpc,wfmt,wfir,pmat)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   ngp    : number of G+p-vectors (in,integer(nspnfv))
-!   igpig  : index from G+p-vectors to G-vectors (in,integer(ngkmax,nspnfv))
-!   vgpc   : G+p-vectors in Cartesian coordinates (in,real(3,ngkmax,nspnfv))
-!   wfmt   : muffin-tin wavefunction in spherical harmonics
-!            (in,complex(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-!   wfir   : interstitial wavefunction in plane wave basis
-!            (in,complex(ngkmax,nspinor,nstsv))
-!   pmat   : momentum matrix elements (out,complex(3,nstsv,nstsv))
+!   ngp   : number of G+p-vectors (in,integer(nspnfv))
+!   igpig : index from G+p-vectors to G-vectors (in,integer(ngkmax,nspnfv))
+!   vgpc  : G+p-vectors in Cartesian coordinates (in,real(3,ngkmax,nspnfv))
+!   wfmt  : muffin-tin wavefunction in spherical harmonics
+!           (in,complex(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+!   wfir  : interstitial wavefunction in plane wave basis
+!           (in,complex(ngkmax,nspinor,nstsv))
+!   pmat  : momentum matrix elements (out,complex(3,nstsv,nstsv))
 ! !DESCRIPTION:
 !   Calculates the momentum matrix elements
 !   $$ P_{ij}=\int d^3r\,\Psi_{i{\bf k}}^*({\bf r})\left(-i\nabla
 !    +\frac{1}{4c^2}\left[\vec{\sigma}\times\nabla V_s({\bf r})\right]\right)
 !    \Psi_{j{\bf k}}({\bf r}), $$
 !   where $V_s$ is the Kohn-Sham effective potential. The second term in the
-!   brackets is only calculated if spin-orbit coupling is enabled.
+!   brackets is only calculated if spin-orbit coupling is enabled. See Rathgen
+!   and Katsnelson, {\it Physica Scripta} {\bf T109}, 170 (2004).
 !
 ! !REVISION HISTORY:
 !   Created November 2003 (Sharma)
 !   Fixed bug found by Juergen Spitaler, September 2006 (JKD)
 !   Added spin-orbit correction, July 2010 (JKD)
+!   Fixed bug found by Koichi Kitahara, January 2014 (JKD)
 !EOP
 !BOC
 implicit none
@@ -93,16 +95,14 @@ do is=1,nspecies
 ! convert wavefunction to spherical coordinates
           call zbsht(nrc,nrci,wfmt(:,:,ias,ispn,jst),zfmt1(:,:,ispn))
         end do
-! compute sigma x (grad V(r)) psi(r)
+! compute i sigma x (grad V(r)) psi(r)
+        lmmax=lmmaxinr
         do irc=1,nrc
-          if (irc.le.nrci) then
-            lmmax=lmmaxinr
-          else
-            lmmax=lmmaxvr
-          end if
           do itp=1,lmmax
             z1=zfmt1(itp,irc,1)
+            z1=cmplx(-aimag(z1),dble(z1),8)
             z2=zfmt1(itp,irc,2)
+            z2=cmplx(-aimag(z2),dble(z2),8)
             z11=gvmt(itp,irc,1)*z1
             z12=gvmt(itp,irc,1)*z2
             z21=gvmt(itp,irc,2)*z1
@@ -116,6 +116,7 @@ do is=1,nspecies
             zfmt2(itp,irc,3,1)=cmplx(-aimag(z12),dble(z12),8)+z22
             zfmt2(itp,irc,3,2)=-cmplx(-aimag(z11),dble(z11),8)+z21
           end do
+          if (irc.eq.nrci) lmmax=lmmaxvr
         end do
 ! convert to spherical harmonics and add to wavefunction gradient
         do ispn=1,nspinor

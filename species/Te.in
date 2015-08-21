@@ -1,8 +1,8 @@
  'Te'                                       : spsymb
  'tellurium'                                : spname
   -52.0000                                  : spzn
-   232600.5706                              : spmass
-  0.277350E-06    2.6000   37.8022   600    : sprmin, rmt, sprmax, nrmt
+   232600.5707                              : spmass
+  0.277350E-06    2.6000   39.8837   600    : sprmin, rmt, sprmax, nrmt
   17                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -22,23 +22,23 @@
    5   1   1   2.00000    F
    5   1   2   2.00000    F
    1                                        : apword
-  0.1500   0  F                             : apwe0, apwdm, apwve
+    0.1500   0  F                           : apwe0, apwdm, apwve
    0                                        : nlx
    5                                        : nlorb
    0   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    1   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    2   2                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
    2   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -1.5022   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -1.5022   0  T
    0   3                                    : lorbl, lorbord
-  0.1500   0  F                             : lorbe0, lorbdm, lorbve
-  0.1500   1  F
- -0.5594   0  T
+    0.1500   0  F                           : lorbe0, lorbdm, lorbve
+    0.1500   1  F
+   -0.5594   0  T

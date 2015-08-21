@@ -19,28 +19,38 @@ complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: devecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv),devecsv(nstsv,nstsv)
 ! local variables
-integer ist,is,ias
+integer nst,ist,jst,is,ias
 integer nr,nrci,ir,irc
 integer lmmax,itp
 real(8) t0
 complex(8) z1,z2,z3,z4,z5,z6
+! automatic arrays
+integer idx(nstsv)
 ! allocatable arrays
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 complex(8), allocatable :: dwfmt(:,:,:,:,:),dwfir(:,:,:)
-! generate the wavefunctions
-allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir(ngtot,nspinor,nstsv))
-call genwfsv(.false.,.false.,.true.,ngp,igpig,occsvp,apwalm,evecfv,evecsv, &
- wfmt,ngtot,wfir)
-! generate the wavefunction derivatives
-allocate(dwfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(dwfir(ngtot,nspinor,nstsv))
-call gendwfsv(.false.,.false.,.true.,ngp,ngpq,igpqig,occsvp,apwalmq,dapwalm, &
- evecfv,devecfv,evecsv,devecsv,dwfmt,ngtot,dwfir)
-! loop over states
+! count and index the occupied states
+nst=0
 do ist=1,nstsv
-  if (abs(occsvp(ist)).lt.epsocc) cycle
-  t0=2.d0*wkptnr*occsvp(ist)
+  if (abs(occsvp(ist)).gt.epsocc) then
+    nst=nst+1
+    idx(nst)=ist
+  end if
+end do
+! generate the wavefunctions
+allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst))
+allocate(wfir(ngtot,nspinor,nst))
+call genwfsv(.false.,.false.,nst,idx,ngp,igpig,apwalm,evecfv,evecsv,wfmt, &
+ ngtot,wfir)
+! generate the wavefunction derivatives
+allocate(dwfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst))
+allocate(dwfir(ngtot,nspinor,nst))
+call gendwfsv(.false.,.false.,nst,idx,ngp,ngpq,igpqig,apwalmq,dapwalm,evecfv, &
+ devecfv,evecsv,devecsv,dwfmt,ngtot,dwfir)
+! loop over occupied states
+do ist=1,nst
+  jst=idx(ist)
+  t0=2.d0*wkptnr*occsvp(jst)
 !----------------------------------------------!
 !     muffin-tin density and magnetisation     !
 !----------------------------------------------!
@@ -53,19 +63,15 @@ do ist=1,nstsv
 ! spin-polarised
       if (ncmag) then
 ! non-collinear
+        lmmax=lmmaxinr
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          if (irc.le.nrci) then
-            lmmax=lmmaxinr
-          else
-            lmmax=lmmaxvr
-          end if
           do itp=1,lmmax
-            z1=conjg(wfmt(itp,irc,ias,1,ist))
-            z2=conjg(wfmt(itp,irc,ias,2,ist))
-            z3=dwfmt(itp,irc,ias,1,ist)
-            z4=dwfmt(itp,irc,ias,2,ist)
+            z1=conjg(wfmt(itp,irc,ias,1,jst))
+            z2=conjg(wfmt(itp,irc,ias,2,jst))
+            z3=dwfmt(itp,irc,ias,1,jst)
+            z4=dwfmt(itp,irc,ias,2,jst)
             z5=z1*z3
             z6=z2*z4
             drhomt(itp,ir,ias)=drhomt(itp,ir,ias)+t0*(z5+z6)
@@ -77,37 +83,32 @@ do ist=1,nstsv
             dmagmt(itp,ir,ias,2)=dmagmt(itp,ir,ias,2) &
              +t0*cmplx(aimag(z5),-dble(z5),8)
           end do
+          if (irc.eq.nrci) lmmax=lmmaxvr
         end do
       else
 ! collinear
+        lmmax=lmmaxinr
         irc=0
         do ir=1,nr,lradstp
           irc=irc+1
-          if (irc.le.nrci) then
-            lmmax=lmmaxinr
-          else
-            lmmax=lmmaxvr
-          end if
           do itp=1,lmmax
-            z1=conjg(wfmt(itp,irc,ias,1,ist))*dwfmt(itp,irc,ias,1,ist)
-            z2=conjg(wfmt(itp,irc,ias,2,ist))*dwfmt(itp,irc,ias,2,ist)
+            z1=conjg(wfmt(itp,irc,ias,1,jst))*dwfmt(itp,irc,ias,1,jst)
+            z2=conjg(wfmt(itp,irc,ias,2,jst))*dwfmt(itp,irc,ias,2,jst)
             drhomt(itp,ir,ias)=drhomt(itp,ir,ias)+t0*(z1+z2)
             dmagmt(itp,ir,ias,1)=dmagmt(itp,ir,ias,1)+t0*(z1-z2)
           end do
+          if (irc.eq.nrci) lmmax=lmmaxvr
         end do
       end if
     else
 ! spin-unpolarised
+      lmmax=lmmaxinr
       irc=0
       do ir=1,nr,lradstp
         irc=irc+1
-        if (irc.le.nrci) then
-          lmmax=lmmaxinr
-        else
-          lmmax=lmmaxvr
-        end if
         drhomt(1:lmmax,ir,ias)=drhomt(1:lmmax,ir,ias) &
-         +t0*conjg(wfmt(1:lmmax,irc,ias,1,ist))*dwfmt(1:lmmax,irc,ias,1,ist)
+         +t0*conjg(wfmt(1:lmmax,irc,ias,1,jst))*dwfmt(1:lmmax,irc,ias,1,jst)
+        if (irc.eq.nrci) lmmax=lmmaxvr
       end do
     end if
 !$OMP END CRITICAL
@@ -121,10 +122,10 @@ do ist=1,nstsv
     if (ncmag) then
 ! non-collinear
       do ir=1,ngtot
-        z1=conjg(wfir(ir,1,ist))
-        z2=conjg(wfir(ir,2,ist))
-        z3=dwfir(ir,1,ist)
-        z4=dwfir(ir,2,ist)
+        z1=conjg(wfir(ir,1,jst))
+        z2=conjg(wfir(ir,2,jst))
+        z3=dwfir(ir,1,jst)
+        z4=dwfir(ir,2,jst)
         z5=z1*z3
         z6=z2*z4
         drhoir(ir)=drhoir(ir)+t0*(z5+z6)
@@ -138,8 +139,8 @@ do ist=1,nstsv
     else
 ! collinear
       do ir=1,ngtot
-        z1=conjg(wfir(ir,1,ist))*dwfir(ir,1,ist)
-        z2=conjg(wfir(ir,2,ist))*dwfir(ir,2,ist)
+        z1=conjg(wfir(ir,1,jst))*dwfir(ir,1,jst)
+        z2=conjg(wfir(ir,2,jst))*dwfir(ir,2,jst)
         drhoir(ir)=drhoir(ir)+t0*(z1+z2)
         dmagir(ir,1)=dmagir(ir,1)+t0*(z1-z2)
       end do
@@ -147,7 +148,7 @@ do ist=1,nstsv
   else
 ! spin-unpolarised
     do ir=1,ngtot
-      drhoir(ir)=drhoir(ir)+t0*conjg(wfir(ir,1,ist))*dwfir(ir,1,ist)
+      drhoir(ir)=drhoir(ir)+t0*conjg(wfir(ir,1,jst))*dwfir(ir,1,jst)
     end do
   end if
 !$OMP END CRITICAL

@@ -3,28 +3,28 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine gendwfsv(tsh,tgp,tocc,ngp,ngpq,igpqig,occsvp,apwalmq,dapwalm, &
- evecfv,devecfv,evecsv,devecsv,dwfmt,ld,dwfir)
+subroutine gendwfsv(tsh,tgp,nst,idx,ngp,ngpq,igpqig,apwalmq,dapwalm,evecfv, &
+ devecfv,evecsv,devecsv,dwfmt,ld,dwfir)
 use modmain
 implicit none
 ! arguments
-logical, intent(in) :: tsh,tgp,tocc
+logical, intent(in) :: tsh,tgp
+integer, intent(in) :: nst,idx(nst)
 integer, intent(in) :: ngp(nspnfv),ngpq(nspnfv)
 integer, intent(in) :: igpqig(ngkmax,nspnfv)
-real(8), intent(in) :: occsvp(nstsv)
 complex(8), intent(in) :: apwalmq(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 complex(8), intent(in) :: dapwalm(ngkmax,apwordmax,lmmaxapw,nspnfv)
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: devecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv)
 complex(8), intent(in) :: devecsv(nstsv,nstsv)
-complex(8), intent(out) :: dwfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
+complex(8), intent(out) :: dwfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst)
 integer, intent(in) :: ld
-complex(8), intent(out) :: dwfir(ld,nspinor,nstsv)
+complex(8), intent(out) :: dwfir(ld,nspinor,nst)
 ! local variables
-integer ispn,jspn,ist
+integer ist,ispn,jspn
 integer is,ia,ias,nrc,nrci
-integer igp,ifg,i,j
+integer igp,ifg,i,j,k
 real(8) t1
 complex(8) z1
 ! automatic arrays
@@ -45,10 +45,8 @@ do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
     done(:)=.false.
-    do j=1,nstsv
-      if (tocc) then
-        if (abs(occsvp(j)).lt.epsocc) cycle
-      end if
+    do j=1,nst
+      k=idx(j)
       if (tevecsv) then
         dwfmt(:,:,ias,:,j)=0.d0
         i=0
@@ -56,8 +54,8 @@ do is=1,nspecies
           jspn=jspnfv(ispn)
           do ist=1,nstfv
             i=i+1
-            z1=devecsv(i,j)
-!***** check is tq0 is needed here
+            z1=devecsv(i,k)
+!***** check if tq0 is needed here
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
               if (.not.done(ist)) then
                 if (tsh) then
@@ -74,7 +72,7 @@ do is=1,nspecies
               end if
               call zfmtadd(nrc,nrci,z1,wfmt1(:,:,ist),dwfmt(:,:,ias,ispn,j))
             end if
-            z1=evecsv(i,j)
+            z1=evecsv(i,k)
             if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
               if (.not.ddone(ist)) then
                 if (tsh) then
@@ -97,10 +95,10 @@ do is=1,nspecies
       else
         if (tsh) then
           call dwavefmt(lradstp,lmaxvr,ias,ngp,ngpq,apwalmq,dapwalm, &
-           evecfv(:,j,1),devecfv(:,j,1),lmmaxvr,dwfmt(:,:,ias,1,j))
+           evecfv(:,k,1),devecfv(:,k,1),lmmaxvr,dwfmt(:,:,ias,1,j))
         else
           call dwavefmt(lradstp,lmaxvr,ias,ngp,ngpq,apwalmq,dapwalm, &
-           evecfv(:,j,1),devecfv(:,j,1),lmmaxvr,wfmt2)
+           evecfv(:,k,1),devecfv(:,k,1),lmmaxvr,wfmt2)
           call zbsht(nrc,nrci,wfmt2,dwfmt(:,:,ias,1,j))
         end if
       end if
@@ -113,18 +111,16 @@ if (.not.tsh) deallocate(wfmt2)
 !     interstitial wavefunction derivatives     !
 !-----------------------------------------------!
 t1=1.d0/sqrt(omega)
-do j=1,nstsv
+do j=1,nst
+  k=idx(j)
   dwfir(:,:,j)=0.d0
-  if (tocc) then
-    if (abs(occsvp(j)).lt.epsocc) cycle
-  end if
   if (tevecsv) then
     i=0
     do ispn=1,nspinor
       jspn=jspnfv(ispn)
       do ist=1,nstfv
         i=i+1
-        z1=devecsv(i,j)
+        z1=devecsv(i,k)
         if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
           if (tgp) then
             do igp=1,ngp(jspn)
@@ -138,7 +134,7 @@ do j=1,nstsv
             end do
           end if
         end if
-        z1=evecsv(i,j)
+        z1=evecsv(i,k)
         if (abs(dble(z1))+abs(aimag(z1)).gt.epsocc) then
           if (tgp) then
             do igp=1,ngpq(jspn)
@@ -157,12 +153,12 @@ do j=1,nstsv
   else
     if (tgp) then
       do igp=1,ngpq(1)
-        dwfir(igp,1,j)=devecfv(igp,j,1)
+        dwfir(igp,1,j)=devecfv(igp,k,1)
       end do
     else
       do igp=1,ngpq(1)
         ifg=igfft(igpqig(igp,1))
-        dwfir(ifg,1,j)=t1*devecfv(igp,j,1)
+        dwfir(ifg,1,j)=t1*devecfv(igp,k,1)
       end do
     end if
   end if

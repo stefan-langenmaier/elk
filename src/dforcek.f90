@@ -263,9 +263,8 @@ do jspn=1,nspnfv
           zsum=zsum+occsv(j,jk)*dffv(j,j)
         end do
       end if
-!$OMP CRITICAL
+!$OMP ATOMIC
       dyn(l,ias)=dyn(l,ias)-wkptnr*zsum
-!$OMP END CRITICAL
 ! end loop over Cartesian components
     end do
 ! end loop over atoms and species

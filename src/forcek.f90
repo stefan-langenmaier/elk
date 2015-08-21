@@ -147,9 +147,8 @@ do jspn=1,nspnfv
           sum=sum+occsv(j,ik)*dble(ffv(j,j))
         end do
       end if
-!$OMP CRITICAL
+!$OMP ATOMIC
       forceibs(l,ias)=forceibs(l,ias)+wkpt(ik)*sum
-!$OMP END CRITICAL
 ! end loop over Cartesian components
     end do
 ! end loop over atoms and species

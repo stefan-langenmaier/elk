@@ -27,8 +27,8 @@ dp=0.d0
 do it=1,maxit
 ! set up the BdG Hamiltonian
   call hmlbdg(adelta,evecbdg)
-! solve the BdG equations
-  call seceqnbdg(evecbdg)
+! solve the BdG eigenvalue equations
+  call eveqnbdg(evecbdg)
 ! generate the anomalous density Chi
   call genachi(evecbdg,achi)
 ! add the residual to the potential

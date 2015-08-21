@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: genzrho
 ! !INTERFACE:
-subroutine genzrho(tsh,tspc,wfmt1,wfmt2,wfir1,wfir2,zrhomt,zrhoir)
+subroutine genzrho(tsh,tspc,wfmt1,wfir1,wfmt2,wfir2,zrhomt,zrhoir)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
@@ -15,9 +15,9 @@ use modmain
 !   tspc   : .true. if the density should be contracted over spin (in,logical)
 !   wfmt1  : muffin-tin part of wavefunction 1 in spherical coordinates
 !            (in,complex(lmmaxvr,nrcmtmax,natmtot,nspinor))
+!   wfir1  : interstitial wavefunction 1 (in,complex(ngtot))
 !   wfmt2  : muffin-tin part of wavefunction 2 in spherical coordinates
 !            (in,complex(lmmaxvr,nrcmtmax,natmtot,nspinor))
-!   wfir1  : interstitial wavefunction 1 (in,complex(ngtot))
 !   wfir2  : interstitial wavefunction 2 (in,complex(ngtot))
 !   zrhomt : muffin-tin charge density in spherical harmonics/coordinates
 !            (out,complex(lmmaxvr,nrcmtmax,natmtot))
@@ -36,11 +36,9 @@ use modmain
 !BOC
 implicit none
 ! arguments
-logical, intent(in) :: tsh
-logical, intent(in) :: tspc
-complex(8), intent(in) ::  wfmt1(lmmaxvr,nrcmtmax,natmtot,*)
-complex(8), intent(in) ::  wfmt2(lmmaxvr,nrcmtmax,natmtot,*)
-complex(8), intent(in) ::  wfir1(ngtot,*),wfir2(ngtot,*)
+logical, intent(in) :: tsh,tspc
+complex(8), intent(in) ::  wfmt1(lmmaxvr,nrcmtmax,natmtot,*),wfir1(ngtot,*)
+complex(8), intent(in) ::  wfmt2(lmmaxvr,nrcmtmax,natmtot,*),wfir2(ngtot,*)
 complex(8), intent(out) :: zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot)
 ! local variables
 integer is,ias,nrc,nrci

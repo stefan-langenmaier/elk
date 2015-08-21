@@ -42,7 +42,7 @@ call hmlrad
 call gensocfr
 ! compute the kinetic energy of the core
 call energykncr
-! delete any existing non-local matrix elements files
+! delete any existing Coulomb matrix elements files
 if (mp_mpi) then
   open(95,file='VNLIJJI.OUT'); close(95,status='DELETE')
   open(95,file='VNLIJJK.OUT'); close(95,status='DELETE')

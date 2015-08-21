@@ -34,7 +34,7 @@ if (allocated(sprho)) deallocate(sprho)
 allocate(sprho(spnrmax,nspecies))
 if (allocated(spvr)) deallocate(spvr)
 allocate(spvr(spnrmax,nspecies))
-! use LDA (xctype=3) to setup atomic densities
+! use LDA (xctype=3) to set up atomic densities
 xctype_(1)=3; xctype_(2:3)=0
 xcgrad_=0
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(rwf)

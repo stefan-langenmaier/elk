@@ -56,7 +56,11 @@ momtot(:)=mommttot(:)+momir(:)
 ! write total moment to test file
 call writetest(450,'total moment',nv=ndmag,tol=2.d-2,rva=momtot)
 ! total moment magnitude
-momtotm=sqrt(momtot(1)**2+momtot(2)**2+momtot(3)**2)
+if (ncmag) then
+  momtotm=sqrt(momtot(1)**2+momtot(2)**2+momtot(3)**2)
+else
+  momtotm=abs(momtot(1))
+end if
 return
 end subroutine
 !EOC

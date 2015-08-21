@@ -5,47 +5,51 @@
 
 subroutine genephmat(iq,ikp,dvphmt,dvphir,ephmat)
 use modmain
+use modphonon
 implicit none
 ! arguments
-integer, intent(in) :: iq
-integer, intent(in) :: ikp
-complex(8), intent(in) :: dvphmt(lmmaxvr,nrcmtmax,natmtot,3*natmtot)
-complex(8), intent(in) :: dvphir(ngtot,3*natmtot)
-complex(8), intent(out) :: ephmat(nstsv,nstsv,3*natmtot)
+integer, intent(in) :: iq,ikp
+complex(8), intent(in) :: dvphmt(lmmaxvr,nrcmtmax,natmtot,nbph)
+complex(8), intent(in) :: dvphir(ngtot,nbph)
+complex(8), intent(out) :: ephmat(nstsv,nstsv,nbph)
 ! local variables
-integer nb,ist,jst,i
-real(8) vkql(3)
+integer ist,jst,i
+real(8) vpql(3)
+! automatic arrays
+integer idx(nstsv)
 ! allocatable arrays
-complex(8), allocatable :: wfmtp(:,:,:,:,:),wfmtpq(:,:,:,:,:)
-complex(8), allocatable :: wfirp(:,:,:),wfirpq(:,:,:)
+complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
+complex(8), allocatable :: wfmtq(:,:,:,:,:),wfirq(:,:,:)
 complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
 ! external functions
 complex(8) zfinp
 external zfinp
-! number of phonon branches
-nb=3*natmtot
 ! k+q-vector in lattice coordinates
-vkql(:)=vkl(:,ikp)+vql(:,iq)
+vpql(:)=vkl(:,ikp)+vql(:,iq)
+! index to all states
+do ist=1,nstsv
+  idx(ist)=ist
+end do
 ! generate the wavefunctions for all states at k and k+q
-allocate(wfmtp(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfirp(ngtot,nspinor,nstsv))
-call genwfsvp(.false.,.false.,.false.,vkl(:,ikp),wfmtp,ngtot,wfirp)
-allocate(wfmtpq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfirpq(ngtot,nspinor,nstsv))
-call genwfsvp(.false.,.false.,.false.,vkql,wfmtpq,ngtot,wfirpq)
+allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+allocate(wfir(ngtot,nspinor,nstsv))
+call genwfsvp(.false.,.false.,nstsv,idx,vkl(:,ikp),wfmt,ngtot,wfir)
+allocate(wfmtq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+allocate(wfirq(ngtot,nspinor,nstsv))
+call genwfsvp(.false.,.false.,nstsv,idx,vpql,wfmtq,ngtot,wfirq)
 allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
 do ist=1,nstsv
   do jst=1,nstsv
 ! note that the complex conjugate of the density is found because zfinp
 ! conjugates the first function
-    call genzrho(.true.,spinpol,wfmtp(:,:,:,:,jst),wfmtpq(:,:,:,:,ist), &
-     wfirp(:,:,jst),wfirpq(:,:,ist),zrhomt,zrhoir)
-    do i=1,nb
-      ephmat(ist,jst,i)=zfinp(.true.,zrhomt,dvphmt(:,:,:,i),zrhoir,dvphir(:,i))
+    call genzrho(.true.,.true.,wfmt(:,:,:,:,jst),wfir(:,:,jst), &
+     wfmtq(:,:,:,:,ist),wfirq(:,:,ist),zrhomt,zrhoir)
+    do i=1,nbph
+      ephmat(ist,jst,i)=zfinp(.true.,zrhomt,zrhoir,dvphmt(:,:,:,i),dvphir(:,i))
     end do
   end do
 end do
-deallocate(wfmtp,wfmtpq,wfirp,wfirpq,zrhomt,zrhoir)
+deallocate(wfmt,wfmtq,wfir,wfirq,zrhomt,zrhoir)
 return
 end subroutine
 

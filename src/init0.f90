@@ -10,7 +10,9 @@ subroutine init0
 ! !USES:
 use modmain
 use modxcifc
-use modldapu
+use moddftu
+use modtddft
+use modphonon
 use modtest
 use modvars
 ! !DESCRIPTION:
@@ -24,7 +26,7 @@ use modvars
 implicit none
 ! local variables
 integer is,ia,ias,ist
-integer l,m,lm
+integer l,m,lm,i
 real(8) rsum,t1
 real(8) ts0,ts1
 
@@ -60,7 +62,7 @@ if (lmaxmat.gt.lmaxapw) then
   stop
 end if
 ! check DOS lmax is within range
-lmaxdos=min(lmaxdos,lmaxapw)
+lmaxdos=min(lmaxdos,lmaxvr)
 ! index to (l,m) pairs
 if (allocated(idxlm)) deallocate(idxlm)
 allocate(idxlm(0:lmaxapw,-lmaxapw:lmaxapw))
@@ -107,6 +109,8 @@ do is=1,nspecies
 end do
 ! total number of atoms
 natmtot=ias
+! number of phonon branches
+nbph=3*natmtot
 ! write to VARIABLES.OUT
 call writevars('nspecies',iv=nspecies)
 call writevars('natoms',nv=nspecies,iva=natoms)
@@ -135,7 +139,7 @@ if (spinsprl) then
   end if
 end if
 ! spin-orbit coupling or fixed spin moment implies spin-polarised calculation
-if ((spinorb).or.(fixspin.ne.0).or.(spinsprl)) spinpol=.true.
+if ((spinorb).or.(fsmtype.ne.0).or.(spinsprl)) spinpol=.true.
 ! number of spinor components and maximum allowed occupancy
 if (spinpol) then
   nspinor=2
@@ -180,10 +184,12 @@ if (spinpol) then
           (abs(bfcmt0(2,ia,is)).gt.epslat)) ndmag=3
     end do
   end do
-! source-free fields and spin-spirals are non-collinear in general
-  if ((nosource).or.(spinsprl)) ndmag=3
 ! spin-orbit coupling is non-collinear in general
   if (spinorb) ndmag=3
+! force collinear magnetism along the z-axis if required
+  if (cmagz) ndmag=1
+! source-free fields and spin-spirals must be non-collinear
+  if ((nosource).or.(spinsprl)) ndmag=3
 else
   ndmag=0
 end if
@@ -202,7 +208,7 @@ if ((xcgrad.eq.3).and.ncmag) then
 end if
 ! spin-polarised cores
 if (.not.spinpol) spincore=.false.
-if (fixspin.ne.0) then
+if (fsmtype.ne.0) then
 ! set fixed spin moment effective field to zero
   bfsmc(:)=0.d0
 ! set muffin-tin FSM fields to zero
@@ -232,6 +238,15 @@ if (reducebf.lt.1.d0-epslat) then
     bfcmt(:,:,:)=0.d0
   end if
 end if
+! set the fixed tensor moment spatial and spin rotation matrices equal for the
+! case of spin-orbit coupling; parity for spin is ignored by rotdmat
+if (spinorb) then
+  do i=1,ntmfix
+    rtmfix(:,:,2,i)=rtmfix(:,:,1,i)
+  end do
+end if
+! generate the fixed tensor moment density matrices if required
+call gendmftm
 ! write to VARIABLES.OUT
 call writevars('nspinor',iv=nspinor)
 call writevars('ndmag',iv=ndmag)
@@ -257,9 +272,15 @@ do is=1,nspecies
 end do
 ! check muffin-tins are not too close together
 call checkmt
+! compute the total muffin-tin volume (M. Meinert)
+omegamt=0.d0
+do is=1,nspecies
+  omegamt=omegamt+dble(natoms(is))*(fourpi/3.d0)*rmt(is)**3
+end do
 ! write to VARIABLES.OUT
 call writevars('avec',nv=9,rva=avec)
 call writevars('bvec',nv=9,rva=bvec)
+call writevars('omega',rv=omega)
 do is=1,nspecies
   call writevars('atposl',l=is,nv=3*natoms(is),rva=atposl(:,:,is))
 end do
@@ -535,26 +556,63 @@ allocate(forceibs(3,natmtot))
 if (allocated(forcetot)) deallocate(forcetot)
 allocate(forcetot(3,natmtot))
 
-!-------------------------!
-!     LDA+U variables     !
-!-------------------------!
-if ((ldapu.ne.0).or.(task.eq.17)) then
-! LDA+U requires second-variational eigenvectors
+!-------------------------------------------------!
+!     DFT+U and fixed tensor moment variables     !
+!-------------------------------------------------!
+if ((dftu.ne.0).or.(ftmtype.ne.0)) then
+! density matrix elements in each muffin-tin
+  if (allocated(dmatmt)) deallocate(dmatmt)
+  allocate(dmatmt(lmmaxdm,nspinor,lmmaxdm,nspinor,natmtot))
+! potential matrix elements in each muffin-tin
+  if (allocated(vmatmt)) deallocate(vmatmt)
+  allocate(vmatmt(lmmaxdm,nspinor,lmmaxdm,nspinor,natmtot))
+! zero the potential matrix
+  vmatmt(:,:,:,:,:)=0.d0
+! require the potential matrix elements be calculated
+  tvmatmt=.true.
+! flags for non-zero muffin-tin potential matrices
+  if (allocated(tvmmt)) deallocate(tvmmt)
+  allocate(tvmmt(0:lmaxdm,natmtot))
+  tvmmt(:,:)=.false.
+! require second-variational eigenvectors
   tevecsv=.true.
-! density matrices
-  if (allocated(dmatlu)) deallocate(dmatlu)
-  allocate(dmatlu(lmmaxlu,lmmaxlu,nspinor,nspinor,natmtot))
-! potential matrix elements
-  if (allocated(vmatlu)) deallocate(vmatlu)
-  allocate(vmatlu(lmmaxlu,lmmaxlu,nspinor,nspinor,natmtot))
-! zero the potential
-  vmatlu(:,:,:,:,:)=0.d0
-! energy for each atom
-  if (allocated(engyalu)) deallocate(engyalu)
-  allocate(engyalu(natmtot))
+end if
+if (dftu.ne.0) then
+! DFT+U energy for each atom
+  if (allocated(engyadu)) deallocate(engyadu)
+  allocate(engyadu(natmmax,ndftu))
 ! interpolation constants (alpha)
-  if (allocated(alphalu)) deallocate(alphalu)
-  allocate(alphalu(natmtot))
+  if (allocated(alphadu)) deallocate(alphadu)
+  allocate(alphadu(natmmax,ndftu))
+! flag the muffin-tin potential matrices which are non-zero
+  do i=1,ndftu
+    is=idftu(1,i)
+    if (is.gt.nspecies) then
+      write(*,*)
+      write(*,'("Error(init0): invalid species number : ",I8)') is
+      write(*,*)
+      stop
+    end if
+    l=idftu(2,i)
+    do ia=1,natoms(is)
+      ias=idxas(ia,is)
+      tvmmt(l,ias)=.true.
+    end do
+  end do
+end if
+if (ftmtype.ne.0) then
+! allocate and zero the fixed tensor moment potential array
+  if (allocated(vmftm)) deallocate(vmftm)
+  allocate(vmftm(lmmaxdm,nspinor,lmmaxdm,nspinor,natmtot))
+  vmftm(:,:,:,:,:)=0.d0
+! flag the muffin-tin potential matrices which are non-zero
+  do i=1,ntmfix
+    is=itmfix(1,i)
+    ia=itmfix(2,i)
+    ias=idxas(ia,is)
+    l=itmfix(3,i)
+    tvmmt(l,ias)=.true.
+  end do
 end if
 
 !-----------------------!

@@ -33,9 +33,7 @@ subroutine rdirac(sol,n,l,k,nr,r,vr,eval,g0,f0)
 implicit none
 ! arguments
 real(8), intent(in) :: sol
-integer, intent(in) :: n
-integer, intent(in) :: l
-integer, intent(in) :: k
+integer, intent(in) :: n,l,k
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
@@ -46,7 +44,7 @@ real(8), intent(out) :: f0(nr)
 integer, parameter :: maxit=2000
 integer kpa,it,nn,ir,irm,nnd,nndp
 ! energy convergence tolerance
-real(8), parameter :: eps=1.d-11
+real(8), parameter :: eps=1.d-12
 real(8) t1,de
 ! automatic arrays
 real(8) g1(nr),f1(nr),fr(nr),gr(nr)
@@ -103,9 +101,7 @@ do it=1,maxit
   if (de.lt.eps*(abs(eval)+1.d0)) goto 20
 end do
 write(*,*)
-write(*,'("Error(rdirac): maximum iterations exceeded")')
-write(*,*)
-stop
+write(*,'("Warning(rdirac): maximum iterations exceeded")')
 20 continue
 ! find effective infinity and set wavefunction to zero after that point
 ! major component
@@ -134,8 +130,8 @@ else
   write(*,*)
   stop
 end if
-g0(:)=t1*g0(:)
-f0(:)=t1*f0(:)
+call dscal(nr,t1,g0,1)
+call dscal(nr,t1,f0,1)
 return
 end subroutine
 !EOC

@@ -33,8 +33,6 @@ integer, intent(in) :: lmax
 real(8), intent(in) :: x
 real(8), intent(out) :: b(0:lmax)
 ! local variables
-! staring value for l above lmax (suitable for lmax < 50)
-integer, parameter :: lst=25
 integer l
 real(8) xi,b0,b1,bt,t3,t4
 if ((lmax.lt.0).or.(lmax.gt.50)) then

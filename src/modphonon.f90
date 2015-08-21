@@ -9,6 +9,8 @@ use modmain
 !--------------------------!
 !     phonon variables     !
 !--------------------------!
+! number of phonon branches (3*natmtot)
+integer nbph
 ! current phonon q-point, species, atom and polarisation index
 integer iqph,isph,iaph,iasph,ipph
 ! number of vectors for writing out frequencies and eigenvectors

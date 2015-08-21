@@ -23,25 +23,20 @@ complex(8), allocatable :: zfmt(:,:,:),zfir(:,:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
-allocate(zfmt(lmmaxvr,nrcmtmax,nspinor))
-allocate(zfir(ngtot,nspinor))
 ! zero the matrix elements
 bmat(:,:)=0.d0
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+allocate(zfmt(lmmaxvr,nrcmtmax,nspinor))
 do jst=1,nstsv
   do ias=1,natmtot
     is=idxis(ias)
     nrc=nrcmt(is)
     nrci=nrcmtinr(is)
 ! apply magnetic field to spinor wavefunction
+    lmmax=lmmaxinr
     do irc=1,nrc
-      if (irc.le.nrci) then
-        lmmax=lmmaxinr
-      else
-        lmmax=lmmaxvr
-      end if
       do itp=1,lmmax
         t1=bmt(itp,irc,ias,ndmag)
         zfmt(itp,irc,1)=t1*wfmt(itp,irc,ias,1,jst)
@@ -54,6 +49,7 @@ do jst=1,nstsv
           zfmt(itp,irc,2)=zfmt(itp,irc,2)+z1*wfmt(itp,irc,ias,1,jst)
         end do
       end if
+      if (irc.eq.nrci) lmmax=lmmaxvr
     end do
     do ist=1,jst
 ! compute inner product (functions are in spherical coordinates)
@@ -65,9 +61,11 @@ do jst=1,nstsv
     end do
   end do
 end do
+deallocate(zfmt)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
+allocate(zfir(ngtot,nspinor))
 t0=omega/dble(ngtot)
 do jst=1,nstsv
 ! apply magnetic field to spinor wavefunction
@@ -90,13 +88,13 @@ do jst=1,nstsv
     end do
   end do
 end do
+deallocate(zfir)
 ! lower triangular part
 do ist=1,nstsv
   do jst=1,ist-1
     bmat(ist,jst)=conjg(bmat(jst,ist))
   end do
 end do
-deallocate(zfmt,zfir)
 return
 end subroutine
 

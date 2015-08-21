@@ -29,7 +29,8 @@ subroutine rotaxang(eps,rot,det,v,th)
 !    \end{matrix}\right), $$
 !   this routine determines the axis of rotation $\hat{\bf v}$ and the angle of
 !   rotation $\theta$. If $R$ corresponds to an improper rotation then only the
-!   proper part is used and {\tt det} is set to $-1$.
+!   proper part is used and {\tt det} is set to $-1$. The rotation convention
+!   follows the `right-hand rule'.
 !
 ! !REVISION HISTORY:
 !   Created December 2006 (JKD)
@@ -38,13 +39,12 @@ subroutine rotaxang(eps,rot,det,v,th)
 implicit none
 ! arguments
 real(8), intent(in) :: eps
-real(8), intent(inout) :: rot(3,3)
+real(8), intent(in) :: rot(3,3)
 real(8), intent(out) :: det
-real(8), intent(out) :: v(3)
-real(8), intent(out) :: th
+real(8), intent(out) :: v(3),th
 ! local variables
 real(8), parameter :: pi=3.1415926535897932385d0
-real(8) p(3,3),t1,t2
+real(8) rotp(3,3),t1,t2
 ! find the determinant
 det=rot(1,2)*rot(2,3)*rot(3,1)-rot(1,3)*rot(2,2)*rot(3,1) &
    +rot(1,3)*rot(2,1)*rot(3,2)-rot(1,1)*rot(2,3)*rot(3,2) &
@@ -57,15 +57,15 @@ else
   goto 10
 end if
 ! proper rotation matrix
-p(:,:)=det*rot(:,:)
-v(1)=(p(2,3)-p(3,2))/2.d0
-v(2)=(p(3,1)-p(1,3))/2.d0
-v(3)=(p(1,2)-p(2,1))/2.d0
+rotp(:,:)=det*rot(:,:)
+v(1)=(rotp(2,3)-rotp(3,2))/2.d0
+v(2)=(rotp(3,1)-rotp(1,3))/2.d0
+v(3)=(rotp(1,2)-rotp(2,1))/2.d0
 t1=sqrt(v(1)**2+v(2)**2+v(3)**2)
-t2=(p(1,1)+p(2,2)+p(3,3)-1.d0)/2.d0
+t2=(rotp(1,1)+rotp(2,2)+rotp(3,3)-1.d0)/2.d0
 if (abs(abs(t2)-1.d0).gt.eps) then
 ! theta not equal to 0 or pi
-  th=atan2(t1,t2)
+  th=-atan2(t1,t2)
   v(:)=v(:)/t1
 else
 ! special case of sin(th)=0
@@ -76,21 +76,21 @@ else
   else
 ! rotation by pi
     th=pi
-    if ((p(1,1).ge.p(2,2)).and.(p(1,1).ge.p(3,3))) then
-      if (p(1,1).lt.(-1.d0+eps)) goto 10
-      v(1)=sqrt(abs(p(1,1)+1.d0)/2.d0)
-      v(2)=(p(2,1)+p(1,2))/(4.d0*v(1))
-      v(3)=(p(3,1)+p(1,3))/(4.d0*v(1))
-    else if ((p(2,2).ge.p(1,1)).and.(p(2,2).ge.p(3,3))) then
-      if (p(2,2).lt.(-1.d0+eps)) goto 10
-      v(2)=sqrt(abs(p(2,2)+1.d0)/2.d0)
-      v(3)=(p(3,2)+p(2,3))/(4.d0*v(2))
-      v(1)=(p(1,2)+p(2,1))/(4.d0*v(2))
+    if ((rotp(1,1).ge.rotp(2,2)).and.(rotp(1,1).ge.rotp(3,3))) then
+      if (rotp(1,1).lt.(-1.d0+eps)) goto 10
+      v(1)=sqrt(abs(rotp(1,1)+1.d0)/2.d0)
+      v(2)=(rotp(2,1)+rotp(1,2))/(4.d0*v(1))
+      v(3)=(rotp(3,1)+rotp(1,3))/(4.d0*v(1))
+    else if ((rotp(2,2).ge.rotp(1,1)).and.(rotp(2,2).ge.rotp(3,3))) then
+      if (rotp(2,2).lt.(-1.d0+eps)) goto 10
+      v(2)=sqrt(abs(rotp(2,2)+1.d0)/2.d0)
+      v(3)=(rotp(3,2)+rotp(2,3))/(4.d0*v(2))
+      v(1)=(rotp(1,2)+rotp(2,1))/(4.d0*v(2))
     else
-      if (p(3,3).lt.(-1.d0+eps)) goto 10
-      v(3)=sqrt(abs(p(3,3)+1.d0)/2.d0)
-      v(1)=(p(1,3)+p(3,1))/(4.d0*v(3))
-      v(2)=(p(2,3)+p(3,2))/(4.d0*v(3))
+      if (rotp(3,3).lt.(-1.d0+eps)) goto 10
+      v(3)=sqrt(abs(rotp(3,3)+1.d0)/2.d0)
+      v(1)=(rotp(1,3)+rotp(3,1))/(4.d0*v(3))
+      v(2)=(rotp(2,3)+rotp(3,2))/(4.d0*v(3))
     end if
   end if
 end if

@@ -9,7 +9,7 @@
 subroutine writestate
 ! !USES:
 use modmain
-use modldapu
+use moddftu
 ! !DESCRIPTION:
 !   Writes the charge density, potentials and other relevant variables to the
 !   file {\tt STATE.OUT}. Note to developers: changes to the way the variables
@@ -40,9 +40,10 @@ write(50) ngridg
 write(50) ngvec
 write(50) ndmag
 write(50) nspinor
-write(50) fixspin
-write(50) ldapu
-write(50) lmmaxlu
+write(50) fsmtype
+write(50) ftmtype
+write(50) dftu
+write(50) lmmaxdm
 ! write the density
 write(50) rhomt,rhoir
 ! write the Coulomb potential
@@ -51,19 +52,24 @@ write(50) vclmt,vclir
 write(50) vxcmt,vxcir
 ! write the Kohn-Sham effective potential
 write(50) vsmt,vsir
-! write the magnetisation, exchange-correlation and effective magnetic fields
 if (spinpol) then
+! write the magnetisation, exchange-correlation and effective magnetic fields
   write(50) magmt,magir
   write(50) bxcmt,bxcir
   write(50) bsmt,bsir
-  if (fixspin.ne.0) then
+! write fixed spin moment magnetic fields
+  if (fsmtype.ne.0) then
     write(50) bfsmc
     write(50) bfsmcmt
   end if
 end if
-! write the LDA+U potential matrix elements
-if (ldapu.ne.0) then
-  write(50) vmatlu
+! write the potential matrix in each muffin-tin
+if ((dftu.ne.0).or.(ftmtype.ne.0)) then
+  write(50) vmatmt
+end if
+! write the fixed tensor moment potential matrix
+if (ftmtype.ne.0) then
+  write(50) vmftm
 end if
 close(50)
 return

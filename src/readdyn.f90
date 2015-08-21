@@ -5,9 +5,10 @@
 
 subroutine readdyn(dynq)
 use modmain
+use modphonon
 implicit none
 ! arguments
-complex(8), intent(out) :: dynq(3*natmtot,3*natmtot,nqpt)
+complex(8), intent(out) :: dynq(nbph,nbph,nqpt)
 ! local variables
 logical exist
 integer iq,is,js,ia,ja

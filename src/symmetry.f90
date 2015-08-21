@@ -19,8 +19,8 @@ call findsymcrys
 call findsymsite
 ! check if fixed spin moments are invariant under the symmetry group
 call checkfsm
-! check if real symmetric eigen solver can be used
-if (.not.tsyminv) tseqr=.false.
+! check if real symmetric first-variational eigen solver can be used
+if (.not.tsyminv) tefvr=.false.
 ! write to VARIABLES.OUT
 call writevars('nsymlat',iv=nsymlat)
 call writevars('symlat',nv=9*nsymlat,iva=symlat)

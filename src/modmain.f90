@@ -136,6 +136,8 @@ integer nrmtmax
 real(8) rmtdelta
 ! muffin-tin radii
 real(8) rmt(maxspecies)
+! total muffin-tin volume
+real(8) omegamt
 ! radial step length for coarse mesh
 integer lradstp
 ! number of coarse radial mesh points
@@ -178,16 +180,20 @@ integer, allocatable :: idxil(:),idxim(:)
 logical spinpol
 ! spinorb is .true. for spin-orbit coupling
 logical spinorb
+! scale factor of spin-orbit coupling term in Hamiltonian
+real(8) socscf
+! dimension of magnetisation and magnetic vector fields (1 or 3)
+integer ndmag
+! ncmag is .true. if the magnetisation is non-collinear, i.e. when ndmag = 3
+logical ncmag
+! if cmagz is .true. then collinear magnetism along the z-axis is enforced
+logical cmagz
 ! fixed spin moment type
 !  0      : none
 !  1 (-1) : total moment (direction)
 !  2 (-2) : individual muffin-tin moments (direction)
 !  3 (-3) : total and muffin-tin moments (direction)
-integer fixspin
-! dimension of magnetisation and magnetic vector fields (1 or 3)
-integer ndmag
-! ncmag is .true. if the magnetisation is non-collinear, i.e. when ndmag = 3
-logical ncmag
+integer fsmtype
 ! fixed total spin magnetic moment
 real(8) momfix(3)
 ! fixed spin moment global effective field in Cartesian coordinates
@@ -229,8 +235,10 @@ integer iqss
 ! number of primitive unit cells in spin-spiral supercell
 integer nscss
 ! number of fixed spin direction points on the sphere for finding the magnetic
-! anisotropy energy
-integer npmae
+! anisotropy energy (MAE)
+integer npmae0,npmae
+! (theta,phi) coordinates for each MAE direction
+real(8), allocatable :: tpmae(:,:)
 
 !---------------------------------------------!
 !     electric field and vector potential     !
@@ -322,6 +330,8 @@ complex(8), allocatable :: ylmg(:,:)
 complex(8), allocatable :: sfacg(:,:)
 ! smooth step function form factors for all species and G-vectors
 real(8), allocatable :: ffacg(:,:)
+! ffdamp is .true. if the form factors should be damped to zero at gmaxvr
+logical ffdamp
 ! characteristic function in G-space: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
 ! characteristic function in real-space: 0 inside the muffin-tins and 1 outside
@@ -465,6 +475,8 @@ character(512) xcdescr
 integer xcspin
 ! exchange-correlation functional density gradient requirement
 integer xcgrad
+! setting ncgga to .true. improves convergence of non-collinear GGA calculations
+logical ncgga
 ! Tran-Blaha '09 constant c [Phys. Rev. Lett. 102, 226401 (2009)]
 real(8) c_tb09
 ! tc_tb09 is .true. if the Tran-Blaha constant has been read in
@@ -673,16 +685,18 @@ real(8), allocatable :: hloa(:,:,:,:,:)
 real(8), allocatable :: hlolo(:,:,:,:)
 ! complex Gaunt coefficient array
 complex(8), allocatable :: gntyry(:,:,:)
-! tseqr is .true. if the first-variational secular equation is to be solved as a
-! real symmetric eigenvalue problem
-logical tseqr
-! tseqit is .true. if the first-variational secular equation is to be solved
+! tefvr is .true. if the first-variational eigenvalue equation is to be solved
+! as a real symmetric problem
+logical tefvr
+! tefvit is .true. if the first-variational eigenvalue equation is to be solved
 ! iteratively
-logical tseqit
-! number of secular equation iterations per self-consistent loop
-integer nseqit
-! iterative solver step length
-real(8) tauseq
+logical tefvit
+! minimum and maximum allowed number of eigenvalue equation iterations
+integer minitefv,maxitefv
+! eigenvalue mixing parameter for iterative solver
+real(8) befvit
+! iterative solver convergence tolerance
+real(8) epsefvit
 
 !--------------------------------------------!
 !     eigenvalue and occupancy variables     !
@@ -745,8 +759,6 @@ real(8), allocatable :: evalcr(:,:)
 real(8), allocatable :: rwfcr(:,:,:,:)
 ! radial charge density for core states
 real(8), allocatable :: rhocr(:,:,:)
-! frozencr is .true. if the core states are fixed to the atomic states
-logical frozencr
 ! spincore is .true. if the core is to be treated as spin-polarised
 logical spincore
 ! number of core spin-channels
@@ -932,13 +944,11 @@ integer maxitoep
 real(8) tauoep(3)
 ! magnitude of the OEP residual
 real(8) resoep
-! kinetic matrix elements in Cartesian basis
+! kinetic matrix elements in the Cartesian basis
 complex(8), allocatable :: kmatc(:,:,:)
 ! complex versions of the exchange potential and field
-complex(8), allocatable :: zvxmt(:,:,:)
-complex(8), allocatable :: zvxir(:)
-complex(8), allocatable :: zbxmt(:,:,:,:)
-complex(8), allocatable :: zbxir(:,:)
+complex(8), allocatable :: zvxmt(:,:,:),zvxir(:)
+complex(8), allocatable :: zbxmt(:,:,:,:),zbxir(:,:)
 ! hybrid is .true. if a hybrid functional is to be used
 logical hybrid
 ! hybrid functional mixing coefficient
@@ -994,16 +1004,6 @@ logical bsefull
 ! Hamiltonian
 logical hxbse,hdbse
 
-!--------------------------------------------------------------------!
-!     Time-dependent density functional theory (TDDFT) variables     !
-!--------------------------------------------------------------------!
-! exchange-correlation kernel type
-integer fxctype(3)
-! parameters for long-range correction (LRC) kernel
-real(8) fxclrc(2)
-! number of independent spin components of the f_xc spin tensor
-integer nscfxc
-
 !--------------------------!
 !     timing variables     !
 !--------------------------!
@@ -1044,35 +1044,45 @@ complex(8) sigmat(2,2,3)
 data sigmat / (0.d0,0.d0), (1.d0,0.d0), (1.d0,0.d0), (0.d0,0.d0), &
               (0.d0,0.d0), (0.d0,1.d0),(0.d0,-1.d0), (0.d0,0.d0), &
               (1.d0,0.d0), (0.d0,0.d0), (0.d0,0.d0),(-1.d0,0.d0) /
-! Boltzmann constant in Hartree/kelvin (CODATA 2006)
-real(8), parameter :: kboltz=3.166815343d-6
-! speed of light in atomic units (=1/alpha) (CODATA 2006)
-real(8), parameter :: sol=137.035999679d0
+! Hartree in eV (CODATA 2010)
+real(8), parameter :: ha_ev=27.21138505d0
+! Boltzmann constant in eV/kelvin (CODATA 2010)
+real(8), parameter :: kb_ev=8.6173324d-5
+! Boltzmann constant in Hartree/kelvin
+real(8), parameter :: kboltz=kb_ev/ha_ev
+! speed of light in atomic units (=1/alpha) (CODATA 2010)
+real(8), parameter :: sol=137.035999074d0
 ! scaled speed of light
 real(8) solsc
-! electron g-factor (CODATA 2006)
-real(8), parameter :: gfacte=2.0023193043622d0
-! hartree in SI units (CODATA 2006)
-real(8), parameter :: ha_si=4.35974394d-18
-! Bohr radius in SI units (CODATA 2006)
-real(8), parameter :: au_si=0.52917720859d-10
-! Planck constant in SI units (CODATA 2006)
-real(8), parameter :: hbar_si=1.054571628d-34
-! electron charge in SI units (CODATA 2006)
-real(8), parameter :: e_si=1.602176487d-19
+! electron g-factor (CODATA 2010)
+real(8), parameter :: gfacte=2.00231930436153d0
+! Hartree in SI units (CODATA 2010)
+real(8), parameter :: ha_si=4.35974434d-18
+! Hartree in inverse meters (CODATA 2010)
+real(8), parameter :: ha_im=2.194746313708d7
+! Bohr radius in SI units (CODATA 2010)
+real(8), parameter :: br_si=0.52917721092d-10
+! Planck constant in SI units (CODATA 2010)
+real(8), parameter :: hbar_si=1.054571726d-34
+! electron charge in SI units (CODATA 2010)
+real(8), parameter :: e_si=1.602176565d-19
 ! atomic unit of magnetic flux density in SI
-real(8), parameter :: b_si=hbar_si/(e_si*au_si**2)
+real(8), parameter :: b_si=hbar_si/(e_si*br_si**2)
 ! atomic unit of time in SI
 real(8), parameter :: t_si=hbar_si/ha_si
-! mass of 1/12 times carbon-12 in electron masses (CODATA 2006)
-real(8), parameter :: amu=1822.88848426d0
+! electron mass in SI (CODATA 2010)
+real(8), parameter :: em_si=9.10938291d-31
+! atomic mass unit in SI (CODATA 2010)
+real(8), parameter :: amu_si=1.660538921d-27
+! atomic mass unit in electron masses
+real(8), parameter :: amu=amu_si/em_si
 
 !---------------------------------!
 !     miscellaneous variables     !
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 2,2,9 /
+data version / 2,3,22 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks
@@ -1083,6 +1093,8 @@ integer tasks(maxtasks)
 integer task
 ! tlast is .true. if the calculation is on the last self-consistent loop
 logical tlast
+! tstop is .true. if the STOP file exists
+logical tstop
 ! number of self-consistent loops after which STATE.OUT is written
 integer nwrite
 ! if wrtvars is .true. then variables are written to VARIABLES.OUT
@@ -1094,7 +1106,7 @@ data filext / '.OUT' /
 ! scratch space path
 character(256) scrpath
 ! maximum number of note lines
-integer, parameter :: maxnlns=20
+integer, parameter :: maxnlns=30
 ! number of note lines
 integer notelns
 ! notes to include in INFO.OUT

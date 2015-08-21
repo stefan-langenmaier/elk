@@ -8,7 +8,7 @@ use modmain
 use modphonon
 implicit none
 ! local variables
-integer nb,iq,i,j,is,ia,ip
+integer iq,i,j,is,ia,ip
 ! allocatable arrays
 real(8), allocatable :: w(:)
 complex(8), allocatable :: dynq(:,:,:),dynr(:,:,:)
@@ -16,12 +16,11 @@ complex(8), allocatable :: dynp(:,:),ev(:,:)
 ! initialise universal variables
 call init0
 call init2
-nb=3*natmtot
-allocate(w(nb))
-allocate(dynq(nb,nb,nqpt))
-allocate(dynr(nb,nb,nqptnr))
-allocate(dynp(nb,nb))
-allocate(ev(nb,nb))
+allocate(w(nbph))
+allocate(dynq(nbph,nbph,nqpt))
+allocate(dynr(nbph,nbph,nqptnr))
+allocate(dynp(nbph,nbph))
+allocate(ev(nbph,nbph))
 ! read in the dynamical matrices
 call readdyn(dynq)
 ! apply the acoustic sum rule
@@ -31,10 +30,10 @@ call dynqtor(dynq,dynr)
 open(50,file='PHONON.OUT',action='WRITE',form='FORMATTED')
 do iq=1,nphwrt
   call dynrtoq(vqlwrt(:,iq),dynr,dynp)
-  call dyndiag(dynp,w,ev)
+  call dynev(dynp,w,ev)
   write(50,*)
   write(50,'(I6,3G18.10," : q-point, vqlwrt")') iq,vqlwrt(:,iq)
-  do j=1,nb
+  do j=1,nbph
     write(50,*)
     write(50,'(I6,G18.10," : mode, frequency")') j,w(j)
     i=0

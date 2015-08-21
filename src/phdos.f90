@@ -9,7 +9,7 @@ use modphonon
 use modtest
 implicit none
 ! local variables
-integer nb,iq,i,iw
+integer iq,i,iw
 integer i1,i2,i3
 real(8) wmin,wmax,wd,dw
 real(8) tmax,temp(ntemp),s(ntemp)
@@ -22,15 +22,14 @@ complex(8), allocatable :: dynp(:,:),ev(:,:)
 ! initialise universal variables
 call init0
 call init2
-nb=3*natmtot
-allocate(wp(nb))
+allocate(wp(nbph))
 allocate(w(nwplot))
 allocate(gw(nwplot))
 allocate(f(nwplot),g(nwplot))
-allocate(dynq(nb,nb,nqpt))
-allocate(dynr(nb,nb,nqptnr))
-allocate(dynp(nb,nb))
-allocate(ev(nb,nb))
+allocate(dynq(nbph,nbph,nqpt))
+allocate(dynr(nbph,nbph,nqptnr))
+allocate(dynp(nbph,nbph))
+allocate(ev(nbph,nbph))
 ! read in the dynamical matrices
 call readdyn(dynq)
 ! apply the acoustic sum rule
@@ -41,9 +40,9 @@ call dynqtor(dynq,dynr)
 wmin=0.d0
 wmax=0.d0
 do iq=1,nqpt
-  call dyndiag(dynq(:,:,iq),wp,ev)
+  call dynev(dynq(:,:,iq),wp,ev)
   wmin=min(wmin,wp(1))
-  wmax=max(wmax,wp(nb))
+  wmax=max(wmax,wp(nbph))
 end do
 wmax=wmax+(wmax-wmin)*0.1d0
 wmin=wmin-(wmax-wmin)*0.1d0
@@ -64,8 +63,8 @@ do i1=0,ngrkf-1
 ! compute the dynamical matrix at this particular q-point
       call dynrtoq(v,dynr,dynp)
 ! find the phonon frequencies
-      call dyndiag(dynp,wp,ev)
-      do i=1,nb
+      call dynev(dynp,wp,ev)
+      do i=1,nbph
         t1=(wp(i)-wmin)/dw+1.d0
         iw=nint(t1)
         if ((iw.ge.1).and.(iw.le.nwplot)) then

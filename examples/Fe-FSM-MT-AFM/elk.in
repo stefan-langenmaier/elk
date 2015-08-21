@@ -1,6 +1,6 @@
 
 ! Antiferromagnetic bcc iron example with  fixed spin moment in muffin-tin.
-! Rememeber to put a small magnetic fields on atoms with same symmetry as 
+! Rememeber to put a small magnetic fields on atoms with same symmetry as
 ! fixed moment. This in order to correctly symmetrize the magnetization.
 ! Run by Fredrik Bultmark, Francesco Cricchio, Lars Nordstrom.
 
@@ -8,11 +8,11 @@ tasks
   0
 
 ! antiferromagnetic local fixed spin moment calculation
-fixspin
+fsmtype
   2
 
 mommtfix
-  1 1   0.0 0.0  1.0     : is, ia, mommtfix 
+  1 1   0.0 0.0  1.0     : is, ia, mommtfix
   1 2   0.0 0.0 -1.0     : is, ia, mommtfix
 
 lmaxapw

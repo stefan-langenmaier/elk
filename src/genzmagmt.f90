@@ -21,23 +21,16 @@ complex(8) z1,z2
 nrc=nrcmt(is)
 nrci=nrcmtinr(is)
 ! calculate the z-component of magnetisation: up-up - dn-dn
+lmmax=lmmaxinr
 do irc=1,nrc
-  if (irc.le.nrci) then
-    lmmax=lmmaxinr
-  else
-    lmmax=lmmaxvr
-  end if
   zmagmt(1:lmmax,irc,1,ndmag)=conjg(wfmt11(1:lmmax,irc))*wfmt21(1:lmmax,irc) &
                              -conjg(wfmt12(1:lmmax,irc))*wfmt22(1:lmmax,irc)
+  if (irc.eq.nrci) lmmax=lmmaxvr
 end do
 ! non-collinear case
 if (ncmag) then
+  lmmax=lmmaxinr
   do irc=1,nrc
-    if (irc.le.nrci) then
-      lmmax=lmmaxinr
-    else
-      lmmax=lmmaxvr
-    end if
     do itp=1,lmmax
 ! up-dn spin density
       z1=conjg(wfmt11(itp,irc))*wfmt22(itp,irc)
@@ -49,6 +42,7 @@ if (ncmag) then
       z1=z2-z1
       zmagmt(itp,irc,1,2)=cmplx(-aimag(z1),dble(z1),8)
     end do
+    if (irc.eq.nrci) lmmax=lmmaxvr
   end do
 end if
 return

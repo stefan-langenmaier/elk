@@ -38,8 +38,7 @@ subroutine findband(sol,l,k,nr,r,vr,eps,demax,e,fnd)
 implicit none
 ! arguments
 real(8), intent(in) :: sol
-integer, intent(in) :: l
-integer, intent(in) :: k
+integer, intent(in) :: l,k
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
@@ -59,6 +58,7 @@ real(8) de,et,eb,t,tp
 real(8) p0(nr),p1(nr),q0(nr),q1(nr)
 ft=.false.
 fb=.false.
+fnd=.false.
 et=e
 eb=e
 ! two-pass loop
@@ -88,19 +88,13 @@ do ip=1,2
     end if
     tp=t
   end do
-  if (fb) then
-    fnd=.false.
-    return
-  end if
+  if (fb) return
 ! find the bottom of the band
   tp=0.d0
   de=-de0
   do ie=1,maxstp
     eb=eb+de
-    if (eb.lt.e-demax) then
-      fnd=.false.
-      return
-    end if
+    if (eb.lt.e-demax) return
     call rschroddme(sol,0,l,k,eb,nr,r,vr,nn,p0,p1,q0,q1)
     t=p1(nr)
     if (ie.gt.1) then
@@ -119,7 +113,6 @@ do ip=1,2
     tp=t
   end do
 end do
-fnd=.false.
 return
 10 continue
 ! set the band energy halfway between top and bottom

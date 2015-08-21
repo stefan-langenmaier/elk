@@ -9,7 +9,7 @@
 subroutine init1
 ! !USES:
 use modmain
-use modldapu
+use moddftu
 use modtest
 use modvars
 ! !DESCRIPTION:
@@ -117,7 +117,7 @@ else
     t1=radkpt/twopi
     ngridk(:)=int(t1*sqrt(bvec(1,:)**2+bvec(2,:)**2+bvec(3,:)**2))+1
   end if
-! setup the default k-point box
+! set up the default k-point box
   kptboxl(:,1)=vkloff(:)/dble(ngridk(:))
   if (task.eq.102) kptboxl(:,1)=0.d0
   kptboxl(:,2)=kptboxl(:,1)
@@ -272,20 +272,20 @@ if (allocated(lofr)) deallocate(lofr)
 allocate(lofr(nrmtmax,2,nlomax,natmtot))
 
 !-------------------------!
-!     LDA+U variables     !
+!     DFT+U variables     !
 !-------------------------!
-if (ldapu.ne.0) then
+if (dftu.ne.0) then
 ! allocate energy arrays to calculate Slater integrals with Yukawa potential
-  if (allocated(flue)) deallocate(flue)
-  allocate(flue(maxapword,0:lmaxapw,natmtot))
+  if (allocated(fdue)) deallocate(fdue)
+  allocate(fdue(maxapword,0:lmaxdm,natmtot))
 ! allocate radial functions to calculate Slater integrals with Yukawa potential
-  if (allocated(flufr)) deallocate(flufr)
-  allocate(flufr(nrmtmax,2,apwordmax,0:lmaxapw,natmtot))
+  if (allocated(fdufr)) deallocate(fdufr)
+  allocate(fdufr(nrmtmax,2,apwordmax,0:lmaxdm,natmtot))
 end if
 
-!------------------------------------!
-!     secular equation variables     !
-!------------------------------------!
+!---------------------------------------!
+!     eigenvalue equation variables     !
+!---------------------------------------!
 ! total number of empty states (M. Meinert)
 nempty=nint(nempty0*natmtot*nspinor)
 if (nempty.lt.1) nempty=1

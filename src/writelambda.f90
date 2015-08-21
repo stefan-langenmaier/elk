@@ -1,10 +1,10 @@
 
 subroutine writelambda(wq,gq)
 use modmain
+use modphonon
 implicit none
 ! arguments
-real(8), intent(in) :: wq(3*natmtot,nqpt)
-real(8), intent(in) :: gq(3*natmtot,nqpt)
+real(8), intent(in) :: wq(nbph,nqpt),gq(nbph,nqpt)
 ! local variables
 integer iq,i
 real(8) t1,t2
@@ -17,7 +17,7 @@ do iq=1,nqpt
   write(50,'(I6," : q-point")') iq
   write(50,'(3G18.10," : q-vector (lattice coordinates)")') vql(:,iq)
   write(50,'(3G18.10," : q-vector (Cartesian coordinates)")') vqc(:,iq)
-  do i=1,3*natmtot
+  do i=1,nbph
     t1=pi*fermidos*wq(i,iq)**2
     if (t1.gt.1.d-8) then
       t2=gq(i,iq)/t1

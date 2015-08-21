@@ -7,10 +7,11 @@ subroutine ephcouple
 use modmain
 use modphonon
 use modmpi
+use modstore
 implicit none
 ! local variables
 integer iq,ik,jk,ikq
-integer ist,jst,nb,ip
+integer ist,jst,ip
 integer is,ia,ias,js,ja,jas
 integer nrc,nrci,irc
 integer isym,iv(3),i,j,n
@@ -28,6 +29,9 @@ complex(8), allocatable :: ephmat(:,:,:)
 ! external functions
 real(8) sdelta,stheta
 external sdelta,stheta
+! set the inner part of the muffin-tin to zero
+fracinr0=fracinr
+fracinr=0.d0
 ! initialise universal variables
 call init0
 call init1
@@ -42,7 +46,6 @@ if ((iv(1).ne.0).or.(iv(2).ne.0).or.(iv(3).ne.0)) then
   write(*,*)
   stop
 end if
-nb=3*natmtot
 ! allocate global arrays
 if (allocated(dvsmt)) deallocate(dvsmt)
 allocate(dvsmt(lmmaxvr,nrcmtmax,natmtot))
@@ -50,10 +53,10 @@ if (allocated(dvsir)) deallocate(dvsir)
 allocate(dvsir(ngtot))
 !****** remove
 ! allocate local arrays
-allocate(wq(nb,nqpt),gq(nb,nqpt))
-allocate(dynq(nb,nb,nqpt),ev(nb,nb))
-allocate(dvphmt(lmmaxvr,nrcmtmax,natmtot,nb))
-allocate(dvphir(ngtot,nb))
+allocate(wq(nbph,nqpt),gq(nbph,nqpt))
+allocate(dynq(nbph,nbph,nqpt),ev(nbph,nbph))
+allocate(dvphmt(lmmaxvr,nrcmtmax,natmtot,nbph))
+allocate(dvphir(ngtot,nbph))
 allocate(zfmt(lmmaxvr,nrcmtmax))
 allocate(gzfmt(lmmaxvr,nrcmtmax,3,natmtot))
 ! read in the density and potentials from file
@@ -85,8 +88,8 @@ do ik=1,nkpt
   allocate(evalfv(nstfv,nspnfv))
   allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
-! solve the first- and second-variational secular equations
-  call seceqn(ik,evalfv,evecfv,evecsv)
+! solve the first- and second-variational eigenvalue equations
+  call eveqn(ik,evalfv,evecfv,evecsv)
 ! write the eigenvectors to file
   call putevecfv(ik,evecfv)
   call putevecsv(ik,evecsv)
@@ -116,9 +119,9 @@ end do
 do iq=1,nqpt
   if (mp_mpi) write(*,'("Info(ephcouple): ",I6," of ",I6," q-points")') iq,nqpt
 ! diagonalise the dynamical matrix
-  call dyndiag(dynq(:,:,iq),wq(:,iq),ev)
+  call dynev(dynq(:,:,iq),wq(:,iq),ev)
 ! loop over phonon branches
-  do j=1,nb
+  do j=1,nbph
 ! zero any negative frequencies
     if (wq(j,iq).lt.0.d0) wq(j,iq)=0.d0
 ! find change in Kohn-Sham potential for mode j
@@ -170,7 +173,7 @@ do iq=1,nqpt
   do ik=1,nkptnr
 ! distribute among MPI processes
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-    allocate(ephmat(nstsv,nstsv,nb))
+    allocate(ephmat(nstsv,nstsv,nbph))
 ! equivalent reduced k-point
     jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! compute the electron-phonon coupling matrix elements
@@ -185,7 +188,7 @@ do iq=1,nqpt
       x=(evalsv(ist,ikq)-efermi)/swidth
       t2=1.d0-stheta(stype,x)
 ! loop over phonon branches
-      do i=1,nb
+      do i=1,nbph
         x=(evalsv(ist,ikq)-efermi+wq(i,iq))/swidth
         t3=1.d0-stheta(stype,x)
         do jst=1,nstsv
@@ -197,9 +200,8 @@ do iq=1,nqpt
           x=(evalsv(jst,jk)-evalsv(ist,ikq)-wq(i,iq))/swidth
           t4=t4*sdelta(stype,x)/swidth
           t5=dble(ephmat(ist,jst,i))**2+aimag(ephmat(ist,jst,i))**2
-!$OMP CRITICAL
+!$OMP ATOMIC
           gq(i,iq)=gq(i,iq)+wq(i,iq)*t1*t4*t5
-!$OMP END CRITICAL
         end do
       end do
     end do
@@ -212,7 +214,7 @@ do iq=1,nqpt
 end do
 ! add gq from each process and redistribute
 if (np_mpi.gt.1) then
-  n=nb*nqpt
+  n=nbph*nqpt
   call mpi_allreduce(mpi_in_place,gq,n,mpi_double_precision,mpi_sum, &
    mpi_comm_kpt,ierror)
 end if
@@ -226,6 +228,8 @@ end if
 deallocate(wq,gq,dynq,ev)
 deallocate(dvphmt,dvphir)
 deallocate(zfmt,gzfmt)
+! restore fracinr
+fracinr=fracinr0
 return
 end subroutine
 

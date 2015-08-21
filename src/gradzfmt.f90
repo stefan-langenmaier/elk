@@ -50,8 +50,8 @@ complex(8), intent(in) :: zfmt(lmmaxvr,nr)
 integer, intent(in) :: ld
 complex(8), intent(out) :: gzfmt(lmmaxvr,ld,3)
 ! local variables
-integer nr0,ir0,ir
-integer l,m,lm,lm1,i,j
+integer nr0,ir0,ir,i,j
+integer lmmax,l,m,lm,lm1
 ! real constant 1/sqrt(2)
 real(8), parameter :: c1=0.7071067811865475244d0
 real(8) t1,t2,t3
@@ -113,18 +113,15 @@ do l=0,lmaxvr
   end do
 end do
 ! convert from spherical components to Cartesian
+lmmax=lmmaxinr
 do ir=1,nr
-  if (ir.le.nri) then
-    lm1=lmmaxinr
-  else
-    lm1=lmmaxvr
-  end if
-  do lm=1,lm1
+  do lm=1,lmmax
     z1=gzfmt(lm,ir,1)
     gzfmt(lm,ir,1)=c1*(z1-gzfmt(lm,ir,2))
     z1=c1*(z1+gzfmt(lm,ir,2))
     gzfmt(lm,ir,2)=cmplx(-aimag(z1),dble(z1),8)
   end do
+  if (ir.eq.nri) lmmax=lmmaxvr
 end do
 return
 end subroutine

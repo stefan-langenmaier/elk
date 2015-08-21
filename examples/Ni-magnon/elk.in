@@ -49,8 +49,8 @@ epsengy
 evaltol
  1.d-14
 
-! use a fixed spin angle calculation
-fixspin
+! use a fixed spin direction calculation
+fsmtype
  -1
 
 ! use a polar angle of 15 degrees

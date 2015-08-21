@@ -15,17 +15,15 @@ subroutine axangsu2(v,th,su2)
 !   axis vector $\hat{\bf v}$ and angle $\theta$. The spinor rotation matrix is
 !   given explicitly by
 !   $$ R^{1/2}(\hat{\bf v},\theta)=I\cos\frac{\theta}{2}
-!    +i(\hat{\bf v}\cdot\vec{\sigma})\sin\frac{\theta}{2}. $$
+!    -i(\hat{\bf v}\cdot\vec{\sigma})\sin\frac{\theta}{2}. $$
 !
 ! !REVISION HISTORY:
 !   Created August 2007 (JKD)
-!   Reversed rotation direction, February 2008 (L. Nordstrom)
 !EOP
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: v(3)
-real(8), intent(in) :: th
+real(8), intent(in) :: v(3),th
 complex(8), intent(out) :: su2(2,2)
 ! local variables
 real(8) vn(3),cs,sn,t1
@@ -40,10 +38,10 @@ end if
 vn(:)=v(:)/t1
 cs=cos(th/2.d0)
 sn=sin(th/2.d0)
-su2(1,1)=cmplx(cs,vn(3)*sn,8)
-su2(1,2)=cmplx(vn(2)*sn,vn(1)*sn,8)
-su2(2,1)=cmplx(-vn(2)*sn,vn(1)*sn,8)
-su2(2,2)=cmplx(cs,-vn(3)*sn,8)
+su2(1,1)=cmplx(cs,-vn(3)*sn,8)
+su2(1,2)=cmplx(-vn(2)*sn,-vn(1)*sn,8)
+su2(2,1)=cmplx(vn(2)*sn,-vn(1)*sn,8)
+su2(2,2)=cmplx(cs,vn(3)*sn,8)
 return
 end subroutine
 !EOC

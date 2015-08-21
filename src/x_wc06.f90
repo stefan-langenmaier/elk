@@ -13,7 +13,6 @@ real(8), intent(in) :: v
 real(8), intent(out) :: ex
 real(8), intent(out) :: vx
 ! local variables
-real(8), parameter :: pi=3.1415926535897932385d0
 real(8), parameter :: ax=-0.7385587663820224059d0
 real(8), parameter :: mu=0.2195149727645171d0
 real(8), parameter :: kappa=0.804d0

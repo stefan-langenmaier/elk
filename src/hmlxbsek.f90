@@ -16,6 +16,7 @@ integer ist1,ist2,jst1,jst2
 real(8) t0
 complex(8) zrho0,z1
 ! automatic arrays
+integer idx(nstsv)
 complex(8) zflm(lmmaxvr)
 ! allocatable arrays
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
@@ -33,8 +34,12 @@ allocate(wfir1(ngtot,nspinor,nstsv),wfir2(ngtot,nspinor,nstsv))
 allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
 allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot,nvcbse),zvclir(ngtot,nvcbse))
 allocate(zfmt(lmmaxvr,nrcmtmax))
+! index to all states
+do ist1=1,nstsv
+  idx(ist1)=ist1
+end do
 ! calculate the wavefunctions for all states of k-point ik2
-call genwfsvp(.false.,.false.,.false.,vkl(:,ik2),wfmt2,ngtot,wfir2)
+call genwfsvp(.false.,.false.,nstsv,idx,vkl(:,ik2),wfmt2,ngtot,wfir2)
 l=0
 do i2=1,nvbse
   ist2=istbse(i2,ik2)
@@ -43,8 +48,8 @@ do i2=1,nvbse
     a2=ijkbse(i2,j2,ik2)
     l=l+1
 ! calculate the complex overlap density
-    call genzrho(.true.,spinpol,wfmt2(:,:,:,:,ist2),wfmt2(:,:,:,:,jst2), &
-     wfir2(:,:,ist2),wfir2(:,:,jst2),zrhomt,zrhoir)
+    call genzrho(.true.,.true.,wfmt2(:,:,:,:,ist2),wfir2(:,:,ist2), &
+     wfmt2(:,:,:,:,jst2),wfir2(:,:,jst2),zrhomt,zrhoir)
 ! compute the Coulomb potential
     call genzvclmt(nrcmt,nrcmtinr,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt(:,:,:,l))
     call zpotcoul(nrcmt,nrcmtinr,nrcmtmax,rcmt,1,gc,jlgr,ylmg,sfacg,zrhoir, &
@@ -58,7 +63,7 @@ do ik1=1,nkptnr
     wfmt1(:,:,:,:,:)=wfmt2(:,:,:,:,:)
     wfir1(:,:,:)=wfir2(:,:,:)
   else
-    call genwfsvp(.false.,.false.,.false.,vkl(:,ik1),wfmt1,ngtot,wfir1)
+    call genwfsvp(.false.,.false.,nstsv,idx,vkl(:,ik1),wfmt1,ngtot,wfir1)
   end if
   do i1=1,nvbse
     ist1=istbse(i1,ik1)
@@ -66,8 +71,8 @@ do ik1=1,nkptnr
       jst1=jstbse(j1,ik1)
       a1=ijkbse(i1,j1,ik1)
 ! calculate the complex overlap density
-      call genzrho(.true.,spinpol,wfmt1(:,:,:,:,ist1),wfmt1(:,:,:,:,jst1), &
-       wfir1(:,:,ist1),wfir1(:,:,jst1),zrhomt,zrhoir)
+      call genzrho(.true.,.true.,wfmt1(:,:,:,:,ist1),wfir1(:,:,ist1), &
+       wfmt1(:,:,:,:,jst1),wfir1(:,:,jst1),zrhomt,zrhoir)
       l=0
       do i2=1,nvbse
         ist2=istbse(i2,ik2)
@@ -76,7 +81,7 @@ do ik1=1,nkptnr
           a2=ijkbse(i2,j2,ik2)
           l=l+1
 ! compute the matrix element
-          z1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
+          z1=t0*zfinp(.true.,zrhomt,zrhoir,zvclmt(:,:,:,l),zvclir(:,l))
           hmlbse(a1,a2)=hmlbse(a1,a2)+z1
 ! compute off-diagonal blocks if required
           if (bsefull) then
@@ -92,7 +97,7 @@ do ik1=1,nkptnr
               end do
             end do
             zvclir(:,l)=conjg(zvclir(:,l))
-            z1=t0*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
+            z1=t0*zfinp(.true.,zrhomt,zrhoir,zvclmt(:,:,:,l),zvclir(:,l))
             hmlbse(a1,b2)=hmlbse(a1,b2)+z1
             hmlbse(b1,a2)=hmlbse(b1,a2)-conjg(z1)
           end if

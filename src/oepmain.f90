@@ -16,15 +16,15 @@ real(8), allocatable :: rfmt1(:,:,:),rfmt2(:,:),rfir(:)
 real(8), allocatable :: rvfmt(:,:,:,:),rvfir(:,:)
 real(8), allocatable :: dvxmt(:,:,:),dvxir(:)
 real(8), allocatable :: dbxmt(:,:,:,:),dbxir(:,:)
-complex(8), allocatable :: vnlcv(:,:,:,:),vnlvv(:,:,:)
+complex(8), allocatable :: vclcv(:,:,:,:),vclvv(:,:,:)
 ! external functions
 real(8) rfinp
 external rfinp
 if (iscl.lt.1) return
-! calculate nonlocal matrix elements
-allocate(vnlcv(ncrmax,natmtot,nstsv,nkpt))
-allocate(vnlvv(nstsv,nstsv,nkpt))
-call oepvnl(vnlcv,vnlvv)
+! calculate Coulomb matrix elements
+allocate(vclcv(ncrmax,natmtot,nstsv,nkpt))
+allocate(vclvv(nstsv,nstsv,nkpt))
+call oepvcl(vclcv,vclvv)
 ! allocate local arrays
 allocate(rfmt1(lmmaxvr,nrmtmax,natmtot),rfir(ngtot))
 allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot),dvxir(ngtot))
@@ -64,7 +64,7 @@ do it=1,maxitoep
   do ik=1,nkpt
 ! distribute among MPI processes
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-    call oepresk(ik,vnlcv,vnlvv,dvxmt,dvxir,dbxmt,dbxir)
+    call oepresk(ik,vclcv,vclvv,dvxmt,dvxir,dbxmt,dbxir)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -85,7 +85,7 @@ do it=1,maxitoep
     end if
   end if
 ! convert muffin-tin residuals to spherical harmonics
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is,idm)
 !$OMP DO
   do ias=1,natmtot
     is=idxis(ias)
@@ -183,7 +183,7 @@ end do
 ! symmetrise the exchange potential and field
 call symrf(1,vxcmt,vxcir)
 if (spinpol) call symrvf(1,bxcmt,bxcir)
-deallocate(rfmt1,rfir,vnlcv,vnlvv)
+deallocate(rfmt1,rfir,vclcv,vclvv)
 deallocate(dvxmt,dvxir)
 if (spinpol) then
   deallocate(rvfmt,rvfir)

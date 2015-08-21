@@ -7,17 +7,15 @@ subroutine gendmat(tspndg,tlmdg,lmin,lmax,ias,ngp,apwalm,evecfv,evecsv,ld,dmat)
 use modmain
 implicit none
 ! arguments
-logical, intent(in) :: tspndg
-logical, intent(in) :: tlmdg
-integer, intent(in) :: lmin
-integer, intent(in) :: lmax
+logical, intent(in) :: tspndg,tlmdg
+integer, intent(in) :: lmin,lmax
 integer, intent(in) :: ias
 integer, intent(in) :: ngp(nspnfv)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv)
 integer, intent(in) :: ld
-complex(8), intent(out) :: dmat(ld,ld,nspinor,nspinor,nstsv)
+complex(8), intent(out) :: dmat(ld,nspinor,ld,nspinor,nstsv)
 ! local variables
 integer ist,ispn,jspn,is,ia
 integer nrc,nrci,nrc0,irc0,irc
@@ -35,9 +33,9 @@ if (lmin.lt.0) then
   write(*,*)
   stop
 end if
-if (lmax.gt.lmaxapw) then
+if (lmax.gt.lmaxvr) then
   write(*,*)
-  write(*,'("Error(gendmat): lmax > lmaxapw : ",2I8)') lmax,lmaxapw
+  write(*,'("Error(gendmat): lmax > lmaxvr : ",2I8)') lmax,lmaxvr
   write(*,*)
   stop
 end if
@@ -110,7 +108,7 @@ do j=1,nstsv
             call fderiv(-2,nrc0,rcmt(irc0,is),fr1(irc0),gr(irc0))
             t1=gr(nrc)
             call fderiv(-2,nrc0,rcmt(irc0,is),fr2(irc0),gr(irc0))
-            dmat(lm1,lm2,ispn,jspn,j)=cmplx(t1,gr(nrc),8)
+            dmat(lm1,ispn,lm2,jspn,j)=cmplx(t1,gr(nrc),8)
           end do
         end do
       end do

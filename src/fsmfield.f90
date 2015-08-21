@@ -27,16 +27,16 @@ implicit none
 ! local variables
 integer idm,is,ia,ias,ir,irc
 real(8) v1(3),v2(3),t1
-if ((.not.spinpol).or.(fixspin.eq.0)) return
+if ((.not.spinpol).or.(fsmtype.eq.0)) return
 ! determine the global effective field
-if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
+if ((abs(fsmtype).eq.1).or.(abs(fsmtype).eq.3)) then
   if (ncmag) then
     v1(:)=momtot(:)
   else
     v1(:)=0.d0
     v1(3)=momtot(1)
   end if
-  if (fixspin.gt.0) then
+  if (fsmtype.gt.0) then
 ! fixed spin moment
     v2(:)=v1(:)-momfix(:)
   else
@@ -64,7 +64,7 @@ if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
     end do
   end do
 end if
-if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
+if ((abs(fsmtype).eq.2).or.(abs(fsmtype).eq.3)) then
 ! determine the muffin-tin fields for fixed local moments
   do is=1,nspecies
     do ia=1,natoms(is)
@@ -78,7 +78,7 @@ if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
         v1(:)=0.d0
         v1(3)=mommt(1,ias)
       end if
-      if (fixspin.gt.0) then
+      if (fsmtype.gt.0) then
 ! fixed spin moment
         v2(:)=v1(:)-mommtfix(:,ia,is)
       else

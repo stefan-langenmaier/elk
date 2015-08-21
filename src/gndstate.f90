@@ -10,7 +10,7 @@ subroutine gndstate
 ! !USES:
 use modmain
 use modmpi
-use modldapu
+use moddftu
 ! !DESCRIPTION:
 !   Computes the self-consistent Kohn-Sham ground-state. General information is
 !   written to the file {\tt INFO.OUT}. First- and second-variational
@@ -34,6 +34,8 @@ real(8), allocatable :: v(:),work(:)
 ! initialise global variables
 call init0
 call init1
+! set the stop signal to .false.
+tstop=.false.
 ! initialise OEP variables if required
 if (xctype(1).lt.0) call init2
 if (task.eq.0) trdstate=.false.
@@ -69,8 +71,8 @@ if (mp_mpi) then
   open(65,file='RMSDVS'//trim(filext),action='WRITE',form='FORMATTED')
 ! open DTOTENERGY.OUT
   open(66,file='DTOTENERGY'//trim(filext),action='WRITE',form='FORMATTED')
-! open TENSMOM.OUT
-  if (tmomlu) open(67,file='TENSMOM'//trim(filext),action='WRITE', &
+! open TMDFTU.OUT
+  if (tmwrite) open(67,file='TMDFTU'//trim(filext),action='WRITE', &
    form='FORMATTED')
 ! open MOMENTM.OUT
   if (spinpol) open(68,file='MOMENTM'//trim(filext),action='WRITE', &
@@ -85,13 +87,6 @@ if (trdstate) then
   call readstate
   if (mp_mpi) then
     write(60,'("Potential read in from STATE.OUT")')
-    if (fixspin.ne.0) then
-      write(*,*)
-      write(*,'("Warning(gndstate): fixed spin moment calculation resumed &
-       &from STATE.OUT")')
-      write(*,'("This may get trapped in a metastable state")')
-      write(*,'("Better to start from atomic density (task = 0)")')
-    end if
   end if
   if (autolinengy) call readfermi
 else
@@ -104,13 +99,17 @@ if (mp_mpi) call flushifc(60)
 ! size of mixing vector
 n=lmmaxvr*nrmtmax*natmtot+ngtot
 if (spinpol) n=n+ndmag*(lmmaxvr*nrcmtmax*natmtot+ngtot)
-if (ldapu.ne.0) n=n+2*lmmaxlu*lmmaxlu*nspinor*nspinor*natmtot
+if (tvmatmt) n=n+2*((lmmaxdm*nspinor)**2)*natmtot
 ! allocate mixing array
 allocate(v(n))
 ! determine the size of the mixer work array
 nwork=-1
 call mixerifc(mixtype,n,v,dv,nwork,v)
 allocate(work(nwork))
+! initialise the mixer
+iscl=0
+call mixpack(.true.,n,v)
+call mixerifc(mixtype,n,v,dv,nwork,work)
 ! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
@@ -177,16 +176,28 @@ do iscl=1,maxscl
   call mpi_barrier(mpi_comm_kpt,ierror)
 ! generate the density and magnetisation
   call rhomag
-! LDA+U
-  if (ldapu.ne.0) then
-! generate the LDA+U density matrix
-    call gendmatlu
-! generate the LDA+U potential matrix
-    call genvmatlu
-! write the LDA+U matrices to file
-    if (mp_mpi) call writeldapu
+! DFT+U or fixed tensor moment calculation
+  if ((dftu.ne.0).or.(ftmtype.ne.0)) then
+! generate the muffin-tin density matrix used for computing the potential matrix
+    call gendmatmt
+! write the FTM tensor moments to file
+    if (ftmtype.ne.0) call writeftm
+! generate the DFT+U or FTM muffin-tin potential matrices
+    call genvmatmt
+  end if
+  if (dftu.ne.0) then
+    if (mp_mpi) then
+! write the DFT+U matrices to file
+      call writedftu
 ! calculate and write tensor moments to file
-    if (tmomlu) call tensmom(67)
+      if (tmwrite) then
+        if (spinorb) then
+          call writetm3du(67)
+        else
+          call writetm2du(67)
+        end if
+      end if
+    end if
   end if
 ! compute the Kohn-Sham potentials and magnetic fields
   call potks
@@ -248,7 +259,7 @@ do iscl=1,maxscl
     write(64,'(G22.12)') bandgap(1)
     call flushifc(64)
 ! output effective fields for fixed spin moment calculations
-    if (fixspin.ne.0) call writefsm(60)
+    if (fsmtype.ne.0) call writefsm(60)
 ! check for WRITE file
     inquire(file='WRITE',exist=exist)
     if (exist) then
@@ -293,10 +304,15 @@ do iscl=1,maxscl
       tlast=.true.
     end if
   end if
-  etp=engytot
   if ((xctype(1).lt.0).and.mp_mpi) then
     write(60,*)
     write(60,'("Magnitude of OEP residual : ",G18.10)') resoep
+  end if
+! average the current and previous total energies and store
+  if (iscl.gt.1) then
+    etp=0.75d0*engytot+0.25d0*etp
+  else
+    etp=engytot
   end if
 ! check for STOP file (only master process)
   if (mp_mpi) then
@@ -306,11 +322,13 @@ do iscl=1,maxscl
       write(60,'("STOP file exists - stopping self-consistent loop")')
       open(50,file='STOP')
       close(50,status='DELETE')
+      tstop=.true.
       tlast=.true.
     end if
   end if
-! broadcast tlast from master process to all other processes
+! broadcast tlast and tstop from master process to all other processes
   call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_kpt,ierror)
+  call mpi_bcast(tstop,1,mpi_logical,0,mpi_comm_kpt,ierror)
 ! output the current total CPU time
   timetot=timeinit+timemat+timefv+timesv+timerho+timepot+timefor
   if (mp_mpi) then
@@ -348,7 +366,7 @@ if (mp_mpi) then
   write(60,'("Timings (CPU seconds) :")')
   write(60,'(" initialisation",T40,": ",F12.2)') timeinit
   write(60,'(" Hamiltonian and overlap matrix set up",T40,": ",F12.2)') timemat
-  write(60,'(" first-variational secular equation",T40,": ",F12.2)') timefv
+  write(60,'(" first-variational eigenvalue equation",T40,": ",F12.2)') timefv
   if (spinpol) then
     write(60,'(" second-variational calculation",T40,": ",F12.2)') timesv
   end if
@@ -378,8 +396,8 @@ if (mp_mpi) then
   close(65)
 ! close the DTOTENERGY.OUT file
   close(66)
-! close TENSMOM.OUT file
-  if (tmomlu) close(67)
+! close TMDFTU.OUT file
+  if (tmwrite) close(67)
 end if
 deallocate(v,work)
 ! synchronise MPI processes

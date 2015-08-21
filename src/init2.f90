@@ -6,7 +6,7 @@
 subroutine init2
 use modmain
 use modrdm
-use modphonon
+use modvars
 implicit none
 ! local variables
 logical lsym(48)
@@ -59,7 +59,7 @@ if (allocated(vqc)) deallocate(vqc)
 allocate(vqc(3,nqptnr))
 if (allocated(wqpt)) deallocate(wqpt)
 allocate(wqpt(nqptnr))
-! setup the q-point box (offset should always be zero)
+! set up the q-point box (offset should always be zero)
 boxl(:,:)=0.d0
 boxl(1,2)=1.d0; boxl(2,3)=1.d0; boxl(3,4)=1.d0;
 ! generate the q-point set
@@ -78,6 +78,15 @@ write(*,'("Error(init2): q = 0 not in q-point set")')
 write(*,*)
 stop
 10 continue
+! write to VARIABLES.OUT
+call writevars('nsymqpt',iv=nsymqpt)
+call writevars('symqpt',nv=9*nsymqpt,iva=symqpt)
+call writevars('ngridq',nv=3,iva=ngridq)
+call writevars('nqpt',iv=nqpt)
+call writevars('iqmap',nv=nqptnr,iva=iqmap)
+call writevars('ivq',nv=3*nqptnr,iva=ivq)
+call writevars('vql',nv=3*nqptnr,rva=vql)
+call writevars('wqpt',nv=nqpt,rva=wqpt)
 
 !----------------------------------------------------!
 !     OEP, Hartree-Fock, RDMFT and BSE variables     !

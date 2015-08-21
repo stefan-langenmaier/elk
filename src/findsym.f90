@@ -9,6 +9,7 @@
 subroutine findsym(apl1,apl2,nsym,lspl,lspn,iea)
 ! !USES:
 use modmain
+use moddftu
 ! !INPUT/OUTPUT PARAMETERS:
 !   apl1 : first set of atomic positions in lattice coordinates
 !          (in,real(3,maxatoms,maxspecies))
@@ -46,11 +47,16 @@ integer, intent(out) :: lspn(48)
 integer, intent(out) :: iea(natmmax,nspecies,48)
 ! local variables
 integer isym,jsym,jsym0,jsym1
-integer is,ia,ja,md
+integer is,ia,ias,ja,jas,md,n
 real(8) sl(3,3),sc(3,3),v(3),t1
 ! automatic arrays
 integer jea(natmmax,nspecies)
 real(8) apl3(3,natmmax)
+! allocatable arrays
+complex(8), allocatable :: dmat(:,:,:,:)
+! external functions
+real(8) dnrm2
+external dnrm2
 nsym=0
 ! loop over lattice symmetries (spatial rotations)
 do isym=1,nsymlat
@@ -129,6 +135,31 @@ do isym=1,nsymlat
     goto 40
   end if
 30 continue
+! check invariance of density matrices for fixed tensor moment calculations
+  if (ftmtype.ne.0) then
+    allocate(dmat(lmmaxdm,nspinor,lmmaxdm,nspinor))
+    n=2*(lmmaxdm*nspinor)**2
+    do is=1,nspecies
+      do ia=1,natoms(is)
+        ias=idxas(ia,is)
+! equivalent atom
+        ja=jea(ia,is)
+        jas=idxas(ja,is)
+! rotate the fixed tensor moment density matrix
+        dmat(:,:,:,:)=0.d0
+        call rotdmat(symlatc(:,:,isym),symlatc(:,:,jsym),lmaxdm,nspinor, &
+         lmmaxdm,dmftm(:,:,:,:,jas),dmat)
+! check invariance
+        call daxpy(n,-1.d0,dmftm(:,:,:,:,ias),1,dmat,1)
+        t1=dnrm2(n,dmat,1)/dble(n)
+        if (t1.gt.epslat) then
+          deallocate(dmat)
+          goto 40
+        end if
+      end do
+    end do
+    deallocate(dmat)
+  end if
 ! everything invariant so add symmetry to set
   nsym=nsym+1
   lspl(nsym)=isym

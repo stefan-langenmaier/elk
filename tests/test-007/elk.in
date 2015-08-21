@@ -1,5 +1,5 @@
 
-! FeAl in CsCl (B2) structure using LDA+U and interpolation between AMF and
+! FeAl in CsCl (B2) structure using GGA+U and interpolation between AMF and
 ! FLL double counting.
 
 tasks
@@ -22,9 +22,9 @@ gmaxvr
 xctype
   20
 
-lda+u
-  3 1                      : ldapu
-  1 2  0.183 0.034911967   : is,llu(is),ujlu(1,is),ujlu(2,is)
+dft+u
+  3 1                      : dftu, inpdftu
+  1 2  0.183 0.034911967   : is, l, U, J
 
 spinpol
   .true.

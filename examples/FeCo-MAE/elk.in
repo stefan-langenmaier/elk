@@ -12,17 +12,27 @@
 tasks
   28
 
-! tight convergence required
-epspot
-  1.e-7
+! number of magnetisation direction points; the estimate of the MAE improves
+! with the number of points; in this case, the symmetry-reduced cardinal
+! directions are used
+npmae
+  -1
+
+! high-quality calculation but with small k-point set
+highq
+ .true.
+
+autokpt
+ .false.
+
+ngridk
+  4  4  4
+
+swidth
+  0.01
 
 mixtype
   3
-
-! number of magnetisation direction points; the estimate of the MAE improves
-! with the number of points
-npmae
-  6
 
 ! artificial strained lattice
 avec
@@ -50,7 +60,4 @@ atoms
   'Co.in'
   1
   0.0  0.5  0.5
-
-ngridk
-  4  4  4
 

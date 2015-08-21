@@ -16,8 +16,8 @@ integer nr0,ir0
 call zgemm('N','N',lmmaxinr,nri,lmmaxinr,zone,zbshtinr,lmmaxinr,zfmt1,lmmaxvr, &
  zzero,zfmt2,lmmaxvr)
 ! transform the outer part of the muffin-tin
-if (nr.eq.nri) return
 nr0=nr-nri
+if (nr0.eq.0) return
 ir0=nri+1
 call zgemm('N','N',lmmaxvr,nr0,lmmaxvr,zone,zbshtvr,lmmaxvr,zfmt1(:,ir0), &
  lmmaxvr,zzero,zfmt2(:,ir0),lmmaxvr)

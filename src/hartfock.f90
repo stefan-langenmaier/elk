@@ -102,8 +102,8 @@ do iscl=1,maxscl
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
     allocate(evecsv(nstsv,nstsv))
     call getevecsv(vkl(:,ik),evecsv)
-! solve the Hartree-Fock secular equation
-    call seceqnhf(ik,vmt,vir,bmt,bir,evecsv)
+! solve the Hartree-Fock eigenvalue equation
+    call eveqnhf(ik,vmt,vir,bmt,bir,evecsv)
 ! write the eigenvalues/vectors to file
     call putevalsv(ik,evalsv(:,ik))
     call putevecsv(ik,evecsv)

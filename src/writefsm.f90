@@ -10,12 +10,12 @@ implicit none
 integer, intent(in) :: fnum
 ! local variables
 integer is,ia,ias
-if (fixspin.eq.0) return
+if (fsmtype.eq.0) return
 write(fnum,*)
-if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
+if ((abs(fsmtype).eq.1).or.(abs(fsmtype).eq.3)) then
   write(fnum,'("FSM global effective field",T30,": ",3G18.10)') bfsmc(1:ndmag)
 end if
-if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
+if ((abs(fsmtype).eq.2).or.(abs(fsmtype).eq.3)) then
   write(fnum,'("FSM local muffin-tin effective fields :")')
   do is=1,nspecies
     write(fnum,'(" species : ",I4," (",A,")")') is,trim(spsymb(is))

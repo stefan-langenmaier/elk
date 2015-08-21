@@ -66,10 +66,14 @@ complex(8), intent(in) :: sfacgq(ngrf,natmtot)
 complex(8), intent(inout) :: chi0(nwrf,ngrf,4,ngrf,4)
 ! local variables
 logical tz(4)
-integer isym,jkp,jkpq,iw
-integer ig,jg,ist,jst,a,b,i,j
+integer isym,jkp,jkpq
+integer iw,nst,nstq
+integer ist,jst,kst,lst
+integer ig,jg,a,b,i,j
 real(8) vkql(3),eij,t1
 complex(8) z1,z2
+! automatic arrays
+integer idx(nstsv),idxq(nstsv)
 ! allocatable arrays
 complex(8), allocatable :: wfmt(:,:,:,:,:),wfir(:,:,:)
 complex(8), allocatable :: wfmtq(:,:,:,:,:),wfirq(:,:,:)
@@ -86,27 +90,42 @@ vkql(:)=vkl(:,ikp)+vqpl(:)
 ! equivalent reduced k-points for k and k+q
 call findkpt(vkl(:,ikp),isym,jkp)
 call findkpt(vkql,isym,jkpq)
-! generate the wavefunctions for all states at k and k+q
-allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir(ngtot,nspinor,nstsv))
-call genwfsvp(.false.,.false.,.false.,vkl(:,ikp),wfmt,ngtot,wfir)
-allocate(wfmtq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfirq(ngtot,nspinor,nstsv))
-call genwfsvp(.false.,.false.,.false.,vkql,wfmtq,ngtot,wfirq)
+! count and index states at k and k+q in energy window
+nst=0
+do ist=1,nstsv
+  if (abs(evalsv(ist,jkp)-efermi).lt.emaxrf) then
+    nst=nst+1
+    idx(nst)=ist
+  end if
+end do
+nstq=0
+do jst=1,nstsv
+  if (abs(evalsv(jst,jkpq)-efermi).lt.emaxrf) then
+    nstq=nstq+1
+    idxq(nstq)=jst
+  end if
+end do
+! generate the wavefunctions for all states at k and k+q in energy window
+allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nst))
+allocate(wfir(ngtot,nspinor,nst))
+call genwfsvp(.false.,.false.,nst,idx,vkl(:,ikp),wfmt,ngtot,wfir)
+allocate(wfmtq(lmmaxvr,nrcmtmax,natmtot,nspinor,nstq))
+allocate(wfirq(ngtot,nspinor,nstq))
+call genwfsvp(.false.,.false.,nstq,idxq,vkql,wfmtq,ngtot,wfirq)
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(zrhomt,zrhoir,zw,zg) &
-!$OMP PRIVATE(jst,t1,eij,iw,i,j) &
-!$OMP PRIVATE(a,b,tz,ig,jg,z1,z2)
+!$OMP PRIVATE(jst,kst,lst,t1,eij,iw) &
+!$OMP PRIVATE(i,j,a,b,tz,ig,jg,z1,z2)
 !$OMP DO
-do ist=1,nstsv
-  if (abs(evalsv(ist,jkp)-efermi).gt.emaxrf) cycle
+do ist=1,nst
   allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngtot))
   allocate(zw(nwrf),zg(ngrf,4))
-  do jst=1,nstsv
-    if (abs(evalsv(jst,jkpq)-efermi).gt.emaxrf) cycle
-    t1=wkptnr*omega*(occsv(ist,jkp)-occsv(jst,jkpq))
+  kst=idx(ist)
+  do jst=1,nstq
+    lst=idxq(jst)
+    t1=wkptnr*omega*(occsv(kst,jkp)-occsv(lst,jkpq))
     if (abs(t1).lt.1.d-8) cycle
-    eij=evalsv(ist,jkp)-evalsv(jst,jkpq)
+    eij=evalsv(kst,jkp)-evalsv(lst,jkpq)
 ! scissor operator
     if (abs(scsr).gt.1.d-8) then
       if (eij.gt.0.d0) then
@@ -127,16 +146,16 @@ do ist=1,nstsv
 ! find which contributions are zero for collinear case
         tz(i)=.false.
         if (.not.ncmag) then
-          if (((a.eq.1).and.(ist.gt.nstfv)).or. &
-              ((a.eq.2).and.(ist.le.nstfv)).or. &
-              ((b.eq.1).and.(jst.gt.nstfv)).or. &
-              ((b.eq.2).and.(jst.le.nstfv))) then
+          if (((a.eq.1).and.(kst.gt.nstfv)).or. &
+              ((a.eq.2).and.(kst.le.nstfv)).or. &
+              ((b.eq.1).and.(lst.gt.nstfv)).or. &
+              ((b.eq.2).and.(lst.le.nstfv))) then
             tz(i)=.true.
             cycle
           end if
         end if
-        call genzrho(.true.,.false.,wfmt(:,:,:,a,ist),wfmtq(:,:,:,b,jst), &
-         wfir(:,a,ist),wfirq(:,b,jst),zrhomt,zrhoir)
+        call genzrho(.true.,.false.,wfmt(:,:,:,a,ist),wfir(:,a,ist), &
+         wfmtq(:,:,:,b,jst),wfirq(:,b,jst),zrhomt,zrhoir)
         call zftzf(ngrf,gqc,ylmgq,ngrf,sfacgq,zrhomt,zrhoir,zg(:,i))
       end do
     end do

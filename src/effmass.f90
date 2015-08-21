@@ -56,8 +56,8 @@ do ik=1,nkpt
   allocate(evecsv(nstsv,nstsv))
   i1=ivk(1,ik); i2=ivk(2,ik); i3=ivk(3,ik)
   if ((i1.eq.0).and.(i2.eq.0).and.(i3.eq.0)) ik0=ik
-! solve the first- and second-variational secular equations
-  call seceqn(ik,evalfv,evecfv,evecsv)
+! solve the first- and second-variational eigenvalue equations
+  call eveqn(ik,evalfv,evecfv,evecsv)
 ! copy eigenvalues to new array
   j1=i1+ndspem; j2=i2+ndspem; j3=i3+ndspem
   do ist=1,nstsv

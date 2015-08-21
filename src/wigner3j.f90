@@ -67,9 +67,9 @@ if ((m1+m2+m3.ne.0).or.(l1.lt.0).or.(l2.lt.0).or.(l3.lt.0)) then
 end if
 n1=j1-m1
 n2=j2+m2
-k1=max(0,j2-j3-m1,j1-j3+m2)
+k1=max(0,n1-l2,n2-l1)
 k2=min(l3,n1,n2)
-if (mod(k1+j1+j2+m3,2).ne.0) then
+if (mod(k1-j1+j2+m3,2).ne.0) then
   sgn=-1.d0
 else
   sgn=1.d0

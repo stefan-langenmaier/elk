@@ -42,16 +42,13 @@ do ias=1,natmtot
     call rbsht(nr,nri,1,grfmt(:,:,ias,i),1,rfmt2(:,:,i))
   end do
 ! integrand in muffin-tin
+  lmmax=lmmaxinr
   do ir=1,nr
-    if (ir.le.nri) then
-      lmmax=lmmaxinr
-    else
-      lmmax=lmmaxvr
-    end if
     do itp=1,lmmax
       t1=sqrt(rfmt2(itp,ir,1)**2+rfmt2(itp,ir,2)**2+rfmt2(itp,ir,3)**2)
       rfmt1(itp,ir)=t1/rfmt1(itp,ir)
     end do
+    if (ir.eq.nri) lmmax=lmmaxvr
   end do
 ! convert to spherical harmonics
   call rfsht(nr,nri,1,rfmt1,1,rfmt(:,:,ias))

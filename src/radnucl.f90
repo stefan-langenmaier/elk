@@ -11,7 +11,7 @@ real(8) function radnucl(z)
 !   z : atomic number (in,real)
 ! !DESCRIPTION:
 !   Computes an approximate nuclear charge radius from the atomic number $Z$.
-!   The nuclear mass number is estimated using
+!   The nuclear mass number, $A$, is estimated using
 !   $$ A=4.467\times 10^{-3}Z^2+2.163 Z-1.168, $$
 !   [D. Andrae in {\it Relativistic Electronic Structure Theory - Fundamentals}
 !   {\bf 11}, 203 (2002)], and the nuclear charge radius can be determined from
@@ -31,8 +31,8 @@ real(8), intent(in) :: z
 real(8), parameter :: c2=4.467d-3, c1=2.163d0, c0=-1.168d0
 ! coefficients for computing charge radius (fm)
 real(8), parameter :: r0=0.9071d0, r1=1.105d0, r2=-0.548d0
-! Bohr radius in SI units (CODATA 2006)
-real(8), parameter :: au_si=0.52917720859d-10
+! Bohr radius in SI units (CODATA 2010)
+real(8), parameter :: br_si=0.52917721092d-10
 real(8) za,a,a13,a23,a43
 za=abs(z)
 ! approximate nuclear mass number
@@ -46,7 +46,7 @@ a13=a**(1.d0/3.d0)
 a23=a13**2
 a43=a13*a
 radnucl=(r0+r1/a23+r2/a43)*a13
-radnucl=radnucl*1.d-15/au_si
+radnucl=radnucl*1.d-15/br_si
 return
 end function
 !EOC

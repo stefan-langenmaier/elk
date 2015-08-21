@@ -10,13 +10,13 @@ implicit none
 integer isym,lspn
 integer is,ia,ja
 real(8) sc(3,3),v(3),t1
-if (fixspin.eq.0) return
+if (fsmtype.eq.0) return
 do isym=1,nsymcrys
   lspn=lspnsymc(isym)
 ! proper rotation matrix in Cartesian coordinates
   sc(:,:)=dble(symlatd(lspn))*symlatc(:,:,lspn)
 ! check invariance of global moment
-  if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
+  if ((abs(fsmtype).eq.1).or.(abs(fsmtype).eq.3)) then
     v(:)=sc(:,1)*momfix(1)+sc(:,2)*momfix(2)+sc(:,3)*momfix(3)
     t1=sum(abs(momfix(:)-v(:)))
     if (t1.gt.epslat) then
@@ -27,7 +27,7 @@ do isym=1,nsymcrys
     end if
   end if
 ! check invariance of muffin-tin moments
-  if ((abs(fixspin).eq.2).or.(abs(fixspin).eq.3)) then
+  if ((abs(fsmtype).eq.2).or.(abs(fsmtype).eq.3)) then
     do is=1,nspecies
       do ia=1,natoms(is)
 ! equivalent atom

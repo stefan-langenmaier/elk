@@ -101,9 +101,8 @@ do l=1,noptcomp
           if (i.eq.j) then
             if (ist.eq.jst) then
               x=(evalsv(ist,jk)-efermi)/swidth
-!$OMP CRITICAL
+!$OMP ATOMIC
               wplas=wplas+wkptnr*dble(z1)*sdelta(stype,x)/swidth
-!$OMP END CRITICAL
             end if
           end if
         end if

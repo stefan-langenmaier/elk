@@ -28,7 +28,7 @@ integer ik1,ik2,jk,iv(3)
 integer ist1,ist2,ist3,ist4
 real(8) t1,t2,t3
 ! allocatable arrays
-complex(8), allocatable :: vnlijjk(:,:,:,:)
+complex(8), allocatable :: vclijjk(:,:,:,:)
 complex(8), allocatable :: evecsv(:,:)
 if (rdmxctype.eq.0) return
 ! calculate the prefactor
@@ -48,12 +48,12 @@ else
   write(*,*)
   stop
 end if
-allocate(vnlijjk(nstsv,nstsv,nstsv,nkpt))
+allocate(vclijjk(nstsv,nstsv,nstsv,nkpt))
 allocate(evecsv(nstsv,nstsv))
 ! start loop over non-reduced k-points
 do ik1=1,nkptnr
-! get non-local matrix elements
-  call getvnlijjk(ik1,vnlijjk)
+! get the Coulomb matrix elements
+  call getvclijjk(ik1,vclijjk)
 ! find the equivalent reduced k-point
   iv(:)=ivk(:,ik1)
   jk=ikmap(iv(1),iv(2),iv(3))
@@ -78,7 +78,7 @@ do ik1=1,nkptnr
               end if
             end if
             dedc(ist2,ist3,ik2)=dedc(ist2,ist3,ik2)-t2*evecsv(ist2,ist1)* &
-             vnlijjk(ist1,ist3,ist4,ik2)
+             vclijjk(ist1,ist3,ist4,ik2)
           end do
         end do
       end do
@@ -87,7 +87,7 @@ do ik1=1,nkptnr
   end do
 ! end loop over non-reduced k-points
 end do
-deallocate(vnlijjk,evecsv)
+deallocate(vclijjk,evecsv)
 return
 end subroutine
 !EOC

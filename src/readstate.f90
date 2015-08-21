@@ -9,7 +9,7 @@
 subroutine readstate
 ! !USES:
 use modmain
-use modldapu
+use moddftu
 ! !DESCRIPTION:
 !   Reads in the charge density and other relevant variables from the file
 !   {\tt STATE.OUT}. Checks for version and parameter compatibility.
@@ -30,8 +30,8 @@ integer nspecies_,natoms_,lmmaxvr_
 integer nrmt_(maxspecies),nrmtmax_
 integer nrcmt_(maxspecies),nrcmtmax_
 integer ngridg_(3),ngtot_,ngvec_
-integer ndmag_,nspinor_,fixspin_
-integer ldapu_,lmmaxlu_
+integer ndmag_,nspinor_,fsmtype_,ftmtype_
+integer dftu_,lmmaxdm_
 real(8) t1
 ! allocatable arrays
 integer, allocatable :: mapir(:)
@@ -45,7 +45,7 @@ real(8), allocatable :: bxcmt_(:,:,:,:),bxcir_(:,:)
 real(8), allocatable :: bsmt_(:,:,:,:),bsir_(:,:)
 real(8), allocatable :: bfsmcmt_(:,:)
 complex(8), allocatable :: vsig_(:)
-complex(8), allocatable :: vmatlu_(:,:,:,:,:)
+complex(8), allocatable :: vmatmt_(:,:,:,:,:),vmftm_(:,:,:,:,:)
 open(50,file='STATE'//trim(filext),action='READ',form='UNFORMATTED', &
  status='OLD',iostat=iostat)
 if (iostat.ne.0) then
@@ -109,9 +109,14 @@ if ((spinpol_).and.(ndmag_.ne.1).and.(ndmag_.ne.3)) then
   stop
 end if
 read(50) nspinor_
-read(50) fixspin_
-read(50) ldapu_
-read(50) lmmaxlu_
+read(50) fsmtype_
+if ((version_(1).gt.2).or.(version_(2).ge.3)) then
+  read(50) ftmtype_
+else
+  ftmtype_=0
+end if
+read(50) dftu_
+read(50) lmmaxdm_
 ngtot_=ngridg_(1)*ngridg_(2)*ngridg_(3)
 allocate(mapir(ngtot))
 allocate(rhomt_(lmmaxvr_,nrmtmax_,natmtot))
@@ -148,30 +153,48 @@ if (spinpol_) then
   read(50) bxcmt_,bxcir_
   read(50) bsmt_,bsir_
 ! read fixed spin moment effective fields
-  if (fixspin_.ne.0) then
+  if (fsmtype_.ne.0) then
     allocate(bfsmcmt_(3,natmtot))
     read(50) bfsmc
     read(50) bfsmcmt_
-    if (fixspin.ne.0) bfsmcmt(:,:)=bfsmcmt_(:,:)
+    if (fsmtype.ne.0) bfsmcmt(:,:)=bfsmcmt_(:,:)
     deallocate(bfsmcmt_)
   end if
 end if
-! read LDA+U potential matrix elements
-if ((ldapu.ne.0).and.(ldapu_.ne.0)) then
-  allocate(vmatlu_(lmmaxlu_,lmmaxlu_,nspinor_,nspinor_,natmtot))
-  read(50) vmatlu_
-  lmmax=min(lmmaxlu,lmmaxlu_)
-  vmatlu(:,:,:,:,:)=0.d0
+! read DFT+U potential matrix in each muffin-tin
+if (((dftu.ne.0).and.(dftu_.ne.0)).or. &
+    ((ftmtype.ne.0).and.(ftmtype_.ne.0))) then
+  allocate(vmatmt_(lmmaxdm_,nspinor_,lmmaxdm_,nspinor_,natmtot))
+  read(50) vmatmt_
+  lmmax=min(lmmaxdm,lmmaxdm_)
+  vmatmt(:,:,:,:,:)=0.d0
   if (nspinor.eq.nspinor_) then
-    vmatlu(1:lmmax,1:lmmax,:,:,:)=vmatlu_(1:lmmax,1:lmmax,:,:,:)
+    vmatmt(1:lmmax,:,1:lmmax,:,:)=vmatmt_(1:lmmax,:,1:lmmax,:,:)
   else if ((nspinor.eq.1).and.(nspinor_.eq.2)) then
-    vmatlu(1:lmmax,1:lmmax,1,1,:)=0.5d0*(vmatlu_(1:lmmax,1:lmmax,1,1,:) &
-     +vmatlu_(1:lmmax,1:lmmax,2,2,:))
+    vmatmt(1:lmmax,1,1:lmmax,1,:)=0.5d0*(vmatmt_(1:lmmax,1,1:lmmax,1,:) &
+     +vmatmt_(1:lmmax,2,1:lmmax,2,:))
   else
-    vmatlu(1:lmmax,1:lmmax,1,1,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
-    vmatlu(1:lmmax,1:lmmax,2,2,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
+    vmatmt(1:lmmax,1,1:lmmax,1,:)=vmatmt_(1:lmmax,1,1:lmmax,1,:)
+    vmatmt(1:lmmax,2,1:lmmax,2,:)=vmatmt_(1:lmmax,1,1:lmmax,1,:)
   end if
-  deallocate(vmatlu_)
+  deallocate(vmatmt_)
+end if
+! read fixed tensor moment potential matrix elements
+if ((ftmtype.ne.0).and.(ftmtype_.ne.0)) then
+  allocate(vmftm_(lmmaxdm_,nspinor_,lmmaxdm_,nspinor_,natmtot))
+  read(50) vmftm_
+  lmmax=min(lmmaxdm,lmmaxdm_)
+  vmftm_(:,:,:,:,:)=0.d0
+  if (nspinor.eq.nspinor_) then
+    vmftm(1:lmmax,:,1:lmmax,:,:)=vmftm_(1:lmmax,:,1:lmmax,:,:)
+  else if ((nspinor.eq.1).and.(nspinor_.eq.2)) then
+    vmftm(1:lmmax,1,1:lmmax,1,:)=0.5d0*(vmftm_(1:lmmax,1,1:lmmax,1,:) &
+     +vmftm_(1:lmmax,2,1:lmmax,2,:))
+  else
+    vmftm(1:lmmax,1,1:lmmax,1,:)=vmftm_(1:lmmax,1,1:lmmax,1,:)
+    vmftm(1:lmmax,2,1:lmmax,2,:)=vmftm_(1:lmmax,1,1:lmmax,1,:)
+  end if
+  deallocate(vmftm_)
 end if
 close(50)
 ! component map for spin-polarised case

@@ -5,15 +5,16 @@
 
 subroutine dynsym(vpl,dynp)
 use modmain
+use modphonon
 implicit none
 ! arguments
 real(8), intent(in) :: vpl(3)
-complex(8), intent(inout) :: dynp(3*natmtot,3*natmtot)
+complex(8), intent(inout) :: dynp(nbph,nbph)
 ! local variables
 integer isym,lspl,i,j,n
 real(8) v1(3),v2(3),s(3,3),t1
 ! automatic arrays
-complex(8) dyns(3*natmtot,3*natmtot)
+complex(8) dyns(nbph,nbph)
 ! map input vector to first Brillouin zone
 v1(:)=vpl(:)
 call vecfbz(epslat,bvec,v1)
@@ -40,8 +41,8 @@ end if
 t1=1.d0/dble(n)
 dynp(:,:)=t1*dyns(:,:)
 ! make the matrix Hermitian
-do i=1,3*natmtot
-  do j=i,3*natmtot
+do i=1,nbph
+  do j=i,nbph
     dynp(i,j)=0.5d0*(dynp(i,j)+conjg(dynp(j,i)))
     dynp(j,i)=conjg(dynp(i,j))
   end do

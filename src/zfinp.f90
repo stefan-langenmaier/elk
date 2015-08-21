@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: zfinp
 ! !INTERFACE:
-complex(8) function zfinp(tsh,zfmt1,zfmt2,zfir1,zfir2)
+complex(8) function zfinp(tsh,zfmt1,zfir1,zfmt2,zfir2)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
@@ -14,10 +14,10 @@ use modmain
 !           (in,logical)
 !   zfmt1 : first complex function in spherical harmonics/coordinates for all
 !           muffin-tins (in,complex(lmmaxvr,nrcmtmax,natmtot))
-!   zfmt2 : second complex function in spherical harmonics/coordinates for all
-!           muffin-tins (in,complex(lmmaxvr,nrcmtmax,natmtot))
 !   zfir1 : first complex interstitial function in real-space
 !           (in,complex(ngtot))
+!   zfmt2 : second complex function in spherical harmonics/coordinates for all
+!           muffin-tins (in,complex(lmmaxvr,nrcmtmax,natmtot))
 !   zfir2 : second complex interstitial function in real-space
 !           (in,complex(ngtot))
 ! !DESCRIPTION:
@@ -35,9 +35,8 @@ use modmain
 implicit none
 ! arguments
 logical, intent(in) :: tsh
-complex(8), intent(in) :: zfmt1(lmmaxvr,nrcmtmax,natmtot)
-complex(8), intent(in) :: zfmt2(lmmaxvr,nrcmtmax,natmtot)
-complex(8), intent(in) :: zfir1(ngtot),zfir2(ngtot)
+complex(8), intent(in) :: zfmt1(lmmaxvr,nrcmtmax,natmtot),zfir1(ngtot)
+complex(8), intent(in) :: zfmt2(lmmaxvr,nrcmtmax,natmtot),zfir2(ngtot)
 ! local variables
 integer ias,is,ir
 ! external functions

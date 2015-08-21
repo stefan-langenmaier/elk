@@ -31,8 +31,6 @@ integer, intent(in) :: lmax
 real(8), intent(in) :: x
 real(8), intent(out) :: a(0:lmax)
 ! local variables
-! starting value for l above lmax (suitable for lmax < 50)
-integer, parameter :: lst=25
 integer l
 real(8) xi,a0,a1,at,t1,t2,xmin
 if ((lmax.lt.0).or.(lmax.gt.50)) then

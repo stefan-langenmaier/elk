@@ -31,7 +31,8 @@ use modphonon
 !   zrho0  : G+p=0 term of the pseudocharge density (out,complex)
 ! !DESCRIPTION:
 !   Calculates the Coulomb potential of a complex charge density by solving
-!   Poisson's equation. First, the multipole moments of the muffin-tin charge
+!   Poisson's equation using the method of M. Weinert, {\it J. Math. Phys.}
+!   {\bf 22}, 2433 (1981). First, the multipole moments of the muffin-tin charge
 !   are determined for the $j$th atom of the $i$th species by
 !   $$ q_{ij;lm}^{\rm MT}=\int_0^{R_i}r^{l+2}\rho_{ij;lm}(r)dr+z_{ij}Y_{00}
 !   \,\delta_{l,0}\;, $$
@@ -208,16 +209,20 @@ do ias=1,natmtot
   end do
 end do
 ! solve Poisson's equation in G+p-space for the pseudocharge
-do ig=1,ngvec
+do ig=1,igp0-1
   ifg=igfft(ig)
-  if (ig.eq.igp0) then
-! set zrho0 (pseudocharge density coefficient of the smallest G+p-vector)
-    zrho0=zvclir(ifg)
-    zvclir(ifg)=0.d0
-    cycle
-  end if
   zvclir(ifg)=(fourpi/gpc(ig)**2)*zvclir(ifg)
 end do
+do ig=igp0+1,ngvec
+  ifg=igfft(ig)
+  zvclir(ifg)=(fourpi/gpc(ig)**2)*zvclir(ifg)
+end do
+! set zrho0 (pseudocharge density coefficient of the smallest G+p-vector)
+if (igp0.gt.0) then
+  ifg=igfft(igp0)
+  zrho0=zvclir(ifg)
+  zvclir(ifg)=0.d0
+end if
 ! match potentials at muffin-tin boundary by adding homogeneous solution
 do is=1,nspecies
 ! compute (r/R_mt)^l

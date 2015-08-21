@@ -13,7 +13,6 @@ real(8), intent(in) :: v
 real(8), intent(out) :: ex
 real(8), intent(out) :: vx
 ! local variables
-real(8), parameter :: pi=3.1415926535897932385d0
 real(8), parameter :: ax=-0.7385587663820224058d0
 real(8), parameter :: thrd=1.d0/3.d0
 real(8), parameter :: thrd4=4.d0/3.d0

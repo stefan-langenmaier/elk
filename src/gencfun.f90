@@ -12,7 +12,7 @@ use modmain
 ! !DESCRIPTION:
 !   Generates the smooth characteristic function. This is the function which is
 !   0 within the muffin-tins and 1 in the intersitial region and is constructed
-!   from radial step function form-factors with $G<G_{\rm max}$. The form
+!   from radial step function form factors with $G<G_{\rm max}$. The form
 !   factors are given by
 !   $$ \tilde{\Theta}_i(G)=\begin{cases}
 !    \frac{4\pi R_i^3}{3 \Omega} & G=0 \\

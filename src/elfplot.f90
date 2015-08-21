@@ -97,12 +97,8 @@ do ias=1,natmtot
   do i=1,3
     call rbsht(nr,nri,1,grfmt1(:,:,i),1,grfmt2(:,:,i))
   end do
+  lmmax=lmmaxinr
   do ir=1,nr
-    if (ir.le.nri) then
-      lmmax=lmmaxinr
-    else
-      lmmax=lmmaxvr
-    end if
     do itp=1,lmmax
       r=abs(rfmt1(itp,ir))
 ! square of gradient of rho
@@ -114,6 +110,7 @@ do ias=1,natmtot
 ! ELF function
       rfmt2(itp,ir)=1.d0/(1.d0+(t2/t3)**2)
     end do
+    if (ir.eq.nri) lmmax=lmmaxvr
   end do
 ! convert ELF from spherical coordinates to spherical harmonics
   call rfsht(nr,nri,1,rfmt2,1,elfmt(:,:,ias))

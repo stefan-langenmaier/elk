@@ -162,6 +162,10 @@ if (spinpol) then
 end if
 call dpotks
 call gendvsig
+! initialise the mixer
+iscl=0
+call phmixpack(.true.,n,v)
+call mixerifc(mtype,n,v,ddv,nwork,work)
 ! begin the self-consistent loop
 do iscl=1,maxscl
 ! compute the Hamiltonian radial integral derivatives
@@ -205,20 +209,20 @@ do iscl=1,maxscl
     call getevalfv(vkl(:,ik),evalfv)
     call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
     call getevecsv(vkl(:,ik),evecsv)
-! solve the first-variational secular equation derivative
+! solve the first-variational eigenvalue equation derivative
     do jspn=1,nspnfv
-      call dseceqnfv(ngk(jspn,ik),ngkq(jspn,ik),igkig(:,jspn,ik), &
+      call deveqnfv(ngk(jspn,ik),ngkq(jspn,ik),igkig(:,jspn,ik), &
        igkqig(:,jspn,ik),vgkc(:,:,jspn,ik),vgkqc(:,:,jspn,ik),evalfv(:,jspn), &
        apwalm(:,:,:,:,jspn),apwalmq(:,:,:,:,jspn),dapwalm(:,:,:,jspn), &
        dapwalmq(:,:,:,jspn),evecfv(:,:,jspn),devalfv(:,jspn),devecfv(:,:,jspn))
     end do
     if (spinsprl) then
-! solve the spin-spiral second-variational secular equation derivative
-!      call dseceqnss(ngk(:,ik),ngkq(:,ik),igkig(:,:,ik),igkqig(:,:,ik),apwalm, &
+! solve the spin-spiral second-variational eigenvalue equation derivative
+!      call deveqnss(ngk(:,ik),ngkq(:,ik),igkig(:,:,ik),igkqig(:,:,ik),apwalm, &
 !       dapwalm,devalfv,evecfv,evecfvq,devecfv,evalsv(:,jk),evecsv,devecsv)
     else
-! solve the second-variational secular equation derivative
-!      call dseceqnsv(ngk(1,ik),ngkq(1,ik),igkig(:,1,ik),igkqig(:,1,ik), &
+! solve the second-variational eigenvalue equation derivative
+!      call deveqnsv(ngk(1,ik),ngkq(1,ik),igkig(:,1,ik),igkqig(:,1,ik), &
 !       vgkqc(:,:,1,ik),apwalm,dapwalm,devalfv,evecfv,evecfvq,devecfv, &
 !       evalsv(:,jk),evecsv,devecsv)
     end if

@@ -3,13 +3,13 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine oepresk(ik,vnlcv,vnlvv,dvxmt,dvxir,dbxmt,dbxir)
+subroutine oepresk(ik,vclcv,vclvv,dvxmt,dvxir,dbxmt,dbxir)
 use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ik
-complex(8), intent(in) :: vnlcv(ncrmax,natmtot,nstsv,nkpt)
-complex(8), intent(in) :: vnlvv(nstsv,nstsv,nkpt)
+complex(8), intent(in) :: vclcv(ncrmax,natmtot,nstsv,nkpt)
+complex(8), intent(in) :: vclvv(nstsv,nstsv,nkpt)
 real(8), intent(inout) :: dvxmt(lmmaxvr,nrcmtmax,natmtot)
 real(8), intent(inout) :: dvxir(ngtot)
 real(8), intent(inout) :: dbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag)
@@ -19,6 +19,8 @@ integer ist,jst,is,ia,ias
 integer nrc,nrci,ic,m,idm
 real(8) de
 complex(8) z1
+! automatic arrays
+integer idx(nstsv)
 ! allocatable arrays
 complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
@@ -47,9 +49,13 @@ call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
 call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
+! index to all states
+do ist=1,nstsv
+  idx(ist)=ist
+end do
 ! calculate the wavefunctions for all states
-call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),occsv,apwalm, &
- evecfv,evecsv,wfmt,ngtot,wfir)
+call genwfsv(.false.,.false.,nstsv,idx,ngk(1,ik),igkig(:,1,ik),apwalm,evecfv, &
+ evecsv,wfmt,ngtot,wfir)
 !-----------------------------------------------------------!
 !     core-conduction overlap density and magnetisation     !
 !-----------------------------------------------------------!
@@ -73,7 +79,7 @@ do is=1,nspecies
                 zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias) &
                  +conjg(wfcr(:,1:nrc,2))*wfmt(:,1:nrc,ias,2,jst)
               end if
-              z1=conjg(vnlcv(ic,ias,jst,ik))
+              z1=conjg(vclcv(ic,ias,jst,ik))
               z1=z1-zfmtinp(.false.,nrc,nrci,rcmt(:,is),zrhomt(:,:,ias), &
                zvxmt(:,:,ias))
 ! spin-polarised case
@@ -115,18 +121,18 @@ do ist=1,nstsv
     do jst=1,nstsv
       if (evalsv(jst,ik).gt.efermi) then
 ! calculate the overlap density
-        call genzrho(.false.,spinpol,wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst), &
-         wfir(:,:,ist),wfir(:,:,jst),zrhomt,zrhoir)
-        z1=conjg(vnlvv(ist,jst,ik))
-        z1=z1-zfinp(.false.,zrhomt,zvxmt,zrhoir,zvxir)
+        call genzrho(.false.,.true.,wfmt(:,:,:,:,ist),wfir(:,:,ist), &
+         wfmt(:,:,:,:,jst),wfir(:,:,jst),zrhomt,zrhoir)
+        z1=conjg(vclvv(ist,jst,ik))
+        z1=z1-zfinp(.false.,zrhomt,zrhoir,zvxmt,zvxir)
 ! spin-polarised case
         if (spinpol) then
           call genzmag(wfmt(:,:,:,:,ist),wfmt(:,:,:,:,jst),wfir(:,:,ist), &
            wfir(:,:,jst),zmagmt,zmagir)
 ! integral of magnetisation dot exchange field
           do idm=1,ndmag
-            z1=z1-zfinp(.false.,zmagmt(:,:,:,idm),zbxmt(:,:,:,idm), &
-             zmagir(:,idm),zbxir(:,idm))
+            z1=z1-zfinp(.false.,zmagmt(:,:,:,idm),zmagir(:,idm), &
+             zbxmt(:,:,:,idm),zbxir(:,idm))
           end do
         end if
         de=evalsv(ist,ik)-evalsv(jst,ik)

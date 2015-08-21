@@ -1,13 +1,14 @@
 
 ! Optimized LDA+U calculation for NiO AFMII with only one free parameter.
 ! The double counting is automatically chosen by doing an interpolation
-! between FLL and AMF (ldapu=3). The Slater parameters are determined through 
-! a Yukawa potential. Hence there is only one free parameter, the potential 
-! screening  length lambdalu (see PRB 80, 035121 (2009)). Here lambdalu=1.5 
-! provides realistic values of Slater parameters which are printed in FLU.OUT. 
-! Try to plot the magnetic moment as function of lambdalu.
+! between FLL and AMF (dftu=3). The Slater parameters are determined through
+! a Yukawa potential. Hence there is only one free parameter, the potential
+! screening  length lambda (see PRB 80, 035121 (2009)). Here lambda=1.5
+! provides realistic values of Slater parameters which are printed in FDU.OUT.
+
+! Try to plot the magnetic moment as function of lambda.
 ! Analyze total and partial DOS (t2g and eg states) and compare with bare LDA.
-! Look at the file ALPHALU.OUT where the interpolation factor is printed out.
+! Look at the file ALPHADU.OUT where the interpolation factor is printed out.
 ! (see PRB 67, 153106 (2003)). Such a factor is about 0.5 for NiO.
 ! Compare the value of the interpolation factor with the example Fe-LDA+U-INT
 ! (weakly correlated system).
@@ -17,14 +18,14 @@ tasks
   0
   10
 
-! lda+u block
-! here an interpolation between AMF and FLL double counting is used (ldapu=3)
-! inptypelu=4 corresponds to calculate the Slater parameters through a Yukawa 
-! potential with screening length lambdalu(is), which constitutes the only 
-! free parameter in the calculation
-lda+u
-  3 4                            : ldapu,inptypelu
-  1 2 1.5                        : is, lambdalu(is)
+! DFT+U block
+! here an interpolation between AMF and FLL double counting is used (dftu=3)
+! inpdftu=4 corresponds to calculate the Slater parameters through a Yukawa
+! potential with screening length lambda, which constitutes the only free
+! parameter in the calculation
+dft+u
+  3 4           : dftu, inpdftu
+  1 2 1.5       : is, l, lambda
 
 spinpol
   .true.

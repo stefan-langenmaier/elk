@@ -6,11 +6,11 @@ tasks
   0
 
 ! ferromagnetic local fixed spin moment calculation
-fixspin
+fsmtype
   2
 
 mommtfix
-  1 1   0.0 0.0 1.0     : ia, is, mommtfix 
+  1 1   0.0 0.0 1.0     : ia, is, mommtfix
 
 lmaxapw
   10
@@ -37,4 +37,4 @@ sppath
   '../../species/'
 
 ngridk
-  6  6  6 
+  6  6  6

@@ -30,7 +30,7 @@ integer ist1,ist2
 real(8), parameter :: eps=1.d-12
 real(8) t1,t2,t3,t4
 ! allocatable arays
-real(8), allocatable :: vnlijji(:,:,:)
+real(8), allocatable :: vclijji(:,:,:)
 if (rdmxctype.eq.0) return
 ! calculate the pre-factor
 if (rdmxctype.eq.1) then
@@ -48,11 +48,11 @@ else
   write(*,*)
   stop
 end if
-allocate(vnlijji(nstsv,nstsv,nkpt))
+allocate(vclijji(nstsv,nstsv,nkpt))
 ! start loop over non-reduced k-points
 do ik1=1,nkptnr
-! get the non-local matrix
-  call getvnlijji(ik1,vnlijji)
+! get the Coulomb matrix elements
+  call getvclijji(ik1,vclijji)
 ! find the equivalent reduced k-point
   iv(:)=ivk(:,ik1)
   jk=ikmap(iv(1),iv(2),iv(3))
@@ -74,12 +74,12 @@ do ik1=1,nkptnr
             t2=t1*(t4**rdmalpha)/(t3**(1.d0-rdmalpha))
           end if
         end if
-        dedn(ist2,ik2)=dedn(ist2,ik2)+t2*vnlijji(ist2,ist1,ik2)
+        dedn(ist2,ik2)=dedn(ist2,ik2)+t2*vclijji(ist2,ist1,ik2)
       end do
     end do
   end do
 end do
-deallocate(vnlijji)
+deallocate(vclijji)
 return
 end subroutine
 !EOC

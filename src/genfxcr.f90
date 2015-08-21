@@ -5,6 +5,7 @@
 
 subroutine genfxcr(tsh,fxcmt,fxcir)
 use modmain
+use modtddft
 use modfxcifc
 implicit none
 ! arguments

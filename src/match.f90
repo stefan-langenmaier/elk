@@ -125,8 +125,7 @@ do is=1,nspecies
       if (info.ne.0) then
         write(*,*)
         write(*,'("Error(match): could not find APW matching coefficients")')
-        write(*,'(" for species ",I4)') is
-        write(*,'(" and atom ",I4)') ia
+        write(*,'(" for species ",I4," and atom ",I4)') is,ia
         write(*,'(" ZGESV returned INFO = ",I8)') info
         write(*,*)
         stop

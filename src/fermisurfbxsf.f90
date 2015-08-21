@@ -49,15 +49,15 @@ do ik=1,nkpt
 !$OMP CRITICAL
   write(*,'("Info(fermisurfbxsf): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL
-! solve the first- and second-variational secular equations
-  call seceqn(ik,evalfv,evecfv,evecsv)
+! solve the first- and second-variational eigenvalue equations
+  call eveqn(ik,evalfv,evecfv,evecsv)
   deallocate(evalfv,evecfv,evecsv)
 ! end loop over reduced k-points set
 end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! if iterative diagonalisation is used the eigenvalues must be reordered
-if (tseqit.and.(.not.spinpol)) then
+if (tefvit.and.(.not.spinpol)) then
   allocate(idx(nstsv),e(nstsv))
   do ik=1,nkpt
     e(:)=evalsv(:,ik)

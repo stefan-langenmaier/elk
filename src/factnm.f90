@@ -22,8 +22,7 @@ real(8) function factnm(n,m)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: n
-integer, intent(in) :: m
+integer, intent(in) :: n,m
 ! local variables
 integer i,j
 real(8) f1(24),f2(38)

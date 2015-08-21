@@ -26,9 +26,6 @@ subroutine vecplot
 !BOC
 use modmain
 implicit none
-! local variables
-integer is,ia,ias,ir,lm
-real(8) vl1(3),vl2(3),vc1(3),vc2(3),vc3(3),vc4(3),t1
 ! allocatable arrays
 real(8), allocatable :: rvfmt(:,:,:,:)
 real(8), allocatable :: rvfir(:,:)
@@ -44,8 +41,7 @@ if ((task.eq.72).or.(task.eq.73).or.(task.eq.82).or.(task.eq.83)) then
 end if
 ! read magnetisation from file
 call readstate
-allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3))
-allocate(rvfir(ngtot,3))
+allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,3),rvfir(ngtot,3))
 select case(task)
 case(72,73)
 ! magnetisation
@@ -86,44 +82,12 @@ case(152,153)
     write(*,*)
     stop
   end if
-  call rvfcross(magmt,bxcmt,magir,bxcir,rvfmt,rvfir)
+  call rvfcross(magmt,magir,bxcmt,bxcir,rvfmt,rvfir)
 end select
 select case(task)
 case(72,82,142,152)
 ! determine the projection of the magnetisation/field onto the plotting plane
-  vl1(:)=vclp2d(:,2)-vclp2d(:,1)
-  vl2(:)=vclp2d(:,3)-vclp2d(:,1)
-  call r3mv(avec,vl1,vc1)
-  call r3mv(avec,vl2,vc2)
-  t1=sqrt(vc1(1)**2+vc1(2)**2+vc1(3)**2)
-  vc1(:)=vc1(:)/t1
-  t1=sqrt(vc2(1)**2+vc2(2)**2+vc2(3)**2)
-  vc2(:)=vc2(:)/t1
-  call r3cross(vc1,vc2,vc3)
-  t1=sqrt(vc3(1)**2+vc3(2)**2+vc3(3)**2)
-  vc3(:)=vc3(:)/t1
-  call r3cross(vc3,vc1,vc2)
-  t1=sqrt(vc2(1)**2+vc2(2)**2+vc2(3)**2)
-  vc2(:)=vc2(:)/t1
-  do is=1,nspecies
-    do ia=1,natoms(is)
-      ias=idxas(ia,is)
-      do ir=1,nrmt(is)
-        do lm=1,lmmaxvr
-          vc4(:)=rvfmt(lm,ir,ias,:)
-          rvfmt(lm,ir,ias,1)=dot_product(vc4(:),vc1(:))
-          rvfmt(lm,ir,ias,2)=dot_product(vc4(:),vc2(:))
-          rvfmt(lm,ir,ias,3)=dot_product(vc4(:),vc3(:))
-        end do
-      end do
-    end do
-  end do
-  do ir=1,ngtot
-    vc4(:)=rvfir(ir,:)
-    rvfir(ir,1)=dot_product(vc4(:),vc1(:))
-    rvfir(ir,2)=dot_product(vc4(:),vc2(:))
-    rvfir(ir,3)=dot_product(vc4(:),vc3(:))
-  end do
+  call proj2d(rvfmt,rvfir)
   if (task.eq.72) then
     open(50,file='MAG2D.OUT',action='WRITE',form='FORMATTED')
   else if (task.eq.82) then

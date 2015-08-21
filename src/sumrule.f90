@@ -8,7 +8,7 @@
 ! !INTERFACE:
 subroutine sumrule(dynq)
 ! !INPUT/OUTPUT PARAMETERS:
-!   dynq : dynamical matrices on q-point set (in,real(3*natmtot,3*natmtot,nqpt))
+!   dynq : dynamical matrices on q-point set (in,real(nbph,nbph,nqpt))
 ! !DESCRIPTION:
 !   Applies the same correction to all the dynamical matrices such that the
 !   matrix for ${\bf q}=0$ satisfies the acoustic sum rule. In other words, the
@@ -27,35 +27,35 @@ subroutine sumrule(dynq)
 !EOP
 !BOC
 use modmain
+use modphonon
 implicit none
 ! arguments
-complex(8), intent(inout) :: dynq(3*natmtot,3*natmtot,nqpt)
+complex(8), intent(inout) :: dynq(nbph,nbph,nqpt)
 ! local variables
-integer nb,iq,i,j,k
+integer iq,i,j,k
 integer lwork,info
 ! allocatable arrays
 real(8), allocatable :: w(:)
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: work(:)
 complex(8), allocatable :: ev(:,:)
-nb=3*natmtot
-allocate(w(nb))
-allocate(rwork(3*nb))
-lwork=2*nb
+allocate(w(nbph))
+allocate(rwork(3*nbph))
+lwork=2*nbph
 allocate(work(lwork))
-allocate(ev(nb,nb))
+allocate(ev(nbph,nbph))
 ! compute the eigenvalues and vectors of the q = 0 dynamical matrix
-do i=1,nb
-  do j=i,nb
+do i=1,nbph
+  do j=i,nbph
     ev(i,j)=0.5d0*(dynq(i,j,iq0)+conjg(dynq(j,i,iq0)))
   end do
 end do
-call zheev('V','U',nb,ev,nb,w,work,lwork,rwork,info)
+call zheev('V','U',nbph,ev,nbph,w,work,lwork,rwork,info)
 ! subtract outer products of 3 lowest eigenvectors for q = 0 from all the
 ! dynamical matrices
 do iq=1,nqpt
-  do i=1,nb
-    do j=1,nb
+  do i=1,nbph
+    do j=1,nbph
       do k=1,3
         dynq(i,j,iq)=dynq(i,j,iq)-w(k)*ev(i,k)*conjg(ev(j,k))
       end do

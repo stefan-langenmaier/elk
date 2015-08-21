@@ -18,7 +18,7 @@ character(256) fname
 integer, allocatable :: ipiv(:)
 real(8), allocatable :: vgqc(:,:),gqc(:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
-complex(8), allocatable :: chi(:,:,:,:,:),chit(:,:,:),fxc(:,:,:,:)
+complex(8), allocatable :: chi(:,:,:,:,:),chit(:),fxc(:,:,:,:)
 complex(8), allocatable :: c(:,:,:,:),d(:,:),e(:,:,:,:),work(:)
 if (.not.spinpol) then
   write(*,*)
@@ -63,6 +63,7 @@ end do
 allocate(vgqc(3,ngrf),gqc(ngrf))
 allocate(ylmgq(lmmaxvr,ngrf),sfacgq(ngrf,natmtot))
 call gengqrf(vecqc,igq0,vgqc,gqc,ylmgq,sfacgq)
+deallocate(vgqc)
 ! compute chi0
 allocate(chi(nwrf,ngrf,4,ngrf,4))
 chi(:,:,:,:,:)=0.d0
@@ -96,15 +97,11 @@ do ig=1,ngrf
 end do
 ! generate transverse chi0 for the collinear case
 if (.not.ncmag) then
-  allocate(chit(nwrf,ngrf,ngrf))
-  do ig=1,ngrf
-    do jg=1,ngrf
-      do iw=1,nwrf
-        a(:,:)=chi(iw,ig,:,jg,:)
-        call tfm13t(a,b)
-        chit(iw,ig,jg)=b(2,2)
-      end do
-    end do
+  allocate(chit(nwrf))
+  do iw=1,nwrf
+    a(:,:)=chi(iw,1,:,1,:)
+    call tfm13t(a,b)
+    chit(iw)=b(2,2)
   end do
 end if
 ! write chi0 to file
@@ -128,11 +125,11 @@ if (mp_mpi) then
   if (.not.ncmag) then
     open(50,file='CHI0_T.OUT',action='WRITE',form='FORMATTED')
     do iw=1,nwrf
-      write(50,'(2G18.10)') dble(wrf(iw)),dble(chit(iw,1,1))
+      write(50,'(2G18.10)') dble(wrf(iw)),dble(chit(iw))
     end do
     write(50,*)
     do iw=1,nwrf
-      write(50,'(2G18.10)') dble(wrf(iw)),aimag(chit(iw,1,1))
+      write(50,'(2G18.10)') dble(wrf(iw)),aimag(chit(iw))
       end do
     close(50)
   end if
@@ -183,14 +180,10 @@ end do
 deallocate(ipiv,work,c,d,e)
 ! generate transverse chi for the collinear case
 if (.not.ncmag) then
-  do ig=1,ngrf
-    do jg=1,ngrf
-      do iw=1,nwrf
-        a(:,:)=chi(iw,ig,:,jg,:)
-        call tfm13t(a,b)
-        chit(iw,ig,jg)=b(2,2)
-      end do
-    end do
+  do iw=1,nwrf
+    a(:,:)=chi(iw,1,:,1,:)
+    call tfm13t(a,b)
+    chit(iw)=b(2,2)
   end do
 end if
 if (mp_mpi) then
@@ -213,11 +206,11 @@ if (mp_mpi) then
   if (.not.ncmag) then
     open(50,file='CHI_T.OUT',action='WRITE',form='FORMATTED')
     do iw=1,nwrf
-      write(50,'(2G18.10)') dble(wrf(iw)),dble(chit(iw,1,1))
+      write(50,'(2G18.10)') dble(wrf(iw)),dble(chit(iw))
     end do
     write(50,*)
     do iw=1,nwrf
-      write(50,'(2G18.10)') dble(wrf(iw)),aimag(chit(iw,1,1))
+      write(50,'(2G18.10)') dble(wrf(iw)),aimag(chit(iw))
     end do
     close(50)
   end if
@@ -246,11 +239,11 @@ if (mp_mpi) then
    &CHI0_ij.OUT")')
   if (.not.ncmag) then
     write(*,*)
-    write(*,'(" Transverse component corresponding to m_+- = m_x +- im_y")')
+    write(*,'(" Transverse components corresponding to m_+- = m_x +- im_y")')
     write(*,'(" written to CHI_T.OUT and CHI0_T.OUT")')
   end if
 end if
-deallocate(vgqc,gqc,ylmgq,sfacgq,chi,fxc)
+deallocate(gqc,ylmgq,sfacgq,chi,fxc)
 if (.not.ncmag) deallocate(chit)
 return
 

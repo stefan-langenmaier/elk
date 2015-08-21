@@ -15,6 +15,13 @@ integer, intent(inout) :: nwork
 real(8), intent(inout) :: work(*)
 ! local variables
 select case(mtype)
+case(0)
+! straight mixing
+  if (nwork.le.0) then
+    nwork=n
+    return
+  end if
+  call mixlinear(iscl,beta0,n,v,work,dv)
 case(1)
 ! adaptive linear mixing
   if (nwork.le.0) then
@@ -52,6 +59,8 @@ implicit none
 integer, intent(in) :: mtype
 character(256), intent(out) :: mixdescr
 select case(mtype)
+case(0)
+  mixdescr='Linear mixing'
 case(1)
   mixdescr='Adaptive linear mixing'
 case(2)

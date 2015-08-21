@@ -6,13 +6,13 @@
 !BOP
 ! !ROUTINE: rvfcross
 ! !INTERFACE:
-subroutine rvfcross(rvfmt1,rvfmt2,rvfir1,rvfir2,rvfmt3,rvfir3)
+subroutine rvfcross(rvfmt1,rvfir1,rvfmt2,rvfir2,rvfmt3,rvfir3)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   rvfmt1 : first input muffin-tin field (in,real(lmmaxvr,nrmtmax,natmtot,3))
-!   rvfmt2 : second input muffin-tin field (in,real(lmmaxvr,nrmtmax,natmtot,3))
 !   rvfir1 : first input interstitial field (in,real(ngtot,3))
+!   rvfmt2 : second input muffin-tin field (in,real(lmmaxvr,nrmtmax,natmtot,3))
 !   rvfir2 : second input interstitial field (in,real(ngtot,3))
 !   rvfmt3 : output muffin-tin field (out,real(lmmaxvr,nrmtmax,natmtot,3))
 !   rvfir3 : output interstitial field (out,real(ngtot,3))
@@ -27,12 +27,9 @@ use modmain
 !BOC
 implicit none
 ! arguments
-real(8), intent(in) :: rvfmt1(lmmaxvr,nrmtmax,natmtot,3)
-real(8), intent(in) :: rvfmt2(lmmaxvr,nrmtmax,natmtot,3)
-real(8), intent(in) :: rvfir1(ngtot,3)
-real(8), intent(in) :: rvfir2(ngtot,3)
-real(8), intent(out) :: rvfmt3(lmmaxvr,nrmtmax,natmtot,3)
-real(8), intent(out) :: rvfir3(ngtot,3)
+real(8), intent(in) :: rvfmt1(lmmaxvr,nrmtmax,natmtot,3),rvfir1(ngtot,3)
+real(8), intent(in) :: rvfmt2(lmmaxvr,nrmtmax,natmtot,3),rvfir2(ngtot,3)
+real(8), intent(out) :: rvfmt3(lmmaxvr,nrmtmax,natmtot,3),rvfir3(ngtot,3)
 ! local variables
 integer is,ias,nr,nri,ir
 integer lmmax,itp,i
@@ -51,18 +48,15 @@ do ias=1,natmtot
     call rbsht(nr,nri,1,rvfmt1(:,:,ias,i),1,rvfmt4(:,:,i))
     call rbsht(nr,nri,1,rvfmt2(:,:,ias,i),1,rvfmt5(:,:,i))
   end do
+  lmmax=lmmaxinr
   do ir=1,nr
-    if (ir.le.nri) then
-      lmmax=lmmaxinr
-    else
-      lmmax=lmmaxvr
-    end if
     do itp=1,lmmax
       v1(:)=rvfmt4(itp,ir,:)
       v2(:)=rvfmt5(itp,ir,:)
       call r3cross(v1,v2,v3)
       rvfmt4(itp,ir,:)=v3(:)
     end do
+    if (ir.eq.nri) lmmax=lmmaxvr
   end do
   do i=1,3
     call rfsht(nr,nri,1,rvfmt4(:,:,i),1,rvfmt3(:,:,ias,i))

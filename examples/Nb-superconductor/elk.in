@@ -69,7 +69,8 @@ nempty
 radkpt
   50.0
 
-
+swidth
+  0.01
 
 !-----------------------------------------------------------------------!
 !     Step 2: Phonon dispersion curves and electron-phonon coupling     !

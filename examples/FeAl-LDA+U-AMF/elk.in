@@ -1,9 +1,9 @@
 
 ! FeAl in CsCl (B2) structure using LDA+U and "around mean field" (AMF) double
-! counting (ldapu=2). Compare the total DOS and partial DOS with the one calculated 
+! counting (dftu=2). Compare the total DOS and partial DOS with the one calculated
 ! with bare LDA. Note the opening of a gap and the increased localization of Fe
-! d-electrons. Note the non-magnetic solution for U about 0.1837 htr (5 eV)
-! (the exact value of U depends on the muffin-tin (MT) radius used since LDA+U
+! d-electrons. Note the non-magnetic solution for U about 0.1837 Ha (5 eV)
+! (the exact value of U depends on the muffin-tin (MT) radius used since DFT+U
 ! is applied only inside mt spheres). Try to plot the magnetic moment as
 ! function of U for different MT radius. Example created by Fredrik Bultmark,
 ! Francesco Cricchio and Lars Nordstrom.
@@ -12,20 +12,17 @@ tasks
   0
   10
 
-! LDA+U block
-! here AMF double counting is used (ldapu=2)
-! inptypelu=1 corresponds to provide U and J as input
-! llu(is) represents the l-shell we would like to apply LDA+U
-! ujlu(1,is) is U in htr
-! ujlu(2,is) is J in htr
-lda+u
-  2 1                      : ldapu,inptypelu
-  1 2  0.183 0.034911967   : is,llu(is),ujlu(1,is),ujlu(2,is)
+! DFT+U block
+! here AMF double counting is used (dftu=2)
+! inpdftu=1 corresponds to provide U and J as input
+dft+u
+  2 1                      : dftu, inpdftu
+  1 2  0.183 0.034911967   : is, l, U, J
 
 spinpol
  .true.
 
-! small field along z to break symmetry 
+! small field along z to break symmetry
 bfieldc
   0.0 0.0 -0.01
 

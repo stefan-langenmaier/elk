@@ -1,32 +1,31 @@
 
 ! NiO in AFMII structure with LDA+U and fully-localised-limit (FLL) double
-! counting (ldapu=1). With inptype=4 the values of Slater parameters are 
-! conveniently calculated through a screened Yukawa potential with screening 
-! length lambdalu provided as input (see PRB 80, 035121 (2009)). 
-! Here lambdalu=1.5 gives realistic values of Slater integrals which are 
-! printed in FLU.OUT.
-! Try to plot the magnetic moments of Ni as function of lambdalu. 
-! If inptypelu=5 the code will automatically determine the screening length 
-! corresponding to the fixed value of U (ulufix) provided as input.
+! counting (dftu=1). With inpdftu=4 the values of Slater parameters are
+! conveniently calculated through a screened Yukawa potential with screening
+! length lambda provided as input (see PRB 80, 035121 (2009)). Here lambda=1.5
+! gives realistic values of Slater integrals which are  printed in FDU.OUT.
+
+! Try to plot the magnetic moments of Ni as function of lambda.
+! If inpdftu=5 the code will automatically determine the screening length
+! corresponding to the fixed value of U (udufix) provided as input.
 ! Example by Francesco Cricchio.
 
 tasks
   0
 
-! lda+u block
-! here FLL double counting is used (ldapu=1)
-! inptypelu=4 corresponds to calculate the Slater parameters self-consistently
-! through a Yukawa potential with screening length lambdalu(is)
-! llu(is) represents the l-shell we would like to apply LDA+U
-lda+u                             
-  1 4         : ldapu,inptypelu
-  1 2 1.5     : is, llu(is), lambdalu(is)
+! DFT+U block
+! here FLL double counting is used (dftu=1)
+! inpdftu=4 corresponds to calculate the Slater parameters self-consistently
+! through a Yukawa potential with screening length lambda
+dft+u
+  1 4           : dftu, inpdftu
+  1 2 1.5       : is, l, lambda
 
-! alternatively try inptypelu=5; this will determine the screening length
-! correspoding to ulufix=0.29399 htr (8 eV) through a secant algorithm
-!lda+u
-! 1 5         : ldapu,inptypelu
-! 1 2 0.29399 : is,llu(is), ulufix(is)
+! alternatively try inpdftu=5; this will determine the screening length
+! corresponding to U=0.29399 Ha (8 eV) through a secant algorithm
+!dft+u
+!  1 5           : dftu, inpdftu
+!  1 2 0.29399   : is, l, U fixed
 
 spinpol
   .true.

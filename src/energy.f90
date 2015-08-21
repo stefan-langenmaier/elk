@@ -9,7 +9,7 @@
 subroutine energy
 ! !USES:
 use modmain
-use modldapu
+use moddftu
 use modtest
 ! !DESCRIPTION:
 !   Computes the total energy and its individual contributions. The kinetic
@@ -63,7 +63,7 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer ik,ist,idm,jdm
+integer ik,ist,idm,jdm,n2,i
 integer is,ia,ias,nrc,nrci
 real(8) cb,vn,sum,f
 complex(8) z1
@@ -164,12 +164,15 @@ else
   engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
 end if
 !----------------------!
-!     LDA+U energy     !
+!     DFT+U energy     !
 !----------------------!
-engylu=0.d0
-if (ldapu.ne.0) then
-  do ias=1,natmtot
-    engylu=engylu+engyalu(ias)
+engydu=0.d0
+if (dftu.ne.0) then
+  do i=1,ndftu
+    is=idftu(1,i)
+    do ia=1,natoms(is)
+      engydu=engydu+engyadu(ia,i)
+    end do
   end do
 end if
 !----------------------------!
@@ -225,6 +228,14 @@ else
     call rfmtctof(rfmt)
     sum=sum+rfinp(1,magmt(:,:,:,idm),rfmt,magir(:,idm),bsir(:,idm))
   end do
+! remove fixed tensor moment potential matrix contribution
+  if (ftmtype.ne.0) then
+    n2=(lmmaxdm*nspinor)**2
+    do ias=1,natmtot
+      z1=zdotc(n2,dmatmt(:,:,:,:,ias),1,vmftm(:,:,:,:,ias),1)
+      sum=sum+dble(z1)
+    end do
+  end if
   engykn=evalsum-engyvcl-engyvxc-sum
   deallocate(rfmt)
 end if
@@ -253,8 +264,8 @@ end if
 !     total energy     !
 !----------------------!
 engytot=engykn+0.5d0*engyvcl+engymad+engyx+engyc+engyts
-! add the LDA+U correction if required
-if (ldapu.ne.0) engytot=engytot+engylu
+! add the DFT+U correction if required
+if (dftu.ne.0) engytot=engytot+engydu
 ! write total energy to test file
 call writetest(0,'total energy',tol=1.d-4,rv=engytot)
 return

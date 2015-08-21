@@ -22,8 +22,6 @@ use modmpi
 implicit none
 ! local variables
 integer it
-! parameter to check energy convergence
-real(8), parameter :: eps=1.d-10
 if (maxitc.lt.1) return
 ! begin iteration loop
 do it=1,maxitc
@@ -39,7 +37,7 @@ do it=1,maxitc
 ! calculate derivative of kinetic energy w.r.t. evecsv
   call rdmdkdc
 ! write the Coulomb matrix elements to file
-  call writevnlijjk
+  call writevclijjk
 ! synchronise MPI processes
   call mpi_barrier(mpi_comm_kpt,ierror)
 ! update evecsv, orthogonalise and write to file (MPI master process only)

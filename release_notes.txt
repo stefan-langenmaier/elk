@@ -1,3 +1,96 @@
+elk-2.3.22
+-Lars Nordström, Francesco Cricchio and JKD added fixed tensor moment (FTM)
+ calculations (experimental)
+-LN made changes to the mixer routine which makes restarts smoother
+-the Hamiltonian is now made real for systems with inversion symmetry; this was
+ removed in the previous release because of a bug; the FV step is now up to four
+ times faster
+-fixed problem with symmetry breaking of tetragonal systems during lattice
+ optimisation pointed out by various users
+-further improved and stabilised lattice optimisation
+-fixed a long-standing bug related to electron-phonon coupling pointed out by
+ Matthieu Verstraete and Ryotaro Arita
+-fixed a problem with electron-phonon coupling introduced in a previous version,
+ discovered by user 'wuhuagumu' and Heung-Sik Kim
+-TDDFT reponse code for both charge and magnetism has been made faster and more
+ memory efficient
+-creating a STOP file in the running directory now cleanly stops a structural
+ optimisation run; as requested by James Mudd
+-problem with nested OpenMP has now been fixed
+-more OpenMP parallel loops have been added
+-extended the use of BLAS throughout the code
+-fixed bug which affected the running of task=120
+-removed the 'frozencr' option for the moment because the core energy was
+ incorrectly calculated; this will be restored in a later release
+-various optimisations and minor bug fixes
+
+
+elk-2.3.16
+-DFT+U now works with multiple entries per atom; every mention of LDA+U has now
+ changed to DFT+U to reflect the generality of the method, and to give it an air
+ of respectibility; for example, the block 'lda+u' is now 'dft+u'; old input
+ files will still work fine
+-greatly improved the magnetic anisotropy energy (MAE) calculations, thanks to
+ suggestions by various users; the crystal is now rotated instead of the
+ magnetisation direction
+-fractional atomic species can now be generated on the fly using the 'fspecies'
+ block; see the example 'fractional-species'; note that the atomic mass is only
+ an estimate in these species files; this is useful for the virtual crystal
+ approximation (VCA)
+-spin-orbit coupling can now be used with strictly collinear calculations by
+ using 'cmagz=.true.'; this will speed up the calculation considerably; use only
+ when the system is genuinely collinear
+-unstable non-collinear GGA calculations can now be stabilised by setting
+ 'ncgga=.true.'
+-improved the speed and stability of the lattice vector optimisation; thanks to
+ forum discussions regarding BaTiO3
+-added the lattice optimisation of BaTiO3 to the examples directory; thanks to
+ David Tompsett
+-geometry optimisation should now work fine with MPI -added highly converged
+ osmium example 'Os-convergence' thanks to a lengthy discussion on the forum
+ started by Marcin Dulak; also increased the value of 'lmaxmat' for the 'highq'
+ option thanks to Marcin's careful testing
+-Important: greatly improved the code setup and compilation thanks to
+ suggestions by Marcin Dulak; all compiler options are now in the file
+ 'elk/make.inc'; the Makefile in 'elk/src' no longer requires modification
+-new variable 'rotavec' available in elk.in; this is a rotation specified in
+ axis-angle convention which allows the rotation of the crystal axes
+-thanks go to Rich Martin and collaborator Wen for useful testing and
+ suggestions
+-improved the DFPT phonon calculations and added the example 'Nb-phonon-DFPT'
+-decreased the chance of accidentally triggering the convergence indicator in
+ the self-consistent loop thanks to a suggestion from Markus Meinert
+-fixed problem with the routine 'nonlinopt', pointed out by user Sabrina and
+ Koichi Kitahara
+-improved the OpenMP efficiency in parts by using '$OMP ATOMIC' instead of
+ '$OMP CRITICAL'
+-changed the names of various internal subroutines; for example 'seceqnfv' is
+ now 'eveqnfv'
+-thanks go to Igor Mazin, Konrad Bussmann and James Glasbrenner for some very
+ useful improvments
+-fixed problem with species generation and MPI pointed out by Marcin Dulak
+-fixed problem with use of Fortran 'APPEND' flag thanks to user Alaska
+-updated the fundamental constants and conversion factors to CODATA 2008
+ recommended values
+-Important: updated code for compatibility with Libxc version 2.2.0; see the
+ manual and note the change in compilation instructions
+-fixed problem with the routine 'energyfdu' which affected DFT+U calculations
+ with 'inpdftu=4' (input of Yukawa screening length)
+-Important: temporarily switched of the conversion of the Hamiltonian to a real
+ symmetric problem because of possible bug; the only effect of this is that the
+ code is slower for systems with inversion symmetry; this will be fixed in the
+ next release
+-minor bug fixes and optimisations
+
+elk-2.2.10
+-fixed problem reported by Sonu Sharma and Michael Fechner with calculation of
+ expectation values L, S and J
+-slightly improved the magnetic anisotropy energy (MAE) calculation
+-added new variable 'socscf' which scales the spin-orbit interaction term in the
+ Hamiltonian; this allows calculation by interpolation of the MAE for cases
+ where the MAE is small
+-added new variables to VARIABLES.OUT
+
 elk-2.2.9
 -fixed problem with fixed spin moment (FSM) calculations pointed out by
  Jagdish Kumar

@@ -33,8 +33,8 @@ real(8) t1
 ! real constant 1/sqrt(4*pi)
 real(8), parameter :: c1=0.28209479177387814347d0
 ! external functions
-real(8) wigner3j,factr,factnm
-external wigner3j,factr,factnm
+real(8) wigner3j,factnm,factr
+external wigner3j,factnm,factr
 if ((l1.lt.0).or.(l2.lt.0).or.(l3.lt.0).or.(abs(m1).gt.l1).or.(abs(m2).gt.l2) &
  .or.(abs(m3).gt.l3)) then
   write(*,*)

@@ -21,13 +21,12 @@ complex(8), allocatable :: zfmt(:,:),zfir(:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
-! allocate local arrays
-allocate(zfmt(lmmaxvr,nrcmtmax),zfir(ngtot))
 ! zero the matrix elements
 vmat(:,:)=0.d0
 !-------------------------!
 !     muffin-tin part     !
 !-------------------------!
+allocate(zfmt(lmmaxvr,nrcmtmax))
 do jst=1,nstsv
   do ias=1,natmtot
     is=idxis(ias)
@@ -35,7 +34,11 @@ do jst=1,nstsv
     nrci=nrcmtinr(is)
     do ispn=1,nspinor
 ! apply potential to wavefunction
-      do irc=1,nrc
+      do irc=1,nrci
+        zfmt(1:lmmaxinr,irc)=vmt(1:lmmaxinr,irc,ias) &
+         *wfmt(1:lmmaxinr,irc,ias,ispn,jst)
+      end do
+      do irc=nrci+1,nrc
         zfmt(:,irc)=vmt(:,irc,ias)*wfmt(:,irc,ias,ispn,jst)
       end do
       do ist=1,jst
@@ -46,9 +49,11 @@ do jst=1,nstsv
     end do
   end do
 end do
+deallocate(zfmt)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
+allocate(zfir(ngtot))
 t1=omega/dble(ngtot)
 do jst=1,nstsv
   do ispn=1,nspinor
@@ -60,13 +65,13 @@ do jst=1,nstsv
     end do
   end do
 end do
+deallocate(zfir)
 ! lower triangular part
 do ist=1,nstsv
   do jst=1,ist-1
     vmat(ist,jst)=conjg(vmat(jst,ist))
   end do
 end do
-deallocate(zfmt,zfir)
 return
 end subroutine
 
