@@ -12,7 +12,8 @@ real(8) function factnm(n,m)
 !   m : order of multifactorial (in,integer)
 ! !DESCRIPTION:
 !   Returns the multifactorial
-!   $$ n\underbrace{!!\,...\,!}_{m\,{\rm times}}=\prod_{i\ge 0,\,n-im>0}n-im $$
+!   $$ n\underbrace{!!\,\cdots\,!}_{m\,{\rm times}}=
+!    \prod_{i\ge 0\atop n-im>0}(n-im) $$
 !   for $n,\,m \ge 0$. $n$ should be less than 150.
 !
 ! !REVISION HISTORY:

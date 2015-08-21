@@ -20,10 +20,10 @@ subroutine fderiv(m,n,x,f,g,cf)
 !   anti-derivative of $f$ given by
 !   $$ g(x_i)=\int_{x_1}^{x_i} f(x)\,dx $$
 !   is calculated. If $m=-1$ then an accurate integral is computed by fitting
-!   the function to a clamped cubic spline. When $m=-2$ the fast but low
+!   the function to a clamped cubic spline. When $m=-3$ the fast but low
 !   accuracy trapezoidal integration method is used. Simpson's integration,
 !   which is slower but more accurate than the trapezoidal method, is used if
-!   $m=-3$.
+!   $m=-2$.
 !
 ! !REVISION HISTORY:
 !   Created May 2002 (JKD)

@@ -94,7 +94,7 @@ do i3=0,ngridp(3)-1
       v1(1)=dble(i1)/dble(ngridp(1))
       call r3mv(b,v1,v2)
       v2(:)=v2(:)+boxl(:,1)
-      if (nsym.gt.0) then
+      if (nsym.gt.1) then
         call r3frac(epslat,v2,iv)
 ! determine if this point is equivalent to one already in the set
         do isym=1,nsym

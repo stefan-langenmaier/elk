@@ -101,8 +101,8 @@ stop
 end program
 
 !BOI
-! !TITLE: The Elk Code Manual\\ Version 1.0.16\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
-! !AUTHORS: J. K. Dewhurst, S. Sharma, L. Nordstr\"{o}m, F. Cricchio, F. Bultmark
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.0.17}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
 !   Welcome to the {\sf Elk} Code! {\sf Elk} is an all-electron full-potential
@@ -141,7 +141,8 @@ end program
 !   Sangeeta Sharma\newline
 !   Lars Nordstr\"{o}m\newline
 !   Francesco Cricchio\newline
-!   Fredrik Bultmark
+!   Fredrik Bultmark\newline
+!   Hardy Gross
 !
 !   \vspace{12pt}
 !   Halle and Uppsala, April 2010

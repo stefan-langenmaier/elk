@@ -893,7 +893,7 @@ real(8), parameter :: gfacte=2.0023193043622d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,0,16 /
+data version / 1,0,17 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

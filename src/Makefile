@@ -196,18 +196,18 @@ release:
 	mkdir $(RELEASE)/species
 	cp ../species/*.in $(RELEASE)/species
 	cp -r ../utilities $(RELEASE)
-	cp COPYING $(RELEASE)
-	cp README $(RELEASE)
+	cp ../COPYING $(RELEASE)
+	cp ../README $(RELEASE)
 	cp release_notes.txt $(RELEASE)
 	cp ../Makefile $(RELEASE)
 	cp ../setup $(RELEASE)
 	$(MAKE) doc
-	cp elk.pdf docs/elk
-	cd spacegroup;$(MAKE) doc;cp spacegroup.pdf ../docs/spacegroup;$(MAKE) clean
-	cp -r docs $(RELEASE)
+	cp elk.pdf ../docs
+	cd spacegroup;$(MAKE) doc;cp spacegroup.pdf ../../docs;$(MAKE) clean
+	cp -r ../docs $(RELEASE)
 	tar -C ../release -czf ../release/elk-$(VERSION).tgz elk
-	cp docs/elk/elk.pdf ../release
-	cp docs/spacegroup/spacegroup.pdf ../release
+	cp ../docs/elk.pdf ../release
+	cp ../docs/spacegroup.pdf ../release
 
 lines:
 	cat $(SRC) | wc -l

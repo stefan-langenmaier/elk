@@ -1011,12 +1011,17 @@ sub do_beg {
     if ( $begdoc == 0 ) {
         if ( $tpage ) {
             print "\\title{@title}";
-            print "\\author{{\\sc @author}\\\\ {\\em @affiliation}}";
+            print "\\author{@author\\\\ {\\em @affiliation}}";
             print "\\date{@date}";
         }
         print "\\begin{document}";
         if ( $tpage ) {
+            print "\\fbox{\\fbox{";
+            print "\\begin{minipage}[t]{\\linewidth}";
             print "\\maketitle";
+            print "\\end{minipage}}}";
+            print "\\thispagestyle{empty}";
+            print "\\newpage";
         }
         print "\\tableofcontents";
         print "\\newpage";

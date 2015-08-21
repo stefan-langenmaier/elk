@@ -17,8 +17,8 @@ stop
 end program
 
 !BOI
-! !TITLE: The Spacegroup Manual\\ Version 1.1.4
-! !AUTHORS: J. K. Dewhurst, S. Sharma and L. Nordstr\"{o}m
+! !TITLE: {\huge{\sc The Spacegroup Manual}}\\ \Large{\sc Version 1.1.4}
+! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma and L. Nordstr\"{o}m}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
 ! {\sf Spacegroup} is a utility which produces crystal geometry for use with the

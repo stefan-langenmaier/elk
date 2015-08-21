@@ -72,18 +72,6 @@ else
     end if
   end do
 end if
-! setup the default k-point box
-boxl(:,1)=vkloff(:)/dble(ngridk(:))
-boxl(:,2)=boxl(:,1); boxl(:,3)=boxl(:,1); boxl(:,4)=boxl(:,1)
-boxl(1,2)=boxl(1,2)+1.d0
-boxl(2,3)=boxl(2,3)+1.d0
-boxl(3,4)=boxl(3,4)+1.d0
-! k-point set and box for Fermi surface plots
-if ((task.eq.100).or.(task.eq.101)) then
-  nsymkpt=0
-  ngridk(:)=np3d(:)
-  boxl(:,:)=vclp3d(:,:)
-end if
 if ((task.eq.20).or.(task.eq.21)) then
 ! for band structure plots generate k-points along a line
   call connect(bvec,nvp1d,npp1d,vvlp1d,vplp1d,dvp1d,dpp1d)
@@ -125,6 +113,17 @@ else
 ! determine the k-point grid automatically from radkpt if required
   if (autokpt) then
     ngridk(:)=int(radkpt/sqrt(avec(1,:)**2+avec(2,:)**2+avec(3,:)**2))+1
+  end if
+! setup the default k-point box
+  boxl(:,1)=vkloff(:)/dble(ngridk(:))
+  boxl(:,2)=boxl(:,1); boxl(:,3)=boxl(:,1); boxl(:,4)=boxl(:,1)
+  boxl(1,2)=boxl(1,2)+1.d0
+  boxl(2,3)=boxl(2,3)+1.d0
+  boxl(3,4)=boxl(3,4)+1.d0
+! k-point set and box for Fermi surface plots
+  if ((task.eq.100).or.(task.eq.101).or.(task.eq.102)) then
+    ngridk(:)=np3d(:)
+    if (task.ne.102) boxl(:,:)=vclp3d(:,:)
   end if
 ! allocate the reduced k-point set arrays
   if (allocated(ivk)) deallocate(ivk)
