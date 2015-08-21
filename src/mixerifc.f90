@@ -35,8 +35,8 @@ case(3)
     nwork=(4+2*mixsdb)*n+mixsdb**2
     return
   end if
-  call mixbroyden(iscl,n,mixsdb,v,work,work(2*n+1),work(4*n+1), &
-   work((4+mixsdb)*n+1),work((4+2*mixsdb)*n+1),dv)
+  call mixbroyden(iscl,n,mixsdb,broydpm(1),broydpm(2),v,work,work(2*n+1), &
+   work(4*n+1),work((4+mixsdb)*n+1),work((4+2*mixsdb)*n+1),dv)
 case default
   write(*,*)
   write(*,'("Error(mixerifc): mtype not defined : ",I8)') mtype

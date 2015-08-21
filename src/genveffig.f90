@@ -25,7 +25,7 @@ integer ig,ifg
 complex(8), allocatable :: zfft(:)
 allocate(zfft(ngrtot))
 ! multiply effective potential by characteristic function
-zfft(:)=dble(veffir(:))*cfunir(:)
+zfft(:)=veffir(:)*cfunir(:)
 ! Fourier transform to G-space
 call zfftifc(3,ngrid,-1,zfft)
 ! store in global array

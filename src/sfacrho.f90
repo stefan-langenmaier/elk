@@ -75,7 +75,6 @@ write(*,*)
 write(*,'("Info(sfacrho): density structure factors written to SFACRHO.OUT")')
 write(*,*)
 write(*,'(" Energy window : ",2G18.10)') wsfac(:)
-write(*,*)
 return
 end subroutine
 !EOC

@@ -5,12 +5,11 @@
 
 subroutine phdos
 use modmain
+use modphonon
 use modtest
 implicit none
 ! local variables
-! number of temperature values
-integer, parameter :: ntemp=10
-integer n,iq,i,iw
+integer nb,iq,i,iw
 integer i1,i2,i3
 real(8) wmin,wmax,wd,dw
 real(8) tmax,temp(ntemp),s(ntemp)
@@ -27,15 +26,15 @@ complex(8), allocatable :: ev(:,:)
 ! initialise universal variables
 call init0
 call init2
-n=3*natmtot
-allocate(wp(n))
+nb=3*natmtot
+allocate(wp(nb))
 allocate(w(nwdos))
 allocate(gw(nwdos))
 allocate(f(nwdos),g(nwdos),cf(4,nwdos))
-allocate(dynq(n,n,nqpt))
-allocate(dynr(n,n,ngridq(1)*ngridq(2)*ngridq(3)))
-allocate(dynp(n,n))
-allocate(ev(n,n))
+allocate(dynq(nb,nb,nqpt))
+allocate(dynr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
+allocate(dynp(nb,nb))
+allocate(ev(nb,nb))
 ! read in the dynamical matrices
 call readdyn(dynq)
 ! apply the acoustic sum rule
@@ -48,7 +47,7 @@ wmax=0.d0
 do iq=1,nqpt
   call dyndiag(dynq(:,:,iq),wp,ev)
   wmin=min(wmin,wp(1))
-  wmax=max(wmax,wp(n))
+  wmax=max(wmax,wp(nb))
 end do
 wmax=wmax+(wmax-wmin)*0.1d0
 wmin=wmin-(wmax-wmin)*0.1d0
@@ -70,7 +69,7 @@ do i1=0,ngrdos-1
       call dynrtoq(v,dynr,dynp)
 ! find the phonon frequencies
       call dyndiag(dynp,wp,ev)
-      do i=1,n
+      do i=1,nb
         t1=(wp(i)-wmin)/dw+1.d0
         iw=nint(t1)
         if ((iw.ge.1).and.(iw.le.nwdos)) then
@@ -171,7 +170,6 @@ do i=1,ntemp
 end do
 close(50)
 write(*,'(" thermodynamic properties written to THERMO.OUT")')
-write(*,*)
 ! write phonon DOS to test file
 call writetest(210,'phonon DOS',nv=nwdos,tol=1.d-2,rva=gw)
 deallocate(wp,w,gw,f,g,cf,dynq,dynr,dynp,ev)

@@ -9,10 +9,13 @@ tasks
   180       ! generate RPA dielectric function with local field contributions
   185       ! compute BSE dielectric funcion
 
+scissor
+ 0.12
+
 lmaxvr
  5
 
-! automatically determine the smallest possible G vector grid
+! automatically determine the smallest possible G-vector grid
 gmaxvr
  0.0
 
@@ -24,7 +27,7 @@ nvbse
 ncbse
   4
 
-! G vector cut-off of local contribution to RPA
+! G-vector cut-off of local contribution to RPA
 gmaxrpa
   3.0
 

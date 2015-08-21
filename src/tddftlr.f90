@@ -8,16 +8,15 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ik,ig,jg,iw,n
+integer ik,ig,jg,iw,it,n
 integer info1,info2
-complex(8) zt1
+complex(8) fxcp,zt1
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
 complex(8), allocatable :: expqmt(:,:,:)
 complex(8), allocatable :: vchi0(:,:,:),fxc(:,:,:)
 complex(8), allocatable :: eps0(:,:,:),eps(:,:,:)
-complex(8), allocatable :: vc(:,:),e(:,:),vce(:,:)
-complex(8), allocatable :: a(:,:),work(:)
+complex(8), allocatable :: vce(:,:),a(:,:),work(:)
 ! initialise global variables
 call init0
 call init1
@@ -45,11 +44,10 @@ end do
 ! allocate local arrays
 allocate(ipiv(ngrpa))
 allocate(expqmt(lmmaxvr,nrcmtmax,natmtot))
-allocate(vchi0(nwrpa,ngrpa,ngrpa),fxc(nwrpa,ngrpa,ngrpa))
-allocate(eps0(nwrpa,ngrpa,ngrpa),eps(nwrpa,ngrpa,ngrpa))
-allocate(vc(ngrpa,ngrpa),e(ngrpa,ngrpa),vce(ngrpa,ngrpa))
-allocate(a(ngrpa,ngrpa),work(ngrpa))
-! generate the exp(iG.r) functions for all the RPA G-vectors
+allocate(vchi0(ngrpa,ngrpa,nwrpa),fxc(ngrpa,ngrpa,nwrpa))
+allocate(eps0(ngrpa,ngrpa,nwrpa),eps(ngrpa,ngrpa,nwrpa))
+allocate(vce(ngrpa,ngrpa),a(ngrpa,ngrpa),work(ngrpa))
+! generate the exp(iG.r) functions for all the MBPT G-vectors
 call genexpigr
 ! generate the exp(iq.r) function for q = 0
 expqmt(:,:,:)=1.d0
@@ -60,70 +58,89 @@ vchi0(:,:,:)=0.d0
 do ik=1,nkptnr
 ! distribute among MPI processes
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-  call genvchi0(iq0,ik,gc,expqmt,vchi0)
+  call genvchi0(iq0,ik,optcomp(1,1),gc,expqmt,vchi0)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! add epsinv from each process and redistribute
 if (np_mpi.gt.1) then
-  n=nwrpa*ngrpa*ngrpa
+  n=ngrpa*ngrpa*nwrpa
   call mpi_allreduce(mpi_in_place,vchi0,n,mpi_double_complex,mpi_sum, &
    mpi_comm_world,ierror)
 end if
 ! calculate symmetric epsilon = 1 - v^1/2 chi0 v^1/2
 do ig=1,ngrpa
   do jg=1,ngrpa
-    eps0(:,ig,jg)=-vchi0(:,ig,jg)
+    eps0(ig,jg,:)=-vchi0(ig,jg,:)
+    eps(ig,jg,:)=vchi0(ig,jg,:)
   end do
-  eps0(:,ig,ig)=eps0(:,ig,ig)+1.d0
+  eps0(ig,ig,:)=eps0(ig,ig,:)+1.d0
+  eps(ig,ig,:)=eps(ig,ig,:)+1.d0
 end do
-! compute vchi0 v^1/2 fxc v^1/2 vchi0
-call genfxc(vchi0,fxc)
+fxcp=0.d0
+it=0
+10 continue
+! compute vchi0 v{-^1/2} fxc v{-^1/2} vchi0
+call genfxc(vchi0,eps0,eps,fxc)
 ! begin loop over frequencies
 do iw=1,nwrpa
-  vc(:,:)=vchi0(iw,:,:)
-  e(:,:)=eps0(iw,:,:)
 ! left multiply eps0 by vchi0 to get v^1/2 chi0 v^1/2 - v^1/2 chi0 v chi0 v^1/2
-  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vc,ngrpa,e,ngrpa,zzero,vce,ngrpa)
+  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vchi0(:,:,iw),ngrpa,eps0(:,:,iw), &
+   ngrpa,zzero,vce,ngrpa)
 ! subtract v^1/2 chi0 fxc chi0 v^1/2
-  vce(:,:)=vce(:,:)-fxc(iw,:,:)
+  vce(:,:)=vce(:,:)-fxc(:,:,iw)
 ! invert this matrix
   call zgetrf(ngrpa,ngrpa,vce,ngrpa,ipiv,info1)
   call zgetri(ngrpa,vce,ngrpa,ipiv,work,ngrpa,info2)
   if ((info1.ne.0).or.(info2.ne.0)) then
     write(*,*)
     write(*,'("Error(tddftlr): unable to invert epsilon")')
-    write(*,'(" for RPA frequency ",I6)') iw
+    write(*,'(" for MBPT frequency ",I6)') iw
     write(*,*)
     stop
   end if
 ! compute v^1/2 chi v^1/2 = vchi0 vce vchi0
-  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vc,ngrpa,vce,ngrpa,zzero,a,ngrpa)
-  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,a,ngrpa,vc,ngrpa,zzero,e,ngrpa)
+  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,vchi0(:,:,iw),ngrpa,vce,ngrpa, &
+   zzero,a,ngrpa)
+  call zgemm('N','N',ngrpa,ngrpa,ngrpa,zone,a,ngrpa,vchi0(:,:,iw),ngrpa, &
+   zzero,eps(:,:,iw),ngrpa)
 ! compute epsilon = 1 + v^1/2 chi v^1/2
-  eps(iw,:,:)=e(:,:)
   do ig=1,ngrpa
-    eps(iw,ig,ig)=1.d0+eps(iw,ig,ig)
+    eps(ig,ig,iw)=1.d0+eps(ig,ig,iw)
   end do
 end do
+! bootstrap f_xc
+if (fxctype.eq.2) then
+  it=it+1
+  if (it.gt.200) then
+    write(*,*)
+    write(*,'("Error(tddftlr): bootstrap kernel failed to converge")')
+    write(*,*)
+    stop
+  end if
+! check for convergence
+  zt1=fxcp-fxc(1,1,1)
+  fxcp=fxc(1,1,1)
+  if (abs(zt1).gt.1.d-8) goto 10
+end if
 ! write G = G' = 0 components to file
 open(50,file="EPSILON_TDDFT.OUT",action='WRITE',form='FORMATTED')
 do iw=1,nwrpa
-  zt1=1.d0/eps(iw,1,1)
+  zt1=1.d0/eps(1,1,iw)
   write(50,'(3G18.10)') dble(wrpa(iw)),dble(zt1)
 end do
 write(50,*)
 do iw=1,nwrpa
-  zt1=1.d0/eps(iw,1,1)
+  zt1=1.d0/eps(1,1,iw)
   write(50,'(3G18.10)') dble(wrpa(iw)),aimag(zt1)
 end do
 close(50)
 write(*,*)
 write(*,'("Info(tddftlr):")')
-write(*,'(" 1/3 trace of dielectric tensor written to EPSILON_TDDFT.OUT")')
-write(*,*)
+write(*,'(" dielectric tensor written to EPSILON_TDDFT.OUT")')
+write(*,'(" for component i, j = ",I1)') optcomp(1,1)
 deallocate(ipiv,expqmt,vchi0,fxc)
-deallocate(eps0,eps,vc,e,vce,a,work)
+deallocate(eps0,eps,vce,a,work)
 ! deallocate global exp(iG.r) arrays
 deallocate(expgmt,expgir)
 return

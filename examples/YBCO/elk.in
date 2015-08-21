@@ -10,9 +10,9 @@ tasks
 rgkmax
   6.0
 
-! small mixing parameter required
-beta0
- 0.05
+! use Broyden mixing
+mixtype
+  3
 
 avec
   7.2246  0.0     0.0

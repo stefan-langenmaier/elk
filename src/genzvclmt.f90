@@ -14,18 +14,15 @@ integer, intent(in) :: ld2
 complex(8), intent(in) :: zrhomt(lmmaxvr,ld2,natmtot)
 complex(8), intent(out) :: zvclmt(lmmaxvr,ld2,natmtot)
 ! local variables
-integer is,ia,ias
-do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias)
+integer is,ias
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    call zpotclmt(lmaxvr,nr(is),r(:,is),lmmaxvr,zrhomt(:,:,ias),zvclmt(:,:,ias))
-  end do
+do ias=1,natmtot
+  is=idxis(ias)
+  call zpotclmt(lmaxvr,nr(is),r(:,is),lmmaxvr,zrhomt(:,:,ias),zvclmt(:,:,ias))
+end do
 !$OMP END DO
 !$OMP END PARALLEL
-end do
 return
 end subroutine
 

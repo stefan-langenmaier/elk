@@ -39,44 +39,34 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
 ! local variables
-integer is,ia,np
-real(8) v(1)
+integer ias
 real(8) ts0,ts1
 ! allocatable arrays
 complex(8), allocatable :: h(:),o(:)
-if (tpmat) then
-  np=(nmatp*(nmatp+1))/2
-else
-  np=nmatp**2
-end if
 !-----------------------------------------------!
 !     Hamiltonian and overlap matrix set up     !
 !-----------------------------------------------!
 call timesec(ts0)
-allocate(h(np),o(np))
-!$OMP PARALLEL SECTIONS DEFAULT(SHARED) PRIVATE(is,ia)
+allocate(h(nmatp**2),o(nmatp**2))
+!$OMP PARALLEL SECTIONS DEFAULT(SHARED) PRIVATE(ias)
 !$OMP SECTION
 ! Hamiltonian
 h(:)=0.d0
-do is=1,nspecies
-  do ia=1,natoms(is)
-    call hmlaa(.false.,is,ia,ngp,apwalm,v,h)
-    call hmlalo(.false.,is,ia,ngp,apwalm,v,h)
-    call hmllolo(.false.,is,ia,ngp,v,h)
-  end do
+do ias=1,natmtot
+  call hmlaa(ias,ngp,apwalm,h)
+  call hmlalo(ias,ngp,apwalm,h)
+  call hmllolo(ias,ngp,h)
 end do
-call hmlistl(.false.,ngp,igpig,vgpc,v,h)
+call hmlistl(ngp,igpig,vgpc,h)
 !$OMP SECTION
 ! overlap
 o(:)=0.d0
-do is=1,nspecies
-  do ia=1,natoms(is)
-    call olpaa(.false.,is,ia,ngp,apwalm,v,o)
-    call olpalo(.false.,is,ia,ngp,apwalm,v,o)
-    call olplolo(.false.,is,ia,ngp,v,o)
-  end do
+do ias=1,natmtot
+  call olpaa(ias,ngp,apwalm,o)
+  call olpalo(ias,ngp,apwalm,o)
+  call olplolo(ias,ngp,o)
 end do
-call olpistl(.false.,ngp,igpig,v,o)
+call olpistl(ngp,igpig,o)
 !$OMP END PARALLEL SECTIONS
 call timesec(ts1)
 !$OMP CRITICAL
@@ -89,7 +79,7 @@ if (tseqr) then
 ! system has inversion symmetry: use real symmetric matrix eigen solver
   call seceqnfvr(nmatp,ngp,vpc,h,o,evalfv,evecfv)
 else
-! no inversion symmetry: use complex Hermititan matrix eigen solver
+! no inversion symmetry: use complex Hermitian matrix eigen solver
   call seceqnfvz(nmatp,h,o,evalfv,evecfv)
 end if
 deallocate(h,o)

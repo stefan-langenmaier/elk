@@ -55,7 +55,7 @@ real(8), intent(out) :: g(nw)
 integer i1,i2,i3,j1,j2,j3,k1,k2,k3,i,iw
 integer i000,i001,i010,i011,i100,i101,i110,i111
 real(8) p1,p2,p3,q1,q2,q3
-real(8) es,fs,wd,dw,dwi,t1
+real(8) es,fs,wd,dw,dwi,w1,t1
 ! allocatable arrays
 real(8), allocatable :: f0(:),f1(:)
 real(8), allocatable :: e0(:),e1(:)
@@ -81,6 +81,7 @@ wd=wint(2)-wint(1)
 ! energy step size
 dw=wd/dble(nw)
 dwi=1.d0/dw
+w1=wint(1)
 g(:)=0.d0
 do j1=0,ngridk(1)-1
   k1=mod(j1+1,ngridk(1))
@@ -115,12 +116,9 @@ do j1=0,ngridk(1)-1
             q3=1.d0-p3
             do i=1,n
               fs=f0(i)*q3+f1(i)*p3
-              if (abs(fs).gt.1.d-10) then
-                es=e0(i)*q3+e1(i)*p3
-                t1=(es-wint(1))*dwi
-                iw=nint(t1)+1
-                if ((iw.ge.1).and.(iw.le.nw)) g(iw)=g(iw)+fs
-              end if
+              es=e0(i)*q3+e1(i)*p3
+              iw=nint((es-w1)*dwi)+1
+              if ((iw.ge.1).and.(iw.le.nw)) g(iw)=g(iw)+fs
             end do
           end do
         end do

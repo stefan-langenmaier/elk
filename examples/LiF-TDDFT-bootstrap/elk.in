@@ -1,0 +1,56 @@
+
+! Time-dependent density functional theory (TDDFT) optical spectrum of lithium
+! fluoride. This material has a prominent excitonic peak, which is absent in the
+! usual RPA dielectric function. The 'bootstrap' TDDFT kernel is used, see:
+! arXiv:1107.0199v1 [cond-mat.mtrl-sci]
+
+tasks
+  0         ! ground-state calculation
+  120       ! compute momentum matrix elements
+  121       ! compute RPA dielectric function with no local field contributions
+  188       ! compute TDDFT dielectric function with local field contributions
+
+! bootstrap kernel
+fxctype
+  2
+
+! G-vector cut-off of exchange-correlation kernel and response function
+gmaxrpa
+  0.0
+
+nempty
+  10
+
+lradstp
+  2
+
+autormt
+ .true.
+
+dos
+  800 100 0 : nwdos, ngrdos, nsmdos
+  0.0 1.5   : wdos
+
+avec
+  3.80402   3.80402   0.00000
+  3.80402   0.00000   3.80402
+  0.00000   3.80402   3.80402
+
+sppath
+  '../../species/'
+
+atoms
+  2                                       : nspecies
+  'Li.in'                                 : spfname
+  1                                       : natoms
+  0.0000  0.0000  0.0000    0.0 0.0 0.0   : atposl, bfcmt
+  'F.in'                                  : spfname
+  1                                       : natoms
+  0.5000  0.5000  0.5000    0.0 0.0 0.0   : atposl, bfcmt
+
+ngridk
+  4  4  4
+
+vkloff
+  0.25 0.5 0.625
+

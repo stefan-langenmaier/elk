@@ -29,7 +29,7 @@ integer, intent(in) :: ngv
 real(8), intent(inout) :: rfir(ngrtot)
 ! local variables
 integer isym,lspl,ilspl,sym(3,3)
-integer iv(3),ig,jg,ifg,jfg
+integer iv(3),ig,ifg,jfg
 real(8) vtc(3),t1
 complex(8) zt1
 ! allocatable arrays
@@ -57,8 +57,7 @@ do isym=1,nsymcrys
     if ((iv(1).ge.intgv(1,1)).and.(iv(1).le.intgv(1,2)).and. &
         (iv(2).ge.intgv(2,1)).and.(iv(2).le.intgv(2,2)).and. &
         (iv(3).ge.intgv(3,1)).and.(iv(3).le.intgv(3,2))) then
-      jg=ivgig(iv(1),iv(2),iv(3))
-      jfg=igfft(jg)
+      jfg=igfft(ivgig(iv(1),iv(2),iv(3)))
 ! complex phase factor for translation
       t1=-(vgc(1,ig)*vtc(1)+vgc(2,ig)*vtc(2)+vgc(3,ig)*vtc(3))
       zt1=cmplx(cos(t1),sin(t1),8)

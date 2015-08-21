@@ -78,10 +78,6 @@ do ia=1,natoms(is)
     v1(:)=atposl(:,ia,is)-atposl(:,ja,is)
 ! map lattice coordinates to [0,1)
     call r3frac(epslat,v1,iv)
-! map lattice coordinates to [-0.5,0.5)
-    do i=1,3
-      if (v1(i).gt.0.5d0) v1(i)=v1(i)-1.d0
-    end do
     do i=1,n
       t1=abs(vtl(1,i)-v1(1))+abs(vtl(2,i)-v1(2))+abs(vtl(3,i)-v1(3))
       if (t1.lt.epslat) goto 10
@@ -175,15 +171,18 @@ if (tsyminv.and.tshift) then
     call r3frac(epslat,vtlsymc(:,isym),iv)
   end do
 end if
-! set flag for non-zero translation vector
+! set flag for zero translation vector
 do isym=1,nsymcrys
   t1=sum(abs(vtlsymc(:,isym)))
-  if (t1.gt.epslat) then
+  if (t1.lt.epslat) then
     tvzsymc(isym)=.true.
   else
     tvzsymc(isym)=.false.
   end if
 end do
+if (tsyminv) then
+  if (.not.tvzsymc(2)) tsyminv=.false.
+end if
 ! write number of crystal symmetries to test file
 call writetest(705,'number of crystal symmetries',iv=nsymcrys)
 deallocate(iea,vtl)

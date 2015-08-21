@@ -149,7 +149,7 @@ end if
 call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
 
 !---------------------!
-!     G+k vectors     !
+!     G+k-vectors     !
 !---------------------!
 ! find the maximum number of G+k-vectors
 call getngkmax
@@ -182,14 +182,14 @@ do ik=1,nkpt
         vc(:)=vc(:)-0.5d0*vqcss(:)
       end if
     end if
-! generate the G+k vectors
+! generate the G+k-vectors
     call gengpvec(vl,vc,ngk(ispn,ik),igkig(:,ispn,ik),vgkl(:,:,ispn,ik), &
      vgkc(:,:,ispn,ik))
-! generate the spherical coordinates of the G+k vectors
+! generate the spherical coordinates of the G+k-vectors
     do igk=1,ngk(ispn,ik)
       call sphcrd(vgkc(:,igk,ispn,ik),gkc(igk,ispn,ik),tpgkc(:,igk,ispn,ik))
     end do
-! generate structure factors for G+k vectors
+! generate structure factors for G+k-vectors
     call gensfacgp(ngk(ispn,ik),vgkc(:,:,ispn,ik),ngkmax,sfacgk(:,:,ispn,ik))
   end do
 end do
@@ -263,19 +263,11 @@ nstfv=int(chgval/2.d0)+nempty+1
 ! overlap and Hamiltonian matrix sizes
 if (allocated(nmat)) deallocate(nmat)
 allocate(nmat(nspnfv,nkpt))
-if (allocated(npmat)) deallocate(npmat)
-allocate(npmat(nspnfv,nkpt))
 nmatmax=0
 do ik=1,nkpt
   do ispn=1,nspnfv
     nmat(ispn,ik)=ngk(ispn,ik)+nlotot
     nmatmax=max(nmatmax,nmat(ispn,ik))
-! packed matrix sizes (or nmat^2 if tpmat is .false.)
-    if (tpmat) then
-      npmat(ispn,ik)=(nmat(ispn,ik)*(nmat(ispn,ik)+1))/2
-    else
-      npmat(ispn,ik)=nmat(ispn,ik)**2
-    end if
 ! the number of first-variational states should not exceed the matrix size
     nstfv=min(nstfv,nmat(ispn,ik))
   end do

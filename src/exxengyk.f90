@@ -16,63 +16,35 @@ real(8) cfq,v(3),t1
 complex(8) zrho0,zt1
 ! allocatable arrays
 integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:)
-real(8), allocatable :: vgkcnr(:,:)
-real(8), allocatable :: gkcnr(:)
-real(8), allocatable :: tpgkcnr(:,:)
-real(8), allocatable :: vgqc(:,:)
-real(8), allocatable :: gqc(:)
-real(8), allocatable :: tpgqc(:,:)
-real(8), allocatable :: jlgqr(:,:,:)
-real(8), allocatable :: evalsvp(:)
-real(8), allocatable :: evalsvnr(:)
-complex(8), allocatable :: sfacgknr(:,:)
-complex(8), allocatable :: apwalm(:,:,:,:)
-complex(8), allocatable :: evecfv(:,:)
-complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: ylmgq(:,:)
-complex(8), allocatable :: sfacgq(:,:)
-complex(8), allocatable :: wfmt1(:,:,:,:,:)
-complex(8), allocatable :: wfmt2(:,:,:,:,:)
-complex(8), allocatable :: wfir1(:,:,:)
-complex(8), allocatable :: wfir2(:,:,:)
-complex(8), allocatable :: wfcr(:,:,:)
-complex(8), allocatable :: zrhomt(:,:,:)
-complex(8), allocatable :: zrhoir(:)
-complex(8), allocatable :: zvclmt(:,:,:)
-complex(8), allocatable :: zvclir(:)
-complex(8), allocatable :: zfmt(:,:)
+real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:),gkcnr(:),tpgkcnr(:,:)
+real(8), allocatable :: vgqc(:,:),gqc(:),tpgqc(:,:),jlgqr(:,:,:)
+real(8), allocatable :: evalsvp(:),evalsvnr(:)
+complex(8), allocatable :: sfacgknr(:,:),apwalm(:,:,:,:)
+complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
+complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
+complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
+complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
+complex(8), allocatable :: wfcr(:,:,:),zfmt(:,:)
+complex(8), allocatable :: zrhomt(:,:,:),zrhoir(:)
+complex(8), allocatable :: zvclmt(:,:,:),zvclir(:)
 ! external functions
 complex(8) zfinp,zfmtinp
 external zfinp,zfmtinp
 ! allocate local arrays
 allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax))
-allocate(vgkcnr(3,ngkmax))
-allocate(gkcnr(ngkmax))
-allocate(tpgkcnr(2,ngkmax))
-allocate(vgqc(3,ngvec))
-allocate(gqc(ngvec))
-allocate(tpgqc(2,ngvec))
+allocate(vgklnr(3,ngkmax),vgkcnr(3,ngkmax),gkcnr(ngkmax),tpgkcnr(2,ngkmax))
+allocate(vgqc(3,ngvec),gqc(ngvec),tpgqc(2,ngvec))
 allocate(jlgqr(0:lnpsd+1,ngvec,nspecies))
-allocate(evalsvp(nstsv))
-allocate(evalsvnr(nstsv))
-allocate(sfacgknr(ngkmax,natmtot))
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
-allocate(ylmgq(lmmaxvr,ngvec))
-allocate(sfacgq(ngvec,natmtot))
+allocate(evalsvp(nstsv),evalsvnr(nstsv))
+allocate(sfacgknr(ngkmax,natmtot),apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
+allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-allocate(wfir1(ngrtot,nspinor,nstsv))
-allocate(wfir2(ngrtot,nspinor,nstsv))
-allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot))
-allocate(zrhoir(ngrtot))
-allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot))
-allocate(zvclir(ngrtot))
-allocate(wfcr(lmmaxvr,nrcmtmax,2))
-allocate(zfmt(lmmaxvr,nrcmtmax))
+allocate(wfir1(ngrtot,nspinor,nstsv),wfir2(ngrtot,nspinor,nstsv))
+allocate(wfcr(lmmaxvr,nrcmtmax,2),zfmt(lmmaxvr,nrcmtmax))
+allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngrtot))
+allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
 ! coefficient for long-range term
 cfq=0.5d0*(omega/pi)**2
 ! get the eigenvalues/vectors from file for input k-point
@@ -86,9 +58,9 @@ call genwfsv(.false.,.false.,.true.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm, &
  evecfv,evecsv,wfmt1,ngrtot,wfir1)
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
-! generate G+k vectors
+! generate G+k-vectors
   call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
+! generate the spherical coordinates of the G+k-vectors
   do igk=1,ngknr
     call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
   end do
@@ -106,7 +78,7 @@ do ik=1,nkptnr
   iq=iqmap(iv(1),iv(2),iv(3))
   v(:)=vkc(:,ikp)-vkc(:,ik)
   do ig=1,ngvec
-! determine G+q vectors
+! determine G+q-vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
 ! G+q-vector length and (theta, phi) coordinates
     call sphcrd(vgqc(:,ig),gqc(ig),tpgqc(:,ig))
@@ -192,7 +164,7 @@ do is=1,nspecies
   end do
 end do
 deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
-deallocate(vgqc,tpgqc,gqc,jlgqr)
+deallocate(vgqc,gqc,tpgqc,jlgqr)
 deallocate(evalsvp,evalsvnr,evecfv,evecsv)
 deallocate(sfacgknr,apwalm,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2,wfcr)

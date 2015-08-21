@@ -40,7 +40,7 @@ complex(8), intent(in) :: zfmt2(lmmaxvr,nrcmtmax,natmtot)
 complex(8), intent(in) :: zfir1(ngrtot)
 complex(8), intent(in) :: zfir2(ngrtot)
 ! local variables
-integer is,ia,ias,ir
+integer ias,is,ir
 ! external functions
 complex(8) zfmtinp
 external zfmtinp
@@ -51,12 +51,10 @@ do ir=1,ngrtot
 end do
 zfinp=zfinp*omega/dble(ngrtot)
 ! muffin-tin contribution
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    zfinp=zfinp+zfmtinp(tsh,lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr, &
-     zfmt1(:,:,ias),zfmt2(:,:,ias))
-  end do
+do ias=1,natmtot
+  is=idxis(ias)
+  zfinp=zfinp+zfmtinp(tsh,lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,zfmt1(:,:,ias), &
+   zfmt2(:,:,ias))
 end do
 return
 end function

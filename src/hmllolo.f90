@@ -3,24 +3,20 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine hmllolo(tapp,is,ia,ngp,v,h)
+subroutine hmllolo(ias,ngp,h)
 use modmain
 implicit none
 ! arguments
-logical, intent(in) :: tapp
-integer, intent(in) :: is
-integer, intent(in) :: ia
+integer, intent(in) :: ias
 integer, intent(in) :: ngp
-complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ld,ias,ilo,jlo
+integer ld,is,ilo,jlo
 integer l1,l2,l3,m1,m2,m3
-integer lm1,lm2,lm3
-integer ist,i,j,k,ki,kj
+integer lm1,lm2,lm3,i,j,k
 complex(8) zsum
 ld=ngp+nlotot
-ias=idxas(ia,is)
+is=idxis(ias)
 do ilo=1,nlorb(is)
   l1=lorbl(ilo,is)
   do m1=-l1,l1
@@ -41,29 +37,8 @@ do ilo=1,nlorb(is)
               end do
             end if
           end do
-          if (tapp) then
-! apply the Hamiltonian operator to v
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(k,ki,kj)
-!$OMP DO
-            do ist=1,nstfv
-              k=(ist-1)*nmatmax
-              ki=k+i
-              kj=k+j
-              h(ki)=h(ki)+zsum*v(kj)
-              if (i.ne.j) h(kj)=h(kj)+conjg(zsum)*v(ki)
-            end do
-!$OMP END DO
-!$OMP END PARALLEL
-          else
-! calculate the matrix elements
-            if (tpmat) then
-              k=i+((j-1)*j)/2
-            else
-              k=i+(j-1)*ld
-            end if
-            h(k)=h(k)+zsum
-          end if
+          k=i+(j-1)*ld
+          h(k)=h(k)+zsum
         end if
       end do
     end do

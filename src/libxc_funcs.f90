@@ -26,10 +26,13 @@ module libxc_funcs_m
   integer, parameter :: XC_LDA_X_1D          =  21  !  Exchange in 1D     
   integer, parameter :: XC_LDA_C_ML1         =  22  !  Modified LSD (version 1) of Proynov and Salahub 
   integer, parameter :: XC_LDA_C_ML2         =  23  !  Modified LSD (version 2) of Proynov and Salahub 
+  integer, parameter :: XC_LDA_C_GOMBAS      =  24  !  Gombas parametrization       
+  integer, parameter :: XC_LDA_K_TF          =  50  !  Thomas-Fermi kinetic energy functional 
+  integer, parameter :: XC_LDA_K_LP          =  51  !  Lee and Parr Gaussian ansatz           
   integer, parameter :: XC_GGA_X_PBE         = 101  !  Perdew, Burke & Ernzerhof exchange             
   integer, parameter :: XC_GGA_X_PBE_R       = 102  !  Perdew, Burke & Ernzerhof exchange (revised)   
   integer, parameter :: XC_GGA_X_B86         = 103  !  Becke 86 Xalfa,beta,gamma                      
-  integer, parameter :: XC_GGA_X_B86_R       = 104  !  Becke 86 Xalfa,beta,gamma (reoptimized)        
+  integer, parameter :: XC_GGA_X_HERMAN      = 104  !  Herman et al original GGA                  
   integer, parameter :: XC_GGA_X_B86_MGC     = 105  !  Becke 86 Xalfa,beta,gamma (with mod. grad. correction) 
   integer, parameter :: XC_GGA_X_B88         = 106  !  Becke 88 
   integer, parameter :: XC_GGA_X_G96         = 107  !  Gill 96                                        
@@ -69,7 +72,13 @@ module libxc_funcs_m
   integer, parameter :: XC_GGA_X_OPTPBE_VDW  = 141  !  PBE reparametrization for vdW 
   integer, parameter :: XC_GGA_X_RGE2        = 142  !  Regularized PBE 
   integer, parameter :: XC_GGA_C_RGE2        = 143  !  Regularized PBE 
-  integer, parameter :: XC_GGA_XC_LB         = 160  !  van Leeuwen & Baerends 
+  integer, parameter :: XC_GGA_X_RPW86       = 144  !  refitted Perdew & Wang 86 
+  integer, parameter :: XC_GGA_X_KT1         = 145  !  Keal and Tozer version 1             
+  integer, parameter :: XC_GGA_XC_KT2        = 146  !  Keal and Tozer version 2             
+  integer, parameter :: XC_GGA_C_WL          = 147  !  Wilson & Levy 
+  integer, parameter :: XC_GGA_C_WI          = 148  !  Wilson & Ivanov 
+  integer, parameter :: XC_GGA_X_MB88        = 149  !  Modified Becke 88 for proton transfer 
+  integer, parameter :: XC_GGA_X_LB          = 160  !  van Leeuwen & Baerends 
   integer, parameter :: XC_GGA_XC_HCTH_93    = 161  !  HCTH functional fitted to  93 molecules  
   integer, parameter :: XC_GGA_XC_HCTH_120   = 162  !  HCTH functional fitted to 120 molecules  
   integer, parameter :: XC_GGA_XC_HCTH_147   = 163  !  HCTH functional fitted to 147 molecules  
@@ -91,6 +100,39 @@ module libxc_funcs_m
   integer, parameter :: XC_GGA_XC_SB98_2a    = 179  !  Schmider-Becke 98 parameterization 2a    
   integer, parameter :: XC_GGA_XC_SB98_2b    = 180  !  Schmider-Becke 98 parameterization 2b    
   integer, parameter :: XC_GGA_XC_SB98_2c    = 181  !  Schmider-Becke 98 parameterization 2c    
+  integer, parameter :: XC_GGA_X_LBM         = 182  !  van Leeuwen & Baerends modified
+  integer, parameter :: XC_GGA_X_OL2         = 183  !  Exchange form based on Ou-Yang and Levy v.2 
+  integer, parameter :: XC_GGA_X_APBE        = 184  !  mu fixed from the semiclassical neutral atom   
+  integer, parameter :: XC_GGA_K_APBE        = 185  !  mu fixed from the semiclassical neutral atom   
+  integer, parameter :: XC_GGA_C_APBE        = 186  !  mu fixed from the semiclassical neutral atom   
+  integer, parameter :: XC_GGA_K_TW1         = 187  !  Tran and Wesolowski set 1 (Table II)           
+  integer, parameter :: XC_GGA_K_TW2         = 188  !  Tran and Wesolowski set 2 (Table II)           
+  integer, parameter :: XC_GGA_K_TW3         = 189  !  Tran and Wesolowski set 3 (Table II)           
+  integer, parameter :: XC_GGA_K_TW4         = 190  !  Tran and Wesolowski set 4 (Table II)           
+  integer, parameter :: XC_GGA_K_VW          = 500  !  von Weiszaecker functional 
+  integer, parameter :: XC_GGA_K_GE2         = 501  !  Second-order gradient expansion (l = 1/9) 
+  integer, parameter :: XC_GGA_K_GOLDEN      = 502  !  TF-lambda-vW form by Golden (l = 13/45) 
+  integer, parameter :: XC_GGA_K_YT65        = 503  !  TF-lambda-vW form by Yonei and Tomishima (l = 1/5) 
+  integer, parameter :: XC_GGA_K_BALTIN      = 504  !  TF-lambda-vW form by Baltin (l = 5/9) 
+  integer, parameter :: XC_GGA_K_LIEB        = 505  !  TF-lambda-vW form by Lieb (l = 0.185909191) 
+  integer, parameter :: XC_GGA_K_ABSR1       = 506  !  gamma-TFvW form by Acharya et al [g = 1 - 1.412/N^(1/3)] 
+  integer, parameter :: XC_GGA_K_ABSR2       = 507  !  gamma-TFvW form by Acharya et al [g = 1 - 1.332/N^(1/3)] 
+  integer, parameter :: XC_GGA_K_GR          = 508  !  gamma-TFvW form by Gázquez and Robles 
+  integer, parameter :: XC_GGA_K_LUDENA      = 509  !  gamma-TFvW form by Ludeña 
+  integer, parameter :: XC_GGA_K_GP85        = 510  !  gamma-TFvW form by Ghosh and Parr 
+  integer, parameter :: XC_GGA_K_PEARSON     = 511  !  Pearson 
+  integer, parameter :: XC_GGA_K_OL1         = 512  !  Ou-Yang and Levy v.1 
+  integer, parameter :: XC_GGA_K_OL2         = 513  !  Ou-Yang and Levy v.2 
+  integer, parameter :: XC_GGA_K_FR_B88      = 514  !  Fuentealba & Reyes (B88 version) 
+  integer, parameter :: XC_GGA_K_FR_PW86     = 515  !  Fuentealba & Reyes (PW86 version) 
+  integer, parameter :: XC_GGA_K_DK          = 516  !  DePristo and Kress                    
+  integer, parameter :: XC_GGA_K_PERDEW      = 517  !  Perdew                                
+  integer, parameter :: XC_GGA_K_VSK         = 518  !  Vitos, Skriver, and Kollar            
+  integer, parameter :: XC_GGA_K_VJKS        = 519  !  Vitos, Johansson, Kollar, and Skriver 
+  integer, parameter :: XC_GGA_K_ERNZERHOF   = 520  !  Ernzerhof 
+  integer, parameter :: XC_GGA_K_LC94        = 521  !  Lembarki & Chermette 
+  integer, parameter :: XC_GGA_K_LLP         = 522  !  Lee, Lee & Parr 
+  integer, parameter :: XC_GGA_K_THAKKAR     = 523  !  Thakkar 1992 
   integer, parameter :: XC_HYB_GGA_XC_B3PW91 = 401  !  The original hybrid proposed by Becke 
   integer, parameter :: XC_HYB_GGA_XC_B3LYP  = 402  !  The (in)famous B3LYP                  
   integer, parameter :: XC_HYB_GGA_XC_B3P86  = 403  !  Perdew 86 hybrid similar to B3PW91    
@@ -124,6 +166,8 @@ module libxc_funcs_m
   integer, parameter :: XC_MGGA_X_BJ06       = 207  !  Becke & Johnson correction to Becke-Roussel 89  
   integer, parameter :: XC_MGGA_X_TB09       = 208  !  Tran & Blaha correction to Becke & Johnson  
   integer, parameter :: XC_MGGA_X_RPP09      = 209  !  Rasanen, Pittalis, and Proetto correction to Becke & Johnson  
+  integer, parameter :: XC_MGGA_X_2D_PRHG07  = 210  !  Pittalis, Rasanen, Helbig, Gross Exchange Functional 
+  integer, parameter :: XC_MGGA_X_2D_PRHG07_PRP10 = 211  !  PRGH07 with PRP10 correction 
   integer, parameter :: XC_MGGA_C_TPSS       = 231  !  Perdew, Tao, Staroverov & Scuseria correlation 
   integer, parameter :: XC_MGGA_C_VSXC       = 232  !  VSxc from Van Voorhis and Scuseria (correlation part) 
   integer, parameter :: XC_LCA_OMC           = 301  !  Orestes, Marcasso & Capelle  

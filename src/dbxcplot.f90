@@ -83,7 +83,6 @@ case(93)
   write(*,'(" 3D divergence of exchange-correlation field written to &
    &DBXC3D.OUT")')
 end select
-write(*,*)
 deallocate(rvfmt,rvfir,rfmt,rfir,grfmt,grfir)
 return
 end subroutine

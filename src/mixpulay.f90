@@ -36,7 +36,7 @@ real(8), intent(out) :: d
 ! local variables
 integer jc,jn,i,j,m,info
 ! initial mixing parameter
-real(8), parameter :: beta=0.5d0
+real(8), parameter :: beta=0.25d0
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
 real(8), allocatable :: alpha(:),a(:,:),work(:)
@@ -55,26 +55,26 @@ if (msd.lt.2) then
   write(*,*)
   stop
 end if
-if (iscl.le.1) then
+if (iscl.le.0) then
   mu(:,1)=nu(:)
   f(:,1)=0.d0
   d=1.d0
   return
 end if
-if (iscl.le.msd) then
-  nu(:)=beta*nu(:)+(1.d0-beta)*mu(:,iscl-1)
-  f(:,iscl)=nu(:)-mu(:,iscl-1)
-  mu(:,iscl)=nu(:)
-  d=sum(f(:,iscl)**2)
+if (iscl.lt.msd) then
+  nu(:)=beta*nu(:)+(1.d0-beta)*mu(:,iscl)
+  f(:,iscl+1)=nu(:)-mu(:,iscl)
+  mu(:,iscl+1)=nu(:)
+  d=sum(f(:,iscl+1)**2)
   d=sqrt(d/dble(n))
   return
 end if
 ! current index
-jc=mod(iscl-1,msd)+1
+jc=mod(iscl,msd)+1
 ! next index
-jn=mod(iscl,msd)+1
+jn=mod(iscl+1,msd)+1
 ! matrix size
-m=min(iscl,msd)+1
+m=min(iscl+1,msd)+1
 allocate(ipiv(m),alpha(m),a(m,m),work(m))
 ! compute f and RMS difference
 f(:,jc)=nu(:)-mu(:,jc)

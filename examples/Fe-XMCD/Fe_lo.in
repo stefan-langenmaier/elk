@@ -1,8 +1,8 @@
- 'Fe'                                       : spsymb
+ 'Fe_lo'                                    : spsymb
  'iron'                                     : spname
   -26.0000                                  : spzn
    101799.2074                              : spmass
-  0.392232E-06    2.0000   32.5195   500    : sprmin, rmt, sprmax, nrmt
+  0.392232E-06    2.0000   35.6837   500    : sprmin, rmt, sprmax, nrmt
   10                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -13,7 +13,7 @@
    3   1   2   4.00000    F
    3   2   2   4.00000    F
    3   2   3   2.00000    F
-   4   0   1   1.00000    F
+   4   0   1   2.00000    F
    1                                        : apword
   0.1500   0  F                             : apwe0, apwdm, apwve
    0                                        : nlx

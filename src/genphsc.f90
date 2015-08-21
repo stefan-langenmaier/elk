@@ -3,20 +3,20 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine genphsc(m,dph)
+subroutine genphsc(p,dph)
 use modmain
 use modphonon
 implicit none
 ! arguments
-integer, intent(in) :: m
+integer, intent(in) :: p
 real(8), intent(in) :: dph
 ! local variables
 integer js,ja,na,i,n,iv(3)
 integer i1,i2,i3,scl(3,3)
 real(8) v1(3),v2(3),dmin,t1
-if ((m.ne.0).and.(m.ne.1)) then
+if ((p.ne.0).and.(p.ne.1)) then
   write(*,*)
-  write(*,'("Error(genphsc): phase (m) should be 0 or 1 : ",I8)') m
+  write(*,'("Error(genphsc): phase (p) should be 0 or 1 : ",I8)') p
   write(*,*)
   stop
 end if
@@ -159,7 +159,7 @@ do js=1,nspecies
 ! add small periodic displacement
       if ((isph.eq.js).and.(iaph.eq.ja)) then
         t1=dot_product(vqc(:,iqph),vphsc(:,i))
-        if (m.eq.0) then
+        if (p.eq.0) then
           v1(ipph)=v1(ipph)+dph*cos(t1)
         else
           v1(ipph)=v1(ipph)+dph*sin(t1)

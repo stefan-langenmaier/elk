@@ -52,33 +52,33 @@ end program
 ! The input parameters are defined as follows:
 ! \vskip 6pt
 ! {\tt hrmg}\\
-! The Hermann-Mauguin symbol of a space group listed in the table below
+! The Hermann-Mauguin symbol of a space group listed in the table below.
 ! (case-sensitive)
 ! \vskip 6pt
 ! {\tt a}, {\tt b}, {\tt c}\\
-! Lattice vector lengths in Bohr (i.e. atomic units, {\bf NOT} \AA ngstroms)
+! Lattice vector lengths in Bohr (i.e. atomic units, {\bf NOT} \AA ngstroms).
 ! \vskip 6pt
 ! {\tt bc}, {\tt ac}, {\tt ab}\\
 ! Angles in degrees between lattice vectors ${\bf b}$ and ${\bf c}$ ($\alpha$);
-! ${\bf a}$ and ${\bf c}$ ($\beta$); and ${\bf a}$ and ${\bf b}$ ($\gamma$)
+! ${\bf a}$ and ${\bf c}$ ($\beta$); and ${\bf a}$ and ${\bf b}$ ($\gamma$).
 ! \vskip 6pt
 ! {\tt ncell}\\
-! The number of unit cells required in each direction
+! The number of unit cells required in each direction.
 ! \vskip 6pt
 ! {\tt primcell}\\
-! Set to {\tt .true.} if the primitive unit cell should be found
+! Set to {\tt .true.} if the primitive unit cell should be found.
 ! \vskip 6pt
 ! {\tt nspecies}\\
-! Number of atomic species
+! Number of atomic species.
 ! \vskip 6pt
 ! {\tt spsymb}\\
-! The atomic species symbol
+! The atomic species symbol.
 ! \vskip 6pt
 ! {\tt nwpos}\\
-! The number of Wyckoff positional coordinates
+! The number of Wyckoff positional coordinates.
 ! \vskip 6pt
 ! {\tt wpos}\\
-! Wyckoff positional coordinates in fractions of the lattice vectors
+! Wyckoff positional coordinates in fractions of the lattice vectors.
 ! \vskip 6pt
 ! Note that {\tt nwpos} and {\tt wpos} are repeated as many times as there are
 ! species. After creating the input file, the {\tt spacegroup} command is run

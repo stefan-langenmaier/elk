@@ -38,12 +38,10 @@ allocate(zrhoir(ngrtot))
 allocate(zvclmt(lmmaxvr,nrmtmax,natmtot))
 allocate(zvclir(ngrtot))
 ! convert real muffin-tin charge density to complex spherical harmonic expansion
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      call rtozflm(lmaxvr,rhomt(:,ir,ias),zrhomt(:,ir,ias))
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    call rtozflm(lmaxvr,rhomt(:,ir,ias),zrhomt(:,ir,ias))
   end do
 end do
 ! store real interstitial charge density in complex array
@@ -67,12 +65,10 @@ end do
 call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
  zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
-do is=1,nspecies
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    do ir=1,nrmt(is)
-      call ztorflm(lmaxvr,zvclmt(:,ir,ias),vclmt(:,ir,ias))
-    end do
+do ias=1,natmtot
+  is=idxis(ias)
+  do ir=1,nrmt(is)
+    call ztorflm(lmaxvr,zvclmt(:,ir,ias),vclmt(:,ir,ias))
   end do
 end do
 ! store complex interstitial potential in real array

@@ -190,7 +190,6 @@ write(*,'(" for components")')
 do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
-write(*,*)
 deallocate(w,sigma)
 if (usegdft) deallocate(delta)
 return

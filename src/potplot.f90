@@ -63,7 +63,6 @@ case(43)
   write(*,'(" 3D Coulomb potential plot written to VCL3D.OUT")')
   write(*,'(" 3D exchange-correlation potential plot written to VXC3D.OUT")')
 end select
-write(*,*)
 return
 end subroutine
 !EOC

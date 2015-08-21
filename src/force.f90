@@ -10,6 +10,7 @@ subroutine force
 ! !USES:
 use modmain
 use modtest
+use modmpi
 ! !DESCRIPTION:
 !   Computes the various contributions to the atomic forces. In principle, the
 !   force acting on a nucleus is simply the gradient at that site of the
@@ -85,7 +86,6 @@ real(8) ts0,ts1
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:)
 real(8), allocatable :: grfmt(:,:,:)
-real(8), allocatable :: ffacg(:,:)
 ! external functions
 real(8) rfmtinp
 external rfmtinp
@@ -134,7 +134,23 @@ call symvect(.false.,forcecr)
 ! set the IBS forces to zero
 forceibs(:,:)=0.d0
 if (tfibs) then
-  allocate(ffacg(ngvec,nspecies))
+! compute k-point dependent contribution to the IBS force
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
+  do ik=1,nkpt
+! distribute among MPI processes
+    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
+    call forcek(ik)
+  end do
+!$OMP END DO
+!$OMP END PARALLEL
+! symmetrise IBS force
+  call symvect(.false.,forceibs)
+! add IBS forces from each process and redistribute
+  if (np_mpi.gt.1) then
+    call mpi_allreduce(mpi_in_place,forceibs,3*natmtot,mpi_double_precision, &
+     mpi_sum,mpi_comm_world,ierror)
+  end if
 ! integral of effective potential with gradient of valence density
   do is=1,nspecies
     nr=nrmt(is)
@@ -149,21 +165,6 @@ if (tfibs) then
       end do
     end do
   end do
-! generate the smooth step function form factors
-  do is=1,nspecies
-    call genffacg(is,ngvec,ffacg(:,is))
-  end do
-! compute k-point dependent contribution to the IBS force
-!$OMP PARALLEL DEFAULT(SHARED)
-!$OMP DO
-  do ik=1,nkpt
-    call forcek(ik,ffacg)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-! symmetrise IBS force
-  call symvect(.false.,forceibs)
-  deallocate(ffacg)
 end if
 ! total force
 do ias=1,natmtot

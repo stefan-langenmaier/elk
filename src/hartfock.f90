@@ -9,7 +9,7 @@ use modmpi
 implicit none
 ! local variables
 logical exist
-integer ik,is,ia,lp
+integer ik,lp
 real(8) etp,de
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:)
@@ -28,9 +28,6 @@ if (mp_mpi) then
 ! open MOMENT.OUT if required
   if (spinpol) open(63,file='MOMENT'//trim(filext),action='WRITE', &
    form='FORMATTED')
-! open FORCEMAX.OUT if required
-  if (tforce) open(64,file='FORCEMAX'//trim(filext),action='WRITE', &
-   form='FORMATTED')
 ! open DTOTENERGY.OUT
   open(66,file='DTOTENERGY'//trim(filext),action='WRITE',form='FORMATTED')
 ! write out general information to INFO.OUT
@@ -38,10 +35,6 @@ if (mp_mpi) then
 end if
 ! read the charge density and potentials from file
 call readstate
-! compute the effective potential
-call poteff
-! Fourier transform effective potential to G-space
-call genveffig
 ! generate the core wavefunctions and densities
 call gencore
 ! find the new linearisation energies
@@ -58,7 +51,6 @@ call hmlrad
 call genkinmatc
 ! find the occupation numbers and Fermi energy
 call occupy
-10 continue
 ! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
@@ -153,7 +145,7 @@ do iscl=1,maxscl
       call flushifc(63)
     end if
   end if
-  if (tlast) goto 20
+  if (tlast) goto 10
 ! compute the change in total energy and check for convergence
   if (iscl.ge.2) then
     de=abs(engytot-etp)
@@ -189,7 +181,7 @@ do iscl=1,maxscl
 ! broadcast tlast from master process to all other processes
   call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_world,ierror)
 end do
-20 continue
+10 continue
 if (mp_mpi) then
   write(60,*)
   write(60,'("+------------------------------+")')
@@ -206,60 +198,9 @@ end if
 !-----------------------!
 if (tforce) then
   call force
-  if (mp_mpi) then
 ! output forces to INFO.OUT
-    call writeforce(60)
-! write maximum force magnitude to FORCEMAX.OUT
-    write(64,'(G18.10)') forcemax
-    call flushifc(64)
-  end if
+  if (mp_mpi) call writeforces(60)
 end if
-!---------------------------------------!
-!     perform structural relaxation     !
-!---------------------------------------!
-if (task.eq.6) then
-  if (mp_mpi) then
-    write(60,*)
-    write(60,'("Maximum force magnitude (target) : ",G18.10," (",G18.10,")")') &
-     forcemax,epsforce
-    call flushifc(60)
-  end if
-! check force convergence
-  if (forcemax.le.epsforce) then
-    if (mp_mpi) then
-      write(60,*)
-      write(60,'("Force convergence target achieved")')
-    end if
-    goto 30
-  end if
-! update the atomic positions if forces are not converged
-  call updatpos
-  if (mp_mpi) then
-! write optimised atomic positions and interatomic distances to file
-    call writegeom(.true.)
-    call writeiad(.true.)
-    write(60,*)
-    write(60,'("+--------------------------+")')
-    write(60,'("| Updated atomic positions |")')
-    write(60,'("+--------------------------+")')
-    do is=1,nspecies
-      write(60,*)
-      write(60,'("Species : ",I4," (",A,")")') is,trim(spsymb(is))
-      write(60,'(" atomic positions (lattice) :")')
-      do ia=1,natoms(is)
-        write(60,'(I4," : ",3F14.8)') ia,atposl(:,ia,is)
-      end do
-    end do
-! add blank line to TOTENERGY.OUT, FERMIDOS.OUT, MOMENT.OUT and DTOTENERGY.OUT
-    write(61,*)
-    write(62,*)
-    if (spinpol) write (63,*)
-    write(66,*)
-  end if
-! begin new self-consistent loop with updated positions
-  goto 10
-end if
-30 continue
 if (mp_mpi) then
   write(60,*)
   write(60,'("+----------------------------+")')
@@ -273,8 +214,6 @@ if (mp_mpi) then
   close(62)
 ! close the MOMENT.OUT file
   if (spinpol) close(63)
-! close the FORCEMAX.OUT file
-  if (tforce) close(64)
 ! close the DTOTENERGY.OUT file
   close(66)
 end if

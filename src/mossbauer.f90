@@ -114,7 +114,6 @@ close(50)
 write(*,*)
 write(*,'("Info(mossbauer):")')
 write(*,'(" Mossbauer parameters written to MOSSBAUER.OUT")')
-write(*,*)
 deallocate(fr,gr,cf)
 return
 end subroutine

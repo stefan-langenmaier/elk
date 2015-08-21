@@ -38,6 +38,9 @@ integer natmmax
 integer natmtot
 ! index to atoms and species
 integer idxas(maxatoms,maxspecies)
+! inverse atoms and species indices
+integer idxis(maxatoms*maxspecies)
+integer idxia(maxatoms*maxspecies)
 ! molecule is .true. is the system is an isolated molecule
 logical molecule
 ! primcell is .true. if primitive unit cell is to be found automatically
@@ -155,6 +158,8 @@ integer lmmaxinr
 integer nrmtinr(maxspecies)
 ! index to (l,m) pairs
 integer, allocatable :: idxlm(:,:)
+! inverse index to (l,m) pairs
+integer, allocatable :: idxil(:),idxim(:)
 
 !--------------------------------!
 !     spin related variables     !
@@ -283,8 +288,10 @@ real(8), allocatable :: vgc(:,:)
 real(8), allocatable :: gc(:)
 ! spherical harmonics of the G-vectors
 complex(8), allocatable :: ylmg(:,:)
-! structure factor for the G-vectors
+! structure factors for the G-vectors
 complex(8), allocatable :: sfacg(:,:)
+! smooth step function form factors for all species and G-vectors
+real(8), allocatable :: ffacg(:,:)
 ! G-space characteristic function: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
 ! real-space characteristic function: 0 inside the muffin-tins and 1 outside
@@ -468,6 +475,8 @@ real(8), allocatable :: ecir(:)
 real(8), allocatable :: jcmt(:,:,:,:)
 ! interstitial paramagnetic current
 real(8), allocatable :: jcir(:,:)
+! if trdstate is .true. the density and potential can be read from STATE.OUT
+logical trdstate
 
 !--------------------------!
 !     mixing variables     !
@@ -483,6 +492,8 @@ real(8) betamax
 integer mixsdp
 ! subspace dimension for Broyden mixing
 integer mixsdb
+! Broyden mixing parameters alpha and w0
+real(8) broydpm(2)
 
 !-------------------------------------!
 !     charge and moment variables     !
@@ -590,10 +601,6 @@ real(8) dlefe
 integer, allocatable :: nmat(:,:)
 ! maximum nmat over all k-points
 integer nmatmax
-! tpmat is .true. if packed matrices are to be used
-logical tpmat
-! size of packed matrices (or nmat^2 if tpmat is .false.)
-integer, allocatable :: npmat(:,:)
 ! index to the position of the local-orbitals in the H and O matrices
 integer, allocatable :: idxlo(:,:,:)
 ! APW-local-orbital overlap integrals
@@ -737,10 +744,12 @@ real(8), allocatable :: forceibs(:,:)
 ! total force on each atom
 real(8), allocatable :: forcetot(:,:)
 ! previous total force on each atom
-real(8), allocatable :: forcetp(:,:)
+real(8), allocatable :: forcetotp(:,:)
 ! maximum force magnitude over all atoms
 real(8) forcemax
-! default step size parameter for structural optimisation
+! maximum number of geometry optimisation steps
+integer maxgeostp
+! default step size parameter for geometry optimisation
 real(8) tau0atm
 ! step size parameters for each atom
 real(8), allocatable :: tauatm(:)
@@ -859,18 +868,18 @@ logical hybrid
 ! hybrid functional mixing parameter
 real(8) hybmix
 
-!------------------------------------!
-!     many-body theory variables     !
-!------------------------------------!
-! |G| cut-off for the RPA dielectric response function
+!--------------------------------------------------------!
+!     many-body perturbation theory (MBPT) variables     !
+!--------------------------------------------------------!
+! |G| cut-off for the RPA dielectric function
 real(8) gmaxrpa
-! number of G vectors for the RPA dielectric response function
+! number of G-vectors for the RPA dielectric function
 integer ngrpa
 ! number of RPA frequencies
 integer nwrpa
 ! complex RPA frequencies
 complex(8), allocatable :: wrpa(:)
-! exp(iG.r) functions for all RPA G vectors
+! exp(iG.r) functions for all MBPT G-vectors
 complex(8), allocatable :: expgmt(:,:,:,:)
 complex(8), allocatable :: expgir(:,:)
 
@@ -906,6 +915,9 @@ real(8), allocatable :: evalbse(:)
 ! if bsefull is .true. then the full BSE Hamiltonian is calculated, otherwise
 ! only the Hermitian block
 logical bsefull
+! if hxbse/hdbse is .true. then the exchange/direct term is included in the
+! BSE Hamiltonian
+logical hxbse,hdbse
 
 !--------------------------------------------------------------------!
 !     Time-dependent density functional theory (TDDFT) variables     !
@@ -943,7 +955,6 @@ real(8), parameter :: fourpi=12.566370614359172954d0
 real(8), parameter :: y00=0.28209479177387814347d0
 ! complex constants
 complex(8), parameter :: zzero=(0.d0,0.d0)
-complex(8), parameter :: zhalf=(0.5d0,0.d0)
 complex(8), parameter :: zone=(1.d0,0.d0)
 complex(8), parameter :: zi=(0.d0,1.d0)
 ! array of i^l values
@@ -983,7 +994,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,3,2 /
+data version / 1,3,30 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

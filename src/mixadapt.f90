@@ -24,19 +24,18 @@ subroutine mixadapt(iscl,beta0,betamax,n,nu,mu,beta,f,d)
 !   loop using an adaptive mixing scheme. The $j$th component of the output
 !   vector is mixed with a fraction of the same component of the input vector:
 !   $$ \mu^{i+1}_j=\beta^i_j\nu^i_j+(1-\beta^i_j)\mu^i_j, $$
-!   where $\beta^{i+1}_j=(1+\beta_0)\beta^i_j+\beta_0$ if
-!   $f^i_j\equiv\nu^i_j-\mu^i_j$ does not change sign between loops. If $f^i_j$
-!   does change sign, then $\beta^{i+1}_j=\beta_0(1+\beta^i_j)$. $\beta^i_j$ is
-!   not allowed to exceed $\beta_{\rm max}$ and is also initialised to this
-!   value when $i\le 1$. Note that the array {\tt nu} serves for both input and
-!   output, and the arrays {\tt mu}, {\tt beta} and {\tt f} are used internally
-!   and should not be changed between calls. The routine is thread-safe so long
-!   as each thread has its own independent work arrays. Complex arrays may be
-!   passed as real arrays with $n$ doubled.
+!   where $\beta^{i+1}_j=\beta^i_j+\beta_0$ if $f^i_j\equiv\nu^i_j-\mu^i_j$ does
+!   not change sign between loops. If $f^i_j$ does change sign, then
+!   $\beta^{i+1}_j=(\beta^i_j+\beta_0)/2$. Note that the array {\tt nu} serves
+!   for both input and output, and the arrays {\tt mu}, {\tt beta} and {\tt f}
+!   are used internally and should not be changed between calls. The routine is
+!   thread-safe so long as each thread has its own independent work arrays.
+!   Complex arrays may be passed as real arrays with $n$ doubled.
 !
 ! !REVISION HISTORY:
 !   Created March 2003 (JKD)
 !   Modified, September 2008 (JKD)
+!   Modified, August 2011 (JKD)
 !EOP
 !BOC
 implicit none
@@ -54,7 +53,7 @@ real(8), intent(out) :: d
 integer i
 real(8) t1
 if (n.le.0) return
-if (iscl.le.1) then
+if (iscl.le.0) then
   mu(:)=nu(:)
   f(:)=0.d0
   beta(:)=beta0
@@ -64,11 +63,11 @@ end if
 d=0.d0
 do i=1,n
   t1=nu(i)-mu(i)
-  if (t1*f(i).gt.0.d0) then
+  if (t1*f(i).ge.0.d0) then
     beta(i)=beta(i)+beta0
     if (beta(i).gt.betamax) beta(i)=betamax
   else
-    beta(i)=beta0
+    beta(i)=(beta(i)+beta0)*0.5d0
   end if
   f(i)=t1
   nu(i)=beta(i)*nu(i)+(1.d0-beta(i))*mu(i)

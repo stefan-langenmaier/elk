@@ -16,7 +16,8 @@ use modldapu
 !   written to the file {\tt INFO.OUT}. First- and second-variational
 !   eigenvalues, eigenvectors and occupancies are written to the unformatted
 !   files {\tt EVALFV.OUT}, {\tt EVALSV.OUT}, {\tt EVECFV.OUT}, {\tt EVECSV.OUT}
-!   and {\tt OCCSV.OUT}.
+!   and {\tt OCCSV.OUT}. The density, magnetisation, effective potential and
+!   magnetic field are written to {\tt STATE.OUT}.
 !
 ! !REVISION HISTORY:
 !   Created October 2002 (JKD)
@@ -26,8 +27,7 @@ use modldapu
 implicit none
 ! local variables
 logical exist
-integer ik,is,ia
-integer n,nwork,lp
+integer ik,nwork,lp,n
 real(8) dv,etp,de,timetot
 ! allocatable arrays
 real(8), allocatable :: v(:)
@@ -35,25 +35,29 @@ real(8), allocatable :: work(:)
 real(8), allocatable :: evalfv(:,:)
 complex(8), allocatable :: evecfv(:,:,:)
 complex(8), allocatable :: evecsv(:,:)
-! require forces for structural optimisation
-if ((task.eq.2).or.(task.eq.3)) tforce=.true.
 ! initialise global variables
 call init0
 call init1
 ! initialise OEP variables if required
 if (xctype(1).lt.0) call init2
+if (task.eq.0) trdstate=.false.
+if (task.eq.1) trdstate=.true.
 ! only the MPI master process should write files
 if (mp_mpi) then
 ! write the real and reciprocal lattice vectors to file
   call writelat
-! write interatomic distances to file
-  call writeiad(.false.)
 ! write symmetry matrices to file
   call writesym
 ! output the k-point set to file
   call writekpts
 ! write lattice vectors and atomic positions to file
-  call writegeom(.false.)
+  open(50,file='GEOMETRY'//trim(filext),action='WRITE',form='FORMATTED')
+  call writegeom(50)
+  close(50)
+! write interatomic distances to file
+  open(50,file='IADIST'//trim(filext),action='WRITE',form='FORMATTED')
+  call writeiad(50)
+  close(50)
 ! open INFO.OUT file
   open(60,file='INFO'//trim(filext),action='WRITE',form='FORMATTED')
 ! open TOTENERGY.OUT
@@ -62,9 +66,6 @@ if (mp_mpi) then
   open(62,file='FERMIDOS'//trim(filext),action='WRITE',form='FORMATTED')
 ! open MOMENT.OUT if required
   if (spinpol) open(63,file='MOMENT'//trim(filext),action='WRITE', &
-   form='FORMATTED')
-! open FORCEMAX.OUT if required
-  if (tforce) open(64,file='FORCEMAX'//trim(filext),action='WRITE', &
    form='FORMATTED')
 ! open RMSDVEFF.OUT
   open(65,file='RMSDVEFF'//trim(filext),action='WRITE',form='FORMATTED')
@@ -79,13 +80,10 @@ if (mp_mpi) then
 end if
 ! initialise or read the charge density and potentials from file
 iscl=0
-if ((task.eq.1).or.(task.eq.3)) then
+if (trdstate) then
   call readstate
   if (mp_mpi) write(60,'("Potential read in from STATE.OUT")')
   if (autolinengy) call readfermi
-else if (task.eq.200) then
-  call phscveff
-  if (mp_mpi) write(60,'("Supercell potential constructed from STATE.OUT")')
 else
   call rhoinit
   call poteff
@@ -103,12 +101,12 @@ allocate(v(n))
 nwork=-1
 call mixerifc(mixtype,n,v,dv,nwork,v)
 allocate(work(nwork))
-10 continue
+! initialise mixer
+call mixpack(.true.,n,v)
+call mixerifc(mixtype,n,v,dv,nwork,work)
 ! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
-! delete any existing eigenvector files
-if ((task.eq.0).or.(task.eq.2)) call delevec
 ! begin the self-consistent loop
 if (mp_mpi) then
   write(60,*)
@@ -212,6 +210,10 @@ do iscl=1,maxscl
   call mixpack(.true.,n,v)
 ! mix in the old potential and field with the new
   call mixerifc(mixtype,n,v,dv,nwork,work)
+! make sure every MPI process has a numerically identical potential
+  if (np_mpi.gt.1) then
+    call mpi_bcast(v,n,mpi_double_precision,0,mpi_comm_world,ierror)
+  end if
 ! unpack potential and field
   call mixpack(.false.,n,v)
 ! add the fixed spin moment effect field
@@ -266,7 +268,7 @@ do iscl=1,maxscl
     end if
   end if
 ! exit self-consistent loop if required
-  if (tlast) goto 20
+  if (tlast) goto 10
 ! check for convergence
   if (iscl.ge.2) then
     if (mp_mpi) then
@@ -317,7 +319,9 @@ do iscl=1,maxscl
   end if
 ! end the self-consistent loop
 end do
-20 continue
+10 continue
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_world,ierror)
 if (mp_mpi) then
   write(60,*)
   write(60,'("+------------------------------+")')
@@ -330,65 +334,12 @@ if (mp_mpi) then
     write(60,'("Wrote STATE.OUT")')
   end if
 end if
-!-----------------------!
-!     compute forces    !
-!-----------------------!
+! compute forces if required
 if (tforce) then
   call force
-  if (mp_mpi) then
 ! output forces to INFO.OUT
-    call writeforce(60)
-! write maximum force magnitude to FORCEMAX.OUT
-    write(64,'(G18.10)') forcemax
-    call flushifc(64)
-  end if
+  if (mp_mpi) call writeforces(60)
 end if
-!---------------------------------------!
-!     perform structural relaxation     !
-!---------------------------------------!
-if ((task.eq.2).or.(task.eq.3)) then
-  if (mp_mpi) then
-    write(60,*)
-    write(60,'("Maximum force magnitude (target) : ",G18.10," (",G18.10,")")') &
-     forcemax,epsforce
-    call flushifc(60)
-  end if
-! check force convergence
-  if (forcemax.le.epsforce) then
-    if (mp_mpi) then
-      write(60,*)
-      write(60,'("Force convergence target achieved")')
-    end if
-    goto 30
-  end if
-! update the atomic positions if forces are not converged
-  call updatpos
-  if (mp_mpi) then
-! write optimised atomic positions and interatomic distances to file
-    call writegeom(.true.)
-    call writeiad(.true.)
-    write(60,*)
-    write(60,'("+--------------------------+")')
-    write(60,'("| Updated atomic positions |")')
-    write(60,'("+--------------------------+")')
-    do is=1,nspecies
-      write(60,*)
-      write(60,'("Species : ",I4," (",A,")")') is,trim(spsymb(is))
-      write(60,'(" atomic positions (lattice) :")')
-      do ia=1,natoms(is)
-        write(60,'(I4," : ",3F14.8)') ia,atposl(:,ia,is)
-      end do
-    end do
-! add blank line to TOTENERGY.OUT, FERMIDOS.OUT, MOMENT.OUT and RMSDVEFF.OUT
-    write(61,*)
-    write(62,*)
-    if (spinpol) write (63,*)
-    write(65,*)
-  end if
-! begin new self-consistent loop with updated positions
-  goto 10
-end if
-30 continue
 ! total time used
 timetot=timeinit+timemat+timefv+timesv+timerho+timepot+timefor
 ! output timing information
@@ -419,8 +370,6 @@ if (mp_mpi) then
   close(62)
 ! close the MOMENT.OUT file
   if (spinpol) close(63)
-! close the FORCEMAX.OUT file
-  if (tforce) close(64)
 ! close the RMSDVEFF.OUT file
   close(65)
 ! close the DTOTENERGY.OUT file

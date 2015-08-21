@@ -8,7 +8,7 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ld,is,ia,ias
+integer ld,is,ias
 integer ik,ispn,ist,n,lp
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:)
@@ -26,17 +26,15 @@ allocate(kinmatc(nstsv,nstsv,nkpt))
 ! convert muffin-tin effective potential to spherical coordinates
 allocate(rfmt(lmmaxvr,nrcmtmax,natmtot))
 ld=lmmaxvr*lradstp
-do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ias)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-     veffmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
-  end do
+do ias=1,natmtot
+  is=idxis(ias)
+  call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+   veffmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
+end do
 !$OMP END DO
 !$OMP END PARALLEL
-end do
 ! generate muffin-tin effective magnetic fields and s.o. coupling functions
 call genbeffmt
 ! loop over k-points
@@ -49,17 +47,17 @@ do ik=1,nkpt
   if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
   allocate(evalfv(nstfv,nspnfv))
   allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
-  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-  allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-  allocate(wfir(ngrtot,nspinor,nstsv))
-  allocate(c(nstsv,nstsv))
-  if (spinpol) allocate(bmat(nstsv,nstsv))
 ! solve the first- and second-variational secular equations
   call seceqn(ik,evalfv,evecfv,evecsv)
 ! write the first variational eigenvalues/vectors to file (this ensures the
 ! phase in eigenvectors is the same for subsequent matrix element evaluations)
   call putevalfv(ik,evalfv)
   call putevecfv(ik,evecfv)
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+  allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+  allocate(wfir(ngrtot,nspinor,nstsv))
+  allocate(c(nstsv,nstsv))
+  if (spinpol) allocate(bmat(nstsv,nstsv))
 ! find the matching coefficients
   do ispn=1,nspnfv
     call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
@@ -92,11 +90,14 @@ end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! broadcast matrix elements to every process
-n=nstsv*nstsv
-do ik=1,nkpt
-  lp=mod(ik-1,np_mpi)
-  call mpi_bcast(kinmatc(:,:,ik),n,mpi_double_complex,lp,mpi_comm_world,ierror)
-end do
+if (np_mpi.gt.1) then
+  n=nstsv*nstsv
+  do ik=1,nkpt
+    lp=mod(ik-1,np_mpi)
+    call mpi_bcast(kinmatc(:,:,ik),n,mpi_double_complex,lp,mpi_comm_world, &
+     ierror)
+  end do
+end if
 deallocate(rfmt)
 return
 end subroutine

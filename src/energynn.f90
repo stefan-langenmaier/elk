@@ -34,6 +34,7 @@ do is=1,nspecies
     ias=idxas(ia,is)
     do ir=1,nrmt(is)
       zvclmt(1,ir,ias)=t1*vn(ir)
+      zvclmt(2:,ir,ias)=0.d0
     end do
   end do
 end do

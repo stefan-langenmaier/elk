@@ -13,6 +13,7 @@ integer ik,jk,a,b
 integer ist,jst,i,j,k
 integer ntop,lwork,info
 real(8) h0,t1
+character(256) fname
 ! allocatable arrays
 integer, allocatable :: idx(:)
 real(8), allocatable :: rwork(:)
@@ -196,8 +197,9 @@ do ik=1,nkptnr
 end do
 deallocate(idx)
 ! read in the RPA inverse dielectric function for q = 0
-allocate(epsinv(nwrpa,ngrpa,ngrpa))
-call getepsinv_rpa(vql(:,iq0),epsinv)
+allocate(epsinv(ngrpa,ngrpa,nwrpa))
+fname='EPSINV_RPA.OUT'
+call getcf2pt(fname,vql(:,iq0),ngrpa,nwrpa,epsinv)
 ! compute the G = G' = q = 0 part of the direct kernel
 h0=-2.d0/twopi**2
 h0=h0*(6.d0*pi**2*(wkptnr/omega))**(1.d0/3.d0)
@@ -230,16 +232,20 @@ do ik=1,nkptnr
 end do
 deallocate(epsinv)
 ! add the exchange matrix elements
-call hmlxbse
-! generate the exp(iG.r) functions for all the RPA G vectors
+if (hxbse) call hmlxbse
+! generate the exp(iG.r) functions for all the MBPT G-vectors
 call genexpigr
 ! add the direct matrix elements
-call hmldbse
+if (hdbse) call hmldbse
 deallocate(expgmt,expgir)
 ! add matrices from all processes and redistribute
 if (np_mpi.gt.1) then
   call mpi_allreduce(mpi_in_place,hmlbse,nmbse*nmbse,mpi_double_complex, &
    mpi_sum,mpi_comm_world,ierror)
+end if
+if (mp_mpi) then
+  write(*,*)
+  write(*,'("Info(bse): diagonalizing the BSE Hamiltonian matrix")')
 end if
 ! diagonalize the BSE matrix
 if (bsefull) then
@@ -291,9 +297,13 @@ if (mp_mpi) then
   end if
   close(50)
 end if
+if (mp_mpi) then
+  write(*,*)
+  write(*,'("Info(bse): calculating the macroscopic dielectric tensor")')
+end if
 ! calculate the macroscopic dielectric tensor
 if (mp_mpi) call dielectric_bse
-! deallocate global RPA and BSE arrays
+! deallocate global MBPT and BSE arrays
 deallocate(istbse,jstbse,ijkbse,hmlbse,evalbse)
 return
 end subroutine

@@ -21,9 +21,12 @@ use modtest
 implicit none
 ! local variables
 integer is,ia,ias,ir
-real(8) sum
+real(8) t1
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+! external functions
+real(8) ddot
+external ddto
 ! find the muffin-tin charges
 chgmttot=0.d0
 do is=1,nspecies
@@ -38,11 +41,8 @@ do is=1,nspecies
   end do
 end do
 ! find the interstitial charge
-sum=0.d0
-do ir=1,ngrtot
-  sum=sum+rhoir(ir)*cfunir(ir)
-end do
-chgir=sum*omega/dble(ngrtot)
+t1=ddot(ngrtot,rhoir,1,cfunir,1)
+chgir=t1*omega/dble(ngrtot)
 ! total calculated charge
 chgcalc=chgmttot+chgir
 ! write calculated total charge to test file

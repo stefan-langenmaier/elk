@@ -21,9 +21,12 @@ use modtest
 implicit none
 ! local variables
 integer is,ia,ias,ir,idm
-real(8) sum
+real(8) t1
 ! automatic arrays
 real(8) fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax)
+! external functions
+real(8) ddot
+external ddot
 if (.not.spinpol) then
   mommt(:,:)=0.d0
   mommttot(:)=0.d0
@@ -48,11 +51,8 @@ do idm=1,ndmag
 end do
 ! find the interstitial moments
 do idm=1,ndmag
-  sum=0.d0
-  do ir=1,ngrtot
-    sum=sum+magir(ir,idm)*cfunir(ir)
-  end do
-  momir(idm)=sum*omega/dble(ngrtot)
+  t1=ddot(ngrtot,magir(:,idm),1,cfunir,1)
+  momir(idm)=t1*omega/dble(ngrtot)
 end do
 momtot(:)=mommttot(:)+momir(:)
 ! write total moment to test file

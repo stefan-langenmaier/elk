@@ -16,6 +16,7 @@ integer ist1,ist2,jst1,jst2
 real(8) vl(3),vc(3)
 real(8) vgqc(3),t0,t1
 complex(8) zsum
+character(256) fname
 ! allocatable arrays
 real(8), allocatable :: gqc(:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
@@ -37,27 +38,29 @@ allocate(expgqmt(lmmaxvr,nrcmtmax,natmtot))
 n=max(nvbse,ncbse)
 allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,n),zrhoir(ngrtot,n))
 allocate(zvv(ngrpa,nvbse,nvbse),zcc(ngrpa,ncbse,ncbse))
-allocate(epsinv(nwrpa,ngrpa,ngrpa))
+allocate(epsinv(ngrpa,ngrpa,nwrpa))
 if (bsefull) then
   allocate(zvc(ngrpa,nvbse,ncbse))
   allocate(zcv(ngrpa,ncbse,nvbse))
 end if
 ! generate the wavefunctions at k-point ik2
 call genwfsvp(.false.,.false.,vkl(:,ik2),wfmt2,ngrtot,wfir2)
+! filename for inverse dielectric function
+fname='EPSINV_RPA.OUT'
 ! begin loop over ik1
 do ik1=1,nkptnr
 ! generate the wavefunctions at k-point ik1
   call genwfsvp(.false.,.false.,vkl(:,ik1),wfmt1,ngrtot,wfir1)
-! q vector in lattice and Cartesian coordinates
+! q-vector in lattice and Cartesian coordinates
   vl(:)=vkl(:,ik1)-vkl(:,ik2)
   vc(:)=vkc(:,ik1)-vkc(:,ik2)
 ! generate the function exp(iq.r) in the muffin-tins
   call genexpmt(vc,expqmt)
-! loop over RPA G vectors
+! loop over MBPT G-vectors
   do ig=1,ngrpa
-! G+q vector in Cartesian coordinates
+! G+q-vector in Cartesian coordinates
     vgqc(:)=vgc(:,ig)+vc(:)
-! length of G+q vector
+! length of G+q-vector
     gqc(ig)=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
 ! compute the function exp(i(G+q).r) in the muffin-tins
     do is=1,nspecies
@@ -133,10 +136,10 @@ do ik1=1,nkptnr
 !$OMP END DO
 !$OMP END PARALLEL
     end if
-! end loop over G vectors
+! end loop over G-vectors
   end do
 ! get RPA inverse epsilon from file
-  call getepsinv_rpa(vl,epsinv)
+  call getcf2pt(fname,vl,ngrpa,nwrpa,epsinv)
   t0=fourpi*wkptnr/omega
   do i1=1,nvbse
     do j1=1,ncbse
@@ -150,7 +153,7 @@ do ik1=1,nkptnr
               t1=gqc(ig)*gqc(jg)
               if (t1.gt.1.d-6) then
                 t1=t0/t1
-                zsum=zsum+t1*epsinv(1,ig,jg)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
+                zsum=zsum+t1*epsinv(ig,jg,1)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
               end if
             end do
           end do
@@ -166,7 +169,7 @@ do ik1=1,nkptnr
                 t1=gqc(ig)*gqc(jg)
                 if (t1.gt.1.d-8) then
                   t1=t0/t1
-                  zsum=zsum+t1*epsinv(1,ig,jg)*zcv(ig,j1,i2) &
+                  zsum=zsum+t1*epsinv(ig,jg,1)*zcv(ig,j1,i2) &
                    *conjg(zvc(jg,i1,j2))
                 end if
               end do

@@ -75,8 +75,7 @@ do ik1=1,nkptnr
           a2=ijkbse(i2,j2,ik2)
           l=l+1
 ! compute the matrix element
-          zt1=2.d0*wkptnr*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir, &
-           zvclir(:,l))
+          zt1=wkptnr*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
           hmlbse(a1,a2)=hmlbse(a1,a2)+zt1
 ! compute off-diagonal blocks if required
           if (bsefull) then
@@ -94,8 +93,7 @@ do ik1=1,nkptnr
               end do
             end do
             zvclir(:,l)=conjg(zvclir(:,l))
-            zt1=2.d0*wkptnr*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir, &
-             zvclir(:,l))
+            zt1=wkptnr*zfinp(.true.,zrhomt,zvclmt(:,:,:,l),zrhoir,zvclir(:,l))
             hmlbse(a1,b2)=hmlbse(a1,b2)+zt1
             hmlbse(b1,a2)=hmlbse(b1,a2)-conjg(zt1)
           end if

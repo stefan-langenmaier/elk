@@ -13,6 +13,9 @@ tasks
 test
  .true.
 
+mixtype
+ 3
+
 epspot
  1.e-6
 
@@ -20,23 +23,20 @@ dos
   50 100 2
   0.0 1.0
 
-mixtype
- 2
-
 ngridq
  2  1  1
 
 ngridk
- 2  2  2
+ 4  4  4
 
 radkpt
  5.0
 
 swidth
- 0.05
+ 0.1
 
 rgkmax
- 5.5
+ 5.0
 
 avec
   1.0  1.0  0.0

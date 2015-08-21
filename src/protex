@@ -937,7 +937,6 @@ sub print_preamble {
     print "\\documentclass[a4paper,11pt]{article}";
     print "\\usepackage{amsmath}";
     print "\\usepackage{epsfig}";
-    print "\\usepackage{hangcaption}";
     print "\\usepackage{tabularx}";
     print "\\usepackage{color}";
     print "\\usepackage[linkbordercolor={0 0 1}]{hyperref}";
@@ -1028,12 +1027,14 @@ sub do_beg {
         }
         print "\\begin{document}";
         if ( $tpage ) {
-            print "\\fbox{\\fbox{";
+            print "\\pagecolor[rgb]{1,0.95,0.85}";
+            print "\\fcolorbox{black}{white}{\\fbox{";
             print "\\begin{minipage}[t]{\\linewidth}";
             print "\\maketitle";
             print "\\end{minipage}}}";
             print "\\thispagestyle{empty}";
             print "\\newpage";
+            print "\\pagecolor{white}";
         }
         print "\\tableofcontents";
         print "\\newpage";

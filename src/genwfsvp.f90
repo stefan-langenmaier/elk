@@ -20,14 +20,9 @@ real(8) vl(3),vc(3)
 integer ngp(nspnfv)
 ! allocatable arrays
 integer, allocatable :: igpig(:,:)
-real(8), allocatable :: vgpl(:,:,:)
-real(8), allocatable :: vgpc(:,:)
-real(8), allocatable :: gpc(:)
-real(8), allocatable :: tpgpc(:,:)
-complex(8), allocatable :: sfacgp(:,:)
-complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
+real(8), allocatable :: vgpl(:,:,:),vgpc(:,:),gpc(:),tpgpc(:,:)
+complex(8), allocatable :: sfacgp(:,:),apwalm(:,:,:,:,:)
+complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 allocate(igpig(ngkmax,nspnfv))
 allocate(vgpl(3,ngkmax,nspnfv),vgpc(3,ngkmax))
 allocate(gpc(ngkmax),tpgpc(2,ngkmax))
@@ -47,13 +42,13 @@ do ispn=1,nspnfv
       vc(:)=vc(:)-0.5d0*vqcss(:)
     end if
   end if
-! generate the G+p vectors
+! generate the G+p-vectors
   call gengpvec(vl,vc,ngp(ispn),igpig(:,ispn),vgpl(:,:,ispn),vgpc)
-! generate the spherical coordinates of the G+p vectors
+! generate the spherical coordinates of the G+p-vectors
   do igp=1,ngp(ispn)
     call sphcrd(vgpc(:,igp),gpc(igp),tpgpc(:,igp))
   end do
-! generate structure factors for G+p vectors
+! generate structure factors for G+p-vectors
   call gensfacgp(ngp(ispn),vgpc,ngkmax,sfacgp)
 ! find the matching coefficients
   call match(ngp(ispn),gpc,tpgpc,sfacgp,apwalm(:,:,:,:,ispn))

@@ -25,16 +25,20 @@ allocate(iwork(5*nmatp),ifail(nmatp))
 allocate(w(nmatp),rwork(7*nmatp))
 lwork=2*nmatp
 allocate(work(lwork))
-if (tpmat) then
-! packed matrix storage
-  call zhpgvx(1,'V','I','U',nmatp,h,o,vl,vu,1,nstfv,evaltol,m,w,evecfv, &
-   nmatmax,work,rwork,iwork,ifail,info)
-  if (info.ne.0) goto 10
-else
-! upper triangular matrix storage
-  call zhegvx(1,'V','I','U',nmatp,h,nmatp,o,nmatp,vl,vu,1,nstfv,evaltol,m,w, &
-   evecfv,nmatmax,work,lwork,rwork,iwork,ifail,info)
-  if (info.ne.0) goto 10
+call zhegvx(1,'V','I','U',nmatp,h,nmatp,o,nmatp,vl,vu,1,nstfv,evaltol,m,w, &
+ evecfv,nmatmax,work,lwork,rwork,iwork,ifail,info)
+if (info.ne.0) then
+  write(*,*)
+  write(*,'("Error(seceqnfv): diagonalisation failed")')
+  write(*,'(" ZHEGVX returned INFO = ",I8)') info
+  if (info.gt.nmatp) then
+    i=info-nmatp
+    write(*,'(" The leading minor of the overlap matrix of order ",I8)') i
+    write(*,'("  is not positive definite")')
+    write(*,'(" Order of overlap matrix : ",I8)') nmatp
+    write(*,*)
+  end if
+  stop
 end if
 evalfv(1:nstfv)=w(1:nstfv)
 deallocate(iwork,ifail,w,rwork,work)
@@ -42,19 +46,6 @@ call timesec(ts1)
 !$OMP CRITICAL
 timefv=timefv+ts1-ts0
 !$OMP END CRITICAL
-return
-10 continue
-write(*,*)
-write(*,'("Error(seceqnfv): diagonalisation failed")')
-write(*,'(" ZHPGVX/ZHEGVX returned INFO = ",I8)') info
-if (info.gt.nmatp) then
-  i=info-nmatp
-  write(*,'(" The leading minor of the overlap matrix of order ",I8)') i
-  write(*,'("  is not positive definite")')
-  write(*,'(" Order of overlap matrix : ",I8)') nmatp
-  write(*,*)
-end if
-stop
 return
 end subroutine
 

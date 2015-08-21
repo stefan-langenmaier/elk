@@ -72,7 +72,7 @@ complex(8), allocatable :: evecsv(:,:),c(:,:)
 ! external functions
 real(8) rfinp
 complex(8) zdotc
-external rfinp,rfint,zdotc
+external rfinp,zdotc
 ! coupling constant of the external field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
 !-----------------------------------------------!
@@ -141,7 +141,7 @@ engycl=engynn+engyen+engyhar
 !-------------------------!
 ! exchange energy from the density
 engyx=rfinp(1,rhomt,exmt,rhoir,exir)
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6)) then
+if ((xctype(1).lt.0).or.(task.eq.5)) then
 ! exact exchange for OEP-EXX or Hartree-Fock on last self-consistent loop
   if (tlast) call exxengy
 ! mix exact and DFT exchange energies for hybrid functionals
@@ -155,7 +155,7 @@ end if
 !----------------------------!
 ! correlation energy from the density
 engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
-if ((task.eq.5).or.(task.eq.6)) then
+if (task.eq.5) then
   if (hybrid) then
 ! fraction of DFT correlation energy for hybrid functionals
     t1=rfinp(1,rhomt,ecmt,rhoir,ecir)
@@ -199,7 +199,7 @@ end do
 ! core electron kinetic energy
 call energykncr
 ! total electron kinetic energy
-if ((task.eq.5).or.(task.eq.6)) then
+if (task.eq.5) then
 ! Hartree-Fock case
   engykn=engykncr
 ! kinetic energy from valence states

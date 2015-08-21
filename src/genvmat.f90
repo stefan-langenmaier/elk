@@ -13,7 +13,7 @@ real(8), intent(in) :: vmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: vir(ngrtot)
 complex(8), intent(out) :: vmat(nstsv,nstsv,nkpt)
 ! local variables
-integer ld,is,ia,ias
+integer ld,is,ias
 integer ik,ispn,n,lp
 ! local arrays
 real(8), allocatable :: rfmt(:,:,:)
@@ -26,17 +26,15 @@ complex(8), allocatable :: wfir(:,:,:)
 allocate(rfmt(lmmaxvr,nrcmtmax,natmtot))
 ! convert muffin-tin potential to spherical coordinates
 ld=lmmaxvr*lradstp
-do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ias)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(is)
 !$OMP DO
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-     vmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
-  end do
+do ias=1,natmtot
+  is=idxis(ias)
+  call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+   vmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
+end do
 !$OMP END DO
 !$OMP END PARALLEL
-end do
 ! loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(apwalm,evecfv,evecsv) &
@@ -67,11 +65,13 @@ end do
 !$OMP END DO
 !$OMP END PARALLEL
 ! broadcast matrix elements to every process
-n=nstsv*nstsv
-do ik=1,nkpt
-  lp=mod(ik-1,np_mpi)
-  call mpi_bcast(vmat(:,:,ik),n,mpi_double_complex,lp,mpi_comm_world,ierror)
-end do
+if (np_mpi.gt.1) then
+  n=nstsv*nstsv
+  do ik=1,nkpt
+    lp=mod(ik-1,np_mpi)
+    call mpi_bcast(vmat(:,:,ik),n,mpi_double_complex,lp,mpi_comm_world,ierror)
+  end do
+end if
 deallocate(rfmt)
 return
 end subroutine

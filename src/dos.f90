@@ -48,10 +48,8 @@ character(256) fname
 ! allocatable arrays
 integer, allocatable :: igkignr(:,:)
 ! low precision for band/spin character array saves memory
-real(4), allocatable :: bc(:,:,:,:,:)
-real(4), allocatable :: sc(:,:,:)
-real(8), allocatable :: vgklnr(:,:,:)
-real(8), allocatable :: vgkcnr(:,:,:)
+real(4), allocatable :: bc(:,:,:,:,:),sc(:,:,:)
+real(8), allocatable :: vgklnr(:,:,:),vgkcnr(:,:,:)
 real(8), allocatable :: gkcnr(:,:),tpgkcnr(:,:,:)
 real(8), allocatable :: w(:),e(:,:,:),f(:,:)
 real(8), allocatable :: g(:),dt(:,:),dp(:,:,:)
@@ -162,14 +160,14 @@ do ik=1,nkptnr
         vc(:)=vc(:)-0.5d0*vqcss(:)
       end if
     end if
-! generate the G+k vectors
+! generate the G+k-vectors
     call gengpvec(vl,vc,ngknr(ispn),igkignr(:,ispn),vgklnr(:,:,ispn), &
      vgkcnr(:,:,ispn))
-! generate the spherical coordinates of the G+k vectors
+! generate the spherical coordinates of the G+k-vectors
     do igk=1,ngknr(ispn)
       call sphcrd(vgkcnr(:,igk,ispn),gkcnr(igk,ispn),tpgkcnr(:,igk,ispn))
     end do
-! generate structure factors for G+k vectors
+! generate structure factors for G+k-vectors
     call gensfacgp(ngknr(ispn),vgkcnr(:,:,ispn),ngkmax,sfacgknr(:,:,ispn))
 ! find the matching coefficients
     call match(ngknr(ispn),gkcnr(:,ispn),tpgkcnr(:,:,ispn),sfacgknr(:,:,ispn), &
@@ -242,8 +240,6 @@ end do
 !$OMP END PARALLEL
 allocate(w(nwdos))
 allocate(e(nstsv,nkptnr,nspinor))
-allocate(f(nstsv,nkptnr))
-allocate(g(nwdos))
 allocate(dt(nwdos,nsd))
 allocate(dp(nwdos,l0:l1,nsd))
 ! generate energy grid
@@ -259,6 +255,7 @@ sps(2)=-1.d0
 !-------------------!
 !     total DOS     !
 !-------------------!
+allocate(f(nstsv,nkptnr),g(nwdos))
 dt(:,:)=0.d0
 do ispn=1,nspinor
   do ik=1,nkptnr
@@ -283,6 +280,7 @@ do ispn=1,nspinor
     dt(:,ispn)=g(:)
   end if
 end do
+deallocate(f,g)
 ! output to file
 open(50,file='TDOS.OUT',action='WRITE',form='FORMATTED')
 do ispn=1,nsd
@@ -300,43 +298,48 @@ do is=1,nspecies
     ias=idxas(ia,is)
     dp(:,:,:)=0.d0
     do ispn=1,nspinor
-      do l=0,lmax
-        do m=-l,l
-          lm=idxlm(l,m)
-          do ik=1,nkptnr
-            jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-            do ist=1,nstsv
-              f(ist,ik)=bc(lm,ispn,ias,ist,ik)
-              if (dosocc) then
-                f(ist,ik)=f(ist,ik)*occsv(ist,jk)
-              else
-                f(ist,ik)=f(ist,ik)*occmax
-              end if
-            end do
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(f,g,l,ik,jk,ist)
+!$OMP DO
+      do lm=1,lmmax
+        allocate(f(nstsv,nkptnr),g(nwdos))
+        l=idxil(lm)
+        do ik=1,nkptnr
+          jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+          do ist=1,nstsv
+            f(ist,ik)=bc(lm,ispn,ias,ist,ik)
+            if (dosocc) then
+              f(ist,ik)=f(ist,ik)*occsv(ist,jk)
+            else
+              f(ist,ik)=f(ist,ik)*occmax
+            end if
           end do
-          call brzint(nsmdos,ngridk,nsk,ikmapnr,nwdos,wdos,nstsv,nstsv, &
-           e(:,:,ispn),f,g)
-          if (dosmsum) then
-            if (dosssum) then
-              dp(:,l,1)=dp(:,l,1)+g(:)
-            else
-              dp(:,l,ispn)=dp(:,l,ispn)+g(:)
-            end if
-          else
-            if (dosssum) then
-              dp(:,lm,1)=dp(:,lm,1)+g(:)
-            else
-              dp(:,lm,ispn)=g(:)
-            end if
-          end if
-! subtract from interstitial DOS
-          if (dosssum) then
-            dt(:,1)=dt(:,1)-g(:)
-          else
-            dt(:,ispn)=dt(:,ispn)-g(:)
-          end if
         end do
+        call brzint(nsmdos,ngridk,nsk,ikmapnr,nwdos,wdos,nstsv,nstsv, &
+         e(:,:,ispn),f,g)
+        if (dosmsum) then
+          if (dosssum) then
+            dp(:,l,1)=dp(:,l,1)+g(:)
+          else
+            dp(:,l,ispn)=dp(:,l,ispn)+g(:)
+          end if
+        else
+          if (dosssum) then
+            dp(:,lm,1)=dp(:,lm,1)+g(:)
+          else
+            dp(:,lm,ispn)=g(:)
+          end if
+        end if
+! subtract from interstitial DOS
+        if (dosssum) then
+          dt(:,1)=dt(:,1)-g(:)
+        else
+          dt(:,ispn)=dt(:,ispn)-g(:)
+        end if
+        deallocate(f,g)
       end do
+!$OMP END DO
+!$OMP END PARALLEL
     end do
 ! output to file
     write(fname,'("PDOS_S",I2.2,"_A",I4.4,".OUT")') is,ia
@@ -414,10 +417,9 @@ write(*,*)
 write(*,'(" Fermi energy is at zero in plot")')
 write(*,*)
 write(*,'(" DOS units are states/Hartree/unit cell")')
-write(*,*)
 ! write the total DOS to test file
 call writetest(10,'total DOS',nv=nwdos*nsd,tol=2.d-2,rva=dt)
-deallocate(bc,sc,w,e,f,g,dt,dp)
+deallocate(bc,sc,w,e,dt,dp)
 if (lmirep) deallocate(elm,ulm)
 return
 end subroutine

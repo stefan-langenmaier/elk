@@ -3,12 +3,14 @@
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
-subroutine mixbroyden(iscl,n,msd,nu,mu,f,df,u,a,d)
+subroutine mixbroyden(iscl,n,msd,alpha,w0,nu,mu,f,df,u,a,d)
 implicit none
 ! arguments
 integer, intent(in) :: iscl
 integer, intent(in) :: n
 integer, intent(in) :: msd
+real(8), intent(in) :: alpha
+real(8), intent(in) :: w0
 real(8), intent(inout) :: nu(n)
 real(8), intent(inout) :: mu(n,2)
 real(8), intent(inout) :: f(n,2)
@@ -19,7 +21,6 @@ real(8), intent(out) :: d
 ! local variables
 integer jc,kp,kc
 integer k,l,m,info
-real(8), parameter :: alpha=0.25d0, w0=0.01d0
 real(8) t1
 ! automatic arrays
 integer ipiv(msd)
@@ -40,7 +41,7 @@ if (msd.lt.2) then
   write(*,*)
   stop
 end if
-if (iscl.le.1) then
+if (iscl.le.0) then
   mu(:,1)=nu(:)
   mu(:,2)=nu(:)
   f(:,1)=0.d0
@@ -51,13 +52,13 @@ if (iscl.le.1) then
   return
 end if
 ! current subspace dimension
-m=min(iscl,msd)
+m=min(iscl+1,msd)
 ! current index modulo m
-jc=mod(iscl-1,m)+1
+jc=mod(iscl,m)+1
 ! previous index modulo 2
-kp=mod(iscl-2,2)+1
+kp=mod(iscl-1,2)+1
 ! current index modulo 2
-kc=mod(iscl-1,2)+1
+kc=mod(iscl,2)+1
 f(:,kc)=nu(:)-mu(:,kp)
 d=sum(f(:,kc)**2)
 d=sqrt(d/dble(n))

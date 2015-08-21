@@ -20,6 +20,8 @@ call mpi_comm_rank(mpi_comm_world,lp_mpi,ierror)
 ! determine if the local process is the master
 if (lp_mpi.eq.0) then
   mp_mpi=.true.
+  write(*,*)
+  write(*,'("Elk code started")')
 else
   mp_mpi=.false.
 end if
@@ -41,21 +43,25 @@ end if
 ! perform the appropriate task
 do itask=1,ntasks
   task=tasks(itask)
+  if (mp_mpi) then
+    write(*,*)
+    write(*,'("Info(main): current task : ",I6)') task
+  end if
 ! synchronise MPI processes
   call mpi_barrier(mpi_comm_world,ierror)
-  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.180).and. &
-   (task.ne.185).and.(task.ne.300)) then
-    write(*,*)
-    write(*,'("Info(main): MPI process ",I8," idle for task ",I8)') lp_mpi,task
+  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.135).and. &
+   (task.ne.180).and.(task.ne.185).and.(task.ne.240).and.(task.ne.300)) then
+    write(*,'("Info(main): MPI process ",I6," idle for task ",I6)') lp_mpi,task
     cycle
   end if
   select case(task)
   case(-1)
     write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
-    stop
-  case(0,1,2,3)
+  case(0,1)
     call gndstate
-  case(5,6)
+  case(2,3)
+    call geomopt
+  case(5)
     call hartfock
   case(10)
     call dos
@@ -99,6 +105,8 @@ do itask=1,ntasks
     call nonlinopt
   case(130)
     call writeexpmat
+  case(135)
+    call writewfpw
   case(140)
     call elnes
   case(180)
@@ -113,7 +121,7 @@ do itask=1,ntasks
     call sfacrho
   case(196)
     call sfacmag
-  case(200,201)
+  case(200,205)
     call phonon
   case(210)
     call phdos
@@ -122,11 +130,13 @@ do itask=1,ntasks
   case(230)
     call writephn
   case(240)
-    call epcouple
+    call ephcouple
   case(245)
     call phlwidth
   case(250)
     call alpha2f
+  case(260)
+    call eliashberg
   case(300)
     call rdmft
   case(400)
@@ -143,6 +153,8 @@ end do
 if (mp_mpi) then
   open(50,file='RUNNING')
   close(50,status='DELETE')
+  write(*,*)
+  write(*,'("Elk code stopped")')
 end if
 ! terminate MPI execution environment
 call mpi_finalize(ierror)
@@ -150,7 +162,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.2}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.30}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -178,12 +190,13 @@ end program
 !   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich, Torbj\"{o}rn
-!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus and Markus Meinert. Special
-!   mention of David Singh's very useful book on the LAPW method\footnote{D. J.
-!   Singh, {\it Planewaves, Pseudopotentials and the LAPW Method} (Kluwer
-!   Academic Publishers, Boston, 1994).} must also be made. Finally we would
-!   like to acknowledge the generous support of Karl-Franzens-Universit\"{a}t
-!   Graz, as well as the EU Marie-Curie Research Training Networks initiative.
+!   Bj\"{o}rkman, Martin Stankovski, Jerzy Goraus, Markus Meinert, Daniel Rohr
+!   and Vladimir Nazarov. Special mention of David Singh's very useful book on
+!   the LAPW method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and
+!   the LAPW Method} (Kluwer Academic Publishers, Boston, 1994).} must also be
+!   made. Finally we would like to acknowledge the generous support of
+!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
+!   Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -194,7 +207,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, May 2011
+!   Halle and Uppsala, August 2011
 !   \newpage
 !
 !   \section{Units}
@@ -243,10 +256,24 @@ end program
 !    \begin{verbatim}
 !     export OMP_NUM_THREADS=x
 !    \end{verbatim}
-!    where x is the number of cores available on a particular node.
+!    where x is the number of cores available on a particular node. Elk also
+!    makes use of nested OpenMP parallelism, meaning that there are nested
+!    parallel loops in parts of the code, the iterative diagonaliser being one
+!    such example. These nested loops can be run in parallel by setting
+!    \begin{verbatim}
+!     export OMP_NESTED=true
+!    \end{verbatim}
+!    Be aware that using this option can actually degrade performance if too
+!    many threads are created. To avoid such oversubscription, you may need to
+!    adjust related OpenMP variables including {\tt OMP\_THREAD\_LIMIT},
+!    {\tt OMP\_MAX\_ACTIVE\_LEVELS} and {\tt OMP\_DYNAMIC} (there may also be
+!    additional compiler-specific environment variables that can be set).
+!    Finally, some vendor-supplied BLAS/LAPACK libraries use OpenMP internally,
+!    for example MKL from Intel and ACML from AMD; refer to their documentation
+!    for usage.
 !    \item
 !    The message passing interface (MPI) is particularly suitable for running
-!    Elk accross multiple nodes of a cluster, with scaling to hundreds of
+!    Elk across multiple nodes of a cluster, with scaling to hundreds of
 !    processors possible. To enable MPI, comment out the indicated line in
 !    {\tt elk/src/Makefile} and set the variable {\tt F90} in {\tt elk/make.inc}
 !    to the MPI version of Fortran 90 (usually {\tt mpif90}). Then run
@@ -310,14 +337,108 @@ end program
 !   lines can be included in the input file and begin with the {\tt !}
 !   character.
 !
+!   \subsubsection{Species files}
 !   The only other input files are those describing the atomic species which go
 !   into the crystal. These files are found in the {\tt species} directory and
 !   are named with the element symbol and the extension {\tt .in}, for example
 !   {\tt Sb.in}. They contain parameters like the atomic charge, mass,
 !   muffin-tin radius, occupied atomic states and the type of linearisation
-!   required. Users should not have to modify these files in the majority of
-!   cases.
+!   required. Here as an example is the copper species file {\tt Cu.in}:
+!   \begin{verbatim}
+!    'Cu'                                      : spsymb
+!    'copper'                                  : spname
+!   -29.0000                                   : spzn
+!    115837.2716                               : spmass
+!    0.371391E-06    2.0000   34.8965   500    : sprmin, rmt, sprmax, nrmt
+!    10                                        : spnst
+!    1   0   1   2.00000    T                  : spn, spl, spk, spocc, spcore
+!    2   0   1   2.00000    T
+!    2   1   1   2.00000    T
+!    2   1   2   4.00000    T
+!    3   0   1   2.00000    T
+!    3   1   1   2.00000    F
+!    3   1   2   4.00000    F
+!    3   2   2   4.00000    F
+!    3   2   3   6.00000    F
+!    4   0   1   1.00000    F
+!    1                                         : apword
+!    0.1500   0  F                             : apwe0, apwdm, apwve
+!    1                                         : nlx
+!    2   2                                     : lx, apword
+!    0.1500   0  T                             : apwe0, apwdm, apwve
+!    0.1500   1  T
+!    4                                         : nlorb
+!    0   2                                     : lorbl, lorbord
+!    0.1500   0  F                             : lorbe0, lorbdm, lorbve
+!    0.1500   1  F
+!    1   2
+!    0.1500   0  F
+!    0.1500   1  F
+!    2   2
+!    0.1500   0  F
+!    0.1500   1  F
+!    1   3
+!    0.1500   0  F
+!    0.1500   1  F
+!   -2.8652   0  T
+!   \end{verbatim}
+!   The input parameters are defined as follows:
+!   \vskip 6pt
+!   {\tt spsymb} \\
+!   The symbol of the element.
+!   \vskip 6pt
+!   {\tt spname} \\
+!   The name of the element.
+!   \vskip 6pt
+!   {\tt spzn} \\
+!   Nuclear charge: should be negative since the electron charge is taken to be
+!   postive in the code; it can also be fractional for purposes of doping.
+!   \vskip 6pt
+!   {\tt spmass} \\
+!   Nuclear mass in atomic units.
+!   \vskip 6pt
+!   {\tt sprmin}, {\tt rmt}, {\tt sprmax}, {\tt nrmt} \\
+!   Respectively, the minimum radius on logarithmic radial mesh; muffin-tin
+!   radius; effective infinity for atomic radial mesh; and number of radial mesh
+!   points to muffin-tin radius.
+!   \vskip 6pt
+!   {\tt spnst} \\
+!   Number of atomic states.
+!   \vskip 6pt
+!   {\tt spn}, {\tt spl}, {\tt spk}, {\tt spocc}, {\tt spcore} \\
+!   Respectively, the principal quantum number of the radial Dirac equation;
+!   quantum number $l$; quantum number $k$ ($l$ or $l+1$); occupancy of atomic
+!   state (can be fractional); {\tt .T.} if state is in the core and therefore
+!   treated with the Dirac equation in the spherical part of the muffin-tin
+!   effective potential.
+!   \vskip 6pt
+!   {\tt apword} \\
+!   Default APW function order, i.e. the number of radial functions and
+!   therefore the order of the radial derivative matching at the muffin-tin
+!   surface.
+!   \vskip 6pt
+!   {\tt apwe0}, {\tt apwdm}, {\tt apwve} \\
+!   Respectively, the default APW linearisation energy; the order of the energy
+!   derivative of the APW radial function $\partial^m u(r)/\partial E^m$; and
+!   {\tt .T.} if the linearisation energy is allowed to vary.
+!   \vskip 6pt
+!   {\tt nlx} \\
+!   The number of exceptions to the default APW configuration. These should be
+!   listed on subsequent lines for particular angular momenta ({\tt lx}).
+!   \vskip 6pt
+!   {\tt nlorb} \\
+!   Number of local orbitals.
+!   \vskip 6pt
+!   {\tt lorbl}, {\tt lorbord} \\
+!   Respectively, the angular momentum $l$ of the local-orbital; and the order
+!   of the radial derivative which goes to zero at the muffin-tin surface.
+!   \vskip 6pt
+!   {\tt lorbe0}, {\tt lorbdm}, {\tt lorbve} \\
+!   Respectively, the default local-orbital linearisation energy; the order of
+!   the energy derivative of the local-orbital radial function; and {\tt .T.} if
+!   the linearisation energy is allowed to vary.
 !
+!   \subsubsection{Examples}
 !   The best way to learn to use Elk is to run the examples included with the
 !   package. These can be found in the {\tt examples} directory and use many of
 !   the code's capabilities. The following section which describes all the input
@@ -420,6 +541,11 @@ end program
 !   {\tt bfcmt} vectors in the {\tt atoms} block. Collinear calculations are
 !   more efficient if the field is applied in the $z$-direction.
 !
+!   \block{broydpm}{
+!   {\tt broydpm } & Broyden mixing parameters $\alpha$ and $w_0$ & real &
+!    $(0.25,0.01)$}
+!   See {\tt mixtype} and {\tt mixsdb}.
+!
 !   \block{chgexs}{
 !   {\tt chgexs } & excess electronic charge & real & $0.0$}
 !   This controls the amount of charge in the unit cell beyond that required to
@@ -466,7 +592,7 @@ end program
 !   {\tt ngrdos} & effective $k$-point mesh size to be used for Brillouin zone
 !    integration & integer & $100$ \\
 !   {\tt nsmdos} & level of smoothing applied to DOS/optics output & integer &
-!    $0$ \\
+!    $1$ \\
 !   \hline
 !   {\tt wintdos} & frequency/energy window for the DOS or optics plot &
 !    real(2) & $(-0.5,0.5)$}
@@ -512,10 +638,10 @@ end program
 !   See {\tt epspot}.
 !
 !   \block{epsforce}{
-!   {\tt epsforce} & convergence tolerance for the forces during a structural
+!   {\tt epsforce} & convergence tolerance for the forces during a geometry
 !    optimisation run & real & $5\times 10^{-4}$}
 !   If the mean absolute value of the atomic forces is less than {\tt epsforce}
-!   then the structural optimisation run is ended. See {\tt tasks}.
+!   then the geometry optimisation run is ended. See {\tt tasks}.
 !
 !   \block{epslat}{
 !   {\tt epslat } & vectors with lengths less than this are considered zero &
@@ -534,9 +660,9 @@ end program
 !   If the RMS change in the effective potential and magnetic field is smaller
 !   than {\tt epspot} and the absolute change in the total energy is less than
 !   {\tt epsengy}, then the self-consistent loop is considered converged
-!   and exited. For structural optimisation runs this results in the forces
-!   being calculated, the atomic positions updated and the loop restarted. See
-!   also {\tt epsengy} and {\tt maxscl}.
+!   and exited. For geometry optimisation runs this results in the forces being
+!   calculated, the atomic positions updated and the loop restarted. See also
+!   {\tt epsengy} and {\tt maxscl}.
 !
 !   \block{emaxelnes}{
 !   {\tt emaxelnes} & maximum allowed initial-state eigenvalue for ELNES
@@ -563,8 +689,8 @@ end program
 !    \delta_{{\bf G},{\bf G}'}\delta_{{\bf G},{\bf 0}}. $$
 !
 !   \block{gmaxrpa}{
-!   {\tt gmaxrpa} & maximum length of $|{\bf G}|$ for computing the RPA inverse
-!    dielectric function with local field contributions & real & $4.0$}
+!   {\tt gmaxrpa} & maximum length of $|{\bf G}|$ for computing RPA dielectric
+!    response function & real & $3.0$}
 !
 !   \block{gmaxvr}{
 !   {\tt gmaxvr} & maximum length of $|{\bf G}|$ for expanding the interstitial
@@ -658,7 +784,7 @@ end program
 !   \block{lmirep}{
 !   {\tt lmirep} & {\tt .true.} if the $Y_{lm}$ basis is to be transformed
 !    into the basis of irreducible representations of the site symmetries for
-!    DOS plotting & logical & {\tt .false.}}
+!    DOS plotting & logical & {\tt .true.}}
 !   When lmirep is set to .true., the spherical harmonic basis is transformed
 !   into one in which the site symmetries are block diagonal. Band characters
 !   determined from the density matrix expressed in this basis correspond to
@@ -700,7 +826,7 @@ end program
 !   \block{mixsdb}{
 !   {\tt mixsdb} & subspace dimension for Broyden mixing & integer & 5}
 !   This is the number of mixing vectors which define the subspace in which the
-!   Hessian matrix is calculated. See {\tt mixtype}.
+!   Hessian matrix is calculated. See {\tt mixtype} and {\tt broydpm}.
 !
 !   \block{mixsdp}{
 !   {\tt mixsdp} & subspace dimension for Pulay mixing & integer & 3}
@@ -808,6 +934,11 @@ end program
 !   \block{nstfsp}{
 !   {\tt nstfsp} & number of states to be included in the Fermi surface plot
 !    file & integer & 6}
+!
+!   \block{ntemp}{
+!   {\tt ntemp} & number of temperature steps & integer & 20}
+!   This is the number of temperature steps to be used in the Eliashberg gap
+!   and thermodynamic properties calculations.
 !
 !   \block{nvbse}{
 !   {\tt nvbse} & number of valence states to be used for BSE calculations &
@@ -1001,6 +1132,18 @@ end program
 !   {\tt sppath} & path where the species files can be found & string & null}
 !   Note that the forward slash {\tt /} at the end of the path must be included.
 !
+!   \block{ssdph}{
+!   {\tt ssdph} & set to {\tt .true.} if a complex de-phasing factor is to be
+!    used in spin-spiral calculations & logical & {\tt .true.}}
+!   If this is {\tt .true.} then spin-spiral wavefunctions in each muffin-tin at
+!   position ${\bf r}_{\alpha}$ are de-phased by the matrix
+!   $$ \begin{pmatrix} e^{-i{\bf q}\cdot{\bf r}_{\alpha}/2} & 0 \\
+!    0 & e^{i{\bf q}\cdot{\bf r}_{\alpha}/2} \end{pmatrix}. $$
+!   In simple situations, this has the advantage of producing magnon dynamical
+!   matrices which are already in diagonal form. This option should be used with
+!   care, and a full understanding of the spin-spiral configuration is required.
+!   See {\tt spinsprl}.
+!
 !   \block{stype}{
 !   {\tt stype} & integer defining the type of smearing to be used & integer &
 !    $0$}
@@ -1032,10 +1175,10 @@ end program
 !   -1 & Write out the version number of the code. \\
 !   0 & Ground state run starting from the atomic densities. \\
 !   1 & Resumption of ground-state run using density in {\tt STATE.OUT}. \\
-!   2 & Structural optimisation run starting from the atomic densities, with
+!   2 & Geometry optimisation run starting from the atomic densities, with
 !    atomic positions written to {\tt GEOMETRY.OUT}. \\
-!   3 & Resumption of structural optimisation run using density in
-!    {\tt STATE.OUT} but with positions from {\tt elk.in}. \\
+!   3 & Resumption of geometry optimisation run using density in {\tt STATE.OUT}
+!    but with positions from {\tt elk.in}. \\
 !   5 & Ground state Hartree-Fock run. \\
 !   10 & Total, partial and interstitial density of states (DOS). \\
 !   14 & Plots the smooth Dirac delta and Heaviside step functions used by the
@@ -1077,15 +1220,17 @@ end program
 !   130 & Output matrix elements of the type
 !    $\langle\Psi_{i{\bf k+q}}|\exp[i({\bf G+q})\cdot{\bf r}]|
 !    \Psi_{j{\bf k}}\rangle$. \\
+!   135 & Output all wavefunctions expanded in the plane wave basis up to a
+!    cut-off defined by {\tt rgkmax}.
+!   \end{tabularx}
+!
+!   \begin{tabularx}{\textwidth}[h]{lX}
 !   140 & Energy loss near edge structure (ELNES). \\
 !   142, 143 & 2/3D plot of the electric field
 !    ${\bf E}({\bf r})\equiv\nabla V_{\rm C}({\bf r})$. \\
 !   152, 153 & 2/3D plot of
 !    ${\bf m}({\bf r})\times{\bf B}_{\rm xc}({\bf r})$. \\
-!   162 & Scanning-tunneling microscopy (STM) image.
-!   \end{tabularx}
-!
-!   \begin{tabularx}{\textwidth}[h]{lX}
+!   162 & Scanning-tunneling microscopy (STM) image. \\
 !   180 & Generate the RPA inverse dielectric function with local contributions
 !    and write it to file. \\
 !   185 & Solve the Bethe-Salpeter equation (BSE) and compute the BSE linear
@@ -1099,7 +1244,7 @@ end program
 !   196 & Calculation of magnetic structure factors. \\
 !   200 & Calculation of dynamical matrices on a $q$-point set defined by
 !    {\tt ngridq}. \\
-!   201 & Phonon dry run: just produce a set of empty DYN files. \\
+!   205 & Phonon dry run: just produce a set of empty DYN files. \\
 !   210 & Phonon density of states. \\
 !   220 & Phonon dispersion plot. \\
 !   230 & Phonon frequencies and eigenvectors for an arbitrary $q$-point. \\
@@ -1115,9 +1260,9 @@ end program
 !   \end{tabularx}
 !
 !   \block{tau0atm}{
-!   {\tt tau0atm} & the step size to be used for structural optimisation &
-!    real & $0.2$}
-!   The position of atom $\alpha$ is updated on step $m$ of a structural
+!   {\tt tau0atm} & the step size to be used for geometry optimisation & real &
+!    $0.2$}
+!   The position of atom $\alpha$ is updated on step $m$ of a geometry
 !   optimisation run using
 !   $$ {\bf r}_{\alpha}^{m+1}={\bf r}_{\alpha}^m+\tau_{\alpha}^m
 !    \left({\bf F}_{\alpha}^m+{\bf F}_{\alpha}^{m-1}\right), $$
@@ -1153,14 +1298,14 @@ end program
 !   Because calculation of the incomplete basis set (IBS) correction to the
 !   force is fairly time-consuming, it can be switched off by setting
 !   {\tt tfibs} to {\tt .false.} This correction can then be included only when
-!   necessary, i.e. when the atoms are close to equilibrium in a structural
-!   relaxation run.
+!   necessary, i.e. when the atoms are close to equilibrium in a geometry
+!   optimisation run.
 !
 !   \block{tforce}{
 !   {\tt tforce} & set to {\tt .true.} if the force should be calculated at the
 !    end of the self-consistent cycle & logical & {\tt .false.}}
-!   This variable is automatically set to {\tt .true.} when performing
-!   structural optimisation.
+!   This variable is automatically set to {\tt .true.} when performing geometry
+!   optimisation.
 !
 !   \block{tmomlu}{
 !   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the
@@ -1171,13 +1316,6 @@ end program
 !   calculate the tensor moments and corresponding LDA+U energy contributions
 !   from a given density matrix and set of Slater parameters at the end of the
 !   self-consistent cycle.
-!
-!   \block{tpmat}{
-!   {\tt tpmat} & set to {\tt .true.} if the first-variational matrices are to
-!    be stored in packed form & logical & {\tt .true.}}
-!   Storing the secular equation matrices $H$ and $O$ in packed form is more
-!   memory efficient, but may result in slower diagonalisation than when stored
-!   in upper triangular form.
 !
 !   \block{tseqit}{
 !   {\tt tseqit} & set to {\tt .true.} if the first-variational secular equation

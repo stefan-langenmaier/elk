@@ -63,10 +63,10 @@ if ((m.lt.0).or.(m.gt.6)) then
   stop
 end if
 if (m.eq.0) then
-  call rdiracint(sol,m,kpa,e,np,nr,r,vr,nn,g0p,f0p,g0,g1,f0,f1)
+  call rdiracint(sol,m,kpa,e,np,nr,r,vr,.false.,nn,g0p,f0p,g0,g1,f0,f1)
 else
   do im=0,m
-    call rdiracint(sol,im,kpa,e,np,nr,r,vr,nn,g0p,f0p,g0,g1,f0,f1)
+    call rdiracint(sol,im,kpa,e,np,nr,r,vr,.false.,nn,g0p,f0p,g0,g1,f0,f1)
     g0p(:)=g0(:)
     f0p(:)=f0(:)
   end do

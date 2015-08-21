@@ -8,7 +8,7 @@ use modmain
 use modphonon
 implicit none
 ! local variables
-integer n,iq,i,j,is,ia,ip
+integer nb,iq,i,j,is,ia,ip
 ! allocatable arrays
 real(8), allocatable :: w(:)
 complex(8), allocatable :: ev(:,:)
@@ -18,12 +18,12 @@ complex(8), allocatable :: dynr(:,:,:)
 ! initialise universal variables
 call init0
 call init2
-n=3*natmtot
-allocate(w(n))
-allocate(ev(n,n))
-allocate(dynq(n,n,nqpt))
-allocate(dynp(n,n))
-allocate(dynr(n,n,ngridq(1)*ngridq(2)*ngridq(3)))
+nb=3*natmtot
+allocate(w(nb))
+allocate(ev(nb,nb))
+allocate(dynq(nb,nb,nqpt))
+allocate(dynp(nb,nb))
+allocate(dynr(nb,nb,ngridq(1)*ngridq(2)*ngridq(3)))
 ! read in the dynamical matrices
 call readdyn(dynq)
 ! apply the acoustic sum rule
@@ -36,7 +36,7 @@ do iq=1,nphwrt
   call dyndiag(dynp,w,ev)
   write(50,*)
   write(50,'(I6,3G18.10," : q-point, vqlwrt")') iq,vqlwrt(:,iq)
-  do j=1,n
+  do j=1,nb
     write(50,*)
     write(50,'(I6,G18.10," : mode, frequency")') j,w(j)
     i=0
@@ -61,7 +61,6 @@ write(*,*)
 write(*,'("Info(writephn): phonon frequencies and eigenvectors written to &
  &PHONON.OUT")')
 write(*,'(" for all q-vectors in the phwrite list")')
-write(*,*)
 deallocate(w,ev,dynq,dynp,dynr)
 return
 end subroutine

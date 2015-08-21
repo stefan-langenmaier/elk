@@ -6,21 +6,15 @@
 !BOP
 ! !ROUTINE: hmlaa
 ! !INTERFACE:
-subroutine hmlaa(tapp,is,ia,ngp,apwalm,v,h)
+subroutine hmlaa(ias,ngp,apwalm,h)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   tapp   : .true. if the Hamiltonian is to be applied to the input vector,
-!            .false. if the full matrix is to be calculated (in,logical)
-!   is     : species number (in,integer)
-!   ia     : atom number (in,integer)
+!   ias    : joint atom and species number (in,integer)
 !   ngp    : number of G+p-vectors (in,integer)
 !   apwalm : APW matching coefficients
 !            (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot))
-!   v      : set of input vectors to which H is applied if tapp is .true.,
-!            otherwise not referenced (in,complex(*))
-!   h      : H applied to v if tapp is .true., otherwise it is the Hamiltonian
-!            matrix (inout,complex(*))
+!   h      : Hamiltonian matrix (inout,complex(*))
 ! !DESCRIPTION:
 !   Calculates the APW-APW contribution to the Hamiltonian matrix.
 !
@@ -30,22 +24,20 @@ use modmain
 !BOC
 implicit none
 ! arguments
-logical, intent(in) :: tapp
-integer, intent(in) :: is
-integer, intent(in) :: ia
+integer, intent(in) :: ias
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
-complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ias,ld,io,jo
-integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
+integer is,ld,io,jo
+integer l1,l2,l3,m1,m2,m3
+integer lm1,lm2,lm3
 real(8) t1
 complex(8) zt1,zsum
 ! automatic arrays
 complex(8) zv(ngp)
 ld=ngp+nlotot
-ias=idxas(ia,is)
+is=idxis(ias)
 lm1=0
 do l1=0,lmaxmat
   do m1=-l1,l1
@@ -75,13 +67,7 @@ do l1=0,lmaxmat
           end if
         end do
       end do
-      if (tapp) then
-! apply the Hamiltonian to a set of vectors
-        call zmatinpv(ngp,zone,apwalm(:,io,lm1,ias),zv,nstfv,nmatmax,v,h)
-      else
-! compute the matrix explicitly
-        call zmatinp(tpmat,ngp,zone,apwalm(:,io,lm1,ias),zv,ld,h)
-      end if
+      call zher2b(ngp,zone,apwalm(:,io,lm1,ias),zv,ld,h)
     end do
   end do
 end do
@@ -94,13 +80,7 @@ do l1=0,lmaxmat
     do io=1,apword(l1,is)
       do jo=1,apword(l1,is)
         zt1=t1*apwfr(nrmt(is),1,io,l1,ias)*apwdfr(jo,l1,ias)
-        if (tapp) then
-          call zmatinpv(ngp,zt1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias), &
-           nstfv,nmatmax,v,h)
-        else
-          call zmatinp(tpmat,ngp,zt1,apwalm(:,io,lm1,ias), &
-           apwalm(:,jo,lm1,ias),ld,h)
-        end if
+        call zher2b(ngp,zt1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias),ld,h)
       end do
     end do
   end do
