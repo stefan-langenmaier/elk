@@ -96,7 +96,7 @@ do it=1,maxitoep
 ! convert muffin-tin residuals to spherical harmonics
   do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias,idm)
+!$OMP PRIVATE(ias,idm) SHARED(is)
 !$OMP DO
     do ia=1,natoms(is)
       ias=idxas(ia,is)

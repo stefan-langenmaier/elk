@@ -26,7 +26,7 @@ real(8), allocatable :: rfmt(:,:)
 ld=lmmaxvr*lradstp
 do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(rfmt,ias,irc,ir,idm)
+!$OMP PRIVATE(rfmt,ias,irc,ir,idm) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     allocate(rfmt(lmmaxvr,nrcmtmax))

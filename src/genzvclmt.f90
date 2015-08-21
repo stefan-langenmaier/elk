@@ -17,7 +17,7 @@ complex(8), intent(out) :: zvclmt(lmmaxvr,ld2,natmtot)
 integer is,ia,ias
 do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias)
+!$OMP PRIVATE(ias) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     ias=idxas(ia,is)

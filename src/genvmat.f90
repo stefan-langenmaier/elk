@@ -27,7 +27,8 @@ allocate(rfmt(lmmaxvr,nrcmtmax,natmtot))
 ! convert muffin-tin potential to spherical coordinates
 ld=lmmaxvr*lradstp
 do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(ias)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(ias) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     ias=idxas(ia,is)

@@ -83,7 +83,7 @@ do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(jlgr,zfmt,ias,ig,ifg) &
 !$OMP PRIVATE(irc,x,zt1,zt2,zt3) &
-!$OMP PRIVATE(lm,l,m,ir)
+!$OMP PRIVATE(lm,l,m,ir) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     allocate(jlgr(0:lmax,nrcmtmax))

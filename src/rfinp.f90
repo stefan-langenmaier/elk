@@ -51,7 +51,7 @@ sum=sum*omega/dble(ngrtot)
 ! muffin-tin contribution
 do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias,t1)
+!$OMP PRIVATE(ias,t1) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     ias=idxas(ia,is)

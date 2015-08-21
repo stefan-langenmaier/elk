@@ -44,7 +44,7 @@ do is=1,nspecies
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(fr,gr,cf,ias) &
 !$OMP PRIVATE(l1,l2,l3,io,jo,ir) &
-!$OMP PRIVATE(m2,lm2,t1,ilo,jlo)
+!$OMP PRIVATE(m2,lm2,t1,ilo,jlo) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     allocate(fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax))

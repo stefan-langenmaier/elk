@@ -22,7 +22,7 @@ do is=1,nspecies
   nrc=nrcmt(is)
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(ias,i,t1,vr,drv,cf) &
-!$OMP PRIVATE(irc,ir,rm)
+!$OMP PRIVATE(irc,ir,rm) SHARED(is)
 !$OMP DO
   do ia=1,natoms(is)
     ias=idxas(ia,is)
