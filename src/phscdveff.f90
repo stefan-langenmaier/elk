@@ -3,16 +3,14 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine phdveff(iph,iq,veffmtp,veffirp,dveffmt,dveffir)
+subroutine phscdveff(m,veffmtp,veffirp)
 use modmain
+use modphonon
 implicit none
 ! arguments
-integer, intent(in) :: iph
-integer, intent(in) :: iq
+integer, intent(in) :: m
 real(8), intent(in) :: veffmtp(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: veffirp(ngrtot)
-complex(8), intent(out) :: dveffmt(lmmaxvr,nrcmtmax,natmtot0)
-complex(8), intent(out) :: dveffir(ngrtot0)
 ! local variables
 integer is,ia,ja,ias,jas
 integer ir,irc,i1,i2,i3,i
@@ -25,9 +23,9 @@ complex(8) zflm(lmmaxvr)
 real(8) rfirvec
 external rfirvec
 ! prefactor
-zt1=1.d0/(dble(nphcell)*deltaph)
+zt1=1.d0/(dble(nphsc)*deltaph)
 ! multiply by i for sin-like displacement
-if (iph.eq.1) zt1=zt1*zi
+if (m.eq.1) zt1=zt1*zi
 !------------------------------!
 !     muffin-tin potential     !
 !------------------------------!
@@ -37,11 +35,11 @@ do is=1,nspecies
   ja=0
   do ia=1,natoms0(is)
     ias=ias+1
-    do i=1,nphcell
+    do i=1,nphsc
       ja=ja+1
       jas=jas+1
 ! important: the muffin-tin potential should have an *explicit* phase exp(iq.r)
-      t1=-dot_product(vqc(:,iq),vphcell(:,i))
+      t1=-dot_product(vqc(:,iqph),vphsc(:,i))
       zt2=zt1*cmplx(cos(t1),sin(t1),8)
 ! loop over radial points
       irc=0
@@ -71,9 +69,9 @@ do i3=0,ngrid0(3)-1
       v1(1)=dble(i1)/dble(ngrid0(1))
       ir=ir+1
       call r3mv(avec0,v1,v2)
-      do i=1,nphcell
-        v3(:)=v2(:)+vphcell(:,i)
-        t1=-dot_product(vqc(:,iq),v3(:))
+      do i=1,nphsc
+        v3(:)=v2(:)+vphsc(:,i)
+        t1=-dot_product(vqc(:,iqph),v3(:))
         zt2=zt1*cmplx(cos(t1),sin(t1),8)
         t1=rfirvec(ngrid,ainv,v3,veffir)
         t2=rfirvec(ngrid,ainv,v3,veffirp)

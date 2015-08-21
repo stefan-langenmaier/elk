@@ -29,19 +29,13 @@ integer, intent(out) :: iv(3)
 ! local variables
 integer i
 do i=1,3
-  iv(i)=int(v(i))
-  v(i)=v(i)-dble(iv(i))
-  if (v(i).lt.0.d0) then
-    v(i)=v(i)+1.d0
-    iv(i)=iv(i)-1
-  end if
+  iv(i)=floor(v(i))
+  v(i)=v(i)-iv(i)
   if (1.d0-v(i).lt.eps) then
     v(i)=0.d0
     iv(i)=iv(i)+1
   end if
-  if (v(i).lt.eps) then
-    v(i)=0.d0
-  end if
+  if (v(i).lt.eps) v(i)=0.d0
 end do
 return
 end subroutine

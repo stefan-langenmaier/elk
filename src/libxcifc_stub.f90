@@ -14,12 +14,12 @@ subroutine xcifc_libxc(xctype,n,rho,rhoup,rhodn,grho2,gup2,gdn2,gupdn,ex,ec, &
  dcdgud)
 implicit none
 integer xctype(3),n
-real(8), optional :: rho(*),rhoup(*),rhodn(*)
-real(8), optional :: grho2(*),gup2(*),gdn2(*),gupdn(*)
-real(8), optional :: ex(*),ec(*),vx(*),vc(*)
-real(8), optional :: vxup(*),vxdn(*),vcup(*),vcdn(*)
-real(8), optional :: dxdg2(*),dxdgu2(*),dxdgd2(*),dxdgud(*)
-real(8), optional :: dcdg2(*),dcdgu2(*),dcdgd2(*),dcdgud(*)
+real(8), optional :: rho(n),rhoup(n),rhodn(n)
+real(8), optional :: grho2(n),gup2(n),gdn2(n),gupdn(n)
+real(8), optional :: ex(n),ec(n),vx(n),vc(n)
+real(8), optional :: vxup(n),vxdn(n),vcup(n),vcdn(n)
+real(8), optional :: dxdg2(n),dxdgu2(n),dxdgd2(n),dxdgud(n)
+real(8), optional :: dcdg2(n),dcdgu2(n),dcdgd2(n),dcdgud(n)
 write(*,*)
 write(*,'("Error(libxcifc): libxc not or improperly installed")')
 write(*,*)

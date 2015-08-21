@@ -12,7 +12,7 @@ integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
 integer ias,l,m,lm,io
@@ -21,7 +21,12 @@ do l=0,lmaxmat
   do m=-l,l
     lm=idxlm(l,m)
     do io=1,apword(l,is)
-      call zmatinp(tapp,ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias),v,o)
+      if (tapp) then
+        call zmatinpv(ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias),nstfv, &
+         nmatmax,v,o)
+      else
+        call zmatinp(ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias),o)
+      end if
     end do
   end do
 end do

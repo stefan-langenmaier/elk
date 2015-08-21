@@ -5,6 +5,7 @@
 
 subroutine writephn
 use modmain
+use modphonon
 implicit none
 ! local variables
 integer n,iq,i,j,is,ia,ip

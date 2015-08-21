@@ -30,9 +30,9 @@ complex(8), allocatable :: wfmt1(:,:,:)
 complex(8), allocatable :: wfmt2(:,:)
 complex(8), allocatable :: wfmt3(:,:)
 complex(8), allocatable :: wfmt4(:,:,:)
-complex(8), allocatable :: gzfmt(:,:,:)
-complex(8), allocatable :: zfft1(:)
-complex(8), allocatable :: zfft2(:)
+complex(8), allocatable :: gwfmt(:,:,:)
+complex(8), allocatable :: wfir1(:)
+complex(8), allocatable :: wfir2(:)
 complex(8), allocatable :: zv(:,:)
 complex(8), allocatable :: work(:)
 ! external functions
@@ -52,8 +52,8 @@ end if
 call timesec(ts0)
 ! coupling constant of the external B-field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
-! coupling constant of the external A-field (1/2c)
-ca=1.d0/(2.d0*sol)
+! coupling constant of the external A-field (1/c)
+ca=1.d0/solsc
 ! number of spin combinations after application of Hamiltonian
 if (spinpol) then
   if (ncmag) then
@@ -74,7 +74,7 @@ allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
 allocate(wfmt2(lmmaxvr,nrcmtmax))
 allocate(wfmt3(lmmaxvr,nrcmtmax))
 allocate(wfmt4(lmmaxvr,nrcmtmax,nsc))
-if (afieldpol) allocate(gzfmt(lmmaxvr,nrcmtmax,3))
+if (afieldpol) allocate(gwfmt(lmmaxvr,nrcmtmax,3))
 do is=1,nspecies
   nrc=nrcmt(is)
   do ia=1,natoms(is)
@@ -140,12 +140,11 @@ do is=1,nspecies
 ! apply vector potential if required
       if (afieldpol) then
         call gradzfmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,nrcmtmax,wfmt1(:,:,jst), &
-         gzfmt)
-        t1=1.d0/(2.d0*sol)
+         gwfmt)
         do irc=1,nrc
-          wfmt3(:,irc)=afieldc(1)*gzfmt(:,irc,1) &
-                      +afieldc(2)*gzfmt(:,irc,2) &
-                      +afieldc(3)*gzfmt(:,irc,3)
+          wfmt3(:,irc)=afieldc(1)*gwfmt(:,irc,1) &
+                      +afieldc(2)*gwfmt(:,irc,2) &
+                      +afieldc(3)*gwfmt(:,irc,3)
           wfmt3(:,irc)=ca*cmplx(aimag(wfmt3(:,irc)),-dble(wfmt3(:,irc)),8)
         end do
         do k=1,nsc
@@ -176,13 +175,13 @@ do is=1,nspecies
   end do
 end do
 deallocate(wfmt1,wfmt2,wfmt3,wfmt4)
-if (afieldpol) deallocate(gzfmt)
+if (afieldpol) deallocate(gwfmt)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
 allocate(bir(ngrtot,3))
-allocate(zfft1(ngrtot))
-allocate(zfft2(ngrtot))
+allocate(wfir1(ngrtot))
+allocate(wfir2(ngrtot))
 allocate(zv(ngkmax,nsc))
 if (spinpol) then
   if (ncmag) then
@@ -198,27 +197,27 @@ if (spinpol) then
     end do
   end if
   do jst=1,nstfv
-    zfft1(:)=0.d0
+    wfir1(:)=0.d0
     do igk=1,ngk(1,ik)
       ifg=igfft(igkig(igk,1,ik))
-      zfft1(ifg)=evecfv(igk,jst)
+      wfir1(ifg)=evecfv(igk,jst)
     end do
 ! Fourier transform wavefunction to real-space
-    call zfftifc(3,ngrid,1,zfft1)
+    call zfftifc(3,ngrid,1,wfir1)
 ! multiply with magnetic field and transform to G-space
-    zfft2(:)=zfft1(:)*bir(:,3)
-    call zfftifc(3,ngrid,-1,zfft2)
+    wfir2(:)=wfir1(:)*bir(:,3)
+    call zfftifc(3,ngrid,-1,wfir2)
     do igk=1,ngk(1,ik)
       ifg=igfft(igkig(igk,1,ik))
-      zv(igk,1)=zfft2(ifg)
-      zv(igk,2)=-zfft2(ifg)
+      zv(igk,1)=wfir2(ifg)
+      zv(igk,2)=-wfir2(ifg)
     end do
     if (ncmag) then
-      zfft2(:)=zfft1(:)*cmplx(bir(:,1),-bir(:,2),8)
-      call zfftifc(3,ngrid,-1,zfft2)
+      wfir2(:)=wfir1(:)*cmplx(bir(:,1),-bir(:,2),8)
+      call zfftifc(3,ngrid,-1,wfir2)
       do igk=1,ngk(1,ik)
         ifg=igfft(igkig(igk,1,ik))
-        zv(igk,3)=zfft2(ifg)
+        zv(igk,3)=wfir2(ifg)
       end do
     end if
 ! apply vector potential if required
@@ -248,7 +247,7 @@ if (spinpol) then
     end do
   end do
 end if
-deallocate(bir,zfft1,zfft2,zv)
+deallocate(bir,wfir1,wfir2,zv)
 ! add the diagonal first-variational part
 i=0
 do ispn=1,nspinor

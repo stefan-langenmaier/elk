@@ -12,11 +12,15 @@ integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ias,ilo,io,l,m,lm,i,j,k
-complex(8) zsum
+integer ias,ilo,io
+integer l,m,lm
+integer ist,i,j,k,ki,kj
+! allocatable arrays
+complex(8), allocatable :: oj(:)
+if (tapp) allocate(oj(ngp))
 ias=idxas(ia,is)
 do ilo=1,nlorb(is)
   l=lorbl(ilo,is)
@@ -24,15 +28,28 @@ do ilo=1,nlorb(is)
     lm=idxlm(l,m)
     j=ngp+idxlo(lm,ilo,ias)
     if (tapp) then
-! apply the overlap operator to v
+! calculate the column of matrix elements for application to v
       do i=1,ngp
-        zsum=0.d0
+        oj(i)=0.d0
         do io=1,apword(l,is)
-          zsum=zsum+conjg(apwalm(i,io,lm,ias))*oalo(io,ilo,ias)
+          oj(i)=oj(i)+conjg(apwalm(i,io,lm,ias))*oalo(io,ilo,ias)
         end do
-        o(i)=o(i)+zsum*v(j)
-        o(j)=o(j)+conjg(zsum)*v(i)
       end do
+! apply column of O to v
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(i,k,ki,kj)
+!$OMP DO
+      do ist=1,nstfv
+        k=(ist-1)*nmatmax
+        kj=k+j
+        do i=1,ngp
+          ki=k+i
+          o(ki)=o(ki)+oj(i)*v(kj)
+          o(kj)=o(kj)+conjg(oj(i))*v(ki)
+        end do
+      end do
+!$OMP END DO
+!$OMP END PARALLEL
     else
 ! calculate the matrix elements
       k=((j-1)*j)/2
@@ -45,6 +62,7 @@ do ilo=1,nlorb(is)
     end if
   end do
 end do
+if (tapp) deallocate(oj)
 return
 end subroutine
 

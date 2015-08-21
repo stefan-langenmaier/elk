@@ -9,6 +9,7 @@
 subroutine writeinfo(fnum)
 ! !USES:
 use modmain
+use modmpi
 use modldapu
 use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
@@ -31,6 +32,16 @@ character(10) dat,tim
 write(fnum,'("+----------------------------+")')
 write(fnum,'("| Elk version ",I1.1,".",I1.1,".",I2.2," started |")') version
 write(fnum,'("+----------------------------+")')
+call date_and_time(date=dat,time=tim)
+write(fnum,*)
+write(fnum,'("Date (YYYY-MM-DD) : ",A4,"-",A2,"-",A2)') dat(1:4),dat(5:6), &
+ dat(7:8)
+write(fnum,'("Time (hh:mm:ss)   : ",A2,":",A2,":",A2)') tim(1:2),tim(3:4), &
+ tim(5:6)
+if (np_mpi.gt.1) then
+  write(fnum,*)
+  write(fnum,'("Using MPI, number of processes : ",I8)') np_mpi
+end if
 if (notelns.gt.0) then
   write(fnum,*)
   write(fnum,'("Notes :")')
@@ -38,12 +49,6 @@ if (notelns.gt.0) then
     write(fnum,'(A)') notes(i)
   end do
 end if
-call date_and_time(date=dat,time=tim)
-write(fnum,*)
-write(fnum,'("Date (YYYY-MM-DD) : ",A4,"-",A2,"-",A2)') dat(1:4),dat(5:6), &
- dat(7:8)
-write(fnum,'("Time (hh:mm:ss)   : ",A2,":",A2,":",A2)') tim(1:2),tim(3:4), &
- tim(5:6)
 write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
 select case(task)
@@ -130,7 +135,7 @@ if (spinorb) then
   write(fnum,'(" spin-orbit coupling")')
 end if
 if (spincore) then
-  write(fnum,'(" spin-polarised core")')
+  write(fnum,'(" spin-polarised core states")')
 end if
 if (spinpol) then
   write(fnum,'(" global magnetic field (Cartesian) : ",3G18.10)') bfieldc

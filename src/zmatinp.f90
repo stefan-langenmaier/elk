@@ -6,26 +6,20 @@
 !BOP
 ! !ROUTINE: zmatinp
 ! !INTERFACE:
-subroutine zmatinp(tapp,n,alpha,x,y,v,a)
+subroutine zmatinp(n,alpha,x,y,a)
 ! !INPUT/OUTPUT PARAMETERS:
-!   tapp  : .true. if the matrix is to be applied to the input vector v,
-!           .false. if the full matrix is to be calculated (in,logical)
 !   n     : length of vectors (in,integer)
 !   alpha : complex constant (in,complex)
 !   x     : first input vector (in,complex(n))
 !   y     : second input vector (in,complex(n))
-!   v     : input vector to which matrix is applied if tapp is .true., otherwise
-!           not referenced (in,complex(n))
-!   a     : matrix applied to v if tapp is .true., otherwise the full matrix in
-!           packed form (inout,complex(n+(n-1)*n/2))
+!   a     : output matrix in packed form (inout,complex(*))
 ! !DESCRIPTION:
 !   Performs the rank-2 operation
 !   $$ A_{ij}\rightarrow\alpha{\bf x}_i^*{\bf y}_j+\alpha^*{\bf y}_i^*{\bf x}_j
 !    +A_{ij}, $$
 !   where $A$ is stored in packed form. This is similar to the {\tt BLAS}
 !   routine {\tt zhpr2}, except that here a matrix of inner products is formed
-!   instead of an outer product of vectors. If {\tt tapp} is {\tt .true.} then
-!   the matrix is applied to an input vector, rather than calculated explicitly.
+!   instead of an outer product of vectors.
 !
 ! !REVISION HISTORY:
 !   Created June 2003 (JKD)
@@ -33,70 +27,59 @@ subroutine zmatinp(tapp,n,alpha,x,y,v,a)
 !BOC
 implicit none
 ! arguments
-logical, intent(in) :: tapp
 integer, intent(in) :: n
 complex(8), intent(in) :: alpha
 complex(8), intent(in) :: x(n)
 complex(8), intent(in) :: y(n)
-complex(8), intent(in) :: v(n)
 complex(8), intent(inout) :: a(*)
 ! local variables
 integer j,k
 ! numbers less than eps are considered to be zero
-real(8), parameter :: eps=1.d-12
-real(8) a1,a2
-complex(8) zt1,zt2
-if (tapp) then
-!--------------------------!
-!     apply the matrix     !
-!--------------------------!
-  zt1=y(1)*v(1)
-  zt2=x(1)*v(1)
-  do j=2,n
-    zt1=zt1+y(j)*v(j)
-    zt2=zt2+x(j)*v(j)
-  end do
-  zt1=conjg(alpha*zt1)
-  zt2=alpha*conjg(zt2)
-  if ((abs(aimag(zt1)).gt.eps).or.(abs(aimag(zt2)).gt.eps)) then
-! complex prefactors
-    a(1:n)=a(1:n)+conjg(zt1*x(1:n)+zt2*y(1:n))
+real(8), parameter :: eps=1.d-10
+real(8) a1,b1
+complex(8) zt1
+k=0
+do j=1,n
+  zt1=alpha*conjg(x(j))
+  if (abs(dble(zt1)).gt.eps) then
+    if (abs(aimag(zt1)).gt.eps) then
+! complex prefactor
+      a(k+1:k+j-1)=a(k+1:k+j-1)+conjg(zt1*y(1:j-1))
+    else
+! real prefactor
+      a1=dble(zt1)
+      a(k+1:k+j-1)=a(k+1:k+j-1)+a1*conjg(y(1:j-1))
+    end if
   else
-! real prefactors
-    a1=dble(zt1)
-    a2=dble(zt2)
-    if ((abs(a1).gt.eps).or.(abs(a2).gt.eps)) then
-      a(1:n)=a(1:n)+conjg(a1*x(1:n)+a2*y(1:n))
+! imaginary prefactor
+    if (abs(aimag(zt1)).gt.eps) then
+      b1=aimag(zt1)
+      a(k+1:k+j-1)=a(k+1:k+j-1)-b1*cmplx(aimag(y(1:j-1)),dble(y(1:j-1)),8)
     end if
   end if
-else
-!---------------------------------------!
-!     calculate the matrix elements     !
-!---------------------------------------!
-  k=0
-  do j=1,n
-    if ((abs(dble(x(j))).gt.eps).or.(abs(aimag(x(j))).gt.eps).or. &
-     (abs(dble(y(j))).gt.eps).or.(abs(aimag(y(j))).gt.eps)) then
-      zt1=conjg(alpha*y(j))
-      zt2=alpha*conjg(x(j))
-      if ((abs(aimag(zt1)).gt.eps).or.(abs(aimag(zt2)).gt.eps)) then
-! complex prefactors
-        a(k+1:k+j-1)=a(k+1:k+j-1)+conjg(zt1*x(1:j-1)+zt2*y(1:j-1))
-        k=k+j
-        a(k)=dble(a(k))+2.d0*dble(zt1*x(j))
-      else
-! real prefactors
-        a1=dble(zt1)
-        a2=dble(zt2)
-        a(k+1:k+j-1)=a(k+1:k+j-1)+conjg(a1*x(1:j-1)+a2*y(1:j-1))
-        k=k+j
-        a(k)=dble(a(k))+2.d0*a1*dble(x(j))
-      end if
+  zt1=conjg(alpha*y(j))
+  if (abs(dble(zt1)).gt.eps) then
+    if (abs(aimag(zt1)).gt.eps) then
+      a(k+1:k+j-1)=a(k+1:k+j-1)+conjg(zt1*x(1:j-1))
+      k=k+j
+      a(k)=dble(a(k))+2.d0*dble(zt1*x(j))
+    else
+      a1=dble(zt1)
+      a(k+1:k+j-1)=a(k+1:k+j-1)+a1*conjg(x(1:j-1))
+      k=k+j
+      a(k)=dble(a(k))+2.d0*a1*dble(x(j))
+    end if
+  else
+    if (abs(aimag(zt1)).gt.eps) then
+      b1=aimag(zt1)
+      a(k+1:k+j-1)=a(k+1:k+j-1)-b1*cmplx(aimag(x(1:j-1)),dble(x(1:j-1)),8)
+      k=k+j
+      a(k)=dble(a(k))-2.d0*b1*aimag(x(j))
     else
       k=k+j
     end if
-  end do
-end if
+  end if
+end do
 return
 end subroutine
 !EOC

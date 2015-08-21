@@ -5,6 +5,7 @@
 
 subroutine alpha2f
 use modmain
+use modphonon
 use modtest
 implicit none
 ! local variables

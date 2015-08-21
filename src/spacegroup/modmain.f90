@@ -68,7 +68,7 @@ real(8) atposl(3,maxatoms,maxspecies)
 ! atomic positions in Cartesian coordinates
 real(8) atposc(3,maxatoms,maxspecies)
 ! magnetic fields
-real(8) bfcmt(3,maxatoms,maxspecies)
+real(8) bfcmt0(3,maxatoms,maxspecies)
 
 !----------------------------------!
 !     atomic species variables     !
@@ -86,7 +86,7 @@ real(8), parameter :: pi=3.1415926535897932385d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,1,4 /
+data version / 1,2,0 /
 
 end module
 !EOC

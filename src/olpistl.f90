@@ -12,8 +12,8 @@ use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   ngp   : number of G+p-vectors (in,integer)
 !   igpig : index from G+p-vectors to G-vectors (in,integer(ngkmax))
-!   v     : input vector to which O is applied if tapp is .true., otherwise
-!           not referenced (in,complex(nmatmax))
+!   v     : set of input vectors to which O is applied if tapp is .true.,
+!           otherwise not referenced (in,complex(*))
 !   o     : O applied to v if tapp is .true., otherwise it is the overlap
 !           matrix in packed form (inout,complex(*))
 ! !DESCRIPTION:
@@ -32,25 +32,37 @@ implicit none
 logical, intent(in) :: tapp
 integer, intent(in) :: ngp
 integer, intent(in) :: igpig(ngkmax)
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer i,j,k,iv(3),ig
-complex(8) zt1
+integer iv(3),ig
+integer ist,i,j,k,ki,kj
+! allocatable arrays
+complex(8), allocatable :: oj(:)
 if (tapp) then
 ! apply the overlap operator to v
-! diagonal
-  zt1=cfunig(ivgig(0,0,0))
-  o(1:ngp)=o(1:ngp)+zt1*v(1:ngp)
-! off-diagonal
-  do i=1,ngp
-    do j=i+1,ngp
+  allocate(oj(ngp))
+  do j=1,ngp
+    do i=1,j
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
       ig=ivgig(iv(1),iv(2),iv(3))
-      zt1=cfunig(ig)
-      o(i)=o(i)+zt1*v(j)
-      o(j)=o(j)+conjg(zt1)*v(i)
+      oj(i)=cfunig(ig)
     end do
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(i,k,ki,kj)
+!$OMP DO
+    do ist=1,nstfv
+      k=(ist-1)*nmatmax
+      kj=k+j
+      do i=1,j-1
+        ki=k+i
+        o(ki)=o(ki)+oj(i)*v(kj)
+        o(kj)=o(kj)+conjg(oj(i))*v(ki)
+      end do
+      o(kj)=o(kj)+dble(oj(j))*v(kj)
+    end do
+!$OMP END DO
+!$OMP END PARALLEL
   end do
 else
 ! calculate the matrix elements
@@ -64,6 +76,7 @@ else
     end do
   end do
 end if
+if (tapp) deallocate(oj)
 return
 end subroutine
 !EOC

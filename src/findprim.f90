@@ -22,18 +22,13 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer is,js,ia,ja,ka
-integer i1,i2,i3,iv(3)
-integer i,j,n,na
+integer is,js,ia,ja,ka,na
+integer i1,i2,i3,iv(3),i,j,n
 real(8) v1(3),v2(3),v3(3)
 real(8) t1,t2
-real(8) apl(3,maxatoms)
 ! allocatable arrays
 real(8), allocatable :: dp(:)
 real(8), allocatable :: vp(:,:)
-! external functions
-real(8) r3taxi
-external r3taxi
 do is=1,nspecies
   do ia=1,natoms(is)
 ! make sure all atomic coordinates are in [0,1)
@@ -61,7 +56,7 @@ do ia=1,natoms(is)
       v2(2)=v1(2)+dble(i2)
       do i3=-1,1
         v2(3)=v1(3)+dble(i3)
-        t1=sqrt(v2(1)**2+v2(2)**2+v2(3)**2)
+        t1=abs(v2(1))+abs(v2(2))+abs(v2(3))
         if (t1.lt.epslat) goto 20
 ! check if vector v2 leaves conventional cell invariant
         do js=1,nspecies
@@ -69,9 +64,9 @@ do ia=1,natoms(is)
             v3(:)=atposl(:,ja,js)+v2(:)
             call r3frac(epslat,v3,iv)
             do ka=1,natoms(js)
-! check both positions and magnetic fields
-              t1=r3taxi(atposl(:,ka,js),v3)
-              t2=r3taxi(bfcmt(:,ja,js),bfcmt(:,ka,js))
+! check both positions and magnetic fields are the same
+              t1=sum(abs(atposl(:,ka,js)-v3(:)))
+              t2=sum(abs(bfcmt0(:,ja,js)-bfcmt0(:,ka,js)))
               if ((t1.lt.epslat).and.(t2.lt.epslat)) goto 10
             end do
 ! atom ja has no equivalent under translation by v2
@@ -88,6 +83,12 @@ do ia=1,natoms(is)
     end do
   end do
 end do
+if (n.eq.0) then
+  write(*,*)
+  write(*,'("Error(findprim): cannot find any lattice vectors")')
+  write(*,*)
+  stop
+end if
 ! find the shortest lattice vector
 j=1
 t1=1.d8
@@ -134,16 +135,14 @@ do is=1,nspecies
     call r3mv(ainv,atposc(:,ia,is),v1)
     call r3frac(epslat,v1,iv)
     do ja=1,na
-      t1=r3taxi(apl(:,ja),v1)
+      t1=sum(abs(atposl(:,ja,is)-v1(:)))
       if (t1.lt.epslat) goto 30
     end do
     na=na+1
-    apl(:,na)=v1(:)
+    atposl(:,na,is)=v1(:)
+    call r3mv(avec,atposl(:,na,is),atposc(:,na,is))
+    bfcmt0(:,na,is)=bfcmt0(:,ia,is)
 30 continue
-  end do
-  do ia=1,na
-    atposl(:,ia,is)=apl(:,ia)
-    call r3mv(avec,apl(:,ia),atposc(:,ia,is))
   end do
   natoms(is)=na
 end do

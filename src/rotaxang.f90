@@ -32,7 +32,7 @@ subroutine rotaxang(eps,rot,det,v,th)
 !   proper part is used and {\tt det} is set to $-1$.
 !
 ! !REVISION HISTORY:
-!   Created Decmeber 2006 (JKD)
+!   Created December 2006 (JKD)
 !EOP
 !BOC
 implicit none
@@ -45,9 +45,6 @@ real(8), intent(out) :: th
 ! local variables
 real(8), parameter :: pi=3.1415926535897932385d0
 real(8) p(3,3),t1,t2
-! external functions
-real(8) r3mdet
-external r3mdet
 ! find the determinant
 det=rot(1,2)*rot(2,3)*rot(3,1)-rot(1,3)*rot(2,2)*rot(3,1) &
    +rot(1,3)*rot(2,1)*rot(3,2)-rot(1,1)*rot(2,3)*rot(3,2) &

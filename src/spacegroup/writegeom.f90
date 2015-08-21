@@ -39,7 +39,7 @@ do is=1,nspecies
   write(50,'("''",A,"''",T40," : spfname")') trim(spsymb(is))//'.in'
   write(50,'(I4,T40," : natoms; atposl, bfcmt below")') natoms(is)
   do ia=1,natoms(is)
-    write(50,'(3F14.8,"  ",3F12.8)') atposl(:,ia,is),0.d0,0.d0,0.d0
+    write(50,'(3F14.8,"  ",3F12.8)') atposl(:,ia,is),bfcmt0(:,ia,is)
   end do
 end do
 close(50)

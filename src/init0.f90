@@ -77,13 +77,6 @@ end do
 !------------------------------------!
 !     index to atoms and species     !
 !------------------------------------!
-! check if the system is an isolated molecule
-if (molecule) then
-  primcell=.false.
-  tshift=.false.
-end if
-! find primitive cell if required
-if (primcell) call findprim
 natmmax=0
 ias=0
 do is=1,nspecies
@@ -150,6 +143,14 @@ end if
 ! set the magnetic fields to the initial values
 bfieldc(:)=bfieldc0(:)
 bfcmt(:,:,:)=bfcmt0(:,:,:)
+! if reducebf < 1 then reduce the external magnetic fields immediately for
+! non-self-consistent calculations
+if (reducebf.lt.1.d0-epslat) then
+  if ((task.ge.10).and.(task.ne.200)) then
+    bfieldc(:)=0.d0
+    bfcmt(:,:,:)=0.d0
+  end if
+end if
 ! check for collinearity in the z-direction and set the dimension of the
 ! magnetisation and exchange-correlation vector fields
 if (spinpol) then
@@ -483,12 +484,6 @@ allocate(dpp1d(npp1d))
 ! zero self-consistent loop number
 iscl=0
 tlast=.false.
-! if reducebf < 1 then reduce the external magnetic fields immediately for
-! non-self-consistent calculations
-if ((reducebf.lt.1.d0).and.(task.gt.3)) then
-  bfieldc(:)=0.d0
-  bfcmt(:,:,:)=0.d0
-end if
 ! set the Fermi energy to zero
 efermi=0.d0
 

@@ -3,8 +3,9 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine phveff
+subroutine phscveff
 use modmain
+use modphonon
 implicit none
 ! local variables
 integer is,ia,ias,jas,i
@@ -19,7 +20,7 @@ jas=0
 do is=1,nspecies
   do ia=1,natoms0(is)
     ias=ias+1
-    do i=1,nphcell
+    do i=1,nphsc
       jas=jas+1
       veffmt(:,:,jas)=veffmt0(:,:,ias)
     end do

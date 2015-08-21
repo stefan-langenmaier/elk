@@ -1,6 +1,6 @@
  'Bmab'                               : hrmg
  10.0605232 10.0605232  24.972729     : a, b, c
- 90.0     90.0     90.0               : ab, ac, bc
+ 90.0     90.0     90.0               : bc, ac, ab
  1  1  1                              : ncell
  .true.                               : primcell
  3                                    : nspecies

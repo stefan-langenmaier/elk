@@ -18,8 +18,7 @@ SRC_main = main.f90
 SRC_routines = readinput.f90 gencrystal.f90 sgsymb.f90 seitzgen.f90 \
  gengroup.f90 seitzeq.f90 seitzmul.f90 writegeom.f90 geomplot.f90
 
-SRC_lib = findprim.f90 r3frac.f90 r3taxi.f90 r3mv.f90 r3cross.f90 r3minv.f90 \
- r3mm.f90
+SRC_lib = findprim.f90 r3frac.f90 r3mv.f90 r3cross.f90 r3minv.f90 r3mm.f90
 
 SRC = $(SRC_modules) $(SRC_main) $(SRC_routines) $(SRC_lib)
 

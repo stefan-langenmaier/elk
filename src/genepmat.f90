@@ -88,19 +88,27 @@ allocate(epm(nstfv,nstfv,n))
 ! p-vector in Cartesian coordinates
 call r3mv(bvec,vpl,vpc)
 ! generate the G+p vectors
-call gengpvec(vpl,vpc,ngp,igpig,vgpl,vgpc,gpc,tpgpc)
+call gengpvec(vpl,vpc,ngp,igpig,vgpl,vgpc)
+! generate the spherical coordinates of the G+p vectors
+do igp=1,ngp
+  call sphcrd(vgpc(:,igp),gpc(igp),tpgpc(:,igp))
+end do
 ! generate the structure factors
 call gensfacgp(ngp,vgpc,ngkmax,sfacgp)
 ! find the matching coefficients for k-point p
 call match(ngp,gpc,tpgpc,sfacgp,apwalm1)
 ! get the eigenvectors for k-point p
 call getevecfv(vpl,vgpl,evecfv1)
-! p+q-vector in lattice coordinates
+! p+q vector in lattice coordinates
 vpql(:)=vpl(:)+vql(:,iq)
-! p+q-vector in Cartesian coordinates
+! p+q vector in Cartesian coordinates
 call r3mv(bvec,vpql,vpqc)
-! generate the G+p+q-vectors
-call gengpvec(vpql,vpqc,ngpq,igpqig,vgpql,vgpqc,gpqc,tpgpqc)
+! generate the G+p+q vectors
+call gengpvec(vpql,vpqc,ngpq,igpqig,vgpql,vgpqc)
+! generate the spherical coordinates of the G+p+q vectors
+do igp=1,ngpq
+  call sphcrd(vgpqc(:,igp),gpqc(igp),tpgpqc(:,igp))
+end do
 ! generate the structure factors
 call gensfacgp(ngpq,vgpqc,ngkmax,sfacgpq)
 ! find the matching coefficients for k-point p+q

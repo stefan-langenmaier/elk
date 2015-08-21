@@ -11,10 +11,12 @@ logical, intent(in) :: tapp
 integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ngp
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ias,ilo1,ilo2,l,m,lm,i,j,k
+integer ias,ilo1,ilo2
+integer l,m,lm
+integer ist,i,j,k,ki,kj
 ias=idxas(ia,is)
 do ilo1=1,nlorb(is)
   l=lorbl(ilo1,is)
@@ -27,8 +29,18 @@ do ilo1=1,nlorb(is)
         if (i.le.j) then
           if (tapp) then
 ! apply the overlap operator to v
-            o(i)=o(i)+ololo(ilo1,ilo2,ias)*v(j)
-            if (i.ne.j) o(j)=o(j)+ololo(ilo1,ilo2,ias)*v(i)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(k,ki,kj)
+!$OMP DO
+            do ist=1,nstfv
+              k=(ist-1)*nmatmax
+              ki=k+i
+              kj=k+j
+              o(ki)=o(ki)+ololo(ilo1,ilo2,ias)*v(kj)
+              if (i.ne.j) o(kj)=o(kj)+ololo(ilo1,ilo2,ias)*v(ki)
+            end do
+!$OMP END DO
+!$OMP END PARALLEL
           else
 ! calculate the matrix elements
             k=i+((j-1)*j)/2

@@ -5,6 +5,8 @@
 
 module modtest
 
+use modmpi
+
 ! if test is .true. then the test variables are written to file
 logical test
 
@@ -27,6 +29,7 @@ complex(8), optional, intent(in) :: zva(*)
 integer i
 character(256) fname
 if (.not.test) return
+if (.not.mp_mpi) return
 if ((id.lt.0).or.(id.gt.999)) then
   write(*,*)
   write(*,'("Error(writetest): id out of range : ",I8)') id

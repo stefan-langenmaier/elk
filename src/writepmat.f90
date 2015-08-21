@@ -19,8 +19,8 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ik,recl
-complex(8), allocatable :: apwalm(:,:,:,:)
+integer ik,ispn,recl
+complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:)
 complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: pmat(:,:,:)
@@ -42,10 +42,10 @@ deallocate(pmat)
 open(50,file='PMAT.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  status='REPLACE',recl=recl)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(apwalm,evecfv,evecsv,pmat)
+!$OMP PRIVATE(apwalm,evecfv,evecsv,pmat,ispn)
 !$OMP DO
 do ik=1,nkpt
-  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(evecfv(nmatmax,nstfv))
   allocate(evecsv(nstsv,nstsv))
   allocate(pmat(3,nstsv,nstsv))
@@ -56,9 +56,12 @@ do ik=1,nkpt
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
-  call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
+  do ispn=1,nspnfv
+    call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
+     sfacgk(:,:,ispn,ik),apwalm(:,:,:,:,ispn))
+  end do
 ! calculate the momentum matrix elements
-  call genpmat(ngk(1,ik),igkig(:,1,ik),vgkc(:,:,1,ik),apwalm,evecfv,evecsv,pmat)
+  call genpmat(ngk(:,ik),igkig(:,:,ik),vgkc(:,:,:,ik),apwalm,evecfv,evecsv,pmat)
 ! write the matrix elements to direct-access file
 !$OMP CRITICAL
   write(50,rec=ik) pmat

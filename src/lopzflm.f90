@@ -15,8 +15,8 @@ subroutine lopzflm(lmax,zflm,ld,zlflm)
 !   zlflm : coefficients of output spherical harmonic expansion
 !           (out,complex(ld,3))
 ! !DESCRIPTION:
-!   Applies the angular momentum operator ${\bf L}$ to a function expanded in
-!   terms of complex spherical harmonics. This makes use of the identities
+!   Applies the angular momentum operator $\hat{\bf L}$ to a function expanded
+!   in terms of complex spherical harmonics. This makes use of the identities
 !   \begin{align*}
 !    (L_x+iL_y)Y_{lm}(\theta,\phi)&=\sqrt{(l-m)(l+m+1)}Y_{lm+1}(\theta,\phi)\\
 !    (L_x-iL_y)Y_{lm}(\theta,\phi)&=\sqrt{(l+m)(l-m+1)}Y_{lm-1}(\theta,\phi)\\

@@ -42,7 +42,7 @@ subroutine xcifc_libxc(xctype,n,rho,rhoup,rhodn,grho2,gup2,gdn2,gupdn,ex,ec, &
 !   dcdgd2 : de_c/d(|grad rhodn|^2) (out,real(n),optional)
 !   dcdgud : de_c/d((grad rhoup).(grad rhodn)) (out,real(n),optional)
 ! !DESCRIPTION:
-!   Interface to the {\tt libxc} exchange-correlation functional library:
+!   Interface to the ETSF {\tt libxc} exchange-correlation functional library:
 !   \newline{\tt http://www.tddft.org/programs/octopus/wiki/index.php/Libxc}.
 !   The second and third integers in {\tt xctype} define the exchange and
 !   correlation functionals in {\tt libxc}, respectively.
@@ -50,6 +50,7 @@ subroutine xcifc_libxc(xctype,n,rho,rhoup,rhodn,grho2,gup2,gdn2,gupdn,ex,ec, &
 ! !REVISION HISTORY:
 !   Created April 2009 (Tyrel McQueen)
 !   Modified September 2009 (JKD and TMQ)
+!   Updated for the libxc 1.0 interface, July 2010 (JKD)
 !EOP
 !BOC
 implicit none
@@ -57,34 +58,34 @@ implicit none
 integer, intent(in) :: xctype(3)
 integer, intent(in) :: n
 ! optional arguments
-real(8), optional, intent(in) :: rho(*)
-real(8), optional, intent(in) :: rhoup(*)
-real(8), optional, intent(in) :: rhodn(*)
-real(8), optional, intent(in) :: grho2(*)
-real(8), optional, intent(in) :: gup2(*)
-real(8), optional, intent(in) :: gdn2(*)
-real(8), optional, intent(in) :: gupdn(*)
-real(8), optional, intent(out) :: ex(*)
-real(8), optional, intent(out) :: ec(*)
-real(8), optional, intent(out) :: vx(*)
-real(8), optional, intent(out) :: vc(*)
-real(8), optional, intent(out) :: vxup(*)
-real(8), optional, intent(out) :: vxdn(*)
-real(8), optional, intent(out) :: vcup(*)
-real(8), optional, intent(out) :: vcdn(*)
-real(8), optional, intent(out) :: dxdg2(*)
-real(8), optional, intent(out) :: dxdgu2(*)
-real(8), optional, intent(out) :: dxdgd2(*)
-real(8), optional, intent(out) :: dxdgud(*)
-real(8), optional, intent(out) :: dcdg2(*)
-real(8), optional, intent(out) :: dcdgu2(*)
-real(8), optional, intent(out) :: dcdgd2(*)
-real(8), optional, intent(out) :: dcdgud(*)
+real(8), optional, intent(in) :: rho(n)
+real(8), optional, intent(in) :: rhoup(n)
+real(8), optional, intent(in) :: rhodn(n)
+real(8), optional, intent(in) :: grho2(n)
+real(8), optional, intent(in) :: gup2(n)
+real(8), optional, intent(in) :: gdn2(n)
+real(8), optional, intent(in) :: gupdn(n)
+real(8), optional, intent(out) :: ex(n)
+real(8), optional, intent(out) :: ec(n)
+real(8), optional, intent(out) :: vx(n)
+real(8), optional, intent(out) :: vc(n)
+real(8), optional, intent(out) :: vxup(n)
+real(8), optional, intent(out) :: vxdn(n)
+real(8), optional, intent(out) :: vcup(n)
+real(8), optional, intent(out) :: vcdn(n)
+real(8), optional, intent(out) :: dxdg2(n)
+real(8), optional, intent(out) :: dxdgu2(n)
+real(8), optional, intent(out) :: dxdgd2(n)
+real(8), optional, intent(out) :: dxdgud(n)
+real(8), optional, intent(out) :: dcdg2(n)
+real(8), optional, intent(out) :: dcdgu2(n)
+real(8), optional, intent(out) :: dcdgd2(n)
+real(8), optional, intent(out) :: dcdgud(n)
 ! local variables
-integer nspin,xcf,id,i,k
-real(8) r(2),v(2),sigma(3),vsigma(3)
-type(xc_f90_func_t) p
-type(xc_f90_info_t) info
+integer nspin,xcf,id,k
+type(xc_f90_pointer_t) p,info
+! allocatable arrays
+real(8), allocatable :: r(:,:),sigma(:,:),v(:,:),vsigma(:,:)
 if (present(rho)) then
   nspin=XC_UNPOLARIZED
 else if (present(rhoup).and.present(rhodn)) then
@@ -105,76 +106,64 @@ do k=2,3
 !-------------------------!
 !     LDA functionals     !
 !-------------------------!
-      if (id.eq.XC_LDA_X) then
-        call xc_f90_lda_init(p,info,id,nspin,3,XC_NON_RELATIVISTIC)
-      else if (id.eq.XC_LDA_C_XALPHA) then
-        call xc_f90_lda_init(p,info,id,nspin,3,1.d0)
-      else
-        call xc_f90_lda_init(p,info,id,nspin)
-      end if
+      call xc_f90_func_init(p,info,id,nspin)
       if (k.eq.2) then
 ! exchange
         if (present(rho)) then
-          do i=1,n
-            call xc_f90_lda_vxc(p,rho(i),ex(i),vx(i))
-          end do
+          call xc_f90_lda_exc_vxc(p,n,rho(1),ex(1),vx(1))
         else
-          do i=1,n
-            r(1)=rhoup(i); r(2)=rhodn(i)
-            call xc_f90_lda_vxc(p,r(1),ex(i),v(1))
-            vxup(i)=v(1); vxdn(i)=v(2)
-          end do
+          allocate(r(2,n),v(2,n))
+          r(1,:)=rhoup(:); r(2,:)=rhodn(:)
+          call xc_f90_lda_exc_vxc(p,n,r(1,1),ex(1),v(1,1))
+          vxup(:)=v(1,:); vxdn(:)=v(2,:)
+          deallocate(r,v)
         end if
       else
 ! correlation
         if (present(rho)) then
-          do i=1,n
-            call xc_f90_lda_vxc(p,rho(i),ec(i),vc(i))
-          end do
+          call xc_f90_lda_exc_vxc(p,n,rho(1),ec(1),vc(1))
         else
-          do i=1,n
-            r(1)=rhoup(i); r(2)=rhodn(i)
-            call xc_f90_lda_vxc(p,r(1),ec(i),v(1))
-            vcup(i)=v(1); vcdn(i)=v(2)
-          end do
+          allocate(r(2,n),v(2,n))
+          r(1,:)=rhoup(:); r(2,:)=rhodn(:)
+          call xc_f90_lda_exc_vxc(p,n,r(1,1),ec(1),v(1,1))
+          vcup(:)=v(1,:); vcdn=v(2,:)
+          deallocate(r,v)
         end if
       end if
 ! destroy functional
-      call xc_f90_lda_end(p)
+      call xc_f90_func_end(p)
     case(XC_FAMILY_GGA)
 !-------------------------!
 !     GGA functionals     !
 !-------------------------!
-      call xc_f90_gga_init(p,info,id,nspin)
+      call xc_f90_func_init(p,info,id,nspin)
       if (k.eq.2) then
 ! exchange
         if (present(rho)) then
-          do i=1,n
-            call xc_f90_gga_vxc(p,rho(i),grho2(i),ex(i),vx(i),dxdg2(i))
-          end do
+          call xc_f90_gga_exc_vxc(p,n,rho(1),grho2(1),ex(1),vx(1),dxdg2(1))
         else
-          do i=1,n
-            r(1)=rhoup(i); r(2)=rhodn(i)
-            sigma(1)=gup2(i); sigma(2)=gupdn(i); sigma(3)=gdn2(i)
-            call xc_f90_gga_vxc(p,r(1),sigma(1),ex(i),v(1),vsigma(1))
-            vxup(i)=v(1); vxdn(i)=v(2)
-            dxdgu2(i)=vsigma(1); dxdgud(i)=vsigma(2); dxdgd2(i)=vsigma(3)
-          end do
+          allocate(r(2,n),sigma(3,n),v(2,n),vsigma(3,n))
+          r(1,:)=rhoup(:); r(2,:)=rhodn(:)
+          sigma(1,:)=gup2(:); sigma(2,:)=gupdn(:); sigma(3,:)=gdn2(:)
+          call xc_f90_gga_exc_vxc(p,n,r(1,1),sigma(1,1),ex(1),v(1,1), &
+           vsigma(1,1))
+          vxup(:)=v(1,:); vxdn(:)=v(2,:)
+          dxdgu2(:)=vsigma(1,:); dxdgud(:)=vsigma(2,:); dxdgd2(:)=vsigma(3,:)
+          deallocate(r,sigma,v,vsigma)
         end if
       else
 ! correlation
         if (present(rho)) then
-          do i=1,n
-            call xc_f90_gga_vxc(p,rho(i),grho2(i),ec(i),vc(i),dcdg2(i))
-          end do
+          call xc_f90_gga_exc_vxc(p,n,rho(1),grho2(1),ec(1),vc(1),dcdg2(1))
         else
-          do i=1,n
-            r(1)=rhoup(i); r(2)=rhodn(i)
-            sigma(1)=gup2(i); sigma(2)=gupdn(i); sigma(3)=gdn2(i)
-            call xc_f90_gga_vxc(p,r(1),sigma(1),ec(i),v(1),vsigma(1))
-            vcup(i)=v(1); vcdn(i)=v(2)
-            dcdgu2(i)=vsigma(1); dcdgud(i)=vsigma(2); dcdgd2(i)=vsigma(3)
-          end do
+          allocate(r(2,n),sigma(3,n),v(2,n),vsigma(3,n))
+          r(1,:)=rhoup(:); r(2,:)=rhodn(:)
+          sigma(1,:)=gup2(:); sigma(2,:)=gupdn(:); sigma(3,:)=gdn2(:)
+          call xc_f90_gga_exc_vxc(p,n,r(1,1),sigma(1,1),ec(1),v(1,1), &
+           vsigma(1,1))
+          vcup(:)=v(1,:); vcdn(:)=v(2,:)
+          dcdgu2(:)=vsigma(1,:); dcdgud(:)=vsigma(2,:); dcdgd2(:)=vsigma(3,:)
+          deallocate(r,sigma,v,vsigma)
         end if
       end if
     case default
@@ -218,8 +207,7 @@ integer, intent(out) :: xcgrad
 ! local variables
 integer xcf,id,k
 character(256) name
-type(xc_f90_func_t) p
-type(xc_f90_info_t) info
+type(xc_f90_pointer_t) p,info
 ! unknown spin polarisation
 xcspin=-1
 ! no gradients by default
@@ -228,30 +216,18 @@ do k=2,3
   id=xctype(k)
   if (id.gt.0) then
     xcf=xc_f90_family_from_id(id)
-    select case(xcf)
-    case(XC_FAMILY_LDA)
-      if (id.eq.XC_LDA_X) then
-        call xc_f90_lda_init(p,info,id,XC_UNPOLARIZED,3,XC_NON_RELATIVISTIC)
-      else if (id.eq.XC_LDA_C_XALPHA) then
-        call xc_f90_lda_init(p,info,id,XC_UNPOLARIZED,3,1.d0)
-      else
-        call xc_f90_lda_init(p,info,id,XC_UNPOLARIZED)
-      end if
-      call xc_f90_info_name(info,name)
-      call xc_f90_lda_end(p)
-    case(XC_FAMILY_GGA)
-      call xc_f90_gga_init(p,info,id,XC_UNPOLARIZED)
-      call xc_f90_info_name(info,name)
-      call xc_f90_gga_end(p)
-! post-processed gradients required
-      xcgrad=2
-    case default
+    if ((xcf.ne.XC_FAMILY_LDA).and.(xcf.ne.XC_FAMILY_GGA)) then
       write(*,*)
       write(*,'("Error(xcdata_libxc): unsupported libxc functional family : ",&
        &I8)') xcf
       write(*,*)
       stop
-    end select
+    end if
+! post-processed gradients required
+    if (xcf.eq.XC_FAMILY_GGA) xcgrad=2
+    call xc_f90_func_init(p,info,id,XC_UNPOLARIZED)
+    call xc_f90_info_name(info,name)
+    call xc_f90_func_end(p)
   else
     name='none'
   end if

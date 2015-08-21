@@ -11,6 +11,7 @@ subroutine readinput
 use modmain
 use modldapu
 use modrdm
+use modphonon
 use modtest
 ! !DESCRIPTION:
 !   Reads in the input parameters from the file {\tt elk.in}. Also sets default
@@ -988,12 +989,13 @@ if (molecule) then
       atposl(:,ia,is)=v(:)
     end do
   end do
+  primcell=.false.
+  tshift=.false.
 end if
+! find primitive cell if required
+if (primcell) call findprim
 ! read in atomic species data
 call readspecies
-! delete TEST.OUT
-open(50,file='TEST.OUT')
-close(50,status='DELETE')
 return
 end subroutine
 !EOC

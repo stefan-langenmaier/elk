@@ -27,6 +27,7 @@ subroutine connect(cvec,nv,np,vvl,vpl,dv,dp)
 ! !REVISION HISTORY:
 !   Created June 2003 (JKD)
 !   Improved September 2007 (JKD)
+!   Improved again, July 2010 (T. McQueen and JKD)
 !EOP
 !BOC
 implicit none
@@ -39,7 +40,7 @@ real(8), intent(out) :: vpl(3,np)
 real(8), intent(out) :: dv(nv)
 real(8), intent(out) :: dp(np)
 ! local variables
-integer iv,ip,ip0,ip1,n
+integer i,j,k,m,n
 real(8) vl(3),vc(3)
 real(8) dt,f,t1
 ! alloctable arrays
@@ -56,45 +57,47 @@ if (np.lt.nv) then
   write(*,*)
   stop
 end if
-if (np.eq.1) then
-  vpl(:,1)=vvl(:,1)
+! special case of 1 vertex
+if (nv.eq.1) then
   dv(1)=0.d0
-  dp(1)=0.d0
+  dp(:)=0.d0
+  do i=1,np
+    vpl(:,i)=vvl(:,1)
+  end do
   return
 end if
 allocate(seg(nv))
-! find the total distance and the length of each segment
+! find the length of each segment and total distance
 dt=0.d0
-do iv=1,nv-1
-  dv(iv)=dt
-  vl(:)=vvl(:,iv+1)-vvl(:,iv)
+do i=1,nv-1
+  dv(i)=dt
+  vl(:)=vvl(:,i+1)-vvl(:,i)
   call r3mv(cvec,vl,vc)
-  seg(iv)=sqrt(vc(1)**2+vc(2)**2+vc(3)**2)
-  dt=dt+seg(iv)
+  seg(i)=sqrt(vc(1)**2+vc(2)**2+vc(3)**2)
+  dt=dt+seg(i)
 end do
 dv(nv)=dt
-if (dt.lt.1.d-8) then
-  do ip=1,np
-    vpl(:,ip)=vvl(:,1)
-    dp(ip)=0.d0
+! add small amount to total distance to avoid 0/0 condition
+dt=dt+1.d-8
+! number of points to use between vertices
+n=np-nv
+! construct the interpolating path
+k=0
+do i=1,nv-1
+  t1=dble(n)*seg(i)/dt
+  m=nint(t1)
+  if ((m.gt.n).or.(i.eq.(nv-1))) m=n
+  do j=1,m+1
+    k=k+1
+    f=dble(j-1)/dble(m+1)
+    dp(k)=dv(i)+f*seg(i)
+    vpl(:,k)=vvl(:,i)*(1.d0-f)+vvl(:,i+1)*f
   end do
-else
-  do iv=1,nv-1
-    t1=dble(np)*dv(iv)/dt
-    ip0=nint(t1)+1
-    if (ip0.lt.1) ip0=1
-    t1=dble(np)*dv(iv+1)/dt
-    ip1=nint(t1)
-    if (ip1.gt.np) ip1=np
-    n=ip1-ip0
-    if (n.le.0) n=1
-    do ip=ip0,ip1
-      f=dble(ip-ip0)/dble(n)
-      dp(ip)=f*seg(iv)+dv(iv)
-      vpl(:,ip)=vvl(:,iv)*(1.d0-f)+vvl(:,iv+1)*f
-    end do
-  end do
-end if
+  dt=dt-seg(i)
+  n=n-m
+end do
+dp(np)=dv(nv)
+vpl(:,np)=vvl(:,nv)
 deallocate(seg)
 return
 end subroutine

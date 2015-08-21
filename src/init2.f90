@@ -6,6 +6,7 @@
 subroutine init2
 use modmain
 use modrdm
+use modphonon
 implicit none
 ! local variables
 logical lsym(48)
@@ -44,16 +45,17 @@ if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
   reduceq=0
 end if
 ! allocate the q-point arrays
-if (allocated(ivq)) deallocate(ivq)
-allocate(ivq(3,ngridq(1)*ngridq(2)*ngridq(3)))
-if (allocated(vql)) deallocate(vql)
-allocate(vql(3,ngridq(1)*ngridq(2)*ngridq(3)))
-if (allocated(vqc)) deallocate(vqc)
-allocate(vqc(3,ngridq(1)*ngridq(2)*ngridq(3)))
-if (allocated(wqpt)) deallocate(wqpt)
-allocate(wqpt(ngridq(1)*ngridq(2)*ngridq(3)))
 if (allocated(iqmap)) deallocate(iqmap)
 allocate(iqmap(0:ngridq(1)-1,0:ngridq(2)-1,0:ngridq(3)-1))
+nqpt=ngridq(1)*ngridq(2)*ngridq(3)
+if (allocated(ivq)) deallocate(ivq)
+allocate(ivq(3,nqpt))
+if (allocated(vql)) deallocate(vql)
+allocate(vql(3,nqpt))
+if (allocated(vqc)) deallocate(vqc)
+allocate(vqc(3,nqpt))
+if (allocated(wqpt)) deallocate(wqpt)
+allocate(wqpt(nqpt))
 ! setup the q-point box (offset should always be zero)
 boxl(:,:)=0.d0
 boxl(1,2)=1.d0; boxl(2,3)=1.d0; boxl(3,4)=1.d0;
@@ -115,6 +117,34 @@ if (task.eq.300) then
   allocate(vclmat(nstsv,nstsv,nkpt))
   if (allocated(dkdc)) deallocate(dkdc)
   allocate(dkdc(nstsv,nstsv,nkpt))
+end if
+
+!--------------------------!
+!     phonon variables     !
+!--------------------------!
+if (task.eq.202) then
+  if (allocated(drhomt)) deallocate(drhomt)
+  allocate(drhomt(lmmaxvr,nrcmtmax,natmtot))
+  if (allocated(drhoir)) deallocate(drhoir)
+  allocate(drhoir(ngrtot))
+  if (allocated(dveffpw)) deallocate(dveffpw)
+  allocate(dveffpw(ngrtot))
+  if (allocated(dveffmt)) deallocate(dveffmt)
+  allocate(dveffmt(lmmaxvr,nrcmtmax,natmtot))
+  if (allocated(dveffir)) deallocate(dveffir)
+  allocate(dveffir(ngrtot))
+  if (allocated(dmagmt)) deallocate(dmagmt)
+  if (allocated(dmagir)) deallocate(dmagir)
+  if (allocated(dbxcpw)) deallocate(dbxcpw)
+  if (allocated(dbxcmt)) deallocate(dbxcmt)
+  if (allocated(dbxcir)) deallocate(dbxcir)
+  if (spinpol) then
+    allocate(dmagmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
+    allocate(dmagir(ngrtot,ndmag))
+    allocate(dbxcpw(ngrtot,ndmag))
+    allocate(dbxcmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
+    allocate(dbxcir(ngrtot,ndmag))
+  end if
 end if
 
 call timesec(ts1)

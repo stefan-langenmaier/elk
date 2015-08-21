@@ -11,13 +11,14 @@ integer, intent(in) :: ikp
 complex(8), intent(out) :: vnlcv(ncrmax,natmtot,nstsv)
 complex(8), intent(out) :: vnlvv(nstsv,nstsv)
 ! local variables
-integer ngknr,ik,ist1,ist2,ist3
-integer is,ia,ias,ic,m1,m2,lmax
-integer nrc,iq,ig,iv(3),igq0
+integer ngknr,ik,igk
+integer ist1,ist2,ist3
+integer is,ia,ias,nrc
+integer ic,m1,m2,lmax
+integer iq,ig,iv(3),igq0
 real(8) v(3),cfq
 complex(8) zrho01,zrho02,zt1,zt2
 ! automatic arrays
-real(8) zn(nspecies)
 complex(8) sfacgq0(natmtot)
 ! allocatable arrays
 integer, allocatable :: igkignr(:)
@@ -86,8 +87,6 @@ allocate(zvcltp(lmmaxvr,nrcmtmax))
 allocate(zfmt(lmmaxvr,nrcmtmax))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
-! set the nuclear charges to zero
-zn(:)=0.d0
 vnlcv(:,:,:)=0.d0
 vnlvv(:,:)=0.d0
 ! get the eigenvalues/vectors from file for input k-point
@@ -97,13 +96,16 @@ call getevecsv(vkl(:,ikp),evecsv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! calculate the wavefunctions for all states for the input k-point
-call genwfsv(.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm,evecfv, &
- evecsv,wfmt1,wfir1)
+call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm, &
+ evecfv,evecsv,wfmt1,ngrtot,wfir1)
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
-! generate G+k-vectors
-  call gengpvec(vklnr(:,ik),vkcnr(:,ik),ngknr,igkignr,vgklnr,vgkcnr,gkcnr, &
-   tpgkcnr)
+! generate G+k vectors
+  call gengpvec(vklnr(:,ik),vkcnr(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
+! generate the spherical coordinates of the G+k vectors
+  do igk=1,ngknr
+    call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
+  end do
 ! get the eigenvalues/vectors from file for non-reduced k-points
   call getevalsv(vklnr(:,ik),evalsvnr)
   call getevecfv(vklnr(:,ik),vgklnr,evecfv)
@@ -112,7 +114,7 @@ do ik=1,nkptnr
   call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
 ! find the matching coefficients
   call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! determine q-vector
+! determine q vector
   iv(:)=ivk(:,ikp)-ivknr(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
   iq=iqmap(iv(1),iv(2),iv(3))
@@ -135,8 +137,8 @@ do ik=1,nkptnr
   call genjlgpr(lmax,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 ! calculate the wavefunctions for occupied states
-  call genwfsv(.false.,.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv,evecsv, &
-   wfmt2,wfir2)
+  call genwfsv(.false.,.false.,.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv, &
+   evecsv,wfmt2,ngrtot,wfir2)
   do ist3=1,nstsv
     if (evalsvnr(ist3).lt.efermi) then
       do ist2=1,nstsv
@@ -145,8 +147,9 @@ do ik=1,nkptnr
           call vnlrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist2), &
            wfir2(:,:,ist3),wfir1(:,:,ist2),zrhomt,zrhoir)
 ! calculate the Coulomb potential
-          call zpotcoul(nrcmt,nrcmtmax,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq, &
-           sfacgq,zn,zrhomt,zrhoir,zvclmt,zvclir,zrho02)
+          call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
+          call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
+           zrhoir,nrcmtmax,zvclmt,zvclir,zrho02)
 !----------------------------------------------!
 !     valence-valence-valence contribution     !
 !----------------------------------------------!
@@ -225,8 +228,7 @@ do is=1,nspecies
                 zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias)+zfmt(:,1:nrc)
               end if
 ! calculate the Coulomb potential
-              call zpotclmt(ptnucl,lmaxvr,nrc,rcmt(:,is),0.d0,lmmaxvr, &
-               zrhomt(:,:,ias),zfmt)
+              call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ias),zfmt)
 ! convert muffin-tin potential to spherical coordinates
               call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
                zfmt,lmmaxvr,zzero,zvcltp,lmmaxvr)

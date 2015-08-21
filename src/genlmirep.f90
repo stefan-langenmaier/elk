@@ -34,7 +34,7 @@ do i=1,lmmax
   a(i,i)=1.d0
 end do
 do isym=1,nsymlat
-  call rotzflm(symlatc(:,:,isym),lmax,lmmax,lmmax,a,ulat(:,:,isym))
+  call rotzflm(symlatc(:,:,isym),0,lmax,lmmax,lmmax,a,ulat(:,:,isym))
 end do
 ! set up pseudorandom symmetric matrix H
 h(:,:)=0.d0

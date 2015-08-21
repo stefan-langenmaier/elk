@@ -23,9 +23,9 @@ implicit none
 integer, intent(in) :: ik
 real(8), intent(in) :: ffacg(ngvec,nspecies)
 ! local variables
-integer np,ispn,jspn
+integer ispn,jspn,jspn0,jspn1
 integer is,ia,ias,ist,jst
-integer i,j,k,l,iv(3),ig
+integer np,i,j,k,l,iv(3),ig
 real(8) sum,t1
 complex(8) zt1,zt2
 complex(8) v(1)
@@ -67,8 +67,13 @@ call getevalfv(vkl(:,ik),evalfv)
 call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
 call getevecsv(vkl(:,ik),evecsv)
 call getoccsv(vkl(:,ik),occsv(:,ik))
-! begin loop over first-variational spin components
+! loop over first-variational spin components
 do ispn=1,nspnfv
+  if (spinsprl) then
+    jspn0=ispn; jspn1=ispn
+  else
+    jspn0=1; jspn1=nspinor
+  end if
 ! find the matching coefficients
   call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
    sfacgk(:,:,ispn,ik),apwalm)
@@ -140,28 +145,16 @@ do ispn=1,nspnfv
 ! compute the force using the second-variational coefficients if required
         sum=0.d0
         if (tevecsv) then
-          if (spinsprl) then
-! spin-spiral case
-            do j=1,nstsv
-              t1=occsv(j,ik)
-              i=(ispn-1)*nstfv+1
+! spin-polarised case
+          do j=1,nstsv
+            t1=occsv(j,ik)
+            do jspn=jspn0,jspn1
+              i=(jspn-1)*nstfv+1
               call zgemv('N',nstfv,nstfv,zone,ffv,nstfv,evecsv(i,j),1,zzero,y,1)
               zt1=zdotc(nstfv,evecsv(i,j),1,y,1)
               sum=sum+t1*dble(zt1)
             end do
-          else
-! normal spin-polarised case
-            do j=1,nstsv
-              t1=occsv(j,ik)
-              do jspn=1,nspinor
-                i=(jspn-1)*nstfv+1
-                call zgemv('N',nstfv,nstfv,zone,ffv,nstfv,evecsv(i,j),1,zzero, &
-                 y,1)
-                zt1=zdotc(nstfv,evecsv(i,j),1,y,1)
-                sum=sum+t1*dble(zt1)
-              end do
-            end do
-          end if
+          end do
         else
 ! spin-unpolarised case
           do j=1,nstsv

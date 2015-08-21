@@ -12,8 +12,7 @@ real(8), intent(in) :: vmt(lmmaxvr,nrmtmax,natmtot)
 real(8), intent(in) :: vir(ngrtot)
 complex(8), intent(out) :: vmat(nstsv,nstsv,nkpt)
 ! local variables
-integer is,ia,ias,irc,ir
-integer ik
+integer ld,is,ia,ias,ik
 ! local arrays
 real(8), allocatable :: rfmt(:,:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
@@ -29,15 +28,12 @@ allocate(evecsv(nstsv,nstsv))
 allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir(ngrtot,nspinor,nstsv))
 ! convert muffin-tin potential to spherical coordinates
+ld=lmmaxvr*lradstp
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
-      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,vmt(:,ir,ias),1, &
-       0.d0,rfmt(:,irc,ias),1)
-    end do
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+     vmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
   end do
 end do
 ! loop over k-points
@@ -48,12 +44,12 @@ do ik=1,nkpt
   call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
-! calculate the wavefunctions for all states
-  call genwfsv(.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik),apwalm, &
-   evecfv,evecsv,wfmt,wfir)
+! calculate the second-variational wavefunctions for all states
+  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv(:,ik), &
+   apwalm,evecfv,evecsv,wfmt,ngrtot,wfir)
   call genvmatk(rfmt,vir,wfmt,wfir,vmat(:,:,ik))
 end do
-deallocate(apwalm,evecfv,evecsv,wfmt,wfir)
+deallocate(rfmt,apwalm,evecfv,evecsv,wfmt,wfir)
 return
 end subroutine
 

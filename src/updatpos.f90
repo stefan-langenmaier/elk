@@ -55,10 +55,6 @@ do is=1,nspecies
     forcetp(:,ias)=forcetot(:,ias)
   end do
 end do
-! write lattice vectors and optimised atomic positions to file
-call writegeom(.true.)
-! write the optimised interatomic distances to file
-call writeiad(.true.)
 ! check for overlapping muffin-tins
 call checkmt
 ! generate structure factors for G-vectors

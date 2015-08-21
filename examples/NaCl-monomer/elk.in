@@ -2,7 +2,7 @@
 ! NaCl monomer in a large box. Note that with 'molecule=.true.' the atomic
 ! positions are supplied in Cartesian coordinates. Try plotting the 1D
 ! density along the molcular axis. You can also compute the vibrational
-! frequency using runtype=200.
+! frequency using task=200.
 
 tasks
   0

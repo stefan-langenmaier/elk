@@ -6,14 +6,34 @@
 ! main routine for the Elk code
 program main
 use modmain
+use modmpi
 implicit none
 ! local variables
-integer itask
+integer ierr,itask
+! initialise MPI execution environment
+call mpi_init(ierr)
+! determine the number of MPI processes
+call mpi_comm_size(mpi_comm_world,np_mpi,ierr)
+! determine the local MPI process number
+call mpi_comm_rank(mpi_comm_world,lp_mpi,ierr)
+! determine if the local process is the master
+if (lp_mpi.eq.0) then
+  mp_mpi=.true.
+else
+  mp_mpi=.false.
+end if
 ! read input files
 call readinput
 ! perform the appropriate task
 do itask=1,ntasks
   task=tasks(itask)
+  if ((np_mpi.gt.1).and.(task.gt.3)) then
+    write(*,*)
+    write(*,'("Error(main): cannot run task ",I8," as a multi-process")') task
+    write(*,'(" run again with the number of MPI processes set to 1")')
+    write(*,*)
+    stop
+  end if
   select case(task)
   case(-1)
     write(*,'("Elk version ",I1.1,".",I1.1,".",I2.2)') version
@@ -58,6 +78,8 @@ do itask=1,ntasks
     call dielectric
   case(122)
     call moke
+  case(125)
+    call nonlinopt
   case(130)
     call writeexpiqr
   case(140)
@@ -70,8 +92,10 @@ do itask=1,ntasks
     call yambo
   case(190)
     call geomplot
-  case(200,201)
+  case(201)
     call phonon
+  case(200)
+    call phononsc
   case(210)
     call phdos
   case(220)
@@ -97,44 +121,46 @@ do itask=1,ntasks
     stop
   end select
 end do
+! terminate MPI execution environment
+call mpi_finalize(ierr)
 stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.0.17}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.1.4}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
-!   Welcome to the {\sf Elk} Code! {\sf Elk} is an all-electron full-potential
-!   linearised augmented-plane-wave (FP-LAPW) code for determining the
-!   properties of crystalline solids. It was developed originally at the
-!   Karl-Franzens-Universit\"{a}t Graz as part of the {\sf EXCITING} EU Research
-!   and Training Network project\footnote{{\sf EXCITING} code developed under
-!   the Research and Training Network {\sf EXCITING} funded by the EU, contract
-!   No. HPRN-CT-2002-00317}. The guiding philosophy during
-!   the implementation of the code was to keep it as simple as possible for both
-!   users and developers without compromising on its capabilities. All the
-!   routines are released under either the GNU General Public License (GPL) or
-!   the GNU Lesser General Public License (LGPL) in the hope that they may
-!   inspire other scientists to implement new developments in the field of
-!   density functional theory and beyond.
+!   Welcome to the Elk Code! Elk is an all-electron full-potential linearised
+!   augmented-plane-wave (FP-LAPW) code for determining the properties of
+!   crystalline solids. It was developed originally at the
+!   Karl-Franzens-Universit\"{a}t Graz as part of the EXCITING EU Research and
+!   Training Network project\footnote{EXCITING code developed under the Research
+!   and Training Network EXCITING funded by the EU, contract No.
+!   HPRN-CT-2002-00317}. The guiding philosophy during the implementation of the
+!   code was to keep it as simple as possible for both users and developers
+!   without compromising on its capabilities. All the routines are released
+!   under either the GNU General Public License (GPL) or the GNU Lesser General
+!   Public License (LGPL) in the hope that they may inspire other scientists to
+!   implement new developments in the field of density functional theory and
+!   beyond.
 !
 !   \section{Acknowledgements}
-!   Lots of people contributed to the {\sf Elk} code with ideas, checking and
-!   testing, writing code or documentation and general encouragement. They
-!   include Claudia Ambrosch-Draxl, Clas Persson, Christian Brouder, Rickard
-!   Armiento, Andrew Chizmeshya, Per Anderson, Igor Nekrasov, Sushil Auluck,
-!   Frank Wagner, Fateh Kalarasse, J\"{u}rgen Spitaler, Stefano Pittalis,
-!   Nektarios Lathiotakis, Tobias Burnus, Stephan Sagmeister, Christian
-!   Meisenbichler, S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann,
-!   Alexey Baranov, Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger,
-!   Antonio Sanna, Tyrel McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich
-!   and Torbj\"{o}rn Bj\"{o}rkman. Special mention of David Singh's very useful
-!   book on the LAPW method\footnote{D. J. Singh, {\it Planewaves,
-!   Pseudopotentials and the LAPW Method} (Kluwer Academic Publishers, Boston,
-!   1994).} must also be made. Finally we would like to acknowledge the generous
-!   support of Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie
-!   Research Training Networks initiative.
+!   Lots of people contributed to the Elk code with ideas, checking and testing,
+!   writing code or documentation and general encouragement. They include
+!   Claudia Ambrosch-Draxl, Clas Persson, Christian Brouder, Rickard Armiento,
+!   Andrew Chizmeshya, Per Anderson, Igor Nekrasov, Sushil Auluck, Frank Wagner,
+!   Fateh Kalarasse, J\"{u}rgen Spitaler, Stefano Pittalis, Nektarios
+!   Lathiotakis, Tobias Burnus, Stephan Sagmeister, Christian Meisenbichler,
+!   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
+!   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
+!   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich and Torbj\"{o}rn
+!   Bj\"{o}rkman. Special mention of David Singh's very useful book on the LAPW
+!   method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and the LAPW
+!   Method} (Kluwer Academic Publishers, Boston, 1994).} must also be made.
+!   Finally we would like to acknowledge the generous support of
+!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
+!   Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -145,20 +171,20 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, April 2010
+!   Halle and Uppsala, August 2010
 !   \newpage
 !
 !   \section{Units}
-!   Unless explicitly stated otherwise, {\sf Elk} uses atomic units. In
-!   this system $\hbar=1$, the electron mass $m=1$, the Bohr radius $a_0=1$ and
-!   the electron charge $e=1$ (note that the electron charge is positive, so
-!   that the atomic numbers $Z$ are negative). Thus, the atomic unit of length
-!   is 0.52917720859(36) \AA, and the atomic unit of energy is the Hartree which
+!   Unless explicitly stated otherwise, Elk uses atomic units. In this system
+!   $\hbar=1$, the electron mass $m=1$, the Bohr radius $a_0=1$ and the electron
+!   charge $e=1$ (note that the electron charge is positive, so that the atomic
+!   numbers $Z$ are negative). Thus, the atomic unit of length is
+!   0.52917720859(36) \AA, and the atomic unit of energy is the Hartree which
 !   equals 27.21138386(68) eV. The unit of the external magnetic fields is
 !   defined such that one unit of magnetic field in {\tt elk.in} equals
 !   1715.255397557 Tesla.
 !
-!   \section{Compiling and running {\sf Elk}}
+!   \section{Compiling and running Elk}
 !   \subsection{Compiling the code}
 !   Unpack the code from the archive file. Run the command
 !   \begin{verbatim}
@@ -166,11 +192,9 @@ end program
 !   \end{verbatim}
 !   in the {\tt elk} directory and select the appropriate system and compiler.
 !   We highly recommend that you edit the file {\tt make.inc} and tune the
-!   compiler options for your particular system. In particular, make use of
-!   machine-optimised {\tt BLAS/LAPACK} libraries if they are available, but
-!   make sure they are version $3.x$. Setting the {\sf OpenMP} options of your
-!   compiler will enable {\sf Elk} to run in parallel mode on multiprocessor
-!   systems. Following this, run
+!   compiler options for your computer system. In particular, use of
+!   machine-optimised BLAS/LAPACK libraries can result in significant increase
+!   in performance, but make sure they are of version $3.x$. Following this, run
 !   \begin{verbatim}
 !     make
 !   \end{verbatim}
@@ -181,23 +205,75 @@ end program
 !   of state to energy-volume data. If you want to compile everything all over
 !   again, then run {\tt make clean} from the {\tt elk} directory, followed by
 !   {\tt make}.
+!   \subsubsection{Parallelism in Elk}
+!   Three forms of parallelism are implemented in Elk, and all can be used in
+!   combination with each other, with efficiency depending on the particular
+!   task, crystal structure and computer system. You may need to contact your
+!   system administrator for assistance with running Elk in parallel.
+!   \begin{enumerate}
+!   \item
+!    OpenMP works for symmetric multiprocessors, i.e. computers that have many
+!    cores with the same unified memory accessible to each. It is enabled by
+!    setting the appropriate command-line options (e.g. {\tt -openmp} for the
+!    Intel compiler) before compiling, and also at runtime by the environment
+!    variable
+!    \begin{verbatim}
+!     export OMP_NUM_THREADS=x
+!    \end{verbatim}
+!    where x is the number of cores available on a particular node.
+!    \item
+!    The message passing interface (MPI) is particularly suitable for running
+!    Elk accross multiple nodes of a cluster, with scaling to hundreds of
+!    processors possible. To enable MPI, comment out the indicated line in
+!    {\tt elk/src/Makefile} and set the variable {\tt F90} in {\tt elk/make.inc}
+!    to the MPI version of Fortran 90 (usually {\tt mpif90}). Then run
+!    {\tt make clean} followed by {\tt make}. If y is the number of nodes and x
+!    is the number of cores per node, then at runtime envoke
+!    \begin{verbatim}
+!     mpirun -np z ./elk
+!    \end{verbatim}
+!    where ${\tt z}={\tt x}\cdot{\tt y}$ is the total number of cores available
+!    on the machine. Highest efficiency is obtained by using hybrid parallelism
+!    with OpenMP on each node and MPI across nodes. This can be done by
+!    compiling the code using the MPI Fortran compiler in combination with the
+!    OpenMP command-line option. At runtime set {\tt export OMP\_NUM\_THREADS=x}
+!    and start the MPI run with {\em one process per node} as follows
+!    \begin{verbatim}
+!     mpirun -pernode -np y ./elk
+!    \end{verbatim}
+!    The number of MPI processes is reported in the file {\tt INFO.OUT} which
+!    serves as a check that MPI is running correctly. Note that version 2 of the
+!    MPI libraries is required to run Elk.
+!   \item
+!    Phonon calculations use a simple form of parallelism by just examining the
+!    run directory for dynamical matrix files. These files are of the form
+!    \begin{verbatim}
+!     DYN_Qqqqq_qqqq_qqqq_Sss_Aaa_Pp.OUT
+!    \end{verbatim}
+!    and contain a single row of a particular dynamical matrix. Elk simply finds
+!    which {\tt DYN} files do not exist, chooses one and runs it. This way many
+!    independent runs of Elk can be started in the same directory on a networked
+!    file system (NFS), and will run until all the dynamical matrices files are
+!    completed. Should a particular run crash, then delete the associated empty
+!    {\tt DYN} file and rerun Elk.
+!   \end{enumerate}
 !
-!   \subsection{Linking with the {\sf Libxc} functional library}
-!   {\sf Libxc} is the ETSF library of exchange-correlation functionals. Elk can
-!   use the complete set of LDA and GGA functionals available in {\sf Libxc}.
-!   In order to do this, first download and compile {\sf Libxc}. This should
-!   have produced the file {\tt libxc.a}. Copy this file to the {\tt elk/src}
-!   directory and then uncomment the lines indicated in the file
-!   {\tt elk/src/libxc.inc}. Once this is done, run {\tt make clean} followed by
-!   {\tt make}. To select a particular functional of {\sf Libxc}, use the block
+!   \subsection{Linking with the libxc functional library}
+!   Libxc is the ETSF library of exchange-correlation functionals. Elk can use
+!   the complete set of LDA and GGA functionals available in libxc. In order to
+!   do this, first download and compile libxc version $1.x$. This should have
+!   produced the file {\tt libxc.a}. Copy this file to the {\tt elk/src}
+!   directory and then uncomment the lines indicated for libxc in the file
+!   {\tt elk/src/Makefile}. Once this is done, run {\tt make clean} followed by
+!   {\tt make}. To select a particular functional of libxc, use the block
 !   \begin{verbatim}
 !     xctype
 !      100 nx nc
 !   \end{verbatim}
 !   where {\tt nx} and {\tt nc} are, respectively, the numbers of the exchange
-!   and correlation functionals in the {\sf Libxc} library. See the
-!   documentation of the library for the functionals and their associated
-!   numbers.
+!   and correlation functionals in the libxc library. See the file
+!   {\tt elk/src/libxc\_funcs.f90} for a list of the functionals and their
+!   associated numbers.
 !
 !   \subsection{Running the code}
 !   As a rule, all input files for the code are in lower case and end with the
@@ -219,10 +295,10 @@ end program
 !   required. Users should not have to modify these files in the majority of
 !   cases.
 !
-!   The best way to learn to use {\sf Elk} is to run the examples included
-!   with the package. These can be found in the {\tt examples} directory and use
-!   many of the code's capabilities. The following section which describes all
-!   the input parameters will be of invaluable assistance.
+!   The best way to learn to use Elk is to run the examples included with the
+!   package. These can be found in the {\tt examples} directory and use many of
+!   the code's capabilities. The following section which describes all the input
+!   parameters will be of invaluable assistance.
 !
 !   \section{Input blocks}
 !   This section lists all the input blocks available. It is arranged with the
@@ -260,7 +336,7 @@ end program
 !   \subsection{{\tt autokpt}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt autokpt} & {\tt .true.} if the {\bf k}-point set is to be determined
+!   {\tt autokpt} & {\tt .true.} if the $k$-point set is to be determined
 !    automatically & logical & {\tt .false.} \\
 !   \hline
 !   \end{tabularx}\newline\newline
@@ -278,24 +354,24 @@ end program
 !   \subsection{{\tt autoswidth}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt autoswidth} & {\tt .true.} if the smearing parameter {\tt swidth} 
+!   {\tt autoswidth} & {\tt .true.} if the smearing parameter {\tt swidth}
 !    should be determined automatically & logical & {\tt .false.} \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   Calculates the smearing width from the $k$-point density,
-!   $V_{\rm BZ}/n_k$; the valence band width, $W$; and an effective mass
-!   parameter, $m^{*}$; according to
+!   Calculates the smearing width from the $k$-point density, $V_{\rm BZ}/n_k$;
+!   the valence band width, $W$; and an effective mass parameter, $m^{*}$;
+!   according to
 !   $$ \sigma=\frac{\sqrt{2W}}{m^{*}}\left(\frac{3}{4\pi}
 !    \frac{V_{\rm BZ}}{n_k}\right)^{1/3}. $$
 !   The variable {\tt mstar} then replaces {\tt swidth} as the control parameter
 !   of the smearing width. A large value of $m^{*}$ gives a narrower smearing
 !   function. Since {\tt swidth} is adjusted according to the fineness of the
-!   $\mathbf{k}$-mesh, the smearing parameter can then be eliminated. It is not
+!   ${\bf k}$-mesh, the smearing parameter can then be eliminated. It is not
 !   recommended that {\tt autoswidth} be used in conjunction with the
 !   Fermi-Dirac smearing function, since the electronic temperature will then be
-!   a function of the $\mathbf{k}$-point mesh. See T. Bj\"orkman and
-!   O. Gr\aa n\"as, {\it Int. J. Quant. Chem.} DOI: 10.1002/qua.22476 (2010) for
-!   details. See also {\tt stype} and {\tt swidth}.
+!   a function of the $k$-point mesh. See T. Bj\"orkman and O. Gr\aa n\"as,
+!   {\it Int. J. Quant. Chem.} DOI: 10.1002/qua.22476 (2010) for details. See
+!   also {\tt stype} and {\tt swidth}.
 !
 !   \subsection{{\tt avec}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -404,8 +480,8 @@ end program
 !   \hline
 !   {\tt nwdos} & number of frequency/energy points in the DOS or optics plot &
 !    integer & $500$ \\
-!   {\tt ngrdos} & effective {\bf k}-point mesh size to be used for Brillouin
-!    zone integration & integer & $100$ \\
+!   {\tt ngrdos} & effective $k$-point mesh size to be used for Brillouin zone
+!    integration & integer & $100$ \\
 !   {\tt nsmdos} & level of smoothing applied to DOS/optics output & integer &
 !    $0$ \\
 !   \hline
@@ -560,13 +636,12 @@ end program
 !   \subsection{{\tt kstlist}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt kstlist(i)} & $i$th ${\bf k}$-point and state pair & integer(2) &
-!    $(1,1)$ \\
+!   {\tt kstlist(i)} & $i$th $k$-point and state pair & integer(2) & $(1,1)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   This is a user-defined list of ${\bf k}$-point and state index pairs which
-!   are those used for plotting wavefunctions and writing ${\bf L}$, ${\bf S}$
-!   and ${\bf J}$ expectation values. Only the first pair is used by the
+!   This is a user-defined list of $k$-point and state index pairs which are
+!   those used for plotting wavefunctions and writing ${\bf L}$, ${\bf S}$ and
+!   ${\bf J}$ expectation values. Only the first pair is used by the
 !   aforementioned tasks. The list should be terminated by a blank line.
 !
 !   \subsection{{\tt lda+u}}
@@ -773,7 +848,7 @@ end program
 !   \end{tabularx}\newline\newline
 !   Defines the number of eigenstates beyond that required for charge
 !   neutrality. When running metals it is not known {\it a priori} how many
-!   states will be below the Fermi energy for each {\bf k}-point. Setting
+!   states will be below the Fermi energy for each $k$-point. Setting
 !   {\tt nempty} greater than zero allows the additional states to act as a
 !   buffer in such cases. Furthermore, magnetic calculations use the
 !   first-variational eigenstates as a basis for setting up the
@@ -784,7 +859,7 @@ end program
 !   \subsection{{\tt ngridk}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt ngridk } & the {\bf k}-point mesh sizes & integer(3) & $(1,1,1)$ \\
+!   {\tt ngridk } & the $k$-point mesh sizes & integer(3) & $(1,1,1)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   \vspace{5pt}
@@ -797,12 +872,11 @@ end program
 !   \subsection{{\tt ngridq}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt ngridq } & the phonon {\bf q}-point mesh sizes & integer(3) &
-!    $(1,1,1)$ \\
+!   {\tt ngridq } & the phonon $q$-point mesh sizes & integer(3) & $(1,1,1)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   Same as {\tt ngridk}, except that this mesh is for the phonon
-!   {\bf q}-points. See also {\tt reduceq}.
+!   Same as {\tt ngridk}, except that this mesh is for the phonon $q$-points.
+!   See also {\tt reduceq}.
 !
 !   \subsection{{\tt nosource}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -874,7 +948,7 @@ end program
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
 !   {\tt optcomp} & the components of the first- or second-order optical tensor
-!   to be calculated & integer(3) & $(1,1,1)$ \\
+!    to be calculated & integer(3) & $(1,1,1)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   This selects which components of the optical tensor you would like to plot.
@@ -883,19 +957,18 @@ end program
 !   \subsection{{\tt phwrite}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt nphwrt} & number of {\bf q}-points for which phonon modes are to be
-!    found & integer & 1 \\
+!   {\tt nphwrt} & number of $q$-points for which phonon modes are to be found &
+!    integer & 1 \\
 !   \hline
-!   {\tt vqlwrt(i)} & the $i$th {\bf q}-point in lattice coordinates & real(3) &
+!   {\tt vqlwrt(i)} & the $i$th $q$-point in lattice coordinates & real(3) &
 !    $(0.0,0.0,0.0)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   This is used in conjunction with {\tt task}=230. The code will write the
 !   phonon frequencies and eigenvectors to the file {\tt PHONON.OUT} for all the
-!   {\bf q}-points in the list. The {\bf q}-points can be anywhere in the
-!   Brillouin zone and do not have to lie on the mesh defined by {\tt ngridq}.
-!   Obviously, all the dynamical matrices have to be computed first using
-!   {\tt task}=200.
+!   $q$-points in the list. The $q$-points can be anywhere in the Brillouin zone
+!   and do not have to lie on the mesh defined by {\tt ngridq}. Obviously, all
+!   the dynamical matrices have to be computed first using {\tt task}=200.
 !
 !   \subsection{{\tt plot1d}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -959,13 +1032,13 @@ end program
 !   \subsection{{\tt radkpt}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt radkpt } & radius of sphere used to determine k-point density & real &
-!    $40.0$ \\
+!   {\tt radkpt } & radius of sphere used to determine $k$-point density &
+!    real & $40.0$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   Used for the automatic determination of the {\bf k}-point mesh. If
-!   {\tt autokpt} is set to {\tt .true.} then the mesh sizes will be determined
-!   by $n_i=\lambda/|{\bf A}_i|+1$.
+!   Used for the automatic determination of the $k$-point mesh. If {\tt autokpt}
+!   is set to {\tt .true.} then the mesh sizes will be determined by
+!   $n_i=\lambda/|{\bf A}_i|+1$.
 !
 !   \subsection{{\tt readalu}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1066,11 +1139,11 @@ end program
 !   \subsection{{\tt scissor}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt scissor} & the scissors correction & real & $0.0$ \\
+!   {\tt scissor} & the scissor correction & real & $0.0$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   This is the scissors shift applied to states above the Fermi energy. Affects
-!   DOS, optics and band structure plots.
+!   This is the scissor shift applied to states above the Fermi energy
+!   {\it Phys. Rev. B} {\bf 43}, 4187 (1991). Affects optics calculations only.
 !
 !   \subsection{{\tt scrpath}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1151,7 +1224,7 @@ end program
 !   2 & Methfessel-Paxton order 2 \\
 !   3 & Fermi-Dirac
 !   \end{tabularx}
-!   See also {\tt autoswidth} and {\tt swidth}. 
+!   See also {\tt autoswidth} and {\tt swidth}.
 !
 !   \subsection{{\tt swidth}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1162,6 +1235,7 @@ end program
 !   \end{tabularx}\newline\newline
 !   See {\tt stype} for details.
 !
+!   \newpage
 !   \subsection{{\tt tasks}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
@@ -1185,11 +1259,11 @@ end program
 !        code to calculate occupancies. \\
 !   15 & Output ${\bf L}$, ${\bf S}$ and ${\bf J}$ total expectation values. \\
 !   16 & Output ${\bf L}$, ${\bf S}$ and ${\bf J}$ expectation values for each
-!        {\bf k}-point and state in {\tt kstlist}. \\
+!        $k$-point and state in {\tt kstlist}. \\
 !   20 & Band structure plot. \\
 !   21 & Band structure plot which includes angular momentum characters for
 !    every atom. \\
-!   25 & Compute the effective mass tensor at the {\bf k}-point given by
+!   25 & Compute the effective mass tensor at the $k$-point given by
 !    {\tt vklem}. \\
 !   31, 32, 33 & 1/2/3D charge density plot. \\
 !   41, 42, 43 & 1/2/3D exchange-correlation and Coulomb potential plots. \\
@@ -1212,6 +1286,7 @@ end program
 !    $\langle\Psi_{i{\bf k}}|-i\nabla|\Psi_{j{\bf k}}\rangle$. \\
 !   121 & Linear optical response tensor. \\
 !   122 & Magneto optical Kerr effect (MOKE) angle. \\
+!   125 & Non-linear optical second harmonic generation. \\
 !   130 & Output matrix elements of the type
 !    $\langle\Psi_{i{\bf k+q}}|\exp[i({\bf G+q})\cdot{\bf r}]|
 !    \Psi_{j{\bf k}}\rangle$. \\
@@ -1221,14 +1296,16 @@ end program
 !   152, 153 & 2/3D plot of
 !    ${\bf m}({\bf r})\times{\bf B}_{\rm xc}({\bf r})$. \\
 !   162 & Scanning-tunneling microscopy (STM) image. \\
-!   190 & Write the atomic geometry to file for plotting with {\sf XCrySDen}
-!    and {\sf V\_Sim}. \\
-!   200 & Calculation of dynamical matrices on a {\bf q}-point set defined by
+!   190 & Write the atomic geometry to file for plotting with XCrySDen and
+!    V\_Sim.
+!   \end{tabularx}
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!   200 & Calculation of dynamical matrices on a $q$-point set defined by
 !    {\tt ngridq}. \\
+!   201 & Phonon dry run: just produce a set of empty DYN files. \\
 !   210 & Phonon density of states. \\
 !   220 & Phonon dispersion plot. \\
-!   230 & Phonon frequencies and eigenvectors for an arbitrary
-!    ${\bf q}$-point. \\
+!   230 & Phonon frequencies and eigenvectors for an arbitrary $q$-point. \\
 !   240 & Generate the ${\bf q}$-dependent phonon linewidths and electron-phonon
 !    coupling constants and write them to file. \\
 !   245 & Phonon linewidths plot. \\
@@ -1343,8 +1420,8 @@ end program
 !   \subsection{{\tt vklem}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt vklem} & the ${\bf k}$-point in lattice coordinates at which to compute
-!    the effective mass tensors & real(3) & $(0.0,0.0,0.0)$ \\
+!   {\tt vklem} & the $k$-point in lattice coordinates at which to compute the
+!    effective mass tensors & real(3) & $(0.0,0.0,0.0)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   See {\tt deltaem} and {\tt ndspem}.
@@ -1371,7 +1448,7 @@ end program
 !   \subsection{{\tt vkloff}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt vkloff } & the ${\bf k}$-point offset vector in lattice coordinates &
+!   {\tt vkloff } & the $k$-point offset vector in lattice coordinates &
 !    real(3) & $(0.0,0.0,0.0)$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
@@ -1410,16 +1487,16 @@ end program
 !    respectively \\
 !   \end{tabularx}
 !
-!   \section{Contributing to {\sf Elk}}
-!   Please bear in mind when writing code for the {\sf Elk} project that it
-!   should be an exercise in physics and not software engineering. All code
-!   should therefore be kept as simple and concise as possible, and above all it
-!   should be easy for anyone to locate and follow the {\sf Fortran}
-!   representation of the original mathematics. We would also appreciate the
-!   following conventions being adhered to:
+!   \section{Contributing to Elk}
+!   Please bear in mind when writing code for the Elk project that it should be
+!   an exercise in physics and not software engineering. All code should
+!   therefore be kept as simple and concise as possible, and above all it should
+!   be easy for anyone to locate and follow the Fortran representation of the
+!   original mathematics. We would also appreciate the following conventions
+!   being adhered to:
 !   \begin{itemize}
-!   \item Strict {\sf Fortran} 90/95 should be used. Features which are marked
-!    as obsolescent in F90/95 should be avoided. These include assigned format
+!   \item Strict Fortran 90/95 should be used. Features which are marked as
+!    obsolescent in F90/95 should be avoided. These include assigned format
 !    specifiers, labeled do-loops, computed goto statements and statement
 !    functions.
 !   \item Modules should be used in place of common blocks for declaring
@@ -1436,13 +1513,13 @@ end program
 !   \item Local allocatable arrays must be deallocated on exit of the routine to
 !    prevent memory leakage. Use of automatic arrays should be limited to arrays
 !    of small size.
-!   \item Every function or subroutine must be documented with the {\sf Protex}
-!    source code documentation system. This should include a short \LaTeX\
-!    description of the algorithms and methods involved. Equations which need to
-!    be referenced should be labeled with {\tt routine\_1}, {\tt routine\_2}
-!    etc. The authorship of each new piece of code or modification should be
-!    indicated in the {\tt REVISION HISTORY} part of the header. See the
-!    {\sf Protex} documentation for details.
+!   \item Every function or subroutine must be documented with the Protex source
+!    code documentation system. This should include a short \LaTeX\ description
+!    of the algorithms and methods involved. Equations which need to be
+!    referenced should be labeled with {\tt routine\_1}, {\tt routine\_2}, etc.
+!    The authorship of each new piece of code or modification should be
+!    indicated in the {\tt REVISION HISTORY} part of the header. See the Protex
+!    documentation for details.
 !   \item Ensure as much as possible that a routine will terminate the program
 !    when given improper input instead of continuing with erroneous results.
 !    Specifically, functions should have a well-defined domain for which they

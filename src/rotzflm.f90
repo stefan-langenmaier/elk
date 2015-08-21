@@ -6,9 +6,10 @@
 !BOP
 ! !ROUTINE: rotzflm
 ! !INTERFACE:
-subroutine rotzflm(rot,lmax,n,ld,zflm1,zflm2)
+subroutine rotzflm(rot,lmin,lmax,n,ld,zflm1,zflm2)
 ! !INPUT/OUTPUT PARAMETERS:
 !   rot   : rotation matrix (in,real(3,3))
+!   lmin  : minimum angular momentum (in,integer)
 !   lmax  : maximum angular momentum (in,integer)
 !   n     : number of functions to rotate (in,integer)
 !   ld    : leading dimension (in,integer)
@@ -31,22 +32,29 @@ subroutine rotzflm(rot,lmax,n,ld,zflm1,zflm2)
 implicit none
 ! arguments
 real(8), intent(in) :: rot(3,3)
+integer, intent(in) :: lmin
 integer, intent(in) :: lmax
 integer, intent(in) :: n
 integer, intent(in) :: ld
 complex(8), intent(in) :: zflm1(ld,n)
 complex(8), intent(out) :: zflm2(ld,n)
 ! local variables
-integer lmmax,l,lm,nm,p
+integer lmmax,l,lm1,lm2,nm,p
 real(8) det,rotp(3,3),ang(3)
 real(8) alpha,beta,gamma
 complex(8), parameter :: zzero=(0.d0,0.d0)
 complex(8), parameter :: zone=(1.d0,0.d0)
 ! allocatable arrays
 complex(8), allocatable :: d(:,:)
-if (lmax.lt.0) then
+if (lmin.lt.0) then
   write(*,*)
-  write(*,'("Error(rotzflm): lmax < 0 : ",I8)') lmax
+  write(*,'("Error(rotzflm): lmin < 0 : ",I8)') lmin
+  write(*,*)
+  stop
+end if
+if (lmin.gt.lmax) then
+  write(*,*)
+  write(*,'("Error(rotzflm): lmin > lmax : ",2I8)') lmin,lmax
   write(*,*)
   stop
 end if
@@ -75,12 +83,15 @@ beta=-ang(2)
 gamma=-ang(1)
 ! determine the rotation matrix for complex spherical harmonics
 call ylmrot(p,alpha,beta,gamma,lmax,lmmax,d)
-! apply rotation matrix
-do l=0,lmax
+! apply rotation matrix (d and zflm may have different starting indices)
+lm1=lmin**2+1
+lm2=1
+do l=lmin,lmax
   nm=2*l+1
-  lm=l**2+1
-  call zgemm('N','N',nm,n,nm,zone,d(lm,lm),lmmax,zflm1(lm,1),ld,zzero, &
-   zflm2(lm,1),ld)
+  call zgemm('N','N',nm,n,nm,zone,d(lm1,lm1),lmmax,zflm1(lm2,1),ld,zzero, &
+   zflm2(lm2,1),ld)
+  lm1=lm1+nm
+  lm2=lm2+nm
 end do
 deallocate(d)
 return

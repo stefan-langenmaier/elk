@@ -1,3 +1,32 @@
+elk-1.1.4
+-message passing interface (MPI) parallel runs now available; scalable to
+ hundreds of cores across a cluster; can also be used as hybrid OpenMP+MPI
+ parallelism for maximum efficiency; with thanks to Bhagawan Sahu for help
+ with testing; see manual for compilation and running instructions
+-S. Sharma added susceptibility tensor for non-linear optical second-harmonic
+ generation (SHG); see example 'GaAs-NLO' for details
+-added spin-orbit correction to momentum matrix elements; affects linear and
+ non-linear optics
+-optical calculations now work in combination with spin-spirals
+-updated interface to version 1.0 of the ETSF exchange-correlation library,
+ libxc; thanks to M. Marques and T. McQueen for assistance
+-fixed bug spotted by T. McQueen involving using multiple tasks in conjunction
+ with 'primcell=.true.'
+-A. Kozhevnikov fixed bug in 'xc_pwca.f90'
+-A. Kozhevnikov also fixed serious bug in 'getevecfv.f90'
+-F. Cricchio changed the order of lattice vector angles in 'spacegroup' utility
+ to 'bc, ac, ab' which corresponds to the convention alpha, beta, gamma
+-removed scissor correction from eigenvalue solver; now it is used, as before,
+ only in optics calculations
+-T. McQueen suggested an improvement to the routine which generates the path in
+ reciprocal space for bandstructure plots, 'connect.f90', which has been
+ implemented
+-fixed problem with XCrysDen Fermi surface plots, spotted by FC
+-various optimisations and simplifications
+Notes for developers
+-arguments to 'zpotcoul' have changed in anticipation of linear-response
+ phonons; should now be called in conjunction with 'genzvclmt'
+
 elk-1.0.17
 -fixed problem with Fermi surface generation introduced in the last version
 -E. K. U. Gross added to list of main developers

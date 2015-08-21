@@ -23,13 +23,14 @@ real(8) ts1,ts0
 real(8) t1
 complex(8) zt1
 ! allocatable arrays
-complex(8), allocatable :: h(:)
+complex(8), allocatable :: h(:,:)
 complex(8), allocatable :: o(:,:)
 ! external functions
 complex(8) zdotc
 external zdotc
 call timesec(ts0)
-allocate(o(nmatp,nstfv))
+allocate(h(nmatmax,nstfv))
+allocate(o(nmatmax,nstfv))
 if ((iscl.ge.2).or.(task.eq.1).or.(task.eq.3)) then
 ! read in the eigenvalues/vectors from file
   call getevalfv(vpl,evalfv)
@@ -43,66 +44,64 @@ else
 end if
 ! start iteration loop
 do it=1,nseqit
-! begin parallel loop over states
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(h,is,ia,t1)
-!$OMP DO
+! operate with H and O on the current vectors
+!$OMP PARALLEL SECTIONS DEFAULT(SHARED) PRIVATE(is,ia)
+!$OMP SECTION
+  h(:,:)=0.d0
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      call hmlaa(.true.,is,ia,ngp,apwalm,evecfv,h)
+      call hmlalo(.true.,is,ia,ngp,apwalm,evecfv,h)
+      call hmllolo(.true.,is,ia,ngp,evecfv,h)
+    end do
+  end do
+  call hmlistl(.true.,ngp,igpig,vgpc,evecfv,h)
+!$OMP SECTION
+  o(:,:)=0.d0
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      call olpaa(.true.,is,ia,ngp,apwalm,evecfv,o)
+      call olpalo(.true.,is,ia,ngp,apwalm,evecfv,o)
+      call olplolo(.true.,is,ia,ngp,evecfv,o)
+    end do
+  end do
+  call olpistl(.true.,ngp,igpig,evecfv,o)
+!$OMP END PARALLEL SECTIONS
   do ist=1,nstfv
-    allocate(h(nmatp))
-! operate with H and O on the current vector
-    h(:)=0.d0
-    do is=1,nspecies
-      do ia=1,natoms(is)
-        call hmlaa(.true.,is,ia,ngp,apwalm,evecfv(:,ist),h)
-        call hmlalo(.true.,is,ia,ngp,apwalm,evecfv(:,ist),h)
-        call hmllolo(.true.,is,ia,ngp,evecfv(:,ist),h)
-      end do
-    end do
-    call hmlistl(.true.,ngp,igpig,vgpc,evecfv(:,ist),h)
-    o(:,ist)=0.d0
-    do is=1,nspecies
-      do ia=1,natoms(is)
-        call olpaa(.true.,is,ia,ngp,apwalm,evecfv(:,ist),o(:,ist))
-        call olpalo(.true.,is,ia,ngp,apwalm,evecfv(:,ist),o(:,ist))
-        call olplolo(.true.,is,ia,ngp,evecfv(:,ist),o(:,ist))
-      end do
-    end do
-    call olpistl(.true.,ngp,igpig,evecfv(:,ist),o(:,ist))
 ! normalise
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
       evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
-      h(:)=t1*h(:)
+      h(:,ist)=t1*h(:,ist)
       o(:,ist)=t1*o(:,ist)
     end if
 ! estimate the eigenvalue
-    evalfv(ist)=dble(zdotc(nmatp,evecfv(:,ist),1,h,1))
+    evalfv(ist)=dble(zdotc(nmatp,evecfv(:,ist),1,h(:,ist),1))
 ! subtract the gradient of the Rayleigh quotient from the eigenvector
     t1=evalfv(ist)
-    evecfv(1:nmatp,ist)=evecfv(1:nmatp,ist)-tauseq*(h(1:nmatp) &
+    evecfv(1:nmatp,ist)=evecfv(1:nmatp,ist)-tauseq*(h(1:nmatp,ist) &
      -t1*o(1:nmatp,ist))
-! normalise
-    o(:,ist)=0.d0
-    do is=1,nspecies
-      do ia=1,natoms(is)
-        call olpaa(.true.,is,ia,ngp,apwalm,evecfv(:,ist),o(:,ist))
-        call olpalo(.true.,is,ia,ngp,apwalm,evecfv(:,ist),o(:,ist))
-        call olplolo(.true.,is,ia,ngp,evecfv(:,ist),o(:,ist))
-      end do
+  end do
+! normalise again
+  o(:,:)=0.d0
+  do is=1,nspecies
+    do ia=1,natoms(is)
+      call olpaa(.true.,is,ia,ngp,apwalm,evecfv,o)
+      call olpalo(.true.,is,ia,ngp,apwalm,evecfv,o)
+      call olplolo(.true.,is,ia,ngp,evecfv,o)
     end do
-    call olpistl(.true.,ngp,igpig,evecfv(:,ist),o(:,ist))
+  end do
+  call olpistl(.true.,ngp,igpig,evecfv,o)
+  do ist=1,nstfv
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
       evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
       o(:,ist)=t1*o(:,ist)
     end if
-    deallocate(h)
-! end parallel loop over states
+! end loop over states
   end do
-!$OMP END DO
-!$OMP END PARALLEL
 ! perform Gram-Schmidt orthonormalisation
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(jst,zt1,t1)
@@ -127,7 +126,7 @@ do it=1,nseqit
 !$OMP END PARALLEL
 ! end iteration loop
 end do
-deallocate(o)
+deallocate(h,o)
 call timesec(ts1)
 !$OMP CRITICAL
 timefv=timefv+ts1-ts0

@@ -50,7 +50,7 @@ lmmax=(lmax+1)**2
 allocate(wfmt1(lmmax,nrcmtmax,nstfv,nspnfv))
 allocate(wfmt2(lmmax,nrcmtmax,nspinor))
 ! de-phasing factor for spin-spirals
-if (spinsprl) then
+if (spinsprl.and.ssdph) then
   t1=-0.5d0*dot_product(vqcss(:),atposc(:,ia,is))
   zq(1)=cmplx(cos(t1),sin(t1),8)
   zq(2)=conjg(zq(1))

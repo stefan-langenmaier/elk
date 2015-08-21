@@ -6,23 +6,28 @@
 !BOP
 ! !ROUTINE: genwfsv
 ! !INTERFACE:
-subroutine genwfsv(tsh,tocc,ngp,igpig,evalsvp,apwalm,evecfv,evecsv,wfmt,wfir)
+subroutine genwfsv(tsh,tgp,tocc,ngp,igpig,evalsvp,apwalm,evecfv,evecsv,wfmt, &
+ ld,wfir)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
-!   tsh     : .true. if wfmt should be in spherical harmonics (in,logical)
+!   tsh     : .true. if wfmt should be in spherical harmonic basis (in,logical)
+!   tgp     : .true. if wfir should be in G+p-space, otherwise in real-space
+!             (in,logical)
 !   tocc    : .true. if only occupied wavefunctions are required (in,logical)
-!   ngp     : number of G+p-vectors (in,integer)
-!   igpig   : index from G+p-vectors to G-vectors (in,integer(ngkmax))
+!   ngp     : number of G+p vectors (in,integer(nspnfv))
+!   igpig   : index from G+p vectors to G vectors (in,integer(ngkmax,nspnfv))
 !   evalsvp : second-variational eigenvalue for every state (in,real(nstsv))
 !   apwalm  : APW matching coefficients
-!             (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot))
-!   evecfv  : first-variational eigenvectors (in,complex(nmatmax,nstfv))
+!             (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
+!   evecfv  : first-variational eigenvectors (in,complex(nmatmax,nstfv,nspnfv))
 !   evecsv  : second-variational eigenvectors (in,complex(nstsv,nstsv))
 !   wfmt    : muffin-tin part of the wavefunctions for every state in spherical
 !             coordinates (out,complex(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
+!   ld      : leading dimension, at least ngkmax if tgp is .true. and ngrtot
+!             if tgp is .false. (in,integer)
 !   wfir    : interstitial part of the wavefunctions for every state
-!             (out,complex(ngrtot,nspinor,nstsv))
+!             (out,complex(ld,nspinor,nstsv))
 ! !DESCRIPTION:
 !   Calculates the second-variational spinor wavefunctions in both the
 !   muffin-tin and interstitial regions for every state of a particular
@@ -33,25 +38,28 @@ use modmain
 !
 ! !REVISION HISTORY:
 !   Created November 2004 (Sharma)
+!   Updated for spin-spirals, June 2010 (JKD)
 !EOP
 !BOC
 implicit none
 ! arguments
 logical, intent(in) :: tsh
+logical, intent(in) :: tgp
 logical, intent(in) :: tocc
-integer, intent(in) :: ngp
-integer, intent(in) :: igpig(ngkmax)
+integer, intent(in) :: ngp(nspnfv)
+integer, intent(in) :: igpig(ngkmax,nspnfv)
 real(8), intent(in) :: evalsvp(nstsv)
-complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
-complex(8), intent(in) :: evecfv(nmatmax,nstfv)
+complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
+complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)
 complex(8), intent(in) :: evecsv(nstsv,nstsv)
 complex(8), intent(out) :: wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv)
-complex(8), intent(out) :: wfir(ngrtot,nspinor,nstsv)
+integer, intent(in) :: ld
+complex(8), intent(out) :: wfir(ld,nspinor,nstsv)
 ! local variables
-integer ispn,is,ia,ias
-integer i,j,n,ist,igp,ifg
+integer ispn,jspn,is,ia,ias
+integer ist,i,j,n,igp,ifg
 real(8) t1
-complex(8) zt1
+complex(8) zq(2),zt1
 ! automatic arrays
 logical done(nstfv)
 ! allocatable arrays
@@ -66,6 +74,12 @@ do is=1,nspecies
   n=lmmaxvr*nrcmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
+! de-phasing factor for spin-spirals
+    if (spinsprl.and.ssdph) then
+      t1=-0.5d0*dot_product(vqcss(:),atposc(:,ia,is))
+      zq(1)=cmplx(cos(t1),sin(t1),8)
+      zq(2)=conjg(zq(1))
+    end if
     done(:)=.false.
     do j=1,nstsv
       if ((.not.tocc).or.((tocc).and.(evalsvp(j).lt.efermi))) then
@@ -74,18 +88,25 @@ do is=1,nspecies
           wfmt(:,:,ias,:,j)=0.d0
           i=0
           do ispn=1,nspinor
+            if (spinsprl) then
+              jspn=ispn
+            else
+              jspn=1
+            end if
             do ist=1,nstfv
               i=i+1
               zt1=evecsv(i,j)
+              if (spinsprl.and.ssdph) zt1=zt1*zq(ispn)
               if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
                 if (.not.done(ist)) then
                   if (tsh) then
 ! wavefunction returned in spherical harmonics
-                    call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm, &
-                     evecfv(:,ist),lmmaxvr,wfmt1(:,:,ist))
+                    call wavefmt(lradstp,lmaxvr,is,ia,ngp(jspn), &
+                     apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr, &
+                     wfmt1(:,:,ist))
                   else
-                    call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm, &
-                     evecfv(:,ist),lmmaxvr,wfmt2)
+                    call wavefmt(lradstp,lmaxvr,is,ia,ngp(jspn), &
+                     apwalm(:,:,:,:,jspn),evecfv(:,ist,jspn),lmmaxvr,wfmt2)
 ! convert from spherical harmonics to spherical coordinates
                     call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr, &
                      lmmaxvr,wfmt2,lmmaxvr,zzero,wfmt1(:,:,ist),lmmaxvr)
@@ -103,11 +124,11 @@ do is=1,nspecies
 ! spin-unpolarised wavefunction
           if (tsh) then
 ! wavefunction returned in spherical harmonics
-            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j),lmmaxvr, &
-             wfmt(:,:,ias,1,j))
+            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j,1), &
+             lmmaxvr,wfmt(:,:,ias,1,j))
           else
-            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j),lmmaxvr, &
-             wfmt2)
+            call wavefmt(lradstp,lmaxvr,is,ia,ngp,apwalm,evecfv(:,j,1), &
+             lmmaxvr,wfmt2)
 ! convert from spherical harmonics to spherical coordinates
             call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr,lmmaxvr, &
              wfmt2,lmmaxvr,zzero,wfmt(:,:,ias,1,j),lmmaxvr)
@@ -132,29 +153,50 @@ do j=1,nstsv
 ! generate spinor wavefunction from second-variational eigenvectors
       i=0
       do ispn=1,nspinor
+        if (spinsprl) then
+          jspn=ispn
+        else
+          jspn=1
+        end if
         do ist=1,nstfv
           i=i+1
           zt1=evecsv(i,j)
           if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
-            zt1=t1*zt1
-            do igp=1,ngp
-              ifg=igfft(igpig(igp))
-              wfir(ifg,ispn,j)=wfir(ifg,ispn,j)+zt1*evecfv(igp,ist)
-            end do
+            if (tgp) then
+! wavefunction in G+p-space
+              do igp=1,ngp(jspn)
+                wfir(igp,ispn,j)=wfir(igp,ispn,j)+zt1*evecfv(igp,ist,jspn)
+              end do
+            else
+! wavefunction in real-space
+              zt1=t1*zt1
+              do igp=1,ngp(jspn)
+                ifg=igfft(igpig(igp,jspn))
+                wfir(ifg,ispn,j)=wfir(ifg,ispn,j)+zt1*evecfv(igp,ist,jspn)
+              end do
+            end if
           end if
         end do
       end do
     else
 ! spin-unpolarised wavefunction
-      do igp=1,ngp
-        ifg=igfft(igpig(igp))
-        wfir(ifg,1,j)=t1*evecfv(igp,j)
+      if (tgp) then
+        do igp=1,ngp(1)
+          wfir(igp,1,j)=evecfv(igp,j,1)
+        end do
+      else
+        do igp=1,ngp(1)
+          ifg=igfft(igpig(igp,1))
+          wfir(ifg,1,j)=t1*evecfv(igp,j,1)
+        end do
+      end if
+    end if
+! Fourier transform wavefunction to real-space if required
+    if (.not.tgp) then
+      do ispn=1,nspinor
+        call zfftifc(3,ngrid,1,wfir(:,ispn,j))
       end do
     end if
-! Fourier transform wavefunction to real-space
-    do ispn=1,nspinor
-      call zfftifc(3,ngrid,1,wfir(:,ispn,j))
-    end do
   end if
 end do
 return

@@ -17,17 +17,16 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Spacegroup Manual}}\\ \Large{\sc Version 1.1.4}
+! !TITLE: {\huge{\sc The Spacegroup Manual}}\\ \Large{\sc Version 1.2.0}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma and L. Nordstr\"{o}m}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
-! {\sf Spacegroup} is a utility which produces crystal geometry for use with the
-! {\sf Elk} code, from the space group defined by its Hermann-Mauguin symbol and
-! lattice vector lengths and angles. {\sf Spacegroup} recognises all 230 space
-! groups in various coordinate settings giving a total of 530 possible symbols,
-! which are tabulated below. The code also provides output compatible with the
-! {\sf XCrysDen} or {\sf V\_Sim} packages for visualisation of the crystal
-! structure.
+! Spacegroup is a utility which produces crystal geometry for use with the Elk
+! code, from the space group defined by its Hermann-Mauguin symbol and lattice
+! vector lengths and angles. Spacegroup recognises all 230 space groups in
+! various coordinate settings giving a total of 530 possible symbols, which are
+! tabulated below. The code also provides output compatible with the XCrysDen or
+! V\_Sim packages for visualisation of the crystal structure.
 ! \section{Usage}
 ! Only one input file, {\tt spacegroup.in}, is required. The structure of this
 ! file is illustrated by the following example for the high $T_c$ superconductor
@@ -35,7 +34,7 @@ end program
 ! \begin{verbatim}
 !  'Bmab'                                : hrmg
 !  10.0605232 10.0605232  24.972729      : a, b, c
-!   90.0     90.0     90.0               : ab, ac, bc
+!   90.0     90.0     90.0               : bc, ac, ab
 !   1  1  1                              : ncell
 !   .true.                               : primcell
 !   3                                    : nspecies
@@ -59,9 +58,9 @@ end program
 ! {\tt a}, {\tt b}, {\tt c}\\
 ! Lattice vector lengths in Bohr (i.e. atomic units, {\bf NOT} \AA ngstroms)
 ! \vskip 6pt
-! {\tt ab}, {\tt ac}, {\tt bc}\\
-! Angles in degrees between lattice vectors ${\bf a}$ and ${\bf b}$; ${\bf a}$
-! and ${\bf c}$; and ${\bf b}$ and ${\bf c}$, respectively
+! {\tt bc}, {\tt ac}, {\tt ab}\\
+! Angles in degrees between lattice vectors ${\bf b}$ and ${\bf c}$ ($\alpha$);
+! ${\bf a}$ and ${\bf c}$ ($\beta$); and ${\bf a}$ and ${\bf b}$ ($\gamma$)
 ! \vskip 6pt
 ! {\tt ncell}\\
 ! The number of unit cells required in each direction
@@ -85,7 +84,7 @@ end program
 ! species. After creating the input file, the {\tt spacegroup} command is run
 ! and the files {\tt GEOMETRY.OUT} and {\tt crystal.xsf} should be produced.
 ! The {\tt GEOMETRY.OUT} file can simply be appended to an {\tt elk.in} file. If
-! {\sf XCrysDen} is available, then use the command
+! XCrysDen is available, then use the command
 ! \vskip 6pt
 ! \hskip 24pt {\tt xcrysden --xsf crystal.xsf}
 ! \vskip 6pt

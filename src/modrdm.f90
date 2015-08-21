@@ -6,9 +6,9 @@
 module modrdm
 use modmain
 
-!-------------------------------------------------------------!
-!     reduced density matrix functional (RDMFT) variables     !
-!-------------------------------------------------------------!
+!--------------------------------------------------------------------!
+!     reduced density matrix functional theory (RDMFT) variables     !
+!--------------------------------------------------------------------!
 ! Coulomb potential matrix elements
 complex(8), allocatable :: vclmat(:,:,:)
 ! derivative of kinetic energy w.r.t. natural orbital coefficients

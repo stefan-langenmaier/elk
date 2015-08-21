@@ -49,7 +49,7 @@ if (n.le.0) then
 end if
 do i=1,n
   r=rho(i)
-  if (r.gt.1.d-20) then
+  if (r.gt.1.d-12) then
     rs=(3.d0/(4.d0*pi*r))**thrd
 ! exchange energy and potential
     ex(i)=(-3.d0/(4.d0*pi))*(3.d0*r*(pi**2))**thrd

@@ -22,7 +22,10 @@ use modmain
 implicit none
 ! local variables
 integer is,ia,ias,ir,lmax
+real(8) t1
 complex(8) zrho0
+! automatic arrays
+real(8) vn(nrmtmax)
 ! allocatable arrays
 real(8), allocatable :: jlgr(:,:,:)
 complex(8), allocatable :: zrhomt(:,:,:)
@@ -48,9 +51,22 @@ zrhoir(:)=rhoir(:)
 ! compute the required spherical Bessel functions
 lmax=lmaxvr+npsden+1
 call genjlgpr(lmax,gc,jlgr)
-! solve the complex Poisson's equation
-call zpotcoul(nrmt,nrmtmax,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,spzn,zrhomt, &
- zrhoir,zvclmt,zvclir,zrho0)
+! solve the complex Poisson's equation in the muffin-tins
+call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
+! add the nuclear monopole potentials
+t1=1.d0/y00
+do is=1,nspecies
+  call potnucl(ptnucl,nrmt(is),spr(:,is),spzn(is),vn)
+  do ia=1,natoms(is)
+    ias=idxas(ia,is)
+    do ir=1,nrmt(is)
+      zvclmt(1,ir,ias)=zvclmt(1,ir,ias)+t1*vn(ir)
+    end do
+  end do
+end do
+! solve Poisson's equation in the entire unit cell
+call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
+ zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
 do is=1,nspecies
   do ia=1,natoms(is)

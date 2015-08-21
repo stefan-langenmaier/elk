@@ -24,11 +24,10 @@ implicit none
 logical lsym(48)
 integer isym,is,ia,ias
 integer ik,io,ilo,iv(3)
-integer i1,i2,i3,ispn
+integer i1,i2,i3,ispn,igk
 integer l1,l2,l3,m1,m2,m3
 integer lm1,lm2,lm3
-real(8) vl(3),vc(3)
-real(8) boxl(3,4),t1
+real(8) vl(3),vc(3),t1
 real(8) ts0,ts1
 ! external functions
 complex(8) gauntyry
@@ -115,31 +114,37 @@ else
     ngridk(:)=int(radkpt/sqrt(avec(1,:)**2+avec(2,:)**2+avec(3,:)**2))+1
   end if
 ! setup the default k-point box
-  boxl(:,1)=vkloff(:)/dble(ngridk(:))
-  boxl(:,2)=boxl(:,1); boxl(:,3)=boxl(:,1); boxl(:,4)=boxl(:,1)
-  boxl(1,2)=boxl(1,2)+1.d0
-  boxl(2,3)=boxl(2,3)+1.d0
-  boxl(3,4)=boxl(3,4)+1.d0
+  kptboxl(:,1)=vkloff(:)/dble(ngridk(:))
+  if (task.eq.102) kptboxl(:,1)=0.d0
+  kptboxl(:,2)=kptboxl(:,1)
+  kptboxl(:,3)=kptboxl(:,1)
+  kptboxl(:,4)=kptboxl(:,1)
+  kptboxl(1,2)=kptboxl(1,2)+1.d0
+  kptboxl(2,3)=kptboxl(2,3)+1.d0
+  kptboxl(3,4)=kptboxl(3,4)+1.d0
 ! k-point set and box for Fermi surface plots
   if ((task.eq.100).or.(task.eq.101).or.(task.eq.102)) then
     ngridk(:)=np3d(:)
-    if (task.ne.102) boxl(:,:)=vclp3d(:,:)
+    if (task.ne.102) kptboxl(:,:)=vclp3d(:,:)
   end if
 ! allocate the reduced k-point set arrays
-  if (allocated(ivk)) deallocate(ivk)
-  allocate(ivk(3,ngridk(1)*ngridk(2)*ngridk(3)))
-  if (allocated(vkl)) deallocate(vkl)
-  allocate(vkl(3,ngridk(1)*ngridk(2)*ngridk(3)))
-  if (allocated(vkc)) deallocate(vkc)
-  allocate(vkc(3,ngridk(1)*ngridk(2)*ngridk(3)))
-  if (allocated(wkpt)) deallocate(wkpt)
-  allocate(wkpt(ngridk(1)*ngridk(2)*ngridk(3)))
   if (allocated(ikmap)) deallocate(ikmap)
   allocate(ikmap(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
+  nkpt=ngridk(1)*ngridk(2)*ngridk(3)
+  if (allocated(ivk)) deallocate(ivk)
+  allocate(ivk(3,nkpt))
+  if (allocated(vkl)) deallocate(vkl)
+  allocate(vkl(3,nkpt))
+  if (allocated(vkc)) deallocate(vkc)
+  allocate(vkc(3,nkpt))
+  if (allocated(wkpt)) deallocate(wkpt)
+  allocate(wkpt(nkpt))
 ! generate the reduced k-point set
-  call genppts(.false.,nsymkpt,symkpt,ngridk,epslat,bvec,boxl,nkpt,ikmap,ivk, &
-   vkl,vkc,wkpt)
+  call genppts(.false.,nsymkpt,symkpt,ngridk,epslat,bvec,kptboxl,nkpt,ikmap, &
+   ivk,vkl,vkc,wkpt)
 ! allocate the non-reduced k-point set arrays
+  if (allocated(ikmapnr)) deallocate(ikmapnr)
+  allocate(ikmapnr(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
   nkptnr=ngridk(1)*ngridk(2)*ngridk(3)
   if (allocated(ivknr)) deallocate(ivknr)
   allocate(ivknr(3,nkptnr))
@@ -149,11 +154,9 @@ else
   allocate(vkcnr(3,nkptnr))
   if (allocated(wkptnr)) deallocate(wkptnr)
   allocate(wkptnr(nkptnr))
-  if (allocated(ikmapnr)) deallocate(ikmapnr)
-  allocate(ikmapnr(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
 ! generate the non-reduced k-point set
-  call genppts(.false.,1,symkpt,ngridk,epslat,bvec,boxl,nkptnr,ikmapnr,ivknr, &
-   vklnr,vkcnr,wkptnr)
+  call genppts(.false.,1,symkpt,ngridk,epslat,bvec,kptboxl,nkptnr,ikmapnr, &
+   ivknr,vklnr,vkcnr,wkptnr)
 end if
 ! write the k-points to test file
 call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
@@ -180,23 +183,26 @@ if (allocated(sfacgk)) deallocate(sfacgk)
 allocate(sfacgk(ngkmax,natmtot,nspnfv,nkpt))
 do ik=1,nkpt
   do ispn=1,nspnfv
-    if (spinsprl) then
+    vl(:)=vkl(:,ik)
+    vc(:)=vkc(:,ik)
 ! spin-spiral case
+    if (spinsprl) then
       if (ispn.eq.1) then
-        vl(:)=vkl(:,ik)+0.5d0*vqlss(:)
-        vc(:)=vkc(:,ik)+0.5d0*vqcss(:)
+        vl(:)=vl(:)+0.5d0*vqlss(:)
+        vc(:)=vc(:)+0.5d0*vqcss(:)
       else
-        vl(:)=vkl(:,ik)-0.5d0*vqlss(:)
-        vc(:)=vkc(:,ik)-0.5d0*vqcss(:)
+        vl(:)=vl(:)-0.5d0*vqlss(:)
+        vc(:)=vc(:)-0.5d0*vqcss(:)
       end if
-    else
-      vl(:)=vkl(:,ik)
-      vc(:)=vkc(:,ik)
     end if
-! generate the G+k-vectors
+! generate the G+k vectors
     call gengpvec(vl,vc,ngk(ispn,ik),igkig(:,ispn,ik),vgkl(:,:,ispn,ik), &
-     vgkc(:,:,ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik))
-! generate structure factors for G+k-vectors
+     vgkc(:,:,ispn,ik))
+! generate the spherical coordinates of the G+k vectors
+    do igk=1,ngk(ispn,ik)
+      call sphcrd(vgkc(:,igk,ispn,ik),gkc(igk,ispn,ik),tpgkc(:,igk,ispn,ik))
+    end do
+! generate structure factors for G+k vectors
     call gensfacgp(ngk(ispn,ik),vgkc(:,:,ispn,ik),ngkmax,sfacgk(:,:,ispn,ik))
   end do
 end do

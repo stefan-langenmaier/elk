@@ -201,7 +201,7 @@ end if
 !-----------------------!
 !     compute forces    !
 !-----------------------!
-if ((.not.tstop).and.(tforce)) then
+if (tforce) then
   call force
 ! output forces to INFO.OUT
   call writeforce(60)
@@ -212,7 +212,7 @@ end if
 !---------------------------------------!
 !     perform structural relaxation     !
 !---------------------------------------!
-if ((.not.tstop).and.(task.eq.6)) then
+if (task.eq.6) then
   write(60,*)
   write(60,'("Maximum force magnitude (target) : ",G18.10," (",G18.10,")")') &
    forcemax,epsforce
@@ -225,6 +225,9 @@ if ((.not.tstop).and.(task.eq.6)) then
   end if
 ! update the atomic positions if forces are not converged
   call updatpos
+! write optimised atomic positions and interatomic distances to file
+  call writegeom(.true.)
+  call writeiad(.true.)
   write(60,*)
   write(60,'("+--------------------------+")')
   write(60,'("| Updated atomic positions |")')

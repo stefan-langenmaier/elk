@@ -39,8 +39,8 @@ real(8) nk1l,fact
 ! automatic arrays
 real(8) ie(0:2*lmaxlu),be(0:2*lmaxlu)
 ! external functions
-real(8) factr,factnm,wigner3j,wigner6j
-external factr,factnm,wigner3j,wigner6j
+real(8) factnm,wigner3j,wigner6j
+external factnm,wigner3j,wigner6j
 ! calculate tensor moment decomposition of direct and exchange energy
 ! see Eq. 23 and 29 Paper and Eq.3-4 PRB 78, 100404 (2008)
 g=k1+p+r

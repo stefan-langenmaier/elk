@@ -11,8 +11,6 @@ integer is,ia,ias,ir
 integer idm,lmax,lm
 real(8) t1
 complex(8) zrho0
-! automatic arrays
-real(8) zn(nspecies)
 ! allocatable arrays
 real(8), allocatable :: rvfmt(:,:,:,:)
 real(8), allocatable :: rvfir(:,:)
@@ -83,14 +81,13 @@ do is=1,nspecies
 end do
 ! store real interstitial divergence in a complex array
 zrhoir(:)=rfir(:)
-! set the point charges to zero
-zn(:)=0.d0
 ! compute the required spherical Bessel functions
 lmax=lmaxvr+npsden+1
 call genjlgpr(lmax,gc,jlgr)
 ! solve the complex Poisson's equation
-call zpotcoul(nrmt,nrmtmax,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zn,zrhomt,zrhoir, &
- zvclmt,zvclir,zrho0)
+call genzvclmt(nrmt,spnrmax,spr,nrmtmax,zrhomt,zvclmt)
+call zpotcoul(nrmt,spnrmax,spr,1,gc,jlgr,ylmg,sfacg,zrhoir,nrmtmax,zvclmt, &
+ zvclir,zrho0)
 ! convert complex muffin-tin potential to real spherical harmonic expansion
 do is=1,nspecies
   do ia=1,natoms(is)

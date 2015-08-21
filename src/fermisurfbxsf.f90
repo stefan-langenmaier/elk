@@ -72,7 +72,7 @@ end if
 nst=ist1-ist0+1
 ! plotting box in Cartesian coordinates
 do i=1,4
-  vc(:,i)=bvec(:,1)*vclp3d(1,i)+bvec(:,2)*vclp3d(2,i)+bvec(:,3)*vclp3d(3,i)
+  vc(:,i)=bvec(:,1)*kptboxl(1,i)+bvec(:,2)*kptboxl(2,i)+bvec(:,3)*kptboxl(3,i)
 end do
 ! produce the Fermi surface plot
 lst=0

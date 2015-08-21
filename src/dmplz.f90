@@ -33,8 +33,8 @@ real(8),intent(out) :: dmpol
 integer g
 real(8) nk1l,fact
 ! external functions
-real(8) wigner3j,factr,factnm
-external wigner3j,factr,factnm
+real(8) wigner3j,factnm
+external wigner3j,factnm
 g=k1+p+r
 if (g.eq.0) then
   fact=sqrt(w2)

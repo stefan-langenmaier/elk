@@ -948,7 +948,7 @@ sub print_preamble {
     print "\\oddsidemargin  0in";
     print "\\evensidemargin 0in";
     print "\\marginparpush  0pt";
-    print "\\pagestyle{myheadings}";
+    print "\\pagestyle{plain}";
     print "\\markboth{}{}";
     print "%-------------------------------------------------------------";
 }#  end unless

@@ -9,6 +9,7 @@
 subroutine tensmom(fnum)
 ! !USES:
 use modmain
+use modmpi
 use modldapu
 use modtest
 ! !DESCRIPTION:
@@ -33,8 +34,8 @@ real(8) dmpoltot,dmpol,dmpol0
 ! automatic arrays
 complex(8) tmom(-ldim:ldim)
 ! allocatable arrays
-real(8),allocatable :: hfexch(:,:,:,:)
 real(8),allocatable :: tmom2(:,:,:,:)
+real(8),allocatable :: hfexch(:,:,:,:)
 complex(8),allocatable :: dmcomb(:,:)
 if (.not.spinpol) then
   write(*,*)
@@ -43,26 +44,28 @@ if (.not.spinpol) then
   write(*,*)
   stop
 end if
-if (iscl.le.1) then
-  write(fnum,*)
-  write(fnum,'("Tensor moment decomposition of density matrix and &
-   &Hartree-Fock energy")')
-  write(fnum,'(" (see Phys. Rev. B. 80, 035121 (2009))")')
-  write(fnum,'("  W.W = modulus square of tensor moment")')
-  write(fnum,'("  Edir = direct energy term")')
-  write(fnum,'("  Ex = exchange energy term")')
-  write(fnum,'("  Pol = polarization of density matrix")')
-end if
-if (iscl.ge.1) then
-  write(fnum,*)
-  write(fnum,'("+-------------------------+")')
-  write(fnum,'("| Iteration number : ",I4," |")') iscl
-  write(fnum,'("+-------------------------+")')
+if (mp_mpi) then
+  if (iscl.le.1) then
+    write(fnum,*)
+    write(fnum,'("Tensor moment decomposition of density matrix and &
+     &Hartree-Fock energy")')
+    write(fnum,'(" (see Phys. Rev. B. 80, 035121 (2009))")')
+    write(fnum,'("  W.W = modulus square of tensor moment")')
+    write(fnum,'("  Edir = direct energy term")')
+    write(fnum,'("  Ex = exchange energy term")')
+    write(fnum,'("  Pol = polarization of density matrix")')
+  end if
+  if (iscl.ge.1) then
+    write(fnum,*)
+    write(fnum,'("+-------------------------+")')
+    write(fnum,'("| Iteration number : ",I4," |")') iscl
+    write(fnum,'("+-------------------------+")')
+  end if
 end if
 ! allocate arrays
-allocate(dmcomb(ldim*nspinor,ldim*nspinor))
 allocate(tmom2(0:2*lmaxlu,0:1,0:(2*lmaxlu+1),natmtot))
 allocate(hfexch(0:2*lmaxlu,0:1,0:(2*lmaxlu+1),natmtot))
+allocate(dmcomb(ldim*nspinor,ldim*nspinor))
 tmom2(:,:,:,:)=0.d0
 hfexch(:,:,:,:)=0.d0
 dmpol0=0.d0
@@ -72,11 +75,13 @@ do is=1,nspecies
   if (l.lt.0) goto 10
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-! write info to TENSMOM.OUT
-    write(fnum,*)
-    write(fnum,'("Species : ",I4," (",A,"), atom : ",I4)') is, &
-     trim(spsymb(is)),ia
-    write(fnum,'(" l = ",I2)') l
+! write info to TENSMOM.OUT (only with MPI master process)
+    if (mp_mpi) then
+      write(fnum,*)
+      write(fnum,'("Species : ",I4," (",A,"), atom : ",I4)') is, &
+       trim(spsymb(is)),ia
+      write(fnum,'(" l = ",I2)') l
+    end if
 ! zero density matrix with combined indices
     dmcomb(:,:)=0.d0
     i1=0
@@ -99,7 +104,7 @@ do is=1,nspecies
     hfe=0.d0
 ! zero total polarization
     dmpoltot=0.d0
-    write(fnum,*)
+    if (mp_mpi) write(fnum,*)
     do k=0,2*l
       do p=0,1
         rmin=abs(k-p)
@@ -119,39 +124,42 @@ do is=1,nspecies
 ! polarization terms
           call dmplz(l,k,p,r,t1,dmpol)
 ! write to file square of tensmom modulus, direct and exch energy, polarizations
-          write(fnum,'("  k = ",I1,", p = ",I1,", r = ",I1)') k,p,r
+          if (mp_mpi) write(fnum,'("  k = ",I1,", p = ",I1,", r = ",I1)') k,p,r
           if ((k+p+r).eq.0) then
 ! for k,p,r = 0 save reference polarization
             dmpol0=dmpol
 ! for k,p,r = 0 do not write out the polarization
-            write(fnum,'("   W.W =",F14.8,", Edir =",F14.8,", Ex =",F14.8)') &
-             t1,edir*t1,exch*t1
+            if (mp_mpi) write(fnum,'("   W.W =",F14.8,", Edir =",F14.8,&
+             &", Ex =",F14.8)') t1,edir*t1,exch*t1
           else
 ! relative polarization
             t2=dmpol/dmpol0
-            write(fnum,'("   W.W =",F14.8,", Edir =",F14.8,", Ex =",F14.8, &
-             &", Pol =",F14.8)') t1,edir*t1,exch*t1,t2
+            if (mp_mpi) write(fnum,'("   W.W =",F14.8,", Edir =",F14.8,&
+             &", Ex =",F14.8,", Pol =",F14.8)') t1,edir*t1,exch*t1,t2
 ! total relative polarization (skipping 000 component)
             dmpoltot=dmpoltot+t2
           end if
           hfe=hfe+(edir+exch)*t1
           do t=-r,r
 ! write out single components of tensor moments
-            write(fnum,'("    t = ",I2," : ",2F14.8)') t,tmom(t)
+            if (mp_mpi) write(fnum,'("    t = ",I2," : ",2F14.8)') t,tmom(t)
           end do
-          write(fnum,*)
+          if (mp_mpi) write(fnum,*)
         end do
       end do
     end do
-    write(fnum,*)
-    write(fnum,'("  Total Hartree-Fock energy (without DC correction) : ", &
-     &F14.8)') hfe
-    write(fnum,'("  Total polarization of density matrix : ",F14.8)') dmpoltot
-    write(fnum,*)
+    if (mp_mpi) then
+      write(fnum,*)
+      write(fnum,'("  Total Hartree-Fock energy (without DC correction) : ",&
+       &F14.8)') hfe
+      write(fnum,'("  Total polarization of density matrix : ",F14.8)') dmpoltot
+      write(fnum,*)
+    end if
 ! end loop over atoms and species
   end do
 10 continue
 end do
+if (mp_mpi) call flushifc(fnum)
 ! write test files if required
 if (test) then
   t1=sqrt(sum(tmom2(:,:,:,:)**2))
@@ -160,7 +168,7 @@ if (test) then
   call writetest(830,'RMS of LDA+U Hartree-Fock exchange energies',tol=1.d-4, &
    rv=t1)
 end if
-deallocate(dmcomb,tmom2,hfexch)
+deallocate(tmom2,hfexch,dmcomb)
 return
 end subroutine
 !EOC

@@ -48,7 +48,8 @@ real(8), parameter :: g3max=1.d14
 real(8) r,kf,s,v,u
 real(8) grho_,g2rho_,g3rho_
 do i=1,n
-  if (rho(i).gt.1.d-12) then
+  r=rho(i)
+  if (r.gt.1.d-12) then
     grho_=grho(i)
     g2rho_=g2rho(i)
     g3rho_=g3rho(i)
@@ -57,7 +58,6 @@ do i=1,n
     if (abs(g2rho_).gt.g2max) g2rho_=sign(g2max,g2rho_)
     if (abs(g3rho_).gt.g3max) g3rho_=sign(g3max,g3rho_)
 ! exchange energy density and potential
-    r=rho(i)
     kf=(r*3.d0*pi**2)**(1.d0/3.d0)
     s=grho_/(2.d0*kf*r)
     v=g2rho_/(r*(2.d0*kf)**2)

@@ -15,11 +15,9 @@ integer i,m,n,no,nop
 integer axis,id(3)
 ! zero vector tolerance
 real(8), parameter :: eps=1.d-6
-real(8) av(3),r(3,3),v1(3),v2(3),v3(3)
+real(8) av(3),r(3,3),t1
+real(8) v1(3),v2(3),v3(3)
 character(20) str1,str2,str3
-! external functions
-real(8) r3taxi
-external r3taxi
 str1=trim(adjustl(hall))//' '
 no=0
 nop=0
@@ -322,7 +320,8 @@ if (n.ge.2) then
   end if
 ! check if axis is invariant with respect to rotation
   call r3mv(r,av,v1)
-  if (r3taxi(av,v1).gt.eps) then
+  t1=sum(abs(av(:)-v1(:)))
+  if (t1.gt.eps) then
     write(*,*)
     write(*,'("Error(seitzgen): axis not invariant with respect to rotation")')
     write(*,'(" for Hall symbol ''",A,"''")') trim(hall)

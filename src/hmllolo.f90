@@ -11,11 +11,13 @@ logical, intent(in) :: tapp
 integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ngp
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ias,ilo1,ilo2,i,j,k
-integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
+integer ias,ilo1,ilo2
+integer l1,l2,l3,m1,m2,m3
+integer lm1,lm2,lm3
+integer ist,i,j,k,ki,kj
 complex(8) zsum
 ias=idxas(ia,is)
 do ilo1=1,nlorb(is)
@@ -40,8 +42,18 @@ do ilo1=1,nlorb(is)
           end do
           if (tapp) then
 ! apply the Hamiltonian operator to v
-            h(i)=h(i)+zsum*v(j)
-            if (i.ne.j) h(j)=h(j)+conjg(zsum)*v(i)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(k,ki,kj)
+!$OMP DO
+            do ist=1,nstfv
+              k=(ist-1)*nmatmax
+              ki=k+i
+              kj=k+j
+              h(ki)=h(ki)+zsum*v(kj)
+              if (i.ne.j) h(kj)=h(kj)+conjg(zsum)*v(ki)
+            end do
+!$OMP END DO
+!$OMP END PARALLEL
           else
 ! calculate the matrix elements
             k=i+((j-1)*j)/2

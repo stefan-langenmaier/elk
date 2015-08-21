@@ -12,6 +12,7 @@ use modmain
 use modtest
 ! !DESCRIPTION:
 !   Computes the dielectric tensor, optical conductivity and plasma frequency.
+!   The formulae are taken from {\it Physica Scripta} {\bf T109}, 170 (2004).
 !
 ! !REVISION HISTORY:
 !   Created November 2005 (SS and JKD)
@@ -26,8 +27,8 @@ implicit none
 integer ik,jk,isym
 integer ist,jst,iw,i,j,l
 integer recl,iostat
-real(8) eji,wplas,x,t1,t2
-real(8) v1(3),v2(3),v3(3)
+real(8) eji,wplas,sc(3,3),x
+real(8) v1(3),v2(3),v3(3),t1,t2
 complex(8) zv(3),eta,zt1
 character(256) fname
 ! allocatable arrays
@@ -44,8 +45,8 @@ call init0
 call init1
 ! read Fermi energy from file
 call readfermi
-do ik=1,nkpt
 ! get the eigenvalues and occupancies from file
+do ik=1,nkpt
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
@@ -88,7 +89,7 @@ if (iostat.ne.0) then
   stop
 end if
 ! i divided by the complex relaxation time
-eta=cmplx(0.d0,swidth)
+eta=cmplx(0.d0,swidth,8)
 ! loop over dielectric tensor components
 do l=1,noptcomp
   i=optcomp(1,l)
@@ -97,13 +98,15 @@ do l=1,noptcomp
   sigma(:)=0.d0
 ! parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(pmat,jk,ist,jst,v1,v2,v3) &
+!$OMP PRIVATE(pmat,jk,sc,ist,jst,v1,v2,v3) &
 !$OMP PRIVATE(zv,zt1,eji,t1,t2,x)
 !$OMP DO
   do ik=1,nkptnr
     allocate(pmat(3,nstsv,nstsv))
 ! equivalent reduced k-point
     jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
+! store symmetry matrix
+    sc(:,:)=symlatc(:,:,lspl(ik))
 ! read momentum matrix elements from direct-access file
 !$OMP CRITICAL
     read(50,rec=jk) pmat
@@ -115,17 +118,19 @@ do l=1,noptcomp
 ! rotate the matrix elements from the reduced to non-reduced k-point
 ! (note that the inverse operation is used)
         v1(:)=dble(pmat(:,ist,jst))
-        call r3mv(symlatc(:,:,lspl(ik)),v1,v2)
+        call r3mv(sc,v1,v2)
         v1(:)=aimag(pmat(:,ist,jst))
-        call r3mv(symlatc(:,:,lspl(ik)),v1,v3)
+        call r3mv(sc,v1,v3)
         zv(:)=cmplx(v2(:),v3(:),8)
         zt1=zv(i)*conjg(zv(j))
         eji=evalsv(jst,jk)-evalsv(ist,jk)
         if ((evalsv(ist,jk).le.efermi).and.(evalsv(jst,jk).gt.efermi)) then
-! scissors correction
-          eji=eji+scissor
 ! generalised DFT correction
-          if (usegdft) eji=eji+delta(jst,ist,jk)
+          if (usegdft) then
+            eji=eji+delta(jst,ist,jk)
+          end if
+! scissor correction
+          eji=eji+scissor
         end if
         if (abs(eji).gt.1.d-8) then
           t1=occsv(ist,jk)*(1.d0-occsv(jst,jk)/occmax)/eji
@@ -198,6 +203,7 @@ do l=1,noptcomp
   call writetest(121,'optical conductivity',nv=nwdos,tol=1.d-2,zva=sigma)
 ! end loop over tensor components
 end do
+close(50)
 write(*,*)
 write(*,'("Info(dielectric):")')
 write(*,'(" dielectric tensor written to EPSILON_ij.OUT")')

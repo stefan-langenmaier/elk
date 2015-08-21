@@ -5,6 +5,7 @@
 
 !BOP
 ! !ROUTINE: genvmatlu
+ !INTERFACE:
 subroutine genvmatlu
 ! !USES:
 use modmain

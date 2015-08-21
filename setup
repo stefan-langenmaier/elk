@@ -79,7 +79,7 @@ GETSYS ()
     F77_OPTS=$F90_OPTS
   elif [ "$SYS" = 8 ] ; then
     F90="g95"
-    F90_OPTS="-O3 -funroll-loops -ffast-math"
+    F90_OPTS="-O3 -funroll-loops"
     F77=$F90
     F77_OPTS=$F90_OPTS
   elif [ "$SYS" = 9 ] ; then

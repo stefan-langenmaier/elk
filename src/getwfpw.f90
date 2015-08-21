@@ -12,10 +12,10 @@ real(8), intent(in) :: vgpl(3,ngkmax)
 complex(8), intent(out) :: wfpw(ngkmax,nspinor,nstsv)
 ! local variables
 integer isym,lspl,ilspl,lspn
-integer ik,igp,igk,ig,ist
+integer ik,ist,igp,igk,ig
 integer recl,ngkmax_,nspinor_,nstsv_
-real(8) vkl_(3),det,v(3),th
-real(8) si(3,3),t1
+real(8) vkl_(3),si(3,3)
+real(8) v(3),det,th,t1
 complex(8) su2(2,2),zt1,zt2
 ! allocatable arrays
 complex(8), allocatable :: wfpwt(:,:,:)
@@ -26,8 +26,8 @@ lspl=lsplsymc(isym)
 ! find the record length
 inquire(iolength=recl) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
 !$OMP CRITICAL
-open(80,file='WFPW'//trim(filext),action='READ',form='UNFORMATTED', &
- access='DIRECT',recl=recl)
+open(80,file='WFPW.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
+ recl=recl)
 read(80,rec=ik) vkl_,ngkmax_,nspinor_,nstsv_,wfpw
 close(80)
 !$OMP END CRITICAL

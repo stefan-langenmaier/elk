@@ -6,13 +6,11 @@
 !BOP
 ! !ROUTINE: zpotclmt
 ! !INTERFACE:
-subroutine zpotclmt(ptnucl,lmax,nr,r,zn,ld,zrhomt,zvclmt)
+subroutine zpotclmt(lmax,nr,r,ld,zrhomt,zvclmt)
 ! !INPUT/OUTPUT PARAMETERS:
-!   ptnucl : .true. if the nucleus is a point particle (in,logical)
 !   lmax   : maximum angular momentum (in,integer)
 !   nr     : number of radial mesh points (in,integer)
 !   r      : radial mesh (in,real(nr))
-!   zn     : nuclear charge at the atomic center (in,real)
 !   ld     : leading dimension (in,integer)
 !   zrhomt : muffin-tin charge density (in,complex(ld,nr))
 !   zvclmt : muffin-tin Coulomb potential (out,complex(ld,nr))
@@ -21,11 +19,9 @@ subroutine zpotclmt(ptnucl,lmax,nr,r,zn,ld,zrhomt,zvclmt)
 !   muffin-tin using the Green's function approach. In other words, the
 !   spherical harmonic expansion of the Coulomb potential, $V_{lm}$, is obtained
 !   from the density expansion, $\rho_{lm}$, by
-!   $$ V_{lm}(r)=\frac{4\pi}{2l+1}\left(\frac{1}{r^{l+1}}\int_0^r
-!    \rho_{lm}(r'){r'}^{l+2}dr'+r^l\int_r^R\frac{\rho_{lm}(r')}{{r'}^{l-1}}dr'
-!    \right)+\frac{1}{Y_{00}}\frac{z}{r}\delta_{l,0} $$
-!   where the last term is the monopole arising from the point charge $z$, and
-!   $R$ is the muffin-tin radius.
+!   $$ V_{lm}(r)=\frac{4\pi}{2l+1}\left(\frac{1}{r^{l+1}}\int_0^r\rho_{lm}(r')
+!      {r'}^{l+2}dr'+r^l\int_r^R\frac{\rho_{lm}(r')}{{r'}^{l-1}}dr'\right) $$
+!   where $R$ is the muffin-tin radius.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)
@@ -33,19 +29,15 @@ subroutine zpotclmt(ptnucl,lmax,nr,r,zn,ld,zrhomt,zvclmt)
 !BOC
 implicit none
 ! arguments
-logical, intent(in) :: ptnucl
 integer, intent(in) :: lmax
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
-real(8), intent(in) :: zn
 integer, intent(in) :: ld
 complex(8), intent(in) :: zrhomt(ld,nr)
 complex(8), intent(out) :: zvclmt(ld,nr)
 ! local variables
 integer l,m,lm,ir
 real(8), parameter :: fourpi=12.566370614359172954d0
-! spherical harmonic for l=m=0
-real(8), parameter :: y00=0.28209479177387814347d0
 real(8) t1,t2,t3,t4
 ! automatic arrays
 real(8) ri(nr),rl(4,nr),cf(4,nr)
@@ -94,12 +86,6 @@ do l=0,lmax
     end do
   end if
 end do
-! add the nuclear potential
-if (zn.ne.0.d0) then
-  call potnucl(ptnucl,nr,r,zn,fr1)
-  t1=1.d0/y00
-  zvclmt(1,:)=zvclmt(1,:)+t1*fr1(:)
-end if
 return
 end subroutine
 !EOC

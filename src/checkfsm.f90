@@ -10,17 +10,15 @@ implicit none
 integer is,ia,ja
 integer isym,lspn
 real(8) sc(3,3),v(3),t1
-! external functions
-real(8) r3taxi
-external r3taxi
 if (fixspin.eq.0) return
 do isym=1,nsymcrys
   lspn=lspnsymc(isym)
+! proper rotation matrix in Cartesian coordinates
   sc(:,:)=dble(symlatd(lspn))*symlatc(:,:,lspn)
 ! check invariance of global moment
   if ((abs(fixspin).eq.1).or.(abs(fixspin).eq.3)) then
     v(:)=sc(:,1)*momfix(1)+sc(:,2)*momfix(2)+sc(:,3)*momfix(3)
-    t1=r3taxi(momfix,v)
+    t1=sum(abs(momfix(:)-v(:)))
     if (t1.gt.epslat) then
       write(*,*)
       write(*,'("Error(checkfsm): momfix not invariant under symmetry group")')
@@ -36,7 +34,7 @@ do isym=1,nsymcrys
         ja=ieqatom(ia,is,isym)
         v(:)=sc(:,1)*mommtfix(1,ja,is)+sc(:,2)*mommtfix(2,ja,is) &
          +sc(:,3)*mommtfix(3,ja,is)
-        t1=r3taxi(mommtfix(:,ia,is),v)
+        t1=sum(abs(mommtfix(:,ia,is)-v(:)))
         if (t1.gt.epslat) then
           write(*,*)
           write(*,'("Error(checkfsm): mommtfix not invariant under symmetry&

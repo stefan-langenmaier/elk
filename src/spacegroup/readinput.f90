@@ -7,9 +7,11 @@ open(50,file='spacegroup.in',action='READ',status='OLD',form='FORMATTED')
 ! read the Hermann-Mauguin symbol
 read(50,*) hrmg
 hrmg=adjustl(hrmg)
-! read lattice parameters
+! read lattice vector lengths
 read(50,*) a,b,c
-read(50,*) ab,ac,bc
+! read angles between lattice vectors: alpha, beta, gamma
+! (convention fixed by F. Cricchio)
+read(50,*) bc,ac,ab
 ! read number of unit cells
 read(50,*) ncell
 if ((ncell(1).lt.1).or.(ncell(2).lt.1).or.(ncell(3).lt.1)) then

@@ -289,10 +289,10 @@ logical autokpt
 real(8) radkpt
 ! k-point grid sizes
 integer ngridk(3)
-! total number of k-points
-integer nkpt
 ! k-point offset
 real(8) vkloff(3)
+! corners of box in lattice coordinates containing the k-points
+real(8) kptboxl(3,4)
 ! type of reduction to perform on k-point set
 !  0 : no reduction
 !  1 : reduce with full crystal symmetry group
@@ -302,6 +302,10 @@ integer reducek
 integer nsymkpt
 ! point group symmetry matrices used for k-point reduction
 integer symkpt(3,3,48)
+! total number of reduced k-points
+integer nkpt
+! map from non-reduced grid to reduced set
+integer, allocatable :: ikmap(:,:,:)
 ! locations of k-points on integer grid
 integer, allocatable :: ivk(:,:)
 ! k-points in lattice coordinates
@@ -310,10 +314,10 @@ real(8), allocatable :: vkl(:,:)
 real(8), allocatable :: vkc(:,:)
 ! k-point weights
 real(8), allocatable :: wkpt(:)
-! map from non-reduced grid to reduced set
-integer, allocatable :: ikmap(:,:,:)
 ! total number of non-reduced k-points
 integer nkptnr
+! map from non-reduced grid to non-reduced set
+integer, allocatable :: ikmapnr(:,:,:)
 ! locations of non-reduced k-points on integer grid
 integer, allocatable :: ivknr(:,:)
 ! non-reduced k-points in lattice coordinates
@@ -322,8 +326,6 @@ real(8), allocatable :: vklnr(:,:)
 real(8), allocatable :: vkcnr(:,:)
 ! non-reduced k-point weights
 real(8), allocatable :: wkptnr(:)
-! map from non-reduced grid to non-reduced set
-integer, allocatable :: ikmapnr(:,:,:)
 ! k-point at which to determine effective mass tensor
 real(8) vklem(3)
 ! displacement size for computing the effective mass tensor
@@ -360,18 +362,18 @@ complex(8), allocatable :: sfacgk(:,:,:,:)
 !-------------------------------!
 ! q-point grid sizes
 integer ngridq(3)
-! total number of q-points
-integer nqpt
 ! type of reduction to perform on q-point set (see reducek)
 integer reduceq
 ! number of point group symmetries used for q-point reduction
 integer nsymqpt
 ! point group symmetry matrices used for q-point reduction
 integer symqpt(3,3,48)
-! locations of q-points on integer grid
-integer, allocatable :: ivq(:,:)
+! total number of reduced q-points
+integer nqpt
 ! map from non-reduced grid to reduced set
 integer, allocatable :: iqmap(:,:,:)
+! locations of q-points on integer grid
+integer, allocatable :: ivq(:,:)
 ! q-points in lattice coordinates
 real(8), allocatable :: vql(:,:)
 ! q-points in Cartesian coordinates
@@ -446,6 +448,14 @@ real(8), allocatable :: exir(:)
 real(8), allocatable :: ecmt(:,:,:)
 ! interstitial real-space correlation energy density
 real(8), allocatable :: ecir(:)
+! muffin-tin paramagnetic current
+real(8), allocatable :: jcmt(:,:,:,:)
+! interstitial paramagnetic current
+real(8), allocatable :: jcir(:,:)
+
+!--------------------------!
+!     mixing variables     !
+!--------------------------!
 ! type of mixing to use for the potential
 integer mixtype
 ! mixing type description
@@ -453,10 +463,6 @@ character(256) mixdescr
 ! adaptive mixing parameter
 real(8) beta0
 real(8) betamax
-! muffin-tin paramagnetic current
-real(8), allocatable :: jcmt(:,:,:,:)
-! interstitial paramagnetic current
-real(8), allocatable :: jcir(:,:)
 
 !-------------------------------------!
 !     charge and moment variables     !
@@ -807,37 +813,6 @@ complex(8), allocatable :: zbxmt(:,:,:,:)
 complex(8), allocatable :: zbxir(:,:)
 
 !--------------------------!
-!     phonon variables     !
-!--------------------------!
-! number of primitive unit cells in phonon supercell
-integer nphcell
-! Cartesian offset vectors for each primitive cell in the supercell
-real(8) vphcell(3,maxatoms)
-! phonon displacement distance
-real(8) deltaph
-! original lattice vectors
-real(8) avec0(3,3)
-! original inverse of lattice vector matrix
-real(8) ainv0(3,3)
-! original number of atoms
-integer natoms0(maxspecies)
-integer natmtot0
-! original atomic positions in Cartesian coordinates
-real(8) atposc0(3,maxatoms,maxspecies)
-! original G-vector grid sizes
-integer ngrid0(3)
-integer ngrtot0
-! original effective potentials
-real(8), allocatable :: veffmt0(:,:,:)
-real(8), allocatable :: veffir0(:)
-! number of vectors for writing out frequencies and eigenvectors
-integer nphwrt
-! vectors in lattice coordinates for writing out frequencies and eigenvectors
-real(8), allocatable :: vqlwrt(:,:)
-! Coulomb pseudopotential
-real(8) mustar
-
-!--------------------------!
 !     timing variables     !
 !--------------------------!
 ! initialisation
@@ -870,7 +845,7 @@ complex(8), parameter :: zzero=(0.d0,0.d0)
 complex(8), parameter :: zhalf=(0.5d0,0.d0)
 complex(8), parameter :: zone=(1.d0,0.d0)
 complex(8), parameter :: zi=(0.d0,1.d0)
-! array of i**l values
+! array of i^l values
 complex(8), allocatable :: zil(:)
 ! Pauli spin matrices:
 ! sigma_x = ( 0  1 )   sigma_y = ( 0 -i )   sigma_z = ( 1  0 )
@@ -887,13 +862,25 @@ real(8), parameter :: sol=137.035999679d0
 real(8) solsc
 ! electron g-factor (CODATA 2006)
 real(8), parameter :: gfacte=2.0023193043622d0
+! hartree in SI units (CODATA 2006)
+real(8), parameter :: ha_si=4.35974394d-18
+! Bohr radius in SI units (CODATA 2006)
+real(8), parameter :: au_si=0.52917720859d-10
+! Planck constant in SI units (CODATA 2006)
+real(8), parameter :: hbar_si=1.054571628d-34
+! electron charge in SI units (CODATA 2006)
+real(8), parameter :: e_si=1.602176487d-19
+! atomic unit of magnetic flux density in SI
+real(8), parameter :: b_si=hbar_si/(e_si*au_si**2)
+! atomic unit of time in SI
+real(8), parameter :: t_si=hbar_si/ha_si
 
 !---------------------------------!
 !     miscellaneous variables     !
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,0,17 /
+data version / 1,1,4 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks
@@ -902,8 +889,6 @@ integer ntasks
 integer tasks(maxtasks)
 ! current task
 integer task
-! tstop is .true. if STOP file exists
-logical tstop
 ! tlast is .true. if self-consistent loop is on the last iteration
 logical tlast
 ! number of self-consistent loops after which STATE.OUT is written

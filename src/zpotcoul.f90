@@ -6,25 +6,25 @@
 !BOP
 ! !ROUTINE: zpotcoul
 ! !INTERFACE:
-subroutine zpotcoul(nr,nrmax,ld,r,igp0,gpc,jlgpr,ylmgp,sfacgp,zn,zrhomt, &
- zrhoir,zvclmt,zvclir,zrho0)
+subroutine zpotcoul(nr,ld1,r,igp0,gpc,jlgpr,ylmgp,sfacgp,zrhoir,ld2,zvclmt, &
+ zvclir,zrho0)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
 !   nr     : number of radial points for each species (in,integer(nspecies))
-!   nrmax  : maximum nr over all species (in,integer)
-!   ld     : leading dimension of r (in,integer)
-!   r      : radial mesh for each species (in,real(ld,nspecies))
+!   ld1    : leading dimension (in,integer)
+!   r      : radial mesh for each species (in,real(ld1,nspecies))
 !   igp0   : index of the shortest G+p-vector (in,integer)
 !   gpc    : G+p-vector lengths (in,real(ngvec))
 !   jlgpr  : spherical Bessel functions for evergy G+p-vector and muffin-tin
 !            radius (in,real(0:lmaxvr+npsden+1,ngvec,nspecies))
 !   ylmgp  : spherical harmonics of the G+p-vectors (in,complex(lmmaxvr,ngvec))
 !   sfacgp : structure factors of the G+p-vectors (in,complex(ngvec,natmtot))
-!   zn     : nuclear charges at the atomic centers (in,real(nspecies))
-!   zrhomt : muffin-tin charge density (in,complex(lmmaxvr,nrmax,natmtot))
 !   zrhoir : interstitial charge density (in,complex(ngrtot))
-!   zvclmt : muffin-tin Coulomb potential (out,complex(lmmaxvr,nrmax,natmtot))
+!   ld2    : leading dimension (in,integer)
+!   zvclmt : muffin-tin Coulomb potential, with the contribution from the
+!            isolated muffin-tin density precalculated and passed in
+!            (inout,complex(lmmaxvr,ld2,natmtot))
 !   zvclir : interstitial Coulomb potential (out,complex(ngrtot))
 !   zrho0  : G+p=0 term of the pseudocharge density (out,complex)
 ! !DESCRIPTION:
@@ -91,18 +91,16 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: nr(nspecies)
-integer, intent(in) :: nrmax
-integer, intent(in) :: ld
-real(8), intent(in) :: r(ld,nspecies)
+integer, intent(in) :: ld1
+real(8), intent(in) :: r(ld1,nspecies)
 integer, intent(in) :: igp0
 real(8), intent(in) :: gpc(ngvec)
 real(8), intent(in) :: jlgpr(0:lmaxvr+npsden+1,ngvec,nspecies)
 complex(8), intent(in) :: ylmgp(lmmaxvr,ngvec)
 complex(8), intent(in) :: sfacgp(ngvec,natmtot)
-real(8), intent(in) :: zn(nspecies)
-complex(8), intent(in) :: zrhomt(lmmaxvr,nrmax,natmtot)
 complex(8), intent(in) :: zrhoir(ngrtot)
-complex(8), intent(out) :: zvclmt(lmmaxvr,nrmax,natmtot)
+integer, intent(in) :: ld2
+complex(8), intent(inout) :: zvclmt(lmmaxvr,ld2,natmtot)
 complex(8), intent(out) :: zvclir(ngrtot)
 complex(8), intent(out) :: zrho0
 ! local variables
@@ -112,7 +110,7 @@ real(8) fpo,t1
 complex(8) zsum1,zsum2,zt1,zt2
 ! automatic arrays
 real(8) rmtl(0:lmaxvr+3,nspecies)
-real(8) rl(nrmax,0:lmaxvr)
+real(8) rl(ld1,0:lmaxvr)
 complex(8) vilm(lmmaxvr)
 complex(8) qmt(lmmaxvr,natmtot)
 complex(8) qi(lmmaxvr,natmtot)
@@ -122,19 +120,6 @@ complex(8) zrp(lmmaxvr)
 real(8) factnm
 external factnm
 fpo=fourpi/omega
-! solve Poisson's equation for the isolated charge in the muffin-tin
-do is=1,nspecies
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias)
-!$OMP DO
-  do ia=1,natoms(is)
-    ias=idxas(ia,is)
-    call zpotclmt(ptnucl,lmaxvr,nr(is),r(:,is),zn(is),lmmaxvr,zrhomt(:,:,ias), &
-     zvclmt(:,:,ias))
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-end do
 ! compute (R_mt)^l
 do is=1,nspecies
   rmtl(0,is)=1.d0

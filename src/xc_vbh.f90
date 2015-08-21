@@ -45,19 +45,22 @@ real(8), parameter :: cp=0.0504d0
 real(8), parameter :: cf=0.0254d0
 real(8), parameter :: rp=30.d0
 real(8), parameter :: rf=75.d0
-real(8) alpha0,a,gamma,r,rs,x,zf,zp
-real(8) fx,fp,ff,eps0_x,epsp_x,mup_x
+real(8) alpha0,eps0_x,a,gamma
+real(8) rup,rdn,r,rs,x,zf,zp
+real(8) fx,fp,ff,epsp_x,mup_x
 real(8) epsp_c,epsf_c,mup_c,muf_c,vc,tau_c
 alpha0=(4.d0/(9.d0*pi))**(1.d0/3.d0)
 eps0_x=(3.d0/2.d0)/(pi*alpha0)
 a=2.d0**(-1.d0/3.d0)
 gamma=(4.d0/3.d0)*a/(1.d0-a)
 do i=1,n
-  if ((rhoup(i).gt.1.d-12).and.(rhodn(i).gt.1.d-12)) then
-    r=rhoup(i)+rhodn(i)
+  rup=rhoup(i); rdn=rhodn(i)
+! total density
+  r=rup+rdn
+  if ((rup.ge.0.d0).and.(rdn.ge.0.d0).and.(r.gt.1.d-12)) then
 ! Wigner-Seitz radius in atomic units (a0=1)
     rs=(3.d0/(4.d0*pi*r))**(1.d0/3.d0)
-    x=rhoup(i)/r
+    x=rup/r
     fx=(1.d0/(1.d0-a))*(x**(4.d0/3.d0)+(1.d0-x)**(4.d0/3.d0)-a)
     epsp_x=-eps0_x/rs
     mup_x=(4.d0/3.d0)*epsp_x

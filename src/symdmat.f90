@@ -43,7 +43,7 @@ do lm1=1,lmmax
 end do
 do isym=1,nsymlat
 ! construct (l,m) rotation matrix for each lattice symmetry
-  call rotzflm(symlatc(:,:,isym),lmax,lmmax,lmmax,zflm,ulm(:,:,isym))
+  call rotzflm(symlatc(:,:,isym),0,lmax,lmmax,lmmax,zflm,ulm(:,:,isym))
 ! construct SU(2) matrix for proper rotation of spinor components
 ! (note that rotsu2 uses only the proper part of the rotation matrix)
   if (spinpol) then

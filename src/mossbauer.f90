@@ -29,16 +29,6 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer ir,nrn,nrt
-! hartree in SI units (CODATA 2006)
-real(8), parameter :: ha_si=4.35974394d-18
-! Bohr radius in SI units
-real(8), parameter :: au_si=0.52917720859d-10
-! Planck constant in SI units
-real(8), parameter :: hbar_si=1.054571628d-34
-! electron charge in SI units
-real(8), parameter :: e_si=1.602176487d-19
-! atomic unit of magnetic flux density in SI
-real(8), parameter :: b_si=hbar_si/(e_si*au_si**2)
 ! nuclear radius constant in Bohr
 real(8), parameter :: r0=1.25d-15/au_si
 real(8) rn,rt,vn,vt
@@ -67,7 +57,7 @@ do is=1,nspecies
   rn=spr(nrn,is)
   vn=(4.d0/3.d0)*pi*rn**3
 ! Thomson radius and volume
-  rt=abs(spzn(is))/sol**2
+  rt=abs(spzn(is))/solsc**2
   do ir=1,nrmt(is)-1
     if (spr(ir,is).gt.rt) goto 20
   end do
@@ -114,9 +104,9 @@ do is=1,nspecies
       write(50,'(" Thomson radius : ",G18.10)') rt
       write(50,'(" number of mesh points to Thomson radius : ",I6)') nrt
       write(50,'(" contact magnetic moment (mu_B) : ",G18.10)') mc
-      bc=(8.d0*pi/3.d0)*mc/(2.d0*sol)
+      bc=(8.d0*pi/3.d0)*mc/(2.d0*solsc)
       write(50,'(" contact hyperfine field : ",G18.10)') bc
-      write(50,'("  tesla                  : ",G18.10)') bc*b_si/sol
+      write(50,'("  tesla                  : ",G18.10)') bc*b_si/solsc
     end if
   end do
 end do

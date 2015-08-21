@@ -21,12 +21,9 @@ implicit none
 ! local variables
 integer ik3,ik1,ik2
 integer ist2,ist1,iv(3)
-real(8) t1,t2,t3
+real(8) t1,t2,t3,t4
 ! allocatable arays
 real(8), allocatable :: vnlijji(:,:,:)
-! external functions
-real(8) r3taxi,rfmtinp
-external r3taxi,rfmtinp
 ! calculate the prefactor
 if (rdmxctype.eq.0) then
   engyx=0.d0
@@ -66,8 +63,8 @@ do ik1=1,nkptnr
 ! Power functional
         else if (rdmxctype.eq.2) then
           t3=occsv(ist2,ik3)*occsv(ist1,ik2)
-          if ((ist2.eq.ist1).and. &
-           (r3taxi(vkl(:,ik3),vklnr(:,ik1)).lt.epslat)) then
+          t4=sum(abs(vkl(:,ik3)-vklnr(:,ik1)))
+          if ((ist2.eq.ist1).and.(t4.lt.epslat)) then
             t2=(0.5d0/occmax)*wkpt(ik3)*t3
           else
             if (t3.gt.0.d0) then

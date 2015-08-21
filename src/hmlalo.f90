@@ -12,18 +12,24 @@ integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ias,io,ilo,i,j,k
-integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
-complex(8) zsum,zt1
+integer ias,io,ilo
+integer l1,l2,l3,m1,m2,m3
+integer lm1,lm2,lm3
+integer ist,i,j,k,ki,kj
+complex(8) zsum
+! allocatable arrays
+complex(8), allocatable :: hi(:)
+if (tapp) allocate(hi(ngp))
 ias=idxas(ia,is)
 do ilo=1,nlorb(is)
   l1=lorbl(ilo,is)
   do m1=-l1,l1
     lm1=idxlm(l1,m1)
     i=ngp+idxlo(lm1,ilo,ias)
+    if (tapp) hi(:)=0.d0
     do l3=0,lmaxmat
       do m3=-l3,l3
         lm3=idxlm(l3,m3)
@@ -40,12 +46,8 @@ do ilo=1,nlorb(is)
 ! note that what is actually computed is the Hermitian conjugate of <lo|H|APW>
           if (abs(dble(zsum))+abs(aimag(zsum)).gt.1.d-14) then
             if (tapp) then
-! apply the Hamiltonian operator to v
-              do j=1,ngp
-                zt1=zsum*apwalm(j,io,lm3,ias)
-                h(i)=h(i)+zt1*v(j)
-                h(j)=h(j)+conjg(zt1)*v(i)
-              end do
+! calculate the row of matrix H for application to v
+              hi(1:ngp)=hi(1:ngp)+zsum*apwalm(1:ngp,io,lm3,ias)
             else
 ! calculate the matrix elements
               k=((i-1)*i)/2
@@ -58,8 +60,26 @@ do ilo=1,nlorb(is)
         end do
       end do
     end do
+! apply row of H to v
+    if (tapp) then
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(j,k,ki,kj)
+!$OMP DO
+      do ist=1,nstfv
+        k=(ist-1)*nmatmax
+        ki=k+i
+        do j=1,ngp
+          kj=k+j
+          h(ki)=h(ki)+hi(j)*v(kj)
+          h(kj)=h(kj)+conjg(hi(j))*v(ki)
+        end do
+      end do
+!$OMP END DO
+!$OMP END PARALLEL
+    end if
   end do
 end do
+if (tapp) deallocate(hi)
 return
 end subroutine
 

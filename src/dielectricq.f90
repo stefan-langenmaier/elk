@@ -23,10 +23,6 @@ real(8), allocatable :: vgklnr(:,:)
 real(8), allocatable :: vgkql(:,:)
 real(8), allocatable :: vgkcnr(:,:)
 real(8), allocatable :: vgkqc(:,:)
-real(8), allocatable :: gkcnr(:)
-real(8), allocatable :: gkqc(:)
-real(8), allocatable :: tpgkcnr(:,:)
-real(8), allocatable :: tpgkqc(:,:)
 real(8), allocatable :: w(:)
 complex(8), allocatable :: wfpwk(:,:,:)
 complex(8), allocatable :: wfpwkq(:,:,:)
@@ -44,10 +40,6 @@ allocate(vgklnr(3,ngkmax))
 allocate(vgkql(3,ngkmax))
 allocate(vgkcnr(3,ngkmax))
 allocate(vgkqc(3,ngkmax))
-allocate(gkcnr(ngkmax))
-allocate(gkqc(ngkmax))
-allocate(tpgkcnr(2,ngkmax))
-allocate(tpgkqc(2,ngkmax))
 allocate(w(nwdos))
 allocate(wfpwk(ngkmax,nspinor,nstsv))
 allocate(wfpwkq(ngkmax,nspinor,nstsv))
@@ -84,9 +76,8 @@ do iq=1,nqpt
 ! equivalent reduced k-point
     jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
 ! generate G+k vectors
-    call gengpvec(vklnr(:,ik),vkcnr(:,ik),ngknr,igkignr,vgklnr,vgkcnr,gkcnr, &
-     tpgkcnr)
-! get the plane wave wavefunction at k
+    call gengpvec(vklnr(:,ik),vkcnr(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
+! get the plane wave wavefunctions at k
     call getwfpw(vklnr(:,ik),vgklnr,wfpwk)
 ! k+q vector in lattice coordinates
     vkql(:)=vklnr(:,ik)+vql(:,iq)
@@ -95,8 +86,8 @@ do iq=1,nqpt
 ! k+q in Cartesian coordinates
     call r3mv(bvec,vkql,vkqc)
 ! generate G+k+q vectors
-    call gengpvec(vkql,vkqc,ngkq,igkqig,vgkql,vgkqc,gkqc,tpgkqc)
-! get the plane wave wavefunction at k+q
+    call gengpvec(vkql,vkqc,ngkq,igkqig,vgkql,vgkqc)
+! get the plane wave wavefunctions at k+q
     call getwfpw(vkql,vgkql,wfpwkq)
 ! generate the map from G+k to G+k+q
     map(:)=0
@@ -111,6 +102,10 @@ do iq=1,nqpt
           goto 10
         end if
       end do
+      write(*,*)
+      write(*,'("Error(dielectricq): unable to map G+k to G+k+q")')
+      write(*,*)
+      stop
 10 continue
     end do
     do ist=1,nstsv
@@ -152,8 +147,7 @@ do iq=1,nqpt
 end do
 deallocate(igkignr,igkqig,map)
 deallocate(vgklnr,vgkql,vgkcnr,vgkqc)
-deallocate(gkcnr,gkqc,tpgkcnr,tpgkqc,w)
-deallocate(wfpwk,wfpwkq,chi,eps)
+deallocate(w,wfpwk,wfpwkq,chi,eps)
 return
 end subroutine
 

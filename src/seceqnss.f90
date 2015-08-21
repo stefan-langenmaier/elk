@@ -28,8 +28,8 @@ complex(8), allocatable :: wfmt1(:,:,:,:)
 complex(8), allocatable :: wfmt2(:,:,:)
 complex(8), allocatable :: wfmt3(:,:)
 complex(8), allocatable :: wfmt4(:,:,:)
-complex(8), allocatable :: zfft1(:,:)
-complex(8), allocatable :: zfft2(:)
+complex(8), allocatable :: wfir1(:,:)
+complex(8), allocatable :: wfir2(:)
 complex(8), allocatable :: zv(:,:)
 complex(8), allocatable :: work(:)
 ! external functions
@@ -138,38 +138,38 @@ deallocate(wfmt1,wfmt2,wfmt3,wfmt4)
 !     interstitial part     !
 !---------------------------!
 allocate(bir(ngrtot,3))
-allocate(zfft1(ngrtot,nspnfv))
-allocate(zfft2(ngrtot))
+allocate(wfir1(ngrtot,nspnfv))
+allocate(wfir2(ngrtot))
 allocate(zv(ngkmax,3))
 do ir=1,ngrtot
   bir(ir,:)=(bxcir(ir,:)+cb*bfieldc(:))*cfunir(ir)
 end do
 do jst=1,nstfv
   do ispn=1,nspnfv
-    zfft1(:,ispn)=0.d0
+    wfir1(:,ispn)=0.d0
     do igk=1,ngk(ispn,ik)
       ifg=igfft(igkig(igk,ispn,ik))
-      zfft1(ifg,ispn)=evecfv(igk,jst,ispn)
+      wfir1(ifg,ispn)=evecfv(igk,jst,ispn)
     end do
 ! Fourier transform wavefunction to real-space
-    call zfftifc(3,ngrid,1,zfft1(:,ispn))
+    call zfftifc(3,ngrid,1,wfir1(:,ispn))
   end do
 ! multiply with magnetic field and transform to G-space
   do k=1,3
     if (k.eq.1) then
       ispn=1
-      zfft2(:)=zfft1(:,1)*bir(:,3)
+      wfir2(:)=wfir1(:,1)*bir(:,3)
     else if (k.eq.2) then
       ispn=2
-      zfft2(:)=-zfft1(:,2)*bir(:,3)
+      wfir2(:)=-wfir1(:,2)*bir(:,3)
     else
       ispn=1
-      zfft2(:)=zfft1(:,2)*cmplx(bir(:,1),-bir(:,2),8)
+      wfir2(:)=wfir1(:,2)*cmplx(bir(:,1),-bir(:,2),8)
     end if
-    call zfftifc(3,ngrid,-1,zfft2)
+    call zfftifc(3,ngrid,-1,wfir2)
     do igk=1,ngk(ispn,ik)
       ifg=igfft(igkig(igk,ispn,ik))
-      zv(igk,k)=zfft2(ifg)
+      zv(igk,k)=wfir2(ifg)
     end do
   end do
   do ist=1,nstfv
@@ -194,7 +194,7 @@ do jst=1,nstfv
     end do
   end do
 end do
-deallocate(bir,zfft1,zfft2,zv)
+deallocate(bir,wfir1,wfir2,zv)
 ! add the diagonal first-variational part
 i=0
 do ispn=1,nspinor

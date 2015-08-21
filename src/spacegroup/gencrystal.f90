@@ -7,14 +7,11 @@ integer i1,i2,i3
 integer id(3),ngen,ngrp
 real(8) abr,acr,bcr
 real(8) sab,cab,cac,cbc
-real(8) v1(3),v2(3)
+real(8) v1(3),v2(3),t1
 ! space group generator Seitz matrices
 real(8) srgen(3,3,12),stgen(3,12)
 ! space group Seitz matrices
 real(8) srgrp(3,3,192),stgrp(3,192)
-! external functions
-real(8) r3taxi
-external r3taxi
 ! convert angles from degrees to radians
 abr=ab*(pi/180.d0)
 acr=ac*(pi/180.d0)
@@ -71,7 +68,8 @@ do is=1,nspecies
             call r3frac(epslat,v2,id)
 ! check if new position already exists
             do ia=1,natoms(is)
-              if (r3taxi(v2,atposl(:,ia,is)).lt.epslat) goto 30
+              t1=sum(abs(v2(:)-atposl(:,ia,is)))
+              if (t1.lt.epslat) goto 30
             end do
 ! add new position to list
             natoms(is)=natoms(is)+1
@@ -93,7 +91,7 @@ do is=1,nspecies
   natmtot=natmtot+natoms(is)
 end do
 ! set magnetic fields to zero
-bfcmt(:,:,:)=0.d0
+bfcmt0(:,:,:)=0.d0
 ! reduce conventional cell to primitive cell if required
 if (primcell) call findprim
 ! find the total number of atoms

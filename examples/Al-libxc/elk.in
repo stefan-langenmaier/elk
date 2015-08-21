@@ -8,8 +8,10 @@ tasks
 
 ! libxc is selected with xctype(1)=100. The remaining two numbers are the
 ! exchange and correlation functionals, respectively - in this case Slater
-! exchange and Perdew-Wang correlation. Refer to the libxc manual for the
-! complete list.
+! exchange and Perdew-Wang correlation. Refer to the file
+! 'elk/src/libxc_funcs.f90' for the complete list of functionals and
+! associated numbers.
+
 xctype
  100  1  13
 

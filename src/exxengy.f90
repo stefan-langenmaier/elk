@@ -58,8 +58,7 @@ do is=1,nspecies
                 call vnlrhomt(.true.,is,wfcr1(:,:,2),wfcr2(:,:,2),zfmt)
                 zrhomt(:,1:nrc)=zrhomt(:,1:nrc)+zfmt(:,1:nrc)
 ! calculate the Coulomb potential
-                call zpotclmt(ptnucl,lmaxvr,nrc,rcmt(:,is),0.d0,lmmaxvr, &
-                 zrhomt,zvclmt)
+                call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
                 zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
                 ecc=ecc-0.5d0*dble(zt1)
               end do

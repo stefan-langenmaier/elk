@@ -70,7 +70,7 @@ complex(8) zt1
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:),c(:,:)
 ! external functions
-real(8) rfmtinp,rfinp,rfint
+real(8) rfinp
 complex(8) zdotc
 external rfmtinp,rfinp,rfint,zdotc
 ! coupling constant of the external field (g_e/4c)

@@ -17,8 +17,8 @@ use modmain
 !   ngp    : number of G+p-vectors (in,integer)
 !   apwalm : APW matching coefficients
 !            (in,complex(ngkmax,apwordmax,lmmaxapw,natmtot))
-!   v      : input vector to which H is applied if tapp is .true., otherwise
-!            not referenced (in,complex(nmatmax))
+!   v      : set of input vectors to which H is applied if tapp is .true.,
+!            otherwise not referenced (in,complex(*))
 !   h      : H applied to v if tapp is .true., otherwise it is the Hamiltonian
 !            matrix in packed form (inout,complex(*))
 ! !DESCRIPTION:
@@ -35,7 +35,7 @@ integer, intent(in) :: is
 integer, intent(in) :: ia
 integer, intent(in) :: ngp
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
 integer ias,io1,io2
@@ -77,7 +77,11 @@ do l1=0,lmaxmat
           end if
         end do
       end do
-      call zmatinp(tapp,ngp,zone,apwalm(:,io1,lm1,ias),zv,v,h)
+      if (tapp) then
+        call zmatinpv(ngp,zone,apwalm(:,io1,lm1,ias),zv,nstfv,nmatmax,v,h)
+      else
+        call zmatinp(ngp,zone,apwalm(:,io1,lm1,ias),zv,h)
+      end if
     end do
   end do
 end do
@@ -89,8 +93,12 @@ do l1=0,lmaxmat
     do io1=1,apword(l1,is)
       do io2=1,apword(l1,is)
         zt1=t1*apwfr(nrmt(is),1,io1,l1,ias)*apwdfr(io2,l1,ias)
-        call zmatinp(tapp,ngp,zt1,apwalm(:,io1,lm1,ias),apwalm(:,io2,lm1,ias), &
-         v,h)
+        if (tapp) then
+          call zmatinpv(ngp,zt1,apwalm(:,io1,lm1,ias),apwalm(:,io2,lm1,ias), &
+           nstfv,nmatmax,v,h)
+        else
+          call zmatinp(ngp,zt1,apwalm(:,io1,lm1,ias),apwalm(:,io2,lm1,ias),h)
+        end if
       end do
     end do
   end do

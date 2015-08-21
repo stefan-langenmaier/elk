@@ -8,6 +8,7 @@ use modmain
 implicit none
 ! local variables
 integer ik,ist,igk,recl
+integer ispn,jspn
 real(8) chg,wfn0,wfn1,sum
 ! allocatable arrays
 complex(8), allocatable :: wfpw(:,:,:)
@@ -31,7 +32,7 @@ open(50,file='WFPW.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  status='REPLACE',recl=recl)
 ! determine the record length and open WFPWH.OUT
 allocate(wfpwh(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-inquire(iolength=recl) vkl(:,ik),ngkmax,nspinor,nstsv,wfpwh
+inquire(iolength=recl) vkl(:,ik),lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv,wfpwh
 deallocate(wfpwh)
 open(51,file='WFPWH.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
  status='REPLACE',recl=recl)
@@ -40,8 +41,8 @@ wfn0=1.d0
 wfn1=0.d0
 ! begin parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(wfpw,wfpwh) &
-!$OMP PRIVATE(ist,sum,igk)
+!$OMP PRIVATE(wfpw,wfpwh,ist) &
+!$OMP PRIVATE(sum,ispn,jspn,igk)
 !$OMP DO
 do ik=1,nkpt
   allocate(wfpw(ngkmax,nspinor,nstsv))
@@ -53,20 +54,26 @@ do ik=1,nkpt
    tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),wfpw,wfpwh)
 !$OMP CRITICAL
   write(50,rec=ik) vkl(:,ik),ngkmax,nspinor,nstsv,wfpw
-  write(51,rec=ik) vkl(:,ik),ngkmax,nspinor,nstsv,wfpwh
+  write(51,rec=ik) vkl(:,ik),lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv,wfpwh
 !$OMP END CRITICAL
 ! read in the occupancies
   call getoccsv(vkl(:,ik),occsv(:,ik))
 ! calculate the total charge from the low G+k wavefunctions
   do ist=1,nstsv
     sum=0.d0
-    do igk=1,ngk(1,ik)
-      sum=sum+dble(wfpw(igk,1,ist))**2+aimag(wfpw(igk,1,ist))**2
-      if (spinpol) sum=sum+dble(wfpw(igk,2,ist))**2+aimag(wfpw(igk,2,ist))**2
+    do ispn=1,nspinor
+      if (spinsprl) then
+        jspn=ispn
+      else
+        jspn=1
+      end if
+      do igk=1,ngk(jspn,ik)
+        sum=sum+dble(wfpw(igk,ispn,ist))**2+aimag(wfpw(igk,ispn,ist))**2
+      end do
     end do
+!$OMP CRITICAL
     if (sum.lt.wfn0) wfn0=sum
     if (sum.gt.wfn1) wfn1=sum
-!$OMP CRITICAL
     chg=chg+wkpt(ik)*occsv(ist,ik)*sum
 !$OMP END CRITICAL
   end do

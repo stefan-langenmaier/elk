@@ -32,7 +32,7 @@ do is=1,nspecies
     call sbessel(lmaxvr,x,jl)
     lm=0
     do l=0,lmaxvr
-      zt1=fourpi*zil(l)*jl(l)
+      zt1=fourpi*jl(l)*zil(l)
       do m=-l,l
         lm=lm+1
         zflm(lm)=zt1*conjg(ylm(lm))

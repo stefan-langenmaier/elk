@@ -67,31 +67,30 @@ integer i
 real(8), parameter :: thrd=1.d0/3.d0
 real(8), parameter :: thrd2=2.d0/3.d0
 real(8), parameter :: pi=3.1415926535897932385d0
-real(8) r,r2,kf,s,u,v
+real(8) rup,rdn,r,r2,kf,s,u,v
 real(8) rs,z,g,ks,ksg
 real(8) t,uu,vv,ww
 real(8) g2rho,exup,exdn
 do i=1,n
-  if ((rhoup(i).gt.1.d-12).and.(rhodn(i).gt.1.d-12)) then
+  rup=rhoup(i); rdn=rhodn(i)
+! total density
+  r=rup+rdn
+  if ((rup.ge.0.d0).and.(rdn.ge.0.d0).and.(r.gt.1.d-12)) then
 ! exchange energy density and potential
 ! spin-up
-    r=rhoup(i)
-    r2=2.d0*r
+    r2=2.d0*rup
     kf=(r2*3.d0*pi**2)**thrd
-    s=gup(i)/(2.d0*kf*r)
-    u=g3up(i)/((r**2)*(2.d0*kf)**3)
-    v=g2up(i)/(r*(2.d0*kf)**2)
+    s=gup(i)/(2.d0*kf*rup)
+    u=g3up(i)/((rup**2)*(2.d0*kf)**3)
+    v=g2up(i)/(rup*(2.d0*kf)**2)
     call x_pbe(kappa,mu,r2,s,u,v,exup,vxup(i))
 ! spin-down
-    r=rhodn(i)
-    r2=2.d0*r
+    r2=2.d0*rdn
     kf=(r2*3.d0*pi**2)**thrd
-    s=gdn(i)/(2.d0*kf*r)
-    u=g3dn(i)/((r**2)*(2.d0*kf)**3)
-    v=g2dn(i)/(r*(2.d0*kf)**2)
+    s=gdn(i)/(2.d0*kf*rdn)
+    u=g3dn(i)/((rdn**2)*(2.d0*kf)**3)
+    v=g2dn(i)/(rdn*(2.d0*kf)**2)
     call x_pbe(kappa,mu,r2,s,u,v,exdn,vxdn(i))
-! total density
-    r=rhoup(i)+rhodn(i)
 ! average exchange energy density
     ex(i)=(exup*rhoup(i)+exdn*rhodn(i))/r
 ! correlation

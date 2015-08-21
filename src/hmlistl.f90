@@ -15,8 +15,8 @@ use modmain
 !   ngp   : number of G+p-vectors (in,integer)
 !   igpig : index from G+p-vectors to G-vectors (in,integer(ngkmax))
 !   vgpc  : G+p-vectors in Cartesian coordinates (in,real(3,ngkmax))
-!   v     : input vector to which H is applied if tapp is .true., otherwise
-!           not referenced (in,complex(nmatmax))
+!   v     : set of input vectors to which H is applied if tapp is .true.,
+!           otherwise not referenced (in,complex(*))
 !   h     : H applied to v if tapp is .true., otherwise it is the Hamiltonian
 !           matrix in packed form (inout,complex(*))
 ! !DESCRIPTION:
@@ -38,30 +38,39 @@ logical, intent(in) :: tapp
 integer, intent(in) :: ngp
 integer, intent(in) :: igpig(ngkmax)
 real(8), intent(in) :: vgpc(3,ngkmax)
-complex(8), intent(in) :: v(nmatmax)
+complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer i,j,k,iv(3),ig
+integer iv(3),ig
+integer ist,i,j,k,ki,kj
 real(8) t1
-complex(8) zt1
+! allocatable arrays
+complex(8), allocatable :: hj(:)
 if (tapp) then
 ! apply the Hamiltonian operator to v
-! diagonal
-  ig=ivgig(0,0,0)
-  do i=1,ngp
-    t1=0.5d0*(vgpc(1,i)**2+vgpc(2,i)**2+vgpc(3,i)**2)
-    h(i)=h(i)+(veffig(ig)+t1*cfunig(ig))*v(i)
-  end do
-! off-diagonal
-  do i=1,ngp
-    do j=i+1,ngp
+  allocate(hj(ngp))
+  do j=1,ngp
+    do i=1,j
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
       ig=ivgig(iv(1),iv(2),iv(3))
       t1=0.5d0*(vgpc(1,i)*vgpc(1,j)+vgpc(2,i)*vgpc(2,j)+vgpc(3,i)*vgpc(3,j))
-      zt1=veffig(ig)+t1*cfunig(ig)
-      h(i)=h(i)+zt1*v(j)
-      h(j)=h(j)+conjg(zt1)*v(i)
+      hj(i)=veffig(ig)+t1*cfunig(ig)
     end do
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(i,k,ki,kj)
+!$OMP DO
+    do ist=1,nstfv
+      k=(ist-1)*nmatmax
+      kj=k+j
+      do i=1,j-1
+        ki=k+i
+        h(ki)=h(ki)+hj(i)*v(kj)
+        h(kj)=h(kj)+conjg(hj(i))*v(ki)
+      end do
+      h(kj)=h(kj)+dble(hj(j))*v(kj)
+    end do
+!$OMP END DO
+!$OMP END PARALLEL
   end do
 else
 ! calculate the matrix elements
@@ -76,6 +85,7 @@ else
     end do
   end do
 end if
+if (tapp) deallocate(hj)
 return
 end subroutine
 !EOC

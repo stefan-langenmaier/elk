@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: gengpvec
 ! !INTERFACE:
-subroutine gengpvec(vpl,vpc,ngp,igpig,vgpl,vgpc,gpc,tpgpc)
+subroutine gengpvec(vpl,vpc,ngp,igpig,vgpl,vgpc)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
@@ -16,15 +16,14 @@ use modmain
 !   igpig : index from G+p-vectors to G-vectors (out,integer(ngkmax))
 !   vgpl  : G+p-vectors in lattice coordinates (out,real(3,ngkmax))
 !   vgpc  : G+p-vectors in Cartesian coordinates (out,real(3,ngkmax))
-!   gpc   : length of G+p-vectors (out,real(ngkmax))
-!   tpgpc : (theta, phi) coordinates of G+p-vectors (out,real(2,ngkmax))
 ! !DESCRIPTION:
 !   Generates a set of ${\bf G+p}$-vectors for the input $p$-point with length
 !   less than {\tt gkmax}. These are used as the plane waves in the APW
-!   functions. Also computes the spherical coordinates of each vector.
+!   functions.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)
+!   Removed spherical coordinate generation, May 2010 (JKD)
 !EOP
 !BOC
 implicit none
@@ -35,8 +34,6 @@ integer, intent(out) :: ngp
 integer, intent(out) :: igpig(ngkmax)
 real(8), intent(out) :: vgpl(3,ngkmax)
 real(8), intent(out) :: vgpc(3,ngkmax)
-real(8), intent(out) :: gpc(ngkmax)
-real(8), intent(out) :: tpgpc(2,ngkmax)
 ! local variables
 integer ig,igp
 real(8) v(3),t1,t2
@@ -59,8 +56,6 @@ do ig=1,ngvec
     vgpl(:,igp)=dble(ivg(:,ig))+vpl(:)
 ! G+p-vector in Cartesian coordinates
     vgpc(:,igp)=v(:)
-! G+p-vector length and (theta, phi) coordinates
-    call sphcrd(vgpc(:,igp),gpc(igp),tpgpc(:,igp))
   end if
 end do
 ngp=igp
