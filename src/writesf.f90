@@ -28,6 +28,7 @@ close(51)
 write(*,*)
 write(*,'("Info(writesf): smooth Dirac delta and Heaviside functions written")')
 write(*,'(" SDELTA.OUT and STHETA.OUT, respectively")')
+write(*,*)
 return
 end subroutine
 

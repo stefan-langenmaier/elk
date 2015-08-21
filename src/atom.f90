@@ -202,7 +202,9 @@ write(*,'("Warning(atom): maximum iterations exceeded")')
 10 continue
 deallocate(vn,vh,ex,ec,vx,vc,vrp)
 deallocate(ri,fr1,fr2,gr1,gr2,cf)
-if (xcgrad.eq.1) deallocate(grho,g2rho,g3rho)
+if (xcgrad.eq.1) then
+  deallocate(grho,g2rho,g3rho)
+end if
 return
 end subroutine
 !EOC

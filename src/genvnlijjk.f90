@@ -61,9 +61,9 @@ allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot,nstsv),zrhoir(ngrtot,nstsv))
 allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot),zvclir(ngrtot))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
-! generate G+k-vectors for non-reduced k-point ikp
+! generate G+k vectors for non-reduced k-point ikp
 call gengpvec(vkl(:,ikp),vkc(:,ikp),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k-vectors
+! generate the spherical coordinates of the G+k vectors
 do igk=1,ngknr
   call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
 end do
@@ -93,7 +93,7 @@ do ik=1,nkpt
   iq=iqmap(iv(1),iv(2),iv(3))
   v(:)=vkc(:,ik)-vkc(:,ikp)
   do ig=1,ngvec
-! determine G+q-vectors
+! determine G+q vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
 ! G+q-vector length and (theta, phi) coordinates
     call sphcrd(vgqc(:,ig),gqc(ig),tpgqc(:,ig))

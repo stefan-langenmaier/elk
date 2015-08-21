@@ -1,13 +1,13 @@
 
-! Ferromagnetic nickel phonon example. Note that 'task=200' can be run on as
-! many computers as you like, but within the same network file system (NFS)
-! directory. Once all the DYN_Qqqqq_qqqq_qqqq_Sss_Aaa_Pp.OUT files are
-! generated, run 'task=220' to generate the phonon dispersion and compare to
+! Ferromagnetic nickel phonon example. Start by running 'task=0', and then run
+! 'task=200' on as many computers as you like, but within the same network file
+! system (NFS) directory. Once all the DYN_Qqqqq_qqqq_qqqq_Sss_Aaa_Pp.OUT files
+! are generated, run 'task=220' to generate the phonon dispersion and compare to
 ! arXiv:cond-mat/0609352v1. A previously calculated dispersion has been included
-! in this directory.
+! in this directory. 
 
 tasks
- 200
+ 0
 
 rgkmax
  8.2
@@ -19,7 +19,9 @@ lmaxmat
 beta0
  0.01
 
-! this variable determines the density of k-points for the phonon calculation
+autokpt
+ .true.
+
 radkpt
  50.0
 

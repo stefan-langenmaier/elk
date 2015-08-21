@@ -283,10 +283,8 @@ real(8), allocatable :: vgc(:,:)
 real(8), allocatable :: gc(:)
 ! spherical harmonics of the G-vectors
 complex(8), allocatable :: ylmg(:,:)
-! structure factors for the G-vectors
+! structure factor for the G-vectors
 complex(8), allocatable :: sfacg(:,:)
-! smooth step function form factors for all species and G-vectors
-real(8), allocatable :: ffacg(:,:)
 ! G-space characteristic function: 0 inside the muffin-tins and 1 outside
 complex(8), allocatable :: cfunig(:)
 ! real-space characteristic function: 0 inside the muffin-tins and 1 outside
@@ -470,8 +468,6 @@ real(8), allocatable :: ecir(:)
 real(8), allocatable :: jcmt(:,:,:,:)
 ! interstitial paramagnetic current
 real(8), allocatable :: jcir(:,:)
-! if trdstate is .true. the density and potential can be read from STATE.OUT
-logical trdstate
 
 !--------------------------!
 !     mixing variables     !
@@ -487,8 +483,6 @@ real(8) betamax
 integer mixsdp
 ! subspace dimension for Broyden mixing
 integer mixsdb
-! Broyden mixing parameters alpha and w0
-real(8) broydpm(2)
 
 !-------------------------------------!
 !     charge and moment variables     !
@@ -596,6 +590,10 @@ real(8) dlefe
 integer, allocatable :: nmat(:,:)
 ! maximum nmat over all k-points
 integer nmatmax
+! tpmat is .true. if packed matrices are to be used
+logical tpmat
+! size of packed matrices (or nmat^2 if tpmat is .false.)
+integer, allocatable :: npmat(:,:)
 ! index to the position of the local-orbitals in the H and O matrices
 integer, allocatable :: idxlo(:,:,:)
 ! APW-local-orbital overlap integrals
@@ -739,12 +737,10 @@ real(8), allocatable :: forceibs(:,:)
 ! total force on each atom
 real(8), allocatable :: forcetot(:,:)
 ! previous total force on each atom
-real(8), allocatable :: forcetotp(:,:)
+real(8), allocatable :: forcetp(:,:)
 ! maximum force magnitude over all atoms
 real(8) forcemax
-! maximum number of geometry optimisation steps
-integer maxgeostp
-! default step size parameter for geometry optimisation
+! default step size parameter for structural optimisation
 real(8) tau0atm
 ! step size parameters for each atom
 real(8), allocatable :: tauatm(:)
@@ -863,18 +859,18 @@ logical hybrid
 ! hybrid functional mixing parameter
 real(8) hybmix
 
-!--------------------------------------------------------!
-!     many-body perturbation theory (MBPT) variables     !
-!--------------------------------------------------------!
-! |G| cut-off for the RPA dielectric function
+!------------------------------------!
+!     many-body theory variables     !
+!------------------------------------!
+! |G| cut-off for the RPA dielectric response function
 real(8) gmaxrpa
-! number of G-vectors for the RPA dielectric function
+! number of G vectors for the RPA dielectric response function
 integer ngrpa
 ! number of RPA frequencies
 integer nwrpa
 ! complex RPA frequencies
 complex(8), allocatable :: wrpa(:)
-! exp(iG.r) functions for all MBPT G-vectors
+! exp(iG.r) functions for all RPA G vectors
 complex(8), allocatable :: expgmt(:,:,:,:)
 complex(8), allocatable :: expgir(:,:)
 
@@ -987,7 +983,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,3,24 /
+data version / 1,3,2 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

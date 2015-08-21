@@ -89,6 +89,7 @@ end do
 close(50)
 write(*,*)
 write(*,'("Info(writeefg): electric field gradient written to EFG.OUT")')
+write(*,*)
 deallocate(rfmt,grfmt1,grfmt2)
 return
 end subroutine

@@ -51,37 +51,39 @@ if (notelns.gt.0) then
 end if
 write(fnum,*)
 write(fnum,'("All units are atomic (Hartree, Bohr, etc.)")')
-write(fnum,*)
 select case(task)
-case(0,1,200)
-  if (trdstate) then
-    write(fnum,'("+------------------------------------------+")')
-    write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
-    write(fnum,'("+------------------------------------------+")')
-  else
-    write(fnum,'("+-------------------------------------------------+")')
-    write(fnum,'("| Ground-state run starting from atomic densities |")')
-    write(fnum,'("+-------------------------------------------------+")')
-  end if
-case(2,3)
-  if (trdstate) then
-    write(fnum,'("+---------------------------------------------------+")')
-    write(fnum,'("| Geometry optimisation run resuming from STATE.OUT |")')
-    write(fnum,'("+---------------------------------------------------+")')
-  else
-    write(fnum,'("+------------------------------------------------------+")')
-    write(fnum,'("| Geometry optimisation starting from atomic densities |")')
-    write(fnum,'("+------------------------------------------------------+")')
-  end if
-case(5)
+case(0)
+  write(fnum,*)
+  write(fnum,'("+-------------------------------------------------+")')
+  write(fnum,'("| Ground-state run starting from atomic densities |")')
+  write(fnum,'("+-------------------------------------------------+")')
+case(1,200)
+  write(fnum,*)
+  write(fnum,'("+------------------------------------------+")')
+  write(fnum,'("| Ground-state run resuming from STATE.OUT |")')
+  write(fnum,'("+------------------------------------------+")')
+case(2)
+  write(fnum,*)
+  write(fnum,'("+--------------------------------------------------------+")')
+  write(fnum,'("| Structural optimisation starting from atomic densities |")')
+  write(fnum,'("+--------------------------------------------------------+")')
+case(3)
+  write(fnum,*)
+  write(fnum,'("+-----------------------------------------------------+")')
+  write(fnum,'("| Structural optimisation run resuming from STATE.OUT |")')
+  write(fnum,'("+-----------------------------------------------------+")')
+case(5,6)
+  write(fnum,*)
   write(fnum,'("+-------------------------------+")')
   write(fnum,'("| Ground-state Hartree-Fock run |")')
   write(fnum,'("+-------------------------------+")')
 case(300)
+  write(fnum,*)
   write(fnum,'("+----------------------------------------------+")')
   write(fnum,'("| Reduced density matrix functional theory run |")')
   write(fnum,'("+----------------------------------------------+")')
 case default
+  write(*,*)
   write(*,'("Error(writeinfo): task not defined : ",I8)') task
   write(*,*)
   stop
@@ -247,7 +249,7 @@ write(fnum,'("Total number of core states    : ",I4)') nstcr
 write(fnum,*)
 write(fnum,'("Total number of local-orbitals : ",I4)') nlotot
 write(fnum,*)
-if (task.eq.5) then
+if ((task.eq.5).or.(task.eq.6)) then
   write(fnum,'("Hartree-Fock calculation using Kohn-Sham states")')
   if (hybrid) then
     write(fnum,'(" hybrid functional, mixing parameter : ",G18.10)') hybmix

@@ -116,8 +116,6 @@ do ig=ngrtot,1,-1
     exit
   end if
 end do
-! re-order the G-vectors in the case of phonons
-call phgvec
 ! write number of G-vectors to test file
 call writetest(900,'number of G-vectors',iv=ngvec)
 deallocate(idx,iar,rar)

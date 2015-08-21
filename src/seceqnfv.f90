@@ -39,17 +39,21 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
 ! local variables
-integer is,ia,n2
+integer is,ia,np
 real(8) v(1)
 real(8) ts0,ts1
 ! allocatable arrays
 complex(8), allocatable :: h(:),o(:)
-n2=nmatp**2
+if (tpmat) then
+  np=(nmatp*(nmatp+1))/2
+else
+  np=nmatp**2
+end if
 !-----------------------------------------------!
 !     Hamiltonian and overlap matrix set up     !
 !-----------------------------------------------!
 call timesec(ts0)
-allocate(h(n2),o(n2))
+allocate(h(np),o(np))
 !$OMP PARALLEL SECTIONS DEFAULT(SHARED) PRIVATE(is,ia)
 !$OMP SECTION
 ! Hamiltonian
@@ -85,7 +89,7 @@ if (tseqr) then
 ! system has inversion symmetry: use real symmetric matrix eigen solver
   call seceqnfvr(nmatp,ngp,vpc,h,o,evalfv,evecfv)
 else
-! no inversion symmetry: use complex Hermitian matrix eigen solver
+! no inversion symmetry: use complex Hermititan matrix eigen solver
   call seceqnfvz(nmatp,h,o,evalfv,evecfv)
 end if
 deallocate(h,o)

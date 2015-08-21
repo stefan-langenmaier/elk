@@ -118,6 +118,7 @@ end if
 write(*,'(" for plotting with XCrysDen (Fermi energy set to zero)")')
 write(*,*)
 write(*,'(" Launch as: xcrysden --bxsf FERMISURF(_UP/_DN).bxsf")')
+write(*,*)
 return
 end subroutine
 

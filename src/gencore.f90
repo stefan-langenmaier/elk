@@ -90,7 +90,7 @@ do is=1,nspecies
       end do
       rhocr(:,ias,ispn)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(t1,ir) SHARED(is)
+!$OMP PRIVATE(t1,ir)
 !$OMP DO
       do ist=1,spnst(is)
         if (spcore(ist,is)) then

@@ -139,9 +139,11 @@ end do
 if (n.eq.0) then
   write(*,*)
   write(*,'("Warning(testcheck): no tests found")')
+  write(*,*)
 else
   write(*,*)
   write(*,'("Info(testcheck): passed all tests")')
+  write(*,*)
 end if
 return
 10 continue

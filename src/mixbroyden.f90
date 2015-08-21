@@ -3,14 +3,12 @@
 ! This file is distributed under the terms of the GNU Lesser General Public
 ! License. See the file COPYING for license details.
 
-subroutine mixbroyden(iscl,n,msd,alpha,w0,nu,mu,f,df,u,a,d)
+subroutine mixbroyden(iscl,n,msd,nu,mu,f,df,u,a,d)
 implicit none
 ! arguments
 integer, intent(in) :: iscl
 integer, intent(in) :: n
 integer, intent(in) :: msd
-real(8), intent(in) :: alpha
-real(8), intent(in) :: w0
 real(8), intent(inout) :: nu(n)
 real(8), intent(inout) :: mu(n,2)
 real(8), intent(inout) :: f(n,2)
@@ -21,6 +19,7 @@ real(8), intent(out) :: d
 ! local variables
 integer jc,kp,kc
 integer k,l,m,info
+real(8), parameter :: alpha=0.25d0, w0=0.01d0
 real(8) t1
 ! automatic arrays
 integer ipiv(msd)

@@ -87,6 +87,7 @@ if (mp_mpi) then
   write(*,*)
   write(*,'("Info(writepmat):")')
   write(*,'(" momentum matrix elements written to file PMAT.OUT")')
+  write(*,*)
 end if
 end subroutine
 !EOC

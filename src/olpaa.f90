@@ -28,7 +28,8 @@ do l=0,lmaxmat
          nmatmax,v,o)
       else
 ! compute the matrix explicitly
-        call zmatinp(ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias),ld,o)
+        call zmatinp(tpmat,ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias), &
+         ld,o)
       end if
     end do
   end do

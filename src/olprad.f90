@@ -39,7 +39,7 @@ do is=1,nspecies
   r2(1:nr)=spr(1:nr,is)**2
 !$OMP PARALLEL DEFAULT(SHARED) &
 !$OMP PRIVATE(fr,gr,cf,ias) &
-!$OMP PRIVATE(ilo,jlo,l,io) SHARED(is)
+!$OMP PRIVATE(ilo,jlo,l,io)
 !$OMP DO
   do ia=1,natoms(is)
     allocate(fr(nrmtmax),gr(nrmtmax),cf(4,nrmtmax))

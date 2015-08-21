@@ -46,11 +46,11 @@ ncbse
 nempty
  20
 
-! G-vector cut-off of local contribution to RPA
+! G vector cut-off of local contribution to RPA
 gmaxrpa
  2.5
 
-! the spectrum is very sensitive to the k-point mesh
+! the spectrum is very sensitive to the k point mesh
 ngridk
  4 4 4
 

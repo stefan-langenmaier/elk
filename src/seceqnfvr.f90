@@ -1,5 +1,5 @@
 
-! Copyright (C) 2011 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
+! Copyright (C) 2011 J. K. Dewhurst, S. Sharma and E. K. U. Gross
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
@@ -39,7 +39,7 @@ real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)
 ! local variables
 integer is,ia,ja,jas
-integer i,j,k,l,m
+integer i,j,k,l,m,n
 integer i1,i2,j1,j2
 integer k1,k2,k3,k4
 integer l1,l2,m1,m2
@@ -59,7 +59,12 @@ call timesec(ts0)
 allocate(tr(nlotot),tp(nlotot))
 allocate(idx(nlotot),s(nlotot))
 allocate(map(nlotot,nlotot))
-allocate(rh(nmatp**2),ro(nmatp**2))
+if (tpmat) then
+  n=(nmatp*(nmatp+1))/2
+else
+  n=nmatp**2
+end if
+allocate(rh(n),ro(n))
 allocate(zp(nlotot))
 tp(:)=.false.
 i=0
@@ -125,14 +130,22 @@ do m=1,nlotot
   j=ngp+m
   do l=1,m
     i=ngp+l
-    map(l,m)=i+(j-1)*nmatp
+    if (tpmat) then
+      map(l,m)=i+((j-1)*j)/2
+    else
+      map(l,m)=i+(j-1)*nmatp
+    end if
     map(m,l)=map(l,m)
   end do
 end do
 ! construct real Hamiltonian and overlap matrices
 ! <APW|H|APW>
 do j=1,ngp
-  k=(j-1)*nmatp
+  if (tpmat) then
+    k=((j-1)*j)/2
+  else
+    k=(j-1)*nmatp
+  end if
   do i=1,j
     k=k+1
     rh(k)=dble(h(k))
@@ -144,8 +157,13 @@ do m1=1,nlotot
   j1=ngp+m1
   j2=ngp+idx(m1)
   do i=1,ngp
-    k1=i+(j1-1)*nmatp
-    k2=i+(j2-1)*nmatp
+    if (tpmat) then
+      k1=i+((j1-1)*j1)/2
+      k2=i+((j2-1)*j2)/2
+    else
+      k1=i+(j1-1)*nmatp
+      k2=i+(j2-1)*nmatp
+    end if
     h1=h(k1); h2=h(k2)
     o1=o(k1); o2=o(k2)
     if (tp(m1)) then
@@ -195,20 +213,14 @@ allocate(w(nmatp))
 allocate(rv(nmatp,nstfv))
 lwork=8*nmatp
 allocate(work(lwork))
-call dsygvx(1,'V','I','U',nmatp,rh,nmatp,ro,nmatp,vl,vu,1,nstfv,evaltol,m,w, &
- rv,nmatp,work,lwork,iwork,ifail,info)
-if (info.ne.0) then
-  write(*,*)
-  write(*,'("Error(seceqnfvr): diagonalisation failed")')
-  write(*,'(" DSYGVX returned INFO = ",I8)') info
-  if (info.gt.nmatp) then
-    i=info-nmatp
-    write(*,'(" The leading minor of the overlap matrix of order ",I8)') i
-    write(*,'("  is not positive definite")')
-    write(*,'(" Order of overlap matrix : ",I8)') nmatp
-    write(*,*)
-  end if
-  stop
+if (tpmat) then
+  call dspgvx(1,'V','I','U',nmatp,rh,ro,vl,vu,1,nstfv,evaltol,m,w,rv,nmatp, &
+   work,iwork,ifail,info)
+  if (info.ne.0) goto 10
+else
+  call dsygvx(1,'V','I','U',nmatp,rh,nmatp,ro,nmatp,vl,vu,1,nstfv,evaltol,m,w, &
+   rv,nmatp,work,lwork,iwork,ifail,info)
+  if (info.ne.0) goto 10
 end if
 evalfv(1:nstfv)=w(1:nstfv)
 ! reconstruct the complex eigenvectors
@@ -241,6 +253,18 @@ call timesec(ts1)
 timefv=timefv+ts1-ts0
 !$OMP END CRITICAL
 return
+10 continue
+write(*,*)
+write(*,'("Error(seceqnfvr): diagonalisation failed")')
+write(*,'(" DSPGVX/DSYGVX returned INFO = ",I8)') info
+if (info.gt.nmatp) then
+  i=info-nmatp
+  write(*,'(" The leading minor of the overlap matrix of order ",I8)') i
+  write(*,'("  is not positive definite")')
+  write(*,'(" Order of overlap matrix : ",I8)') nmatp
+  write(*,*)
+end if
+stop
 end subroutine
 !EOC
 

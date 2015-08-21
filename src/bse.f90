@@ -13,7 +13,6 @@ integer ik,jk,a,b
 integer ist,jst,i,j,k
 integer ntop,lwork,info
 real(8) h0,t1
-character(256) fname
 ! allocatable arrays
 integer, allocatable :: idx(:)
 real(8), allocatable :: rwork(:)
@@ -197,9 +196,8 @@ do ik=1,nkptnr
 end do
 deallocate(idx)
 ! read in the RPA inverse dielectric function for q = 0
-allocate(epsinv(ngrpa,ngrpa,nwrpa))
-fname='EPSINV_RPA.OUT'
-call getcf2pt(fname,vql(:,iq0),ngrpa,nwrpa,epsinv)
+allocate(epsinv(nwrpa,ngrpa,ngrpa))
+call getepsinv_rpa(vql(:,iq0),epsinv)
 ! compute the G = G' = q = 0 part of the direct kernel
 h0=-2.d0/twopi**2
 h0=h0*(6.d0*pi**2*(wkptnr/omega))**(1.d0/3.d0)
@@ -233,7 +231,7 @@ end do
 deallocate(epsinv)
 ! add the exchange matrix elements
 call hmlxbse
-! generate the exp(iG.r) functions for all the MBPT G-vectors
+! generate the exp(iG.r) functions for all the RPA G vectors
 call genexpigr
 ! add the direct matrix elements
 call hmldbse
@@ -295,7 +293,7 @@ if (mp_mpi) then
 end if
 ! calculate the macroscopic dielectric tensor
 if (mp_mpi) call dielectric_bse
-! deallocate global MBPT and BSE arrays
+! deallocate global RPA and BSE arrays
 deallocate(istbse,jstbse,ijkbse,hmlbse,evalbse)
 return
 end subroutine

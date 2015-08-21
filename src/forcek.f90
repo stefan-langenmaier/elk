@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: forcek
 ! !INTERFACE:
-subroutine forcek(ik)
+subroutine forcek(ik,ffacg)
 ! !USES:
 use modmain
 ! !DESCRIPTION:
@@ -21,10 +21,11 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ik
+real(8), intent(in) :: ffacg(ngvec,nspecies)
 ! local variables
 integer ispn,jspn,jspn0,jspn1
 integer is,ia,ias,ist,jst
-integer n2,i,j,k,l,iv(3),ig
+integer np,i,j,k,l,iv(3),ig
 real(8) sum,t1
 complex(8) zt1,zt2
 complex(8) v(1)
@@ -33,25 +34,34 @@ integer, allocatable :: ijg(:)
 real(8), allocatable :: dp(:)
 real(8), allocatable :: evalfv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
-complex(8), allocatable :: h(:),o(:),dlh(:),dlo(:)
-complex(8), allocatable :: vh(:),vo(:)
-complex(8), allocatable :: ffv(:,:),y(:)
+complex(8), allocatable :: evecfv(:,:,:)
+complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: h(:)
+complex(8), allocatable :: o(:)
+complex(8), allocatable :: dlh(:)
+complex(8), allocatable :: dlo(:)
+complex(8), allocatable :: vh(:)
+complex(8), allocatable :: vo(:)
+complex(8), allocatable :: ffv(:,:)
+complex(8), allocatable :: y(:)
 ! external functions
 complex(8) zdotc
 external zdotc
-n2=nmat(1,ik)**2
-if (spinsprl) n2=max(n2,nmat(2,ik)**2)
+np=npmat(1,ik)
+if (spinsprl) np=max(np,npmat(2,ik))
 ! allocate local arrays
-allocate(ijg(n2))
-allocate(dp(n2))
+allocate(ijg(np))
+allocate(dp(np))
 allocate(evalfv(nstfv,nspnfv))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv,nspnfv))
 allocate(evecsv(nstsv,nstsv))
-allocate(h(n2),o(n2),dlh(n2),dlo(n2))
-allocate(vh(nmatmax),vo(nmatmax))
-allocate(ffv(nstfv,nstfv),y(nstfv))
+allocate(h(np),o(np))
+allocate(dlh(np),dlo(np))
+allocate(vh(nmatmax))
+allocate(vo(nmatmax))
+allocate(ffv(nstfv,nstfv))
+allocate(y(nstfv))
 ! get the eigenvalues/vectors and occupancies from file
 call getevalfv(vkl(:,ik),evalfv)
 call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
@@ -68,7 +78,11 @@ do ispn=1,nspnfv
   call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
    sfacgk(:,:,ispn,ik),apwalm)
   do j=1,ngk(ispn,ik)
-    k=(j-1)*nmat(ispn,ik)
+    if (tpmat) then
+      k=((j-1)*j)/2
+    else
+      k=(j-1)*nmat(ispn,ik)
+    end if
     do i=1,j
       k=k+1
       iv(:)=ivg(:,igkig(i,ispn,ik))-ivg(:,igkig(j,ispn,ik))
@@ -81,17 +95,21 @@ do ispn=1,nspnfv
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-      h(1:n2)=0.d0
+      h(1:npmat(ispn,ik))=0.d0
       call hmlaa(.false.,is,ia,ngk(ispn,ik),apwalm,v,h)
       call hmlalo(.false.,is,ia,ngk(ispn,ik),apwalm,v,h)
-      o(1:n2)=0.d0
+      o(1:npmat(ispn,ik))=0.d0
       call olpaa(.false.,is,ia,ngk(ispn,ik),apwalm,v,o)
       call olpalo(.false.,is,ia,ngk(ispn,ik),apwalm,v,o)
 ! loop over Cartesian directions
       do l=1,3
 ! APW-APW contribution
         do j=1,ngk(ispn,ik)
-          k=(j-1)*nmat(ispn,ik)
+          if (tpmat) then
+            k=((j-1)*j)/2
+          else
+            k=(j-1)*nmat(ispn,ik)
+          end if
           do i=1,j
             k=k+1
             ig=ijg(k)
@@ -103,7 +121,11 @@ do ispn=1,nspnfv
         end do
 ! APW-local-orbital contribution
         do j=ngk(ispn,ik)+1,nmat(ispn,ik)
-          k=(j-1)*nmat(ispn,ik)
+          if (tpmat) then
+            k=((j-1)*j)/2
+          else
+            k=(j-1)*nmat(ispn,ik)
+          end if
           do i=1,ngk(ispn,ik)
             k=k+1
             t1=vgkc(l,i,ispn,ik)
@@ -117,16 +139,25 @@ do ispn=1,nspnfv
           end do
         end do
 ! multiply by i
-        do k=1,n2
+        do k=1,npmat(ispn,ik)
           dlh(k)=cmplx(-aimag(dlh(k)),dble(dlh(k)),8)
           dlo(k)=cmplx(-aimag(dlo(k)),dble(dlo(k)),8)
         end do
 ! compute the force matrix elements in the first-variational basis
         do jst=1,nstfv
-          call zhemv('U',nmat(ispn,ik),zone,dlh,nmat(ispn,ik), &
-           evecfv(:,jst,ispn),1,zzero,vh,1)
-          call zhemv('U',nmat(ispn,ik),zone,dlo,nmat(ispn,ik), &
-           evecfv(:,jst,ispn),1,zzero,vo,1)
+          if (tpmat) then
+! packed matrices
+            call zhpmv('U',nmat(ispn,ik),zone,dlh,evecfv(:,jst,ispn),1,zzero, &
+             vh,1)
+            call zhpmv('U',nmat(ispn,ik),zone,dlo,evecfv(:,jst,ispn),1,zzero, &
+             vo,1)
+          else
+! upper triangular matrices
+            call zhemv('U',nmat(ispn,ik),zone,dlh,nmat(ispn,ik), &
+             evecfv(:,jst,ispn),1,zzero,vh,1)
+            call zhemv('U',nmat(ispn,ik),zone,dlo,nmat(ispn,ik), &
+             evecfv(:,jst,ispn),1,zzero,vo,1)
+          end if
           t1=evalfv(jst,ispn)
           do ist=1,nstfv
             zt1=zdotc(nmat(ispn,ik),evecfv(:,ist,ispn),1,vh,1)

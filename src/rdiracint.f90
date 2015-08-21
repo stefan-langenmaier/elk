@@ -6,29 +6,27 @@
 !BOP
 ! !ROUTINE: rdiracint
 ! !INTERFACE:
-subroutine rdiracint(sol,m,kpa,e,np,nr,r,vr,trsc,nn,g0p,f0p,g0,g1,f0,f1)
+subroutine rdiracint(sol,m,kpa,e,np,nr,r,vr,nn,g0p,f0p,g0,g1,f0,f1)
 ! !INPUT/OUTPUT PARAMETERS:
-!   sol  : speed of light in atomic units (in,real)
-!   m    : order of energy derivative (in,integer)
-!   kpa  : quantum number kappa (in,integer)
-!   e    : energy (in,real)
-!   np   : order of predictor-corrector polynomial (in,integer)
-!   nr   : number of radial mesh points (in,integer)
-!   r    : radial mesh (in,real(nr))
-!   vr   : potential on radial mesh (in,real(nr))
-!   trsc : .true. if the radial functions should be rescaled if any one of them
-!          exceeds an overflow value (in,logical)
-!   nn   : number of nodes (out,integer)
-!   g0p  : m-1 th energy derivative of the major component multiplied by r
-!          (in,real(nr))
-!   f0p  : m-1 th energy derivative of the minor component multiplied by r
-!          (in,real(nr))
-!   g0   : m th energy derivative of the major component multiplied by r
-!          (out,real(nr))
-!   g1   : radial derivative of g0 (out,real(nr))
-!   f0   : m th energy derivative of the minor component multiplied by r
-!          (out,real(nr))
-!   f1   : radial derivative of f0 (out,real(nr))
+!   sol : speed of light in atomic units (in,real)
+!   m   : order of energy derivative (in,integer)
+!   kpa : quantum number kappa (in,integer)
+!   e   : energy (in,real)
+!   np  : order of predictor-corrector polynomial (in,integer)
+!   nr  : number of radial mesh points (in,integer)
+!   r   : radial mesh (in,real(nr))
+!   vr  : potential on radial mesh (in,real(nr))
+!   nn  : number of nodes (out,integer)
+!   g0p : m-1 th energy derivative of the major component multiplied by r
+!         (in,real(nr))
+!   f0p : m-1 th energy derivative of the minor component multiplied by r
+!         (in,real(nr))
+!   g0  : m th energy derivative of the major component multiplied by r
+!         (out,real(nr))
+!   g1  : radial derivative of g0 (out,real(nr))
+!   f0  : m th energy derivative of the minor component multiplied by r
+!         (out,real(nr))
+!   f1  : radial derivative of f0 (out,real(nr))
 ! !DESCRIPTION:
 !   Integrates the $m$th energy derivative of the radial Dirac equation from
 !   $r=0$ outwards. This involves using the predictor-corrector method to solve
@@ -60,7 +58,6 @@ integer, intent(in) :: np
 integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
-logical, intent(in) :: trsc
 integer, intent(out) :: nn
 real(8), intent(in) :: g0p(nr)
 real(8), intent(in) :: f0p(nr)
@@ -70,8 +67,6 @@ real(8), intent(out) :: f0(nr)
 real(8), intent(out) :: f1(nr)
 ! local variables
 integer ir,ir0,npl
-! rescaling limit
-real(8), parameter :: rsc=1.d100, rsci=1.d0/rsc
 real(8) ci,e0,t1,t2,t3,t4
 ! automatic arrays
 real(8) c(np)
@@ -139,22 +134,13 @@ do ir=2,nr
     f1(ir)=f1(ir)-ci*dble(m)*g0p(ir)
   end if
 ! check for overflow
-  if ((abs(g0(ir)).gt.rsc).or.(abs(g1(ir)).gt.rsc).or. &
-      (abs(f0(ir)).gt.rsc).or.(abs(f1(ir)).gt.rsc)) then
-    if (trsc) then
-! rescale values already calculated and continue
-      g0(1:ir)=g0(1:ir)*rsci
-      g1(1:ir)=g1(1:ir)*rsci
-      f0(1:ir)=f0(1:ir)*rsci
-      f1(1:ir)=f1(1:ir)*rsci
-    else
-! set the remaining points and return
-      g0(ir:nr)=g0(ir)
-      g1(ir:nr)=g1(ir)
-      f0(ir:nr)=f0(ir)
-      f1(ir:nr)=f1(ir)
-      return
-    end if
+  if ((abs(g0(ir)).gt.1.d100).or.(abs(g1(ir)).gt.1.d100).or. &
+      (abs(f0(ir)).gt.1.d100).or.(abs(f1(ir)).gt.1.d100)) then
+    g0(ir:nr)=g0(ir)
+    g1(ir:nr)=g1(ir)
+    f0(ir:nr)=f0(ir)
+    f1(ir:nr)=f1(ir)
+    return
   end if
 ! check for node
   if (g0(ir-1)*g0(ir).lt.0.d0) nn=nn+1

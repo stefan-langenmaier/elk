@@ -23,13 +23,15 @@ real(8) ts1,ts0
 real(8) t1
 complex(8) zt1
 ! allocatable arrays
-complex(8), allocatable :: h(:,:),o(:,:)
+complex(8), allocatable :: h(:,:)
+complex(8), allocatable :: o(:,:)
 ! external functions
 complex(8) zdotc
 external zdotc
 call timesec(ts0)
-allocate(h(nmatmax,nstfv),o(nmatmax,nstsv))
-if ((iscl.ge.2).or.trdstate) then
+allocate(h(nmatmax,nstfv))
+allocate(o(nmatmax,nstfv))
+if ((iscl.ge.2).or.(task.eq.1).or.(task.eq.3)) then
 ! read in the eigenvalues/vectors from file
   call getevalfv(vpl,evalfv)
   call getevecfv(vpl,vgpl,evecfv)
@@ -70,9 +72,9 @@ do it=1,nseqit
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      call zdscal(nmatp,t1,evecfv(:,ist),1)
-      call zdscal(nmatp,t1,h(:,ist),1)
-      call zdscal(nmatp,t1,o(:,ist),1)
+      evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
+      h(1:nmatp,ist)=t1*h(1:nmatp,ist)
+      o(1:nmatp,ist)=t1*o(1:nmatp,ist)
     end if
 ! estimate the eigenvalue
     evalfv(ist)=dble(zdotc(nmatp,evecfv(:,ist),1,h(:,ist),1))
@@ -95,8 +97,8 @@ do it=1,nseqit
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      call zdscal(nmatp,t1,evecfv(:,ist),1)
-      call zdscal(nmatp,t1,o(:,ist),1)
+      evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
+      o(1:nmatp,ist)=t1*o(1:nmatp,ist)
     end if
 ! end loop over states
   end do
@@ -116,8 +118,8 @@ do it=1,nseqit
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,o(:,ist),1))
     if (t1.gt.0.d0) then
       t1=1.d0/sqrt(t1)
-      call zdscal(nmatp,t1,evecfv(:,ist),1)
-      call zdscal(nmatp,t1,o(:,ist),1)
+      evecfv(1:nmatp,ist)=t1*evecfv(1:nmatp,ist)
+      o(1:nmatp,ist)=t1*o(1:nmatp,ist)
     end if
   end do
 !$OMP END DO

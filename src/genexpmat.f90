@@ -18,15 +18,29 @@ integer nrc,i,j,k,l
 real(8) vpc(3),vpql(3),vpqc(3),t1
 complex(8) zsum
 ! allocatable arrays
-integer, allocatable :: igpig(:),igpqig(:)
-real(8), allocatable :: vgpl(:,:),vgpc(:,:),gpc(:),tpgpc(:,:)
-real(8), allocatable :: vgpql(:,:),vgpqc(:,:),gpqc(:),tpgpqc(:,:)
-complex(8), allocatable :: sfacgp(:,:),sfacgpq(:,:)
-complex(8), allocatable :: apwalm1(:,:,:,:),apwalm2(:,:,:,:)
-complex(8), allocatable :: evecfv1(:,:),evecfv2(:,:)
-complex(8), allocatable :: evecsv1(:,:),evecsv2(:,:)
-complex(8), allocatable :: wfmt1(:,:),wfmt2(:,:,:)
-complex(8), allocatable :: zfir(:),zv(:),em(:,:)
+integer, allocatable :: igpig(:)
+integer, allocatable :: igpqig(:)
+real(8), allocatable :: vgpl(:,:)
+real(8), allocatable :: vgpc(:,:)
+real(8), allocatable :: gpc(:)
+real(8), allocatable :: tpgpc(:,:)
+real(8), allocatable :: vgpql(:,:)
+real(8), allocatable :: vgpqc(:,:)
+real(8), allocatable :: gpqc(:)
+real(8), allocatable :: tpgpqc(:,:)
+complex(8), allocatable :: sfacgp(:,:)
+complex(8), allocatable :: sfacgpq(:,:)
+complex(8), allocatable :: apwalm1(:,:,:,:)
+complex(8), allocatable :: apwalm2(:,:,:,:)
+complex(8), allocatable :: evecfv1(:,:)
+complex(8), allocatable :: evecfv2(:,:)
+complex(8), allocatable :: evecsv1(:,:)
+complex(8), allocatable :: evecsv2(:,:)
+complex(8), allocatable :: wfmt1(:,:)
+complex(8), allocatable :: wfmt2(:,:,:)
+complex(8), allocatable :: zfir(:)
+complex(8), allocatable :: zv(:)
+complex(8), allocatable :: em(:,:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
@@ -40,23 +54,36 @@ if (t1.lt.epslat) then
   return
 end if
 ! allocate local arrays
-allocate(igpig(ngkmax),igpqig(ngkmax))
-allocate(vgpl(3,ngkmax),vgpc(3,ngkmax),gpc(ngkmax),tpgpc(2,ngkmax))
-allocate(vgpql(3,ngkmax),vgpqc(3,ngkmax),gpqc(ngkmax),tpgpqc(2,ngkmax))
-allocate(sfacgp(ngkmax,natmtot),sfacgpq(ngkmax,natmtot))
+allocate(igpig(ngkmax))
+allocate(igpqig(ngkmax))
+allocate(vgpl(3,ngkmax))
+allocate(vgpc(3,ngkmax))
+allocate(gpc(ngkmax))
+allocate(tpgpc(2,ngkmax))
+allocate(vgpql(3,ngkmax))
+allocate(vgpqc(3,ngkmax))
+allocate(gpqc(ngkmax))
+allocate(tpgpqc(2,ngkmax))
+allocate(sfacgp(ngkmax,natmtot))
+allocate(sfacgpq(ngkmax,natmtot))
 allocate(apwalm1(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(apwalm2(ngkmax,apwordmax,lmmaxapw,natmtot))
-allocate(evecfv1(nmatmax,nstfv),evecfv2(nmatmax,nstfv))
+allocate(evecfv1(nmatmax,nstfv))
+allocate(evecfv2(nmatmax,nstfv))
 if (tevecsv) then
-  allocate(evecsv1(nstsv,nstsv),evecsv2(nstsv,nstsv))
+  allocate(evecsv1(nstsv,nstsv))
+  allocate(evecsv2(nstsv,nstsv))
 end if
-allocate(wfmt1(lmmaxvr,nrcmtmax),wfmt2(lmmaxvr,nrcmtmax,nstfv))
-allocate(zfir(ngrtot),zv(ngkmax),em(nstfv,nstfv))
-! p-vector in Cartesian coordinates
+allocate(wfmt1(lmmaxvr,nrcmtmax))
+allocate(wfmt2(lmmaxvr,nrcmtmax,nstfv))
+allocate(zfir(ngrtot))
+allocate(zv(ngkmax))
+allocate(em(nstfv,nstfv))
+! p vector in Cartesian coordinates
 call r3mv(bvec,vpl,vpc)
-! generate the G+p-vectors
+! generate the G+p vectors
 call gengpvec(vpl,vpc,ngp,igpig,vgpl,vgpc)
-! generate the spherical coordinates of the G+p-vectors
+! generate the spherical coordinates of the G+p vectors
 do igp=1,ngp
   call sphcrd(vgpc(:,igp),gpc(igp),tpgpc(:,igp))
 end do
@@ -70,9 +97,9 @@ call getevecfv(vpl,vgpl,evecfv1)
 vpql(:)=vpl(:)+vecql(:)
 ! p+q-vector in Cartesian coordinates
 call r3mv(bvec,vpql,vpqc)
-! generate the G+p+q-vectors
+! generate the G+p+q vectors
 call gengpvec(vpql,vpqc,ngpq,igpqig,vgpql,vgpqc)
-! generate the spherical coordinates of the G+p+q-vectors
+! generate the spherical coordinates of the G+p+q vectors
 do igp=1,ngpq
   call sphcrd(vgpqc(:,igp),gpqc(igp),tpgpqc(:,igp))
 end do

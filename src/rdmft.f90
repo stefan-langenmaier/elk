@@ -62,7 +62,6 @@ if (mp_mpi) then
     open(63,file='RDMN_MOMENT.OUT',action='WRITE',form='FORMATTED')
     open(64,file='RDMC_MOMENT.OUT',action='WRITE',form='FORMATTED')
   end if
-  open(65,file='RDM_ENERGY.OUT',action='WRITE',form='FORMATTED')
 ! write out general information to RDM_INFO.OUT
   call writeinfo(60)
   write(60,*)
@@ -93,9 +92,6 @@ do iscl=1,rdmmaxscl
     call rdmwriteengy(60)
     call writechg(60)
     call writeeval
-! write out the total energy
-    write(65,'(G18.10)') engytot
-    call flushifc(65)
   end if
 end do
 if (mp_mpi) then
@@ -119,7 +115,6 @@ if (mp_mpi) then
     close(63)
     close(64)
   end if
-  close(65)
 end if
 return
 end subroutine

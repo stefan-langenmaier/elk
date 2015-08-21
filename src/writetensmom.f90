@@ -27,6 +27,7 @@ close(50)
 write(*,*)
 write(*,'("Info(writetensmom): Tensor moment decomposition of density matrix")')
 write(*,'(" and Hartree-Fock energy written to TENSMOM.OUT")')
+write(*,*)
 return
 end subroutine
 

@@ -12,13 +12,13 @@ real(8), intent(out) :: w(3*natmtot)
 complex(8), intent(out) :: ev(3*natmtot,3*natmtot)
 ! local variables
 integer is,ia,ip,js,ja,jp
-integer nb,i,j,lwork,info
+integer i,j,n,lwork,info
 real(8) t1
 ! allocatable arrays
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: work(:)
 ! number of phonon branches
-nb=3*natmtot
+n=3*natmtot
 ev(:,:)=0.d0
 i=0
 do is=1,nspecies
@@ -47,10 +47,10 @@ do is=1,nspecies
     end do
   end do
 end do
-allocate(rwork(3*nb))
-lwork=2*nb
+allocate(rwork(3*n))
+lwork=2*n
 allocate(work(lwork))
-call zheev('V','U',nb,ev,nb,w,work,lwork,rwork,info)
+call zheev('V','U',n,ev,n,w,work,lwork,rwork,info)
 if (info.ne.0) then
   write(*,*)
   write(*,'("Error(dyndiag): diagonalisation failed")')
@@ -58,7 +58,7 @@ if (info.ne.0) then
   write(*,*)
   stop
 end if
-do i=1,nb
+do i=1,n
   if (w(i).ge.0.d0) then
     w(i)=sqrt(w(i))
   else

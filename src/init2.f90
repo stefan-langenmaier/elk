@@ -40,8 +40,8 @@ else
   end do
 end if
 ! OEP, Hartree-Fock, RPA epsilon, BSE or RDMFT
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.180).or.(task.eq.185).or. &
- (task.eq.188).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.180).or. &
+ (task.eq.185).or.(task.eq.188).or.(task.eq.300)) then
   ngridq(:)=ngridk(:)
 end if
 ! allocate the q-point arrays
@@ -65,8 +65,6 @@ boxl(1,2)=1.d0; boxl(2,3)=1.d0; boxl(3,4)=1.d0;
 ! first Brillouin zone
 call genppts(.true.,nsymqpt,symqpt,ngridq,nqptnr,epslat,bvec,boxl,nqpt,iqmap, &
  iqmapnr,ivq,vql,vqc,wqpt,wqptnr)
-! write the q-points to QPOINTS.OUT
-call writeqpts
 ! find the index for q = 0
 do iq0=1,nqpt
   t1=sum(abs(vql(:,iq0)))
@@ -81,7 +79,7 @@ stop
 !-----------------------------------------------!
 !     OEP, Hartree-Fock and RDMFT variables     !
 !-----------------------------------------------!
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.300)) then
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
 ! determine the 1/q^2 integral weights if required
   call genwiq2
 ! output the 1/q^2 integrals to WIQ2.OUT

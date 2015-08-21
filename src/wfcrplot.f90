@@ -35,6 +35,7 @@ write(*,*)
 write(*,'("Info(wfcrplot):")')
 write(*,'(" Core state wavefunctions written to WFCORE_Sss_Aaaaa.OUT")')
 write(*,'(" for all species and atoms")')
+write(*,*)
 return
 end subroutine
 

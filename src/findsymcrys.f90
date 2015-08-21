@@ -175,18 +175,15 @@ if (tsyminv.and.tshift) then
     call r3frac(epslat,vtlsymc(:,isym),iv)
   end do
 end if
-! set flag for zero translation vector
+! set flag for non-zero translation vector
 do isym=1,nsymcrys
   t1=sum(abs(vtlsymc(:,isym)))
-  if (t1.lt.epslat) then
+  if (t1.gt.epslat) then
     tvzsymc(isym)=.true.
   else
     tvzsymc(isym)=.false.
   end if
 end do
-if (tsyminv) then
-  if (.not.tvzsymc(2)) tsyminv=.false.
-end if
 ! write number of crystal symmetries to test file
 call writetest(705,'number of crystal symmetries',iv=nsymcrys)
 deallocate(iea,vtl)

@@ -70,9 +70,9 @@ call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
 do ik=1,nkptnr
 ! equivalent reduced k-point
   jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
-! generate G+k-vectors
+! generate G+k vectors
   call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k-vectors
+! generate the spherical coordinates of the G+k vectors
   do igk=1,ngknr
     call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
   end do
@@ -83,13 +83,13 @@ do ik=1,nkptnr
   call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
 ! find the matching coefficients
   call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! determine q-vector
+! determine q vector
   iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
   iq=iqmap(iv(1),iv(2),iv(3))
   v(:)=vkc(:,ikp)-vkc(:,ik)
   do ig=1,ngvec
-! determine G+q-vectors
+! determine G+q vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
 ! G+q-vector length and (theta, phi) coordinates
     call sphcrd(vgqc(:,ig),gqc(ig),tpgqc(:,ig))

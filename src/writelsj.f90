@@ -103,6 +103,7 @@ if (task.eq.15) then
   write(*,*)
   write(*,'("Info(writelsj):")')
   write(*,'(" total L, S and J expectation values written to LSJ.OUT")')
+  write(*,*)
 else
 ! compute L, S and J for all states in kstlist
   open(50,file='LSJ_KST.OUT',action='WRITE',form='FORMATTED')
@@ -176,6 +177,7 @@ else
   write(*,'("Info(writelsj):")')
   write(*,'(" L, S and J expectation values for each k-point and state")')
   write(*,'("  in kstlist written to LSJ_KST.OUT")')
+  write(*,*)
 end if
 deallocate(apwalm,evecfv,evecsv,dmat1,dmat2,zlflm)
 return

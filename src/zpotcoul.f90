@@ -56,7 +56,7 @@ use modmain
 !   $$ \rho_{ij;lm}^{\rm P}=\frac{(2l+2N_i+3)!!}{2^N_iN_i!(2l+1)!!}\left(
 !    q_{ij;lm}^{\rm MT}-q_{ij;lm}^{\rm I}\right) $$
 !   and $N_i\approx\frac{1}{2}R_iG_{\rm max}$ is generally a good choice.
-!   The pseudocharge in reciprocal space is given by
+!   The pseudocharge in reciprocal-space is given by
 !   $$ \rho^{\rm P}({\bf G})=\rho^{\rm I}({\bf G})+\sum_{ij;lm}2^{N_i}N_i!
 !    \frac{4\pi(-i)^l}{\Omega R_i^l}\frac{j_{l+N_i+1}(GR_i)}{(GR_i)^{N_i+1}}
 !    \rho_{ij;lm}^{\rm P}\exp(-i{\bf G}\cdot{\bf r}_{ij})Y_{lm}(\hat{\bf G}) $$
@@ -209,7 +209,7 @@ do is=1,nspecies
     end do
   end do
 end do
-! set zrho0 (pseudocharge density coefficient of the smallest G+p-vector)
+! set zrho0 (pseudocharge density coefficient of the smallest G+p vector)
 ifg=igfft(igp0)
 zrho0=zvclir(ifg)
 zvclir(ifg)=0.d0

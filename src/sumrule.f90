@@ -31,31 +31,31 @@ implicit none
 ! arguments
 complex(8), intent(inout) :: dynq(3*natmtot,3*natmtot,nqpt)
 ! local variables
-integer nb,iq,i,j,k
+integer n,iq,i,j,k
 integer lwork,info
 ! allocatable arrays
 real(8), allocatable :: w(:)
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: work(:)
 complex(8), allocatable :: ev(:,:)
-nb=3*natmtot
-allocate(w(nb))
-allocate(rwork(3*nb))
-lwork=2*nb
+n=3*natmtot
+allocate(w(n))
+allocate(rwork(3*n))
+lwork=2*n
 allocate(work(lwork))
-allocate(ev(nb,nb))
+allocate(ev(n,n))
 ! compute the eigenvalues and vectors of the q = 0 dynamical matrix
-do i=1,nb
-  do j=i,nb
+do i=1,n
+  do j=i,n
     ev(i,j)=0.5d0*(dynq(i,j,iq0)+conjg(dynq(j,i,iq0)))
   end do
 end do
-call zheev('V','U',nb,ev,nb,w,work,lwork,rwork,info)
+call zheev('V','U',n,ev,n,w,work,lwork,rwork,info)
 ! subtract outer products of 3 lowest eigenvectors for q = 0 from all the
 ! dynamical matrices
 do iq=1,nqpt
-  do i=1,nb
-    do j=1,nb
+  do i=1,n
+    do j=1,n
       do k=1,3
         dynq(i,j,iq)=dynq(i,j,iq)-w(k)*ev(i,k)*conjg(ev(j,k))
       end do

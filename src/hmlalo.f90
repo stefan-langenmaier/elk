@@ -52,7 +52,11 @@ do ilo=1,nlorb(is)
               hi(1:ngp)=hi(1:ngp)+zsum*apwalm(1:ngp,io,lm3,ias)
             else
 ! calculate the matrix elements
-              k=(i-1)*ld
+              if (tpmat) then
+                k=((i-1)*i)/2
+              else
+                k=(i-1)*ld
+              end if
               do j=1,ngp
                 k=k+1
                 h(k)=h(k)+conjg(zsum*apwalm(j,io,lm3,ias))

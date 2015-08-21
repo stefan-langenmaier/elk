@@ -43,7 +43,11 @@ do ilo=1,nlorb(is)
 !$OMP END PARALLEL
           else
 ! calculate the matrix elements
-            k=i+(j-1)*ld
+            if (tpmat) then
+              k=i+((j-1)*j)/2
+            else
+              k=i+(j-1)*ld
+            end if
             o(k)=o(k)+ololo(ilo,jlo,ias)
           end if
         end if

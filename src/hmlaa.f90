@@ -80,7 +80,7 @@ do l1=0,lmaxmat
         call zmatinpv(ngp,zone,apwalm(:,io,lm1,ias),zv,nstfv,nmatmax,v,h)
       else
 ! compute the matrix explicitly
-        call zmatinp(ngp,zone,apwalm(:,io,lm1,ias),zv,ld,h)
+        call zmatinp(tpmat,ngp,zone,apwalm(:,io,lm1,ias),zv,ld,h)
       end if
     end do
   end do
@@ -98,7 +98,8 @@ do l1=0,lmaxmat
           call zmatinpv(ngp,zt1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias), &
            nstfv,nmatmax,v,h)
         else
-          call zmatinp(ngp,zt1,apwalm(:,io,lm1,ias),apwalm(:,jo,lm1,ias),ld,h)
+          call zmatinp(tpmat,ngp,zt1,apwalm(:,io,lm1,ias), &
+           apwalm(:,jo,lm1,ias),ld,h)
         end if
       end do
     end do

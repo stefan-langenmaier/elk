@@ -81,6 +81,7 @@ write(*,'("Info(writeexpmat)")')
 write(*,'(" < i,k+q | exp(iq.r) | j,k > matrix elements written to &
  &EXPIQR.OUT")')
 write(*,'(" for the q-vector in vecql and all k-points in kstlist")')
+write(*,*)
 deallocate(expmt,emat)
 return
 end subroutine

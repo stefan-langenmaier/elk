@@ -10,18 +10,10 @@ implicit none
 integer ig,iw
 real(8) w1,w2,t1,t2
 
-!--------------------------------------------------------!
-!     many-body perturbation theory (MBPT) variables     !
-!--------------------------------------------------------!
-! G-vectors for 2-point correlators
-ngrpa=1
-do ig=ngvec,1,-1
-  if (gc(ig).lt.gmaxrpa) then
-    ngrpa=ig
-    exit
-  end if
-end do
-! frequencies for bosonic 2-point correlators
+!-----------------------!
+!     RPA variables     !
+!-----------------------!
+! frequencies
 nwrpa=1
 if (allocated(wrpa)) deallocate(wrpa)
 if (task.eq.188) then
@@ -39,6 +31,15 @@ else
   allocate(wrpa(nwrpa))
   wrpa(1)=cmplx(0.d0,swidth,8)
 end if
+! G-vectors
+ngrpa=1
+do ig=ngvec,1,-1
+  if (gc(ig).lt.gmaxrpa) then
+    ngrpa=ig
+    goto 10
+  end if
+end do
+10 continue
 
 return
 end subroutine

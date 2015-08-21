@@ -129,7 +129,7 @@ end if
 ! spin-polarised calculations require second-variational eigenvectors
 if (spinpol) tevecsv=.true.
 ! Hartree-Fock/RDMFT requires second-variational eigenvectors
-if ((task.eq.5).or.(task.eq.300)) tevecsv=.true.
+if ((task.eq.5).or.(task.eq.6).or.(task.eq.300)) tevecsv=.true.
 ! get exchange-correlation functional data
 call getxcdata(xctype,xcdescr,xcspin,xcgrad)
 if ((spinpol).and.(xcspin.eq.0)) then
@@ -331,8 +331,6 @@ if (allocated(sfacg)) deallocate(sfacg)
 allocate(sfacg(ngvec,natmtot))
 ! generate structure factors for G-vectors
 call gensfacgp(ngvec,vgc,ngvec,sfacg)
-! generate the smooth step function form factors
-call genffacg
 ! generate the characteristic function
 call gencfun
 
@@ -429,9 +427,9 @@ allocate(chgmt(natmtot))
 if (allocated(mommt)) deallocate(mommt)
 allocate(mommt(3,natmtot))
 
-!-------------------------!
-!     force variables     !
-!-------------------------!
+!--------------------------------------------!
+!     forces and structural optimisation     !
+!--------------------------------------------!
 if (allocated(forcehf)) deallocate(forcehf)
 allocate(forcehf(3,natmtot))
 if (allocated(forcecr)) deallocate(forcecr)
@@ -440,6 +438,14 @@ if (allocated(forceibs)) deallocate(forceibs)
 allocate(forceibs(3,natmtot))
 if (allocated(forcetot)) deallocate(forcetot)
 allocate(forcetot(3,natmtot))
+if (allocated(forcetp)) deallocate(forcetp)
+allocate(forcetp(3,natmtot))
+if (allocated(tauatm)) deallocate(tauatm)
+allocate(tauatm(natmtot))
+! initialise the previous force
+forcetp(:,:)=0.d0
+! initial step sizes
+tauatm(:)=tau0atm
 
 !-------------------------!
 !     LDA+U variables     !
@@ -468,11 +474,11 @@ end if
 !-----------------------!
 ! Poisson solver pseudocharge density constant l + n(l)
 if (nspecies.gt.0) then
-  t1=0.5d0*gmaxvr*maxval(rmt(1:nspecies))
+  t1=gmaxvr*maxval(rmt(1:nspecies))
 else
-  t1=0.5d0*gmaxvr*2.d0
+  t1=gmaxvr*2.d0
 end if
-lnpsd=max(nint(t1),lmaxvr+1)
+lnpsd=max(int(t1)-6,lmaxvr+1)
 ! determine the nuclear-nuclear energy
 call energynn
 ! get smearing function description

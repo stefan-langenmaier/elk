@@ -31,7 +31,7 @@ integer i
 do i=1,3
   iv(i)=floor(v(i))
   v(i)=v(i)-iv(i)
-  if ((1.d0-v(i)).lt.eps) then
+  if (1.d0-v(i).lt.eps) then
     v(i)=0.d0
     iv(i)=iv(i)+1
   end if

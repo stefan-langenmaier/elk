@@ -81,7 +81,7 @@ real(8), intent(out) :: wpptnr
 ! local variables
 integer i1,i2,i3,iv(3)
 integer isym,ip,jp,i
-real(8) v1(3),v2(3),v3(3),v4(3)
+real(8) v1(3),v2(3),v3(3)
 real(8) b(3,3),s(3,3),t1
 if ((ngridp(1).le.0).or.(ngridp(2).le.0).or.(ngridp(3).le.0)) then
   write(*,*)
@@ -113,15 +113,14 @@ do i3=0,ngridp(3)-1
       call r3mv(b,v1,v2)
       v2(:)=v2(:)+boxl(:,1)
       if (nsym.gt.1) then
+        call r3frac(epslat,v2,iv)
 ! determine if this point is equivalent to one already in the set
         do isym=1,nsym
           s(:,:)=dble(sym(:,:,isym))
           call r3mtv(s,v2,v3)
           call r3frac(epslat,v3,iv)
           do i=1,ip
-            v4(:)=vpl(:,i)
-            call r3frac(epslat,v4,iv)
-            t1=abs(v4(1)-v3(1))+abs(v4(2)-v3(2))+abs(v4(3)-v3(3))
+            t1=abs(vpl(1,i)-v3(1))+abs(vpl(2,i)-v3(2))+abs(vpl(3,i)-v3(3))
             if (t1.lt.epslat) then
 ! equivalent p-point found so add to existing weight
               ipmap(i1,i2,i3)=i

@@ -90,6 +90,7 @@ write(*,'(" for components")')
 do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
+write(*,*)
 ! write sigma to test file
 call writetest(185,'BSE optical conductivity',nv=nwdos,tol=2.d-2,zva=sigma)
 deallocate(w,pmat,sigma)

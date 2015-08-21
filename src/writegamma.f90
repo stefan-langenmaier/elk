@@ -28,6 +28,7 @@ close(50)
 write(*,*)
 write(*,'("Info(writegamma):")')
 write(*,'(" wrote phonon linewidths for all q-points to GAMMAQ.OUT")')
+write(*,*)
 return
 end subroutine
 

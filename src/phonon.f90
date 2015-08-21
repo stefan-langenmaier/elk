@@ -9,14 +9,14 @@ use modphonon
 implicit none
 ! local variables
 integer is,ia,ja,ias,jas
-integer ip,nph,i,p
+integer ip,nph,i,m,task0
 real(8) dph,a,b,t1
-real(8) forcetot1(3,maxatoms*maxspecies)
+real(8) ftp(3,maxatoms*maxspecies)
 complex(8) zt1,zt2
 complex(8) dyn(3,maxatoms,maxspecies)
 ! allocatable arrays
-real(8), allocatable :: veffmt1(:,:,:),veffir1(:)
-complex(8), allocatable :: dveffmt(:,:,:),dveffir(:)
+real(8), allocatable :: veffmtp(:,:,:)
+real(8), allocatable :: veffirp(:)
 !------------------------!
 !     initialisation     !
 !------------------------!
@@ -32,14 +32,24 @@ autokpt=.true.
 call init0
 ! initialise q-point dependent variables
 call init2
+! read original effective potential from file and make a copy
+call readstate
+if (allocated(veffmt0)) deallocate(veffmt0)
+allocate(veffmt0(lmmaxvr,nrmtmax,natmtot))
+if (allocated(veffir0)) deallocate(veffir0)
+allocate(veffir0(ngrtot))
+veffmt0(:,:,:)=veffmt(:,:,:)
+veffir0(:)=veffir(:)
 ! allocate the effective potential derivative arrays
-allocate(dveffmt(lmmaxvr,nrcmtmax,natmtot),dveffir(ngrtot))
+if (allocated(dveffmt)) deallocate(dveffmt)
+allocate(dveffmt(lmmaxvr,nrcmtmax,natmtot))
+if (allocated(dveffir)) deallocate(dveffir)
+allocate(dveffir(ngrtot))
 ! store original parameters
 natoms0(1:nspecies)=natoms(1:nspecies)
 natmtot0=natmtot
 avec0(:,:)=avec(:,:)
 ainv0(:,:)=ainv(:,:)
-binv0(:,:)=binv(:,:)
 atposc0(:,:,:)=0.d0
 do is=1,nspecies
   do ia=1,natoms(is)
@@ -48,6 +58,7 @@ do is=1,nspecies
 end do
 ngrid0(:)=ngrid(:)
 ngrtot0=ngrtot
+task0=task
 !---------------------------------------!
 !     compute dynamical matrix rows     !
 !---------------------------------------!
@@ -61,7 +72,7 @@ if (iqph.eq.0) then
   return
 end if
 ! phonon dry run: just generate empty DYN files
-if (task.eq.205) goto 10
+if (task.eq.201) goto 10
 dyn(:,:,:)=0.d0
 dveffmt(:,:,:)=0.d0
 dveffir(:)=0.d0
@@ -73,44 +84,42 @@ if ((ivq(1,iqph).eq.0).and.(ivq(2,iqph).eq.0).and.(ivq(3,iqph).eq.0)) then
 else
   nph=1
 end if
-! initial supercell density constructed from atomic densities
-trdstate=.false.
-! loop over cos and sin displacements
-do p=0,nph
+do m=0,nph
 ! restore input values
   natoms(1:nspecies)=natoms0(1:nspecies)
   avec(:,:)=avec0(:,:)
   atposc(:,:,:)=atposc0(:,:,:)
 ! generate the supercell
-  call genphsc(p,deltaph)
+  call genphsc(m,deltaph)
 ! run the ground-state calculation
   call gndstate
-! subsequent calculations will read in this supercell potential
-  trdstate=.true.
+! subsequent calculations will read in this potential
+  task=1
 ! store the total force for the first displacement
   do ias=1,natmtot
-    forcetot1(:,ias)=forcetot(:,ias)
+    ftp(:,ias)=forcetot(:,ias)
   end do
 ! store the effective potential for the first displacement
-  allocate(veffmt1(lmmaxvr,nrmtmax,natmtot),veffir1(ngrtot))
-  veffmt1(:,:,:)=veffmt(:,:,:)
-  veffir1(:)=veffir(:)
+  allocate(veffmtp(lmmaxvr,nrmtmax,natmtot))
+  allocate(veffirp(ngrtot))
+  veffmtp(:,:,:)=veffmt(:,:,:)
+  veffirp(:)=veffir(:)
 ! restore input values
   natoms(1:nspecies)=natoms0(1:nspecies)
   avec(:,:)=avec0(:,:)
   atposc(:,:,:)=atposc0(:,:,:)
 ! generate the supercell again with twice the displacement
   dph=deltaph+deltaph
-  call genphsc(p,dph)
+  call genphsc(m,dph)
 ! run the ground-state calculation again
   call gndstate
-! compute the complex effective potential derivative with implicit q-phase
-  call phdveff(p,veffmt1,veffir1,dveffmt,dveffir)
-  deallocate(veffmt1,veffir1)
+! compute the complex perturbing effective potential with implicit q-phase
+  call phscdveff(m,veffmtp,veffirp)
+  deallocate(veffmtp,veffirp)
 ! Fourier transform the force differences to obtain the dynamical matrix
   zt1=1.d0/(dble(nphsc)*deltaph)
 ! multiply by i for sin-like displacement
-  if (p.eq.1) zt1=zt1*zi
+  if (m.eq.1) zt1=zt1*zi
   jas=0
   do is=1,nspecies
     ja=0
@@ -121,13 +130,15 @@ do p=0,nph
         t1=-dot_product(vqc(:,iqph),vphsc(:,i))
         zt2=zt1*cmplx(cos(t1),sin(t1),8)
         do ip=1,3
-          t1=-(forcetot(ip,jas)-forcetot1(ip,jas))
+          t1=-(forcetot(ip,jas)-ftp(ip,jas))
           dyn(ip,ia,is)=dyn(ip,ia,is)+zt2*t1
         end do
       end do
     end do
   end do
 end do
+! restore task number
+task=task0
 20 continue
 ! write dynamical matrix row to file
 do is=1,nspecies
@@ -143,7 +154,7 @@ do is=1,nspecies
 end do
 close(80)
 ! write the complex effective potential derivative to file
-call writedveff(dveffmt,dveffir)
+call writedveff
 ! delete the non-essential files
 call phdelete
 goto 10

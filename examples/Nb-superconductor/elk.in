@@ -8,8 +8,8 @@
 ! parameters and err on the side of caution. Electron-phonon coupling is still
 ! an experimental feature at this stage.
 
-! Follow the steps below for niobium on a 4x4x4 q-point grid. This is a time-
-! consuming example, so the main results are included in this directory.
+! Follow the steps below for niobium on a 3x3x3 q-point grid. Results obtained
+! for a 4x4x4 q-point grid are included in this directory.
 
 avec
   1.0  1.0 -1.0
@@ -28,12 +28,26 @@ atoms
   1                                   : natoms
   0.0  0.0  0.0    0.0  0.0  0.0      : atposl, bfcmt
 
-! use efficient Broyden mixing
-mixtype
-  3
+
+
+!------------------------------------------------------!
+!     Step 1: Determine the ground-state potential     !
+!------------------------------------------------------!
+
+! This should be run on one computer.
+
+tasks
+  0
+
+! fine k-point grid required for accurate electron-phonon coupling; it should
+! also be commensurate with the q-point grid
+ngridk
+  12 12 12
+
+
 
 !--------------------------------------------------------------------------!
-!     Step 1: Compute the dynamical matrices and potential derivatives     !
+!     Step 2: Compute the dynamical matrices and potential derivatives     !
 !--------------------------------------------------------------------------!
 
 ! This step should be run on as many computers as possible which share the same
@@ -47,66 +61,63 @@ mixtype
 ! re-run the code. All the DYN files must be calculated before proceeding to the
 ! next step.
 
-tasks
-  200
+! Uncomment the lines below.
 
-! good convergence required for accurate forces
-epspot
-  1.d-7
-
-! the q-point grid
-ngridq
-  4  4  4
-
-lmaxmat
-  6
-
-nempty
-  8
-
-! this is an important parameter which fixes the k-point density irrespective
-! of the size of the phonon supercell
-radkpt
-  60.0
+!tasks
+!  200
+!
+!! small mixing parameter required
+!beta0
+!  0.01
+!
+!! good convergence required for accurate forces
+!epspot
+!  1.d-7
+!
+!! the q-point grid (a finer grid should be used for production)
+!ngridq
+!  3  3  3
+!
+!nempty
+!  8
+!
+!! this is an important parameter which fixes the k-point density irrespective
+!! of the size of the phonon supercell
+!radkpt
+!  60.0
 
 
 
 !-----------------------------------------------------------------------!
-!     Step 2: Phonon dispersion curves and electron-phonon coupling     !
+!     Step 3: Phonon dispersion curves and electron-phonon coupling     !
 !-----------------------------------------------------------------------!
 
 ! This should be run on one computer. You can plot the dispersion curves in the
 ! file PHDISP.OUT along with lines corresponding to high symmetry points stored
 ! in PHDLINES.OUT. The phonon linewidths along the same directions are in the
 ! file PHLWIDTH.OUT (PHLWLINES.OUT). The electron-phonon coupling parameter,
-! lambda, and the estimated T_c is stored in MCMILLAN.OUT. You can also plot the
-! Eliashberg function in ALPHA2F.OUT. Compare with the results of Bauer et al.
-! in PRB 57, 11276 (1998).
+! lambda, is stored in LAMBDA.OUT and the estimated T_c in TC_MCMILLAN.OUT. You
+! can also plot the Eliashberg function in ALPHA2F.OUT. Compare with the results
+! of Bauer et al. in PRB 57, 11276 (1998).
 
-! Uncomment the tasks below and run.
+! Uncomment the lines below.
 
 !tasks
-!  0       ! ground-state run
-!  220     ! plot the phonon dispersion
-!  240     ! generate the q-dependent phonon linewidths and coupling constants
-!  245     ! plot the phonon linewidths
-!  250     ! Eliashberg function, coupling constant, and superconducting T_c
-
-! fine k-point grid required for accurate electron-phonon coupling; it should
-! also be commensurate with the q-point grid
-ngridk
-  24 24 24
-
-! vertex location lines for the dispersion curves and phonon linewidths
-plot1d
-  9 400
-  0.5   0.5   0.5
-  0.25  0.25  0.25
-  0.0   0.0   0.0
- -0.5   0.5   0.5
- -0.5   0.5   0.0
- -0.75  0.25  0.25
- -0.5   0.5   0.0
-  0.0   0.0   0.0
-  0.5   0.5   0.0
+!  220
+!  240
+!  245
+!  250
+!
+!! vertex location lines for the dispersion curves and phonon linewidths
+!plot1d
+!  9 400
+!  0.5   0.5   0.5
+!  0.25  0.25  0.25
+!  0.0   0.0   0.0
+! -0.5   0.5   0.5
+! -0.5   0.5   0.0
+! -0.75  0.25  0.25
+! -0.5   0.5   0.0
+!  0.0   0.0   0.0
+!  0.5   0.5   0.0
 

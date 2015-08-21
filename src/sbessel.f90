@@ -63,12 +63,12 @@ if (x.lt.1.d-8) then
   return
 end if
 xi=1.d0/x
-if (lmax.eq.0) then
-  jl(0)=sin(x)*xi
-  return
-end if
 ! for x < lmax recurse down
 if (x.lt.dble(lmax)) then
+  if (lmax.eq.0) then
+    jl(0)=sin(x)*xi
+    return
+  end if
 ! start from truly random numbers
   j0=0.6370354636449841609d0*rsci
   j1=0.3532702964695481204d0*rsci

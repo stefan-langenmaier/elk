@@ -182,6 +182,7 @@ case(53)
   write(*,*)
   write(*,'("Info(elfplot): 3D ELF plot written to ELF3D.OUT")')
 end select
+write(*,*)
 deallocate(rftp1,rftp2,rftp3)
 deallocate(grfmt,grfir,gwf2mt,gwf2ir,elfmt,elfir)
 deallocate(zfft1,zfft2,evecfv,evecsv)

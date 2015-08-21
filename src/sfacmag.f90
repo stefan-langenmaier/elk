@@ -83,6 +83,7 @@ if (ndmag.eq.1) then
 end if
 write(*,*)
 write(*,'(" Energy window : ",2G18.10)') wsfac(:)
+write(*,*)
 return
 end subroutine
 !EOC

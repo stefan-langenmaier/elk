@@ -47,6 +47,7 @@ case(33)
   write(*,*)
   write(*,'("Info(rhoplot): 3D density plot written to RHO3D.OUT")')
 end select
+write(*,*)
 return
 end subroutine
 !EOC

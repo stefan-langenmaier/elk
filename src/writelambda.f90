@@ -6,8 +6,15 @@ implicit none
 real(8), intent(in) :: wq(3*natmtot,nqpt)
 real(8), intent(in) :: gq(3*natmtot,nqpt)
 ! local variables
-integer iq,i
+integer ik,iq,i
 real(8) t1,t2
+! get the eigenvalues and occupancies from file
+do ik=1,nkpt
+  call getevalsv(vkl(:,ik),evalsv(:,ik))
+  call getoccsv(vkl(:,ik),occsv(:,ik))
+end do
+! compute the density of states at the Fermi energy
+call occupy
 open(50,file='LAMBDAQ.OUT',action='WRITE',form='FORMATTED')
 write(50,*)
 write(50,'(I4," : total number of atoms")') natmtot
@@ -33,6 +40,7 @@ write(*,*)
 write(*,'("Info(writelambda):")')
 write(*,'(" wrote electron-phonon coupling constants for all q-points to &
  &LAMBDAQ.OUT")')
+write(*,*)
 return
 end subroutine
 

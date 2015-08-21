@@ -31,6 +31,7 @@ filext='.OUT'
 iqph=0; isph=0; iaph=0; ipph=0
 write(*,*)
 write(*,'("Info(dyntask): nothing more to do")')
+write(*,*)
 return
 end subroutine
 

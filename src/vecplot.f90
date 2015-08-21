@@ -146,6 +146,7 @@ case(72,82,142,152)
   else
     write(*,'(" 2D m(r) x B_xc(r) written to MCBXC2D.OUT")')
   end if
+  write(*,*)
 case(73,83,143,153)
   if (task.eq.73) then
     open(50,file='MAG3D.OUT',action='WRITE',form='FORMATTED')
@@ -169,6 +170,7 @@ case(73,83,143,153)
   else
     write(*,'(" 3D m(r) x B_xc(r) written to MCBXC3D.OUT")')
   end if
+  write(*,*)
 end select
 deallocate(rvfmt,rvfir)
 return

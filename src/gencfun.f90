@@ -34,7 +34,9 @@ integer is,ia,ig,ifg
 real(8) t1
 complex(8) zt1
 ! allocatable arrays
+real(8), allocatable :: ffacg(:)
 complex(8), allocatable :: zfft(:)
+allocate(ffacg(ngrtot))
 allocate(zfft(ngrtot))
 ! allocate global characteristic function arrays
 if (allocated(cfunig)) deallocate(cfunig)
@@ -45,6 +47,8 @@ cfunig(:)=0.d0
 cfunig(1)=1.d0
 ! begin loop over species
 do is=1,nspecies
+! generate the smooth step function form factors
+  call genffacg(is,ngrtot,ffacg)
 ! loop over atoms
   do ia=1,natoms(is)
     do ig=1,ngrtot
@@ -52,7 +56,7 @@ do is=1,nspecies
       t1=-dot_product(vgc(:,ig),atposc(:,ia,is))
       zt1=cmplx(cos(t1),sin(t1),8)
 ! add to characteristic function in G-space
-      cfunig(ig)=cfunig(ig)-zt1*ffacg(ig,is)
+      cfunig(ig)=cfunig(ig)-zt1*ffacg(ig)
     end do
   end do
 end do
@@ -63,7 +67,7 @@ end do
 ! Fourier transform to real-space
 call zfftifc(3,ngrid,1,zfft)
 cfunir(:)=dble(zfft(:))
-deallocate(zfft)
+deallocate(ffacg,zfft)
 return
 end subroutine
 !EOC

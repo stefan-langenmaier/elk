@@ -76,8 +76,6 @@ beta0=0.05d0
 betamax=1.d0
 mixsdp=3
 mixsdb=5
-broydpm(1)=0.25d0
-broydpm(2)=0.01d0
 epspot=1.d-6
 epsengy=1.d-4
 epsforce=5.d-4
@@ -115,7 +113,6 @@ dosssum=.false.
 lmirep=.true.
 spinpol=.false.
 spinorb=.false.
-maxgeostp=200
 tau0atm=0.2d0
 nstfsp=6
 lradstp=4
@@ -215,10 +212,10 @@ vhmat(3,3)=1.d0
 reduceh=.true.
 hybrid=.false.
 hybmix=1.d0
+tpmat=.true.
 ecvcut=-3.5d0
 esccut=-0.4d0
 gmaxrpa=3.d0
-ntemp=20
 
 ! BSE defaults
 nvbse0=2
@@ -471,16 +468,6 @@ case('mixsdb')
     write(*,*)
     stop
   end if
-case('broydpm')
-  read(50,*,err=20) broydpm(:)
-  if ((broydpm(1).lt.0.d0).or.(broydpm(1).gt.1.d0).or. &
-      (broydpm(2).lt.0.d0).or.(broydpm(2).gt.1.d0)) then
-    write(*,*)
-    write(*,'("Error(readinput): invalid Broyden mixing parameters : ",&
-     &2G18.10)') broydpm
-    write(*,*)
-    stop
-  end if
 case('maxscl')
   read(50,*,err=20) maxscl
   if (maxscl.lt.0) then
@@ -619,14 +606,6 @@ case('dosssum')
   read(50,*,err=20) dosssum
 case('lmirep')
   read(50,*,err=20) lmirep
-case('maxgeostp')
-  read(50,*,err=20) maxgeostp
-  if (maxgeostp.le.0) then
-    write(*,*)
-    write(*,'("Error(readinput): maxgeostp <= 0 : ",I8)') maxgeostp
-    write(*,*)
-    stop
-  end if
 case('tau0atm')
   read(50,*,err=20) tau0atm
 case('nstfsp')
@@ -670,7 +649,7 @@ case('optcomp')
       noptcomp=i-1
       goto 10
     end if
-    str=trim(str)//' 1 1'
+    str=trim(str)//' 1'
     read(str,*,iostat=iostat) optcomp(:,i)
     if (iostat.ne.0) then
       write(*,*)
@@ -1046,6 +1025,8 @@ case('hybmix')
     write(*,*)
     stop
   end if
+case('tpmat')
+  read(50,*,err=20) tpmat
 case('ecvcut')
   read(50,*,err=20) ecvcut
 case('esccut')
@@ -1134,14 +1115,6 @@ case('fxclrc')
   read(50,'(A256)',err=20) str
   str=trim(str)//' 0.0'
   read(str,*,err=20) fxclrc(:)
-case('ntemp')
-  read(50,*,err=20) ntemp
-  if (ntemp.lt.1) then
-    write(*,*)
-    write(*,'("Error(readinput): ntemp < 1 : ",I8)') ntemp
-    write(*,*)
-    stop
-  end if
 case('')
   goto 10
 case default
@@ -1177,6 +1150,8 @@ if (molecule) then
       atposl(:,ia,is)=v(:)
     end do
   end do
+  primcell=.false.
+  tshift=.false.
 end if
 ! find primitive cell if required
 if (primcell) call findprim

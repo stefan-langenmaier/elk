@@ -32,7 +32,8 @@ ihv(:,2)=nh(:)/2
 ! find the subgroup of symmorphic, non-magnetic symmetries
 lsym(:)=.false.
 do isym=1,nsymcrys
-  if (tvzsymc(isym).and.(lspnsymc(isym).eq.1)) lsym(lsplsymc(isym))=.true.
+  if ((.not.tvzsymc(isym)).and.(lspnsymc(isym).eq.1)) &
+   lsym(lsplsymc(isym))=.true.
 end do
 nsym=0
 do isym=1,nsymlat

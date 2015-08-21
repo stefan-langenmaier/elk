@@ -23,7 +23,7 @@ complex(8) sfacgq0(natmtot)
 ! allocatable arrays
 integer, allocatable :: igkignr(:)
 real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:),gkcnr(:),tpgkcnr(:,:)
-real(8), allocatable :: vgqc(:,:),gqc(:),tpgqc(:,:)
+real(8), allocatable :: vgqc(:,:),tpgqc(:,:),gqc(:)
 real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
 real(8), allocatable :: vmt(:,:,:),vir(:)
 real(8), allocatable :: bmt(:,:,:,:),bir(:,:)
@@ -46,7 +46,7 @@ write(*,'("Info(seceqnhf): ",I6," of ",I6," k-points")') ikp,nkpt
 ! allocate local arrays
 allocate(igkignr(ngkmax))
 allocate(vgklnr(3,ngkmax),vgkcnr(3,ngkmax),gkcnr(ngkmax),tpgkcnr(2,ngkmax))
-allocate(vgqc(3,ngvec),gqc(ngvec),tpgqc(2,ngvec))
+allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
 allocate(jlgqr(0:lnpsd+1,ngvec,nspecies),jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
 allocate(sfacgknr(ngkmax,natmtot),apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
@@ -138,9 +138,9 @@ do ik=1,nkptnr
 ! find the equivalent reduced k-point
   iv(:)=ivk(:,ik)
   jk=ikmap(iv(1),iv(2),iv(3))
-! generate the G+k-vectors
+! generate the G+k vectors
   call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k-vectors
+! generate the spherical coordinates of the G+k vectors
   do igk=1,ngknr
     call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
   end do
@@ -160,7 +160,7 @@ do ik=1,nkptnr
   iq=iqmap(iv(1),iv(2),iv(3))
   v(:)=vkc(:,ikp)-vkc(:,ik)
   do ig=1,ngvec
-! determine G+q-vectors
+! determine G+q vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
 ! G+q-vector length and (theta, phi) coordinates
     call sphcrd(vgqc(:,ig),gqc(ig),tpgqc(:,ig))
@@ -195,6 +195,9 @@ do ik=1,nkptnr
         call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt(:,:,:,ist2),zvclmt)
         call zpotcoul(nrcmt,nrcmtmax,rcmt,igq0,gqc,jlgqr,ylmgq,sfacgq, &
          zrhoir(:,ist2),nrcmtmax,zvclmt,zvclir,zrho02)
+!----------------------------------------------!
+!     valence-valence-valence contribution     !
+!----------------------------------------------!
         do ist1=1,ist2
           zt1=zfinp(.true.,zrhomt(:,:,:,ist1),zvclmt,zrhoir(:,ist1),zvclir)
 ! compute the density coefficient of the smallest G+q-vector

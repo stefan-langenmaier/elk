@@ -1,11 +1,11 @@
 //
-// time: Fri Jul 15 15:49:55 2011
+// time: Wed Nov  5 14:14:42 2008
 //
-// version: 3.2.0 (format), 4.4.4 (DX)
+// version: 3.2.0 (format), 4.4.0 (DX)
 //
 //
 // MODULE main
-// workspace: width = 620, height = 667
+// workspace: width = 620, height = 624
 // layout: snap = 0, width = 50, height = 50, align = NN
 //
 macro main(
@@ -210,20 +210,21 @@ main_Collect_1_out_1 =
     main_Translate_1_out_1
     ) [instance: 1, cache: 1];
     // 
-    // node Display[3]: x = 287, y = 605, inputs = 8, label = Display
+    // node Display[2]: x = 254, y = 562, inputs = 8, label = Display
     // depth: value = 24
+    // window: position = (0.0035,0.0267), size = 0.5653x0.6233, screen = 0
     //
-main_Display_3_out_1[cache: 2] = 
+main_Display_2_out_1[cache: 2] = 
     Display(
     main_Collect_1_out_1,
     main_Camera_1_out_1,
-    main_Display_3_in_3,
-    main_Display_3_in_4,
-    main_Display_3_in_5,
-    main_Display_3_in_6,
-    main_Display_3_in_7,
-    main_Display_3_in_8
-    ) [instance: 3, cache: 1];
+    main_Display_2_in_3,
+    main_Display_2_in_4,
+    main_Display_2_in_5,
+    main_Display_2_in_6,
+    main_Display_2_in_7,
+    main_Display_2_in_8
+    ) [instance: 2, cache: 1];
 // network: end of macro body
 }
 main_Camera_1_in_1 = NULL;
@@ -305,12 +306,12 @@ main_Shade_1_out_1 = NULL;
 main_Translate_1_in_2 = [2.0 1.2 0];
 main_Translate_1_out_1 = NULL;
 main_Collect_1_out_1 = NULL;
-main_Display_3_in_3 = "X24,,";
-main_Display_3_in_4 = NULL;
-main_Display_3_in_5 = NULL;
-main_Display_3_in_6 = NULL;
-main_Display_3_in_7 = NULL;
-main_Display_3_in_8 = NULL;
-Executive("product version 4 4 4");
+main_Display_2_in_3 = "X24,,";
+main_Display_2_in_4 = NULL;
+main_Display_2_in_5 = NULL;
+main_Display_2_in_6 = NULL;
+main_Display_2_in_7 = NULL;
+main_Display_2_in_8 = NULL;
+Executive("product version 4 4 0");
 $sync
 main();

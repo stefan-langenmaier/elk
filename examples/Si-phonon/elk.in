@@ -1,5 +1,5 @@
 
-! Phonon dispersion of silicon.
+! Phonon dispersion of silicon. First run with task=0, and then with task=200.
 
 ! You can submit the same job (with task=200) on as many machines as you like,
 ! but they must be be able to see the same directory. Each machine with compute
@@ -10,7 +10,7 @@
 ! The final output (PHDISP.OUT and PHDLINES.OUT) is included for this example.
 
 tasks
-  200
+  0
 
 ! phonon q-point grid
 ngridq
