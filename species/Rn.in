@@ -2,7 +2,7 @@
  'radon'                                    : spname
   -86.0000                                  : spzn
    404681.2435                              : spmass
-  0.215666E-06    2.0000   31.1746   700    : sprmin, rmt, sprmax, nrmt
+  0.215666E-06    2.0000   29.7760   700    : sprmin, rmt, sprmax, nrmt
   24                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

@@ -85,6 +85,8 @@ fpso=fourpi/sqrt(omega)
 do is=1,nspecies
 ! maximum APW order for this species
   omax=maxval(apword(1:lmaxapw,is))
+! starting point on radial mesh for fitting polynomial of order np
+  ir=nrmt(is)-np+1
 ! evaluate the spherical Bessel function derivatives for all G+p-vectors
   do igp=1,ngp
     t1=gpc(igp)*rmt(is)
@@ -104,7 +106,6 @@ do is=1,nspecies
       zt1=fpso*zil(l)
 ! set up matrix of derivatives
       do jo=1,apword(l,is)
-        ir=nrmt(is)-np+1
         do io=1,apword(l,is)
           zd(io,jo)=polynom(io-1,np,spr(ir,is),apwfr(ir,1,jo,l,ias),c,rmt(is))
         end do

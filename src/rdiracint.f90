@@ -66,8 +66,8 @@ real(8), intent(out) :: g1(nr)
 real(8), intent(out) :: f0(nr)
 real(8), intent(out) :: f1(nr)
 ! local variables
-integer ir,ir0,npl
-real(8) alpha,e0,rkpa,ri
+integer i,ir,ir0,npl
+real(8) ci,e0,t1,t2
 ! automatic arrays
 real(8) c(np)
 ! external functions
@@ -85,25 +85,27 @@ if ((m.lt.0).or.(m.gt.6)) then
   write(*,*)
   stop
 end if
-! fine structure constant
-alpha=1.d0/sol
+! inverse speed of light
+ci=1.d0/sol
 ! electron rest energy
 e0=sol**2
-rkpa=dble(kpa)
-! estimate r -> 0 boundary values
+t1=2.d0*e0+e
+! determine the r -> 0 boundary values of F and G self-consistently
 f0(1)=0.d0
 g1(1)=1.d0
 f1(1)=0.d0
-ri=1.d0/r(1)
-g0(1)=(alpha*(e+2.d0*e0-vr(1))*f0(1)-g1(1))/(rkpa*ri)
-f0(1)=(alpha*(e-vr(1))*g0(1)+f1(1))/(rkpa*ri)
+t2=r(1)/dble(kpa)
+do i=1,10
+  g0(1)=t2*(ci*(t1-vr(1))*f0(1)-g1(1))
+  f0(1)=t2*(ci*(e-vr(1))*g0(1)+f1(1))
+end do
 if (m.ne.0) then
-  g1(1)=g1(1)+alpha*dble(m)*f0p(1)
-  f1(1)=f1(1)-alpha*dble(m)*g0p(1)
+  g1(1)=g1(1)+ci*dble(m)*f0p(1)
+  f1(1)=f1(1)-ci*dble(m)*g0p(1)
 end if
 nn=0
 do ir=2,nr
-  ri=1.d0/r(ir)
+  t2=dble(kpa)/r(ir)
 ! predictor-corrector order
   npl=min(ir,np)
   ir0=ir-npl+1
@@ -113,21 +115,21 @@ do ir=2,nr
   g0(ir)=polynom(-1,npl,r(ir0),g1(ir0),c,r(ir))+g0(ir0)
   f0(ir)=polynom(-1,npl,r(ir0),f1(ir0),c,r(ir))+f0(ir0)
 ! compute the derivatives
-  g1(ir)=alpha*(e+2.d0*e0-vr(ir))*f0(ir)-rkpa*ri*g0(ir)
-  f1(ir)=-alpha*(e-vr(ir))*g0(ir)+rkpa*ri*f0(ir)
+  g1(ir)=ci*(t1-vr(ir))*f0(ir)-t2*g0(ir)
+  f1(ir)=ci*(vr(ir)-e)*g0(ir)+t2*f0(ir)
   if (m.ne.0) then
-    g1(ir)=g1(ir)+alpha*dble(m)*f0p(ir)
-    f1(ir)=f1(ir)-alpha*dble(m)*g0p(ir)
+    g1(ir)=g1(ir)+ci*dble(m)*f0p(ir)
+    f1(ir)=f1(ir)-ci*dble(m)*g0p(ir)
   end if
 ! integrate for correction
   g0(ir)=polynom(-1,npl,r(ir0),g1(ir0),c,r(ir))+g0(ir0)
   f0(ir)=polynom(-1,npl,r(ir0),f1(ir0),c,r(ir))+f0(ir0)
 ! compute the derivatives again
-  g1(ir)=alpha*(e+2.d0*e0-vr(ir))*f0(ir)-rkpa*ri*g0(ir)
-  f1(ir)=-alpha*(e-vr(ir))*g0(ir)+rkpa*ri*f0(ir)
+  g1(ir)=ci*(t1-vr(ir))*f0(ir)-t2*g0(ir)
+  f1(ir)=ci*(vr(ir)-e)*g0(ir)+t2*f0(ir)
   if (m.ne.0) then
-    g1(ir)=g1(ir)+alpha*dble(m)*f0p(ir)
-    f1(ir)=f1(ir)-alpha*dble(m)*g0p(ir)
+    g1(ir)=g1(ir)+ci*dble(m)*f0p(ir)
+    f1(ir)=f1(ir)-ci*dble(m)*g0p(ir)
   end if
 ! check for overflow
   if ((abs(g0(ir)).gt.1.d100).or.(abs(g1(ir)).gt.1.d100).or. &
@@ -144,3 +146,4 @@ end do
 return
 end subroutine
 !EOC
+

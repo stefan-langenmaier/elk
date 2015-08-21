@@ -6,7 +6,6 @@ tasks
   0         ! ground-state calculation
   120       ! compute momentum matrix elements
   121       ! compute RPA dielectric function with no local field contributions
-  170       ! generate plane wave wavefunctions
   180       ! generate RPA dielectric function with local field contributions
   185       ! compute BSE dielectric funcion
 
@@ -36,7 +35,7 @@ autormt
  .true.
 
 dos
-  400 100 0 : nwdos, ngrdos, nsmdos
+  800 100 0 : nwdos, ngrdos, nsmdos
   0.0 1.5   : wdos
 
 avec

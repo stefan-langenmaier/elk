@@ -23,7 +23,7 @@ lradstp
   2
 
 dos
-  200 100 0 : nwdos, ngrdos, nsmdos
+  400 100 0 : nwdos, ngrdos, nsmdos
   0.0 1.5   : wdos
 
 avec

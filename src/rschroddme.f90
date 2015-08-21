@@ -47,7 +47,7 @@ real(8), intent(out) :: q0(nr)
 real(8), intent(out) :: q1(nr)
 ! local variables
 integer im,kpa,ir
-real(8) rm,t1
+real(8) t1,t2
 ! allocatable arrays
 real(8), allocatable :: p0p(:)
 real(8), allocatable :: g0(:),g1(:)
@@ -94,12 +94,12 @@ else
   end if
   call rdiracdme(sol,m,kpa,e,np,nr,r,vr,nn,g0,g1,f0,f1)
 ! determine equivalent scalar relativistic functions
-  t1=1.d0/(2.d0*sol**2)
+  t1=1.d0/sol**2
   do ir=1,nr
-    rm=1.d0-t1*vr(ir)
+    t2=2.d0-t1*vr(ir)
     p0(ir)=g0(ir)
     p1(ir)=g1(ir)
-    q0(ir)=(p1(ir)-p0(ir)/r(ir))/(2.d0*rm)
+    q0(ir)=(p1(ir)-p0(ir)/r(ir))/t2
   end do
   call fderiv(1,nr,r,q0,q1,cf)
   deallocate(g0,g1,f0,f1,cf)

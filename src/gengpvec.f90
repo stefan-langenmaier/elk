@@ -36,13 +36,13 @@ real(8), intent(out) :: vgpl(3,ngkmax)
 real(8), intent(out) :: vgpc(3,ngkmax)
 ! local variables
 integer ig,igp
-real(8) v(3),t1,t2
-t1=gkmax**2
+real(8) v(3),t0,t1
+t0=gkmax**2
 igp=0
 do ig=1,ngvec
   v(:)=vgc(:,ig)+vpc(:)
-  t2=v(1)**2+v(2)**2+v(3)**2
-  if (t2.lt.t1) then
+  t1=v(1)**2+v(2)**2+v(3)**2
+  if (t1.lt.t0) then
     igp=igp+1
     if (igp.gt.ngkmax) then
       write(*,*)

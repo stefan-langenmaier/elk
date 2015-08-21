@@ -25,10 +25,9 @@ implicit none
 integer, intent(in) :: fnum
 ! local variables
 logical named_,opened_
-character(32) action_,blank_,delim_,form_
+character(32) action_,form_
 character(1024) name_
-inquire(fnum,action=action_,blank=blank_,delim=delim_,form=form_,name=name_, &
- named=named_,opened=opened_)
+inquire(fnum,action=action_,form=form_,name=name_,named=named_,opened=opened_)
 if ((adjustl(action_).ne.'WRITE').and.(adjustl(action_).ne.'READWRITE')) then
   write(*,*)
   write(*,'("Error(flushifc): unit ",I4," is read-only")') fnum
@@ -55,8 +54,7 @@ if (.not.opened_) then
 end if
 ! close and re-open file
 close(fnum)
-open(fnum,action=action_,blank=blank_,delim=delim_,form=form_, &
- file=trim(name_),position='APPEND')
+open(fnum,action=action_,form=form_,file=trim(name_),position='APPEND')
 return
 end subroutine
 !EOC

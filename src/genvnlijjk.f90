@@ -42,8 +42,6 @@ real(8), allocatable :: tpgqc(:,:)
 real(8), allocatable :: gqc(:)
 real(8), allocatable :: jlgqr(:,:,:)
 real(8), allocatable :: jlgq0r(:,:,:)
-real(8), allocatable :: evalsvp(:)
-real(8), allocatable :: evalsvnr(:)
 complex(8), allocatable :: sfacgknr(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:)
@@ -72,8 +70,6 @@ allocate(tpgqc(2,ngvec))
 allocate(gqc(ngvec))
 allocate(jlgqr(0:lmaxvr+npsden+1,ngvec,nspecies))
 allocate(jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
-allocate(evalsvp(nstsv))
-allocate(evalsvnr(nstsv))
 allocate(sfacgknr(ngkmax,natmtot))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv))
@@ -90,31 +86,32 @@ allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot))
 allocate(zvclir(ngrtot))
 ! factor for long-range term
 cfq=0.5d0*(omega/pi)**2
+! generate G+k vectors for non-reduced k-point ikp
+call gengpvec(vkl(:,ikp),vkc(:,ikp),ngknr,igkignr,vgklnr,vgkcnr)
+! generate the spherical coordinates of the G+k vectors
+do igk=1,ngknr
+  call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
+end do
+! generate the structure factors
+call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
+! find the matching coefficients
+call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
+! get the eigenvectors from file for non-reduced k-point ikp
+call getevecfv(vkl(:,ikp),vgklnr,evecfv)
+call getevecsv(vkl(:,ikp),evecsv)
+! calculate the wavefunctions for all states for passed non-reduced k-point ikp
+call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
+ evecsv,wfmt2,ngrtot,wfir2)
 ! start loop over reduced k-point set
 do ik=1,nkpt
-! get the eigenvectors and values from file
-  call getevalsv(vkl(:,ik),evalsvp)
+! get the eigenvectors from file
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! find the matching coefficients
   call match(ngk(1,ik),gkc(:,1,ik),tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),apwalm)
 ! calculate the wavefunctions for all states for the reduced k-point
-  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsvp,apwalm, &
+  call genwfsv(.false.,.false.,.false.,ngk(1,ik),igkig(:,1,ik),evalsv,apwalm, &
    evecfv,evecsv,wfmt1,ngrtot,wfir1)
-! generate G+k vectors for non-reduced k-point ikp
-  call gengpvec(vkl(:,ikp),vkc(:,ikp),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
-  do igk=1,ngknr
-    call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-  end do
-! generate the structure factors
-  call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-  call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvalues/vectors from file for non-reduced k-point ikp
-  call getevalsv(vkl(:,ikp),evalsvnr)
-  call getevecfv(vkl(:,ikp),vgklnr,evecfv)
-  call getevecsv(vkl(:,ikp),evecsv)
 ! determine q-vector
   iv(:)=ivk(:,ik)-ivk(:,ikp)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -136,9 +133,6 @@ do ik=1,nkpt
 ! compute the required spherical Bessel functions
   call genjlgpr(lmaxvr+npsden+1,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
-! calculate the wavefunctions for all states for passed non-reduced k-point ikp
-  call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsvnr,apwalm,evecfv, &
-   evecsv,wfmt2,ngrtot,wfir2)
 !----------------------------------------------!
 !     valence-valence-valence contribution     !
 !----------------------------------------------!
@@ -183,8 +177,7 @@ do ik=1,nkpt
 end do
 deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
 deallocate(vgqc,tpgqc,gqc,jlgqr,jlgq0r)
-deallocate(evalsvp,evalsvnr)
-deallocate(apwalm,evecfv,evecsv,sfacgknr,ylmgq,sfacgq)
+deallocate(sfacgknr,apwalm,evecfv,evecsv,ylmgq,sfacgq)
 deallocate(wfmt1,wfmt2,wfir1,wfir2)
 deallocate(zrhomt,zrhoir,zvclmt,zvclir)
 return

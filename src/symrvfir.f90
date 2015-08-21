@@ -63,7 +63,7 @@ do isym=1,nsymcrys
       jg=ivgig(iv(1),iv(2),iv(3))
       jfg=igfft(jg)
 ! complex phase factor for translation
-      t1=-dot_product(vgc(:,ig),vtc(:))
+      t1=-(vgc(1,ig)*vtc(1)+vgc(2,ig)*vtc(2)+vgc(3,ig)*vtc(3))
       zt1=cmplx(cos(t1),sin(t1),8)
 ! translation, spatial rotation and global spin rotation
       if (lspn.eq.1) then

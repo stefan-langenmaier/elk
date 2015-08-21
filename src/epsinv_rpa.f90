@@ -8,15 +8,14 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ik,iq,ig,iw
-integer ist,jst,n
+integer iq,ik,ig,iw,n
 integer info1,info2,recl
-real(8) vgqc(3),eij
-real(8) t1,t2,t3
+real(8) vgqc(3)
 ! allocatable arrays
 integer, allocatable :: ipiv(:)
+real(8), allocatable :: gqc(:)
+complex(8), allocatable :: expqmt(:,:,:)
 complex(8), allocatable :: epsinv(:,:,:)
-complex(8), allocatable :: pmat(:,:,:)
 complex(8), allocatable :: a(:,:)
 complex(8), allocatable :: work(:)
 ! initialise global variables
@@ -24,7 +23,6 @@ call init0
 call init1
 call init2
 call init3
-allocate(epsinv(nwrpa,ngrpa,ngrpa))
 ! read density and potentials from file
 call readstate
 ! find the new linearisation energies
@@ -33,11 +31,16 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
+! generate the exp(iG.r) functions for all the RPA G vectors
+call genexpigr
 ! get the eigenvalues and occupancies from file
 do ik=1,nkpt
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
+allocate(gqc(ngrpa))
+allocate(expqmt(lmmaxvr,nrcmtmax,natmtot))
+allocate(epsinv(nwrpa,ngrpa,ngrpa))
 if (mp_mpi) then
 ! determine the record length for EPSINV_RPA.OUT
   inquire(iolength=recl) vql(:,1),nwrpa,ngrpa,epsinv
@@ -48,75 +51,35 @@ end if
 ! loop over q-points
 do iq=1,nqpt
   if (mp_mpi) write(*,'("Info(epsinv_rpa): ",I6," of ",I6," q-points")') iq,nqpt
+! generate the G+q vector lengths
+  do ig=1,ngrpa
+    vgqc(:)=vgc(:,ig)+vqc(:,iq)
+    gqc(ig)=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
+  end do
+! generate the function exp(iq.r) in the muffin-tins
+  call genexpmt(vqc(:,iq),expqmt)
+! zero the dielectric function array
   epsinv(:,:,:)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
   do ik=1,nkptnr
 ! distribute among MPI processes
     if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-! compute response function chi0 and store in array epsinv
-    call genchi0(iq,ik,epsinv)
+! compute dielectric function and store in array epsinv
+    call genepsqk(iq,ik,gqc,expqmt,epsinv)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-! add chi0 from each process and redistribute
+! add epsinv from each process and redistribute
   if (np_mpi.gt.1) then
     n=nwrpa*ngrpa*ngrpa
     call mpi_allreduce(mpi_in_place,epsinv,n,mpi_double_complex,mpi_sum, &
      mpi_comm_world,ierror)
   end if
-!-----------------------------------!
-!     compute epsilon from chi0     !
-!-----------------------------------!
+! add delta(G,G')
   do ig=1,ngrpa
-    vgqc(:)=vgc(:,ig)+vqc(:,iq)
-    t1=vgqc(1)**2+vgqc(2)**2+vgqc(3)**2+lmda2rpa
-    t1=-fourpi/t1
-    epsinv(:,ig,:)=t1*epsinv(:,ig,:)
     epsinv(:,ig,ig)=epsinv(:,ig,ig)+1.d0
   end do
-!----------------------------------------!
-!     compute G = G' = q = 0 element     !
-!----------------------------------------!
-  if (iq.eq.iq0) then
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(pmat,t1,t2,t3) &
-!$OMP PRIVATE(ist,jst,eij)
-!$OMP DO
-    do ik=1,nkpt
-! distribute among MPI processes
-      if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-      allocate(pmat(3,nstsv,nstsv))
-! read the momentum matrix elements from file
-      call getpmat(vkl(:,ik),pmat)
-! prefactor: the 1/3 is because we want Tr(epsinv)/3
-      t1=(8.d0/3.d0)*pi*wkpt(ik)/omega
-      do ist=1,nstsv
-        do jst=1,nstsv
-          t2=occsv(ist,ik)*(1.d0-occsv(jst,ik)/occmax)
-          if (t2.gt.1.d-8) then
-            eij=evalsv(ist,ik)-(evalsv(jst,ik)+scissor)
-            if (abs(eij).gt.1.d-8) then
-! sum |<i|p|j>|^2
-              t3=sum(dble(pmat(:,ist,jst))**2+aimag(pmat(:,ist,jst))**2)
-              t3=t1*t2*t3
-!$OMP CRITICAL
-              epsinv(:,1,1)=epsinv(:,1,1)-t3/(eij*(eij**2-wrpa(:)**2))
-!$OMP END CRITICAL
-            end if
-          end if
-        end do
-      end do
-      deallocate(pmat)
-    end do
-!$OMP END DO
-!$OMP END PARALLEL
-! add epsinv from each process and redistribute
-    if (np_mpi.gt.1) then
-      call mpi_allreduce(mpi_in_place,epsinv(:,1,1),nwrpa,mpi_double_complex, &
-       mpi_sum,mpi_comm_world,ierror)
-    end if
-  end if
 !-------------------------------------!
 !     invert epsilon over G-space     !
 !-------------------------------------!
@@ -148,7 +111,9 @@ do iq=1,nqpt
 ! end loop over q-points
 end do
 if (mp_mpi) close(50)
-deallocate(epsinv)
+deallocate(gqc,expqmt,epsinv)
+! deallocate global exp(iG.r) arrays
+deallocate(expgmt,expgir)
 if (mp_mpi) then
   write(*,*)
   write(*,'("Info(epsinv_rpa):")')

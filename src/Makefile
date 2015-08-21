@@ -64,8 +64,8 @@ SRC_routines = \
  writechg.f90 writeforce.f90 genjlgpr.f90 findkpt.f90 putevalfv.f90 \
  getevalfv.f90 putevalsv.f90 getevalsv.f90 putoccsv.f90 getoccsv.f90 \
  putevecfv.f90 getevecfv.f90 putevecsv.f90 getevecsv.f90 delevec.f90 \
- genvmatk.f90 genvmat.f90 genwfsv.f90 gendmat.f90 findsymsite.f90 geomplot.f90 \
- hartfock.f90 genkinmatc.f90 energykncr.f90 rfpack.f90 \
+ genvmatk.f90 genvmat.f90 genwfsv.f90 genwfsvp.f90 gendmat.f90 findsymsite.f90 \
+ geomplot.f90 hartfock.f90 genkinmatc.f90 energykncr.f90 rfpack.f90 \
  rfint.f90 writefsm.f90 genbmatk.f90 seceqnit.f90 gdft.f90 genexpmat.f90 \
  writeexpmat.f90 elnes.f90 symdmat.f90 genlmirep.f90 rhomagsh.f90 \
  testcheck.f90 mixander.f90 fermisurfbxsf.f90 checkfsm.f90 genexpmt.f90 \
@@ -108,7 +108,7 @@ SRC_RDMFT = \
 SRC_PW = \
  writewfpw.f90 genwfpw.f90 getwfpw.f90 getwfpwh.f90
 
-SRC_RPA = genchi0.f90 epsinv_rpa.f90 getepsinv_rpa.f90 genexpigr.f90
+SRC_RPA = genepsqk.f90 epsinv_rpa.f90 getepsinv_rpa.f90 genexpigr.f90
 
 SRC_BSE = bse.f90 hmlxbse.f90 hmlxbsek.f90 hmldbse.f90 hmldbsek.f90 \
  dielectric_bse.f90
@@ -128,7 +128,7 @@ SRC_lib = \
  rotaxang.f90 i3minv.f90 axangsu2.f90 z2mm.f90 z2mctm.f90 z2mmct.f90 \
  potnucl.f90 timesec.f90 rfirvec.f90 vecfbz.f90 mixadapt.f90 mixpulay.f90 \
  ylmrot.f90 ylmroty.f90 rlmrot.f90 rotrflm.f90 sdelta_lr.f90 stheta_lr.f90 \
- grad2rfmt.f90
+ grad2rfmt.f90 pade.f90
 
 SRC_xc = \
   xc_pzca.f90 xc_pwca.f90 xc_pbe.f90 xc_am05.f90 xc_xalpha.f90 xc_wc06.f90 \
@@ -152,7 +152,7 @@ EXE = elk
 # Targets
 #-------------------------------------------------------------------------------
 elk:	$(OBJ)
-	$(F90) $(F90_OPTS) -o $(EXE) $(OBJ) $(LIB_LPK) $(LIB_FFT) $(LIB_XC) 
+	$(F90) $(F90_OPTS) -o $(EXE) $(OBJ) $(LIB_LPK) $(LIB_FFT) $(LIB_XC) \
          $(LIB_SYS)
 
 blas:

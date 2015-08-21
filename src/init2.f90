@@ -130,12 +130,6 @@ if (task.eq.300) then
   if (allocated(dkdc)) deallocate(dkdc)
   allocate(dkdc(nstsv,nstsv,nkpt))
 end if
-! Coulomb interaction regulator for RPA: 1/(q^2+lambda^2)
-t1=twopi**3/omega
-t1=t1/dble(nqptnr)
-t1=t1**(1.d0/3.d0)
-t1=t1/2.d0
-lmda2rpa=t1**2
 
 !--------------------------!
 !     phonon variables     !

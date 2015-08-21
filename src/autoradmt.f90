@@ -26,7 +26,7 @@ use modmain
 implicit none
 ! local variables
 integer is,js,ia,ja,i1,i2,i3
-real(8) s,v1(3),v2(3),t1,t2,t3
+real(8) s,v1(3),v2(3),t1,t2
 ! external functions
 real(8) r3dist
 external r3dist
@@ -49,8 +49,8 @@ do i1=-1,1
               if ((i1.ne.0).or.(i2.ne.0).or.(i3.ne.0).or.(is.ne.js).or. &
                (ia.ne.ja)) then
                 t2=r3dist(v2,atposc(:,ja,js))
-                t3=t1*t2
-                if (t3.lt.s) s=t3
+                t2=t1*t2
+                if (t2.lt.s) s=t2
               end if
             end do
           end do

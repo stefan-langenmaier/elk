@@ -66,31 +66,33 @@ real(8), intent(out) :: p1(nr)
 real(8), intent(out) :: q0(nr)
 real(8), intent(out) :: q1(nr)
 ! local variables
-integer ir,ir0,npl
-real(8) rm,ri,t1,t2,t3
+integer i,ir,ir0,npl
+real(8) ri,t1,t2,t3,t4
 ! automatic arrays
 real(8) c(np)
 ! external functions
 real(8) polynom
 external polynom
-t1=1.d0/(2.d0*sol**2)
-t2=dble(l*(l+1))/2.d0
-! estimate r -> 0 boundary values
+t1=1.d0/sol**2
+t2=dble(l*(l+1))
+! determine the r -> 0 boundary values of P and Q self-consistently
 q0(1)=0.d0
 p1(1)=1.d0
 q1(1)=0.d0
-rm=1.d0-t1*vr(1)
-t3=t2/(rm*r(1)**2)
-p0(1)=r(1)*(p1(1)-2.d0*rm*q0(1))
-q0(1)=r(1)*((t3+vr(1)-e)*p0(1)-q1(1))
+t3=2.d0-t1*vr(1)
+t4=t2/(t3*r(1)**2)
+do i=1,10
+  p0(1)=r(1)*(p1(1)-t3*q0(1))
+  q0(1)=r(1)*((t4+vr(1)-e)*p0(1)-q1(1))
+end do
 if (m.ne.0) then
   q1(1)=q1(1)-dble(m)*p0p(1)
 end if
 nn=0
 do ir=2,nr
-  rm=1.d0-t1*vr(ir)
   ri=1.d0/r(ir)
-  t3=t2/(rm*r(ir)**2)+vr(ir)-e
+  t3=2.d0-t1*vr(ir)
+  t4=t2/(t3*r(ir)**2)+vr(ir)-e
 ! predictor-corrector order
   npl=min(ir,np)
   ir0=ir-npl+1
@@ -100,8 +102,8 @@ do ir=2,nr
   p0(ir)=polynom(-1,npl,r(ir0),p1(ir0),c,r(ir))+p0(ir0)
   q0(ir)=polynom(-1,npl,r(ir0),q1(ir0),c,r(ir))+q0(ir0)
 ! compute the derivatives
-  p1(ir)=2.d0*rm*q0(ir)+p0(ir)*ri
-  q1(ir)=t3*p0(ir)-q0(ir)*ri
+  p1(ir)=t3*q0(ir)+p0(ir)*ri
+  q1(ir)=t4*p0(ir)-q0(ir)*ri
   if (m.ne.0) then
     q1(ir)=q1(ir)-dble(m)*p0p(ir)
   end if
@@ -109,8 +111,8 @@ do ir=2,nr
   p0(ir)=polynom(-1,npl,r(ir0),p1(ir0),c,r(ir))+p0(ir0)
   q0(ir)=polynom(-1,npl,r(ir0),q1(ir0),c,r(ir))+q0(ir0)
 ! compute the derivatives again
-  p1(ir)=2.d0*rm*q0(ir)+p0(ir)*ri
-  q1(ir)=t3*p0(ir)-q0(ir)*ri
+  p1(ir)=t3*q0(ir)+p0(ir)*ri
+  q1(ir)=t4*p0(ir)-q0(ir)*ri
   if (m.ne.0) then
     q1(ir)=q1(ir)-dble(m)*p0p(ir)
   end if

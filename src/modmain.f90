@@ -852,8 +852,6 @@ complex(8), allocatable :: wrpa(:)
 ! exp(iG.r) functions for all RPA G vectors
 complex(8), allocatable :: expgmt(:,:,:,:)
 complex(8), allocatable :: expgir(:,:)
-! Coulomb interation regulator for RPA: 1/(q^2+lambda^2)
-real(8) lmda2rpa
 
 !-------------------------------------------------!
 !     Bethe-Salpeter equation (BSE) variables     !
@@ -948,7 +946,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,2,15 /
+data version / 1,2,20 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

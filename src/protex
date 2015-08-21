@@ -939,7 +939,8 @@ sub print_preamble {
     print "\\usepackage{epsfig}";
     print "\\usepackage{hangcaption}";
     print "\\usepackage{tabularx}";
-    print "\\usepackage{hyperref}";
+    print "\\usepackage{color}";
+    print "\\usepackage[linkbordercolor={0 0 1}]{hyperref}";
     print "\\textheight     9in";
     print "\\topmargin      0pt";
     print "\\headsep        1cm";
@@ -1002,6 +1003,17 @@ sub print_macros {
     print "\\def\\cI{{\\cal I}}";
     print "\\def\\diag{\\mathop{\\rm diag}}";
     print "\\def\\tr{\\mathop{\\rm tr}}";
+    print "%-------------------------------------------------------------";
+    print " ";
+    print "%------------------------ Elk commands -----------------------";
+    print "\\newcommand{\\block}[2]{";
+    print "\\color{blue}\\subsection{\\tt #1}\\color{black}";
+    print "\\begin{tabularx}{\\textwidth}[h]{|l|X|c|c|}";
+    print "\\hline";
+    print "#2 \\\\";
+    print "\\hline";
+    print "\\end{tabularx}\\vskip 0.25cm";
+    print "}";
     print "%-------------------------------------------------------------";
 
 }# end sub print_macros

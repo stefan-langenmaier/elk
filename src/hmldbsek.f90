@@ -9,24 +9,15 @@ implicit none
 ! arguments
 integer, intent(in) :: ik2
 ! local variables
-integer ik1,ngknr,igk,ig,jg
+integer ik1,ig,jg
 integer is,ia,ias,irc
-integer i1,i2,j1,j2,a1,a2
+integer i1,i2,j1,j2,a1,a2,b1,b2
 integer ist1,ist2,jst1,jst2
 real(8) vl(3),vc(3)
 real(8) vgqc(3),t0,t1
 complex(8) zsum
 ! allocatable arrays
-integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:)
-real(8), allocatable :: vgkcnr(:,:)
-real(8), allocatable :: gkcnr(:)
-real(8), allocatable :: tpgkcnr(:,:)
-real(8), allocatable :: gqc2(:)
-complex(8), allocatable :: sfacgknr(:,:)
-complex(8), allocatable :: apwalm(:,:,:,:)
-complex(8), allocatable :: evecfv(:,:)
-complex(8), allocatable :: evecsv(:,:)
+real(8), allocatable :: gqc(:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:)
 complex(8), allocatable :: wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:)
@@ -37,20 +28,13 @@ complex(8), allocatable :: zrhomt(:,:,:)
 complex(8), allocatable :: zrhoir(:)
 complex(8), allocatable :: zvv(:,:,:)
 complex(8), allocatable :: zcc(:,:,:)
+complex(8), allocatable :: zvc(:,:,:)
+complex(8), allocatable :: zcv(:,:,:)
 complex(8), allocatable :: epsinv(:,:,:)
 ! external functions
 complex(8) zfinp
 external zfinp
-allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax))
-allocate(vgkcnr(3,ngkmax))
-allocate(gkcnr(ngkmax))
-allocate(tpgkcnr(2,ngkmax))
-allocate(gqc2(ngrpa))
-allocate(sfacgknr(ngkmax,natmtot))
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
-allocate(evecfv(nmatmax,nstfv))
-allocate(evecsv(nstsv,nstsv))
+allocate(gqc(ngrpa))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir1(ngrtot,nspinor,nstsv))
@@ -62,52 +46,28 @@ allocate(zrhoir(ngrtot))
 allocate(zvv(ngrpa,nvbse,nvbse))
 allocate(zcc(ngrpa,ncbse,ncbse))
 allocate(epsinv(nwrpa,ngrpa,ngrpa))
-! generate G+k vectors for k-point ik2
-call gengpvec(vkl(:,ik2),vkc(:,ik2),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
-do igk=1,ngknr
-  call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-end do
-! generate the structure factors
-call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvector for k-point ik2
-call getevecfv(vkl(:,ik2),vgklnr,evecfv)
-call getevecsv(vkl(:,ik2),evecsv)
-! generate the wavefunctions for k-point ik2
-call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
- evecsv,wfmt2,ngrtot,wfir2)
+if (bsefull) then
+  allocate(zvc(ngrpa,nvbse,ncbse))
+  allocate(zcv(ngrpa,ncbse,nvbse))
+end if
+! generate the wavefunctions at k-point ik2
+call genwfsvp(.false.,.false.,vkl(:,ik2),wfmt2,ngrtot,wfir2)
 ! begin loop over ik1
 do ik1=1,nkptnr
-! generate G+k vectors for k-point ik1
-  call gengpvec(vkl(:,ik1),vkc(:,ik1),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
-  do igk=1,ngknr
-    call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-  end do
-! generate the structure factors
-  call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-  call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvectors from file
-  call getevecfv(vkl(:,ik1),vgklnr,evecfv)
-  call getevecsv(vkl(:,ik1),evecsv)
-! generate the wavefunctions for k-point ik1
-  call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
-   evecsv,wfmt1,ngrtot,wfir1)
+! generate the wavefunctions at k-point ik1
+  call genwfsvp(.false.,.false.,vkl(:,ik1),wfmt1,ngrtot,wfir1)
 ! q vector in lattice and Cartesian coordinates
   vl(:)=vkl(:,ik1)-vkl(:,ik2)
   vc(:)=vkc(:,ik1)-vkc(:,ik2)
 ! generate the function exp(iq.r) in the muffin-tins
   call genexpmt(vc,expqmt)
-! loop over G vectors
+! loop over RPA G vectors
   do ig=1,ngrpa
 ! G+q vector in Cartesian coordinates
     vgqc(:)=vgc(:,ig)+vc(:)
-! length of G+q vector squared
-    gqc2(ig)=vgqc(1)**2+vgqc(2)**2+vgqc(3)**2
-! compute the fuction exp(i(G+q).r) in the muffin-tins
+! length of G+q vector
+    gqc(ig)=sqrt(vgqc(1)**2+vgqc(2)**2+vgqc(3)**2)
+! compute the function exp(i(G+q).r) in the muffin-tins
     do is=1,nspecies
       do ia=1,natoms(is)
         ias=idxas(ia,is)
@@ -121,6 +81,8 @@ do ik1=1,nkptnr
       ist1=istbse(i1,ik1)
       do i2=1,nvbse
         ist2=istbse(i2,ik2)
+! note that the complex conjugate of the density is found because zfinp
+! conjugates the first function
         call genzrho(.false.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,ist1), &
          wfir2(:,:,ist2),wfir1(:,:,ist1),zrhomt,zrhoir)
         zvv(ig,i1,i2)=zfinp(.false.,zrhomt,expgqmt,zrhoir,expgir(:,ig))
@@ -136,6 +98,29 @@ do ik1=1,nkptnr
         zcc(ig,j1,j2)=zfinp(.false.,zrhomt,expgqmt,zrhoir,expgir(:,ig))
       end do
     end do
+! matrix elements for full BSE kernel if required
+    if (bsefull) then
+! compute the <v|exp(i(G+q).r)|c'> matrix elements
+      do i1=1,nvbse
+        ist1=istbse(i1,ik1)
+        do j2=1,ncbse
+          jst2=jstbse(j2,ik2)
+          call genzrho(.false.,wfmt2(:,:,:,:,jst2),wfmt1(:,:,:,:,ist1), &
+           wfir2(:,:,jst2),wfir1(:,:,ist1),zrhomt,zrhoir)
+          zvc(ig,i1,j2)=zfinp(.false.,zrhomt,expgqmt,zrhoir,expgir(:,ig))
+        end do
+      end do
+! compute the <c|exp(i(G+q).r)|v'> matrix elements
+      do j1=1,ncbse
+        jst1=jstbse(j1,ik1)
+        do i2=1,nvbse
+          ist2=istbse(i2,ik2)
+          call genzrho(.false.,wfmt2(:,:,:,:,ist2),wfmt1(:,:,:,:,jst1), &
+           wfir2(:,:,ist2),wfir1(:,:,jst1),zrhomt,zrhoir)
+          zcv(ig,j1,i2)=zfinp(.false.,zrhomt,expgqmt,zrhoir,expgir(:,ig))
+        end do
+      end do
+    end if
 ! end loop over G vectors
   end do
 ! get RPA inverse epsilon from file
@@ -148,21 +133,45 @@ do ik1=1,nkptnr
         do j2=1,ncbse
           a2=ijkbse(i2,j2,ik2)
           zsum=0.d0
-          do jg=1,ngrpa
-            t1=t0/(gqc2(jg)+lmda2rpa)
-            do ig=1,ngrpa
-              zsum=zsum+t1*epsinv(1,ig,jg)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
+          do ig=1,ngrpa
+            do jg=1,ngrpa
+              t1=gqc(ig)*gqc(jg)
+              if (t1.gt.1.d-6) then
+                t1=t0/t1
+                zsum=zsum+t1*epsinv(1,ig,jg)*zcc(ig,j1,j2)*conjg(zvv(jg,i1,i2))
+              end if
             end do
           end do
           hmlbse(a1,a2)=hmlbse(a1,a2)-zsum
+! compute off-diagonal blocks if required
+          if (bsefull) then
+            b1=a1+nbbse
+            b2=a2+nbbse
+            hmlbse(b1,b2)=hmlbse(b1,b2)+conjg(zsum)
+            zsum=0.d0
+            do ig=1,ngrpa
+              do jg=1,ngrpa
+                t1=gqc(ig)*gqc(jg)
+                if (t1.gt.1.d-6) then
+                  t1=t0/t1
+                  zsum=zsum+t1*epsinv(1,ig,jg)*zcv(ig,j1,i2) &
+                   *conjg(zvc(jg,i1,j2))
+                end if
+              end do
+            end do
+            hmlbse(a1,b2)=hmlbse(a1,b2)-zsum
+            hmlbse(b1,a2)=hmlbse(b1,a2)+conjg(zsum)
+          end if
+! end loop over i2 and j2
         end do
       end do
+! end loop over i1 and j1
     end do
   end do
+! end loop over ik1
 end do
-deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr,gqc2)
-deallocate(sfacgknr,apwalm,evecfv,evecsv)
-deallocate(wfmt1,wfmt2,wfir1,wfir2,expqmt,expgqmt)
+deallocate(gqc,wfmt1,wfmt2,wfir1,wfir2,expqmt,expgqmt)
 deallocate(zrhomt,zrhoir,zvv,zcc,epsinv)
+if (bsefull) deallocate(zvc,zcv)
 return
 end subroutine

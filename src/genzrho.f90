@@ -90,10 +90,9 @@ subroutine zvmul1(n,a,b,c)
 implicit none
 ! arguments
 integer, intent(in) :: n
-complex(8), intent(in) :: a(n)
-complex(8), intent(in) :: b(n)
+complex(8), intent(in) :: a(n),b(n)
 complex(8), intent(out) :: c(n)
-c(1:n)=conjg(a(1:n))*b(1:n)
+c(:)=conjg(a(:))*b(:)
 return
 end subroutine
 
@@ -101,13 +100,9 @@ subroutine zvmul2(n,a1,b1,a2,b2,c)
 implicit none
 ! arguments
 integer, intent(in) :: n
-complex(8), intent(in) :: a1(n)
-complex(8), intent(in) :: b1(n)
-complex(8), intent(in) :: a2(n)
-complex(8), intent(in) :: b2(n)
+complex(8), intent(in) :: a1(n),b1(n),a2(n),b2(n)
 complex(8), intent(out) :: c(n)
-c(1:n)=conjg(a1(1:n))*b1(1:n)
-c(1:n)=c(1:n)+conjg(a2(1:n))*b2(1:n)
+c(:)=conjg(a1(:))*b1(:)+conjg(a2(:))*b2(:)
 return
 end subroutine
 

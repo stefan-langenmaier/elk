@@ -40,16 +40,16 @@ integer l,m,lm,ir
 real(8), parameter :: fourpi=12.566370614359172954d0
 real(8) t1,t2,t3,t4
 ! automatic arrays
-real(8) ri(nr),rl(4,nr),cf(4,nr)
+real(8) ri(nr),rl1(nr),rl2(nr),rl3(nr),rl4(nr),cf(4,nr)
 real(8) fr1(nr),fr2(nr),fr3(nr),fr4(nr),fr5(nr)
 ! initialise r^l, r^(-l-1), r^(l+2) and r^(-l+1)
 do ir=1,nr
   ri(ir)=1.d0/r(ir)
-  rl(1,ir)=1.d0
-  rl(2,ir)=ri(ir)
+  rl1(ir)=1.d0
+  rl2(ir)=ri(ir)
   t1=fourpi*r(ir)
-  rl(3,ir)=t1*r(ir)
-  rl(4,ir)=t1
+  rl3(ir)=t1*r(ir)
+  rl4(ir)=t1
 end do
 lm=0
 do l=0,lmax
@@ -58,10 +58,10 @@ do l=0,lmax
     do ir=1,nr
       t1=dble(zrhomt(lm,ir))
       t2=aimag(zrhomt(lm,ir))
-      fr1(ir)=t1*rl(3,ir)
-      fr2(ir)=t2*rl(3,ir)
-      fr3(ir)=t1*rl(4,ir)
-      fr4(ir)=t2*rl(4,ir)
+      fr1(ir)=t1*rl3(ir)
+      fr2(ir)=t2*rl3(ir)
+      fr3(ir)=t1*rl4(ir)
+      fr4(ir)=t2*rl4(ir)
     end do
     call fderiv(-1,nr,r,fr1,fr5,cf)
     call fderiv(-1,nr,r,fr2,fr1,cf)
@@ -70,19 +70,19 @@ do l=0,lmax
     t1=fr2(nr)
     t2=fr3(nr)
     do ir=1,nr
-      t3=rl(2,ir)*fr5(ir)+rl(1,ir)*(t1-fr2(ir))
-      t4=rl(2,ir)*fr1(ir)+rl(1,ir)*(t2-fr3(ir))
+      t3=rl2(ir)*fr5(ir)+rl1(ir)*(t1-fr2(ir))
+      t4=rl2(ir)*fr1(ir)+rl1(ir)*(t2-fr3(ir))
       zvclmt(lm,ir)=cmplx(t3,t4,8)
     end do
   end do
   if (l.lt.lmax) then
     t1=fourpi/dble(2*(l+1)+1)
     do ir=1,nr
-      rl(1,ir)=rl(1,ir)*r(ir)
-      rl(2,ir)=rl(2,ir)*ri(ir)
+      rl1(ir)=rl1(ir)*r(ir)
+      rl2(ir)=rl2(ir)*ri(ir)
       t2=t1*r(ir)**2
-      rl(3,ir)=rl(1,ir)*t2
-      rl(4,ir)=rl(2,ir)*t2
+      rl3(ir)=rl1(ir)*t2
+      rl4(ir)=rl2(ir)*t2
     end do
   end if
 end do

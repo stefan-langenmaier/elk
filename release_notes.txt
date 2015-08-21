@@ -1,3 +1,16 @@
+elk-1.2.20
+-the Bethe-Salpeter equation (BSE) for linear optics now works beyond the
+ Tamm-Dankoff approximation
+-RPA and BSE calculations now use full wavefunctions instead of plane waves
+-removed the Coulomb regulator from the calculation of RPA dielectric function,
+ instead used the analytic results for the head and the wings of the matrix
+ (thanks to Vladimir Nazarov for discussions)
+-improved the stability of radial Dirac and Schrodinger integrators (thanks to
+ Alexei Baranov, Frank Wagner and Ondrej Certik for discussions)
+-added more block descriptions to the manual (thanks to various people for
+ pointing out omissions)
+-various optimisations
+
 elk-1.2.15
 -SS and JKD added the Bethe-Salpeter equation (BSE) for linear optics
  calculations. This feature works with LDA+U, magnetism and spin-orbit coupling.

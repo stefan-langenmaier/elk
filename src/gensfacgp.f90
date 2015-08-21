@@ -31,12 +31,13 @@ integer, intent(in) :: ld
 complex(8), intent(out) :: sfacgp(ld,natmtot)
 ! local variables
 integer is,ia,ias,igp
-real(8) t1
+real(8) v(3),t1
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
+    v(:)=atposc(:,ia,is)
     do igp=1,ngp
-      t1=dot_product(vgpc(:,igp),atposc(:,ia,is))
+      t1=vgpc(1,igp)*v(1)+vgpc(2,igp)*v(2)+vgpc(3,igp)*v(3)
       sfacgp(igp,ias)=cmplx(cos(t1),sin(t1),8)
     end do
   end do

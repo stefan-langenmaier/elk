@@ -108,8 +108,8 @@ do is=1,nspecies
         if (ncmag) then
           wfmt3(:,1:nrc)=wfmt2(:,1:nrc) &
            *cmplx(beffmt(:,1:nrc,ias,1),-beffmt(:,1:nrc,ias,2),8)
-          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
-           wfmt3,lmmaxvr,zzero,wfmt4(:,:,3),lmmaxvr)
+          call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
+           lmmaxvr,zzero,wfmt4(:,:,3),lmmaxvr)
         end if
 ! apply spin-orbit coupling if required
         if (spinorb) then
@@ -193,7 +193,7 @@ deallocate(wfmt1)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
-allocate(bir(ngrtot,3))
+allocate(bir(ngrtot,ndmag))
 if (spinpol) then
   if (ncmag) then
 ! non-collinear
@@ -203,8 +203,7 @@ if (spinpol) then
   else
 ! collinear
     do ir=1,ngrtot
-      bir(ir,1:2)=0.d0
-      bir(ir,3)=(bxcir(ir,1)+cb*bfieldc(3))*cfunir(ir)
+      bir(ir,1)=(bxcir(ir,1)+cb*bfieldc(3))*cfunir(ir)
     end do
   end if
 ! begin loop over states
@@ -224,7 +223,7 @@ if (spinpol) then
 ! Fourier transform wavefunction to real-space
     call zfftifc(3,ngrid,1,wfir1)
 ! multiply with magnetic field and transform to G-space
-    wfir2(:)=wfir1(:)*bir(:,3)
+    wfir2(:)=wfir1(:)*bir(:,ndmag)
     call zfftifc(3,ngrid,-1,wfir2)
     do igk=1,ngk(1,ik)
       ifg=igfft(igkig(igk,1,ik))

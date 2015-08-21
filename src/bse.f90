@@ -12,18 +12,14 @@ implicit none
 integer ik,jk,a,b
 integer ist,jst,i,j
 integer ntop,lwork,info
-real(8) t1
+real(8) h0,t1
 ! allocatable arrays
 integer, allocatable :: idx(:)
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: epsinv(:,:,:)
+complex(8), allocatable :: w(:)
+complex(8), allocatable :: vl(:,:),vr(:,:)
 complex(8), allocatable :: work(:)
-if (bsefull) then
-  write(*,*)
-  write(*,'("Error(bse): full BSE matrix not yet implimented")')
-  write(*,*)
-  stop
-end if
 ! initialise global variables
 call init0
 call init1
@@ -126,9 +122,13 @@ do ik=1,nkptnr
 ! end loop over non-reduced k-points
 end do
 deallocate(idx)
-! read in the RPA inverse dielectric function
+! read in the RPA inverse dielectric function for q = 0
 allocate(epsinv(nwrpa,ngrpa,ngrpa))
 call getepsinv_rpa(vql(:,iq0),epsinv)
+! compute the G = G' = q = 0 part of the direct kernel
+h0=-2.d0/twopi**2
+h0=h0*(6.d0*pi**2*(wkptnr/omega))**(1.d0/3.d0)
+h0=h0*fourpi*epsinv(1,1,1)
 ! synchronise MPI processes
 call mpi_barrier(mpi_comm_world,ierror)
 if (mp_mpi) then
@@ -147,7 +147,7 @@ do ik=1,nkptnr
     do j=1,ncbse
       jst=jstbse(j,ik)
       a=ijkbse(i,j,ik)
-      hmlbse(a,a)=(evalsv(jst,jk)+scissor)-evalsv(ist,jk)
+      hmlbse(a,a)=(evalsv(jst,jk)+scissor)-evalsv(ist,jk)+h0
       if (bsefull) then
         b=a+nbbse
         hmlbse(b,b)=-hmlbse(a,a)
@@ -169,24 +169,52 @@ if (np_mpi.gt.1) then
    mpi_sum,mpi_comm_world,ierror)
 end if
 ! diagonalize the BSE matrix
-allocate(rwork(3*nmbse))
-lwork=2*nmbse
-allocate(work(lwork))
-call zheev('V','U',nmbse,hmlbse,nmbse,evalbse,work,lwork,rwork,info)
-if (info.ne.0) then
-  write(*,*)
-  write(*,'("Error(bse): diagonalisation failed")')
-  write(*,'(" ZHEEV returned INFO = ",I8)') info
-  write(*,*)
-  stop
+if (bsefull) then
+! full non-Hermitian matrix
+  allocate(w(nmbse))
+  allocate(vl(1,1),vr(nmbse,nmbse))
+  lwork=2*nmbse
+  allocate(rwork(lwork))
+  allocate(work(lwork))
+  call zgeev('N','V',nmbse,hmlbse,nmbse,w,vl,1,vr,nmbse,work,lwork,rwork,info)
+  if (info.ne.0) then
+    write(*,*)
+    write(*,'("Error(bse): diagonalisation failed")')
+    write(*,'(" ZGEEV returned INFO = ",I8)') info
+    write(*,*)
+    stop
+  end if
+  evalbse(:)=dble(w(:))
+  hmlbse(:,:)=vr(:,:)
+  deallocate(vl,vr,rwork,work)
+else
+! Hermitian block only
+  allocate(rwork(3*nmbse))
+  lwork=2*nmbse
+  allocate(work(lwork))
+  call zheev('V','U',nmbse,hmlbse,nmbse,evalbse,work,lwork,rwork,info)
+  if (info.ne.0) then
+    write(*,*)
+    write(*,'("Error(bse): diagonalisation failed")')
+    write(*,'(" ZHEEV returned INFO = ",I8)') info
+    write(*,*)
+    stop
+  end if
+  deallocate(rwork,work)
 end if
-deallocate(rwork,work)
 ! write the BSE eigenvalues to file
 open(50,file='EIGVAL_BSE.OUT',action='WRITE',form='FORMATTED')
 write(50,'(I6," : nmbse")') nmbse
-do a=1,nmbse
-  write(50,'(I6,G18.10)') a,evalbse(a)
-end do
+if (bsefull) then
+  do a=1,nmbse
+    write(50,'(I6,2G18.10)') a,dble(w(a)),aimag(w(a))
+  end do
+  deallocate(w)
+else
+  do a=1,nmbse
+    write(50,'(I6,G18.10)') a,evalbse(a)
+  end do
+end if
 close(50)
 ! calculate the macroscopic dielectric tensor
 call dielectric_bse

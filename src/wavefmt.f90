@@ -58,8 +58,6 @@ real(8), intent(out) :: wfmt(2,ld,*)
 ! local variables
 integer ias,l,m,lm,ld2
 integer ir,nr,io,ilo
-! values smaller than eps are taken to be zero
-real(8), parameter :: eps=1.d-14
 complex(8) zt1
 ! external functions
 complex(8) zdotu

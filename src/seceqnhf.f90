@@ -26,14 +26,13 @@ real(8), allocatable :: vgklnr(:,:),vgkcnr(:,:)
 real(8), allocatable :: gkcnr(:),tpgkcnr(:,:)
 real(8), allocatable :: vgqc(:,:),tpgqc(:,:),gqc(:)
 real(8), allocatable :: jlgqr(:,:,:),jlgq0r(:,:,:)
-real(8), allocatable :: evalsvp(:),evalsvnr(:)
 real(8), allocatable :: vmt(:,:,:),vir(:)
 real(8), allocatable :: bmt(:,:,:,:),bir(:,:)
 real(8), allocatable :: rfmt(:,:),rwork(:)
-complex(8), allocatable :: h(:,:),vmat(:,:)
 complex(8), allocatable :: sfacgknr(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:),evecsv(:,:)
+complex(8), allocatable :: h(:,:),vmat(:,:)
 complex(8), allocatable :: ylmgq(:,:),sfacgq(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:),wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:),wfir2(:,:,:)
@@ -53,29 +52,24 @@ allocate(gkcnr(ngkmax),tpgkcnr(2,ngkmax))
 allocate(vgqc(3,ngvec),tpgqc(2,ngvec),gqc(ngvec))
 allocate(jlgqr(0:lmaxvr+npsden+1,ngvec,nspecies))
 allocate(jlgq0r(0:lmaxvr,nrcmtmax,nspecies))
-allocate(evalsvp(nstsv),evalsvnr(nstsv))
-allocate(rwork(3*nstsv))
-allocate(h(nstsv,nstsv),vmat(nstsv,nstsv))
+allocate(sfacgknr(ngkmax,natmtot))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv),evecsv(nstsv,nstsv))
-allocate(sfacgknr(ngkmax,natmtot))
+allocate(h(nstsv,nstsv),vmat(nstsv,nstsv))
 allocate(ylmgq(lmmaxvr,ngvec),sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir1(ngrtot,nspinor,nstsv))
 allocate(wfir2(ngrtot,nspinor,nstsv))
 allocate(zfmt(lmmaxvr,nrcmtmax))
-lwork=2*nstsv
-allocate(work(lwork))
 ! coefficient of long-range term
 cfq=0.5d0*(omega/pi)**2
-! get the eigenvalues/vectors from file for input k-point
-call getevalsv(vkl(:,ikp),evalsvp)
+! get the eigenvectors from file for input k-point
 call getevecfv(vkl(:,ikp),vgkl(:,:,:,ikp),evecfv)
 ! find the matching coefficients
 call match(ngk(1,ikp),gkc(:,1,ikp),tpgkc(:,:,1,ikp),sfacgk(:,:,1,ikp),apwalm)
 ! calculate the wavefunctions for all states for the input k-point
-call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm, &
+call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsv,apwalm, &
  evecfv,evecsvp,wfmt1,ngrtot,wfir1)
 !---------------------------------!
 !     kinetic matrix elements     !
@@ -159,10 +153,12 @@ do ik=1,nkptnr
   call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
 ! find the matching coefficients
   call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvalues/vectors from file for non-reduced k-point
-  call getevalsv(vkl(:,ik),evalsvnr)
+! get the eigenvectors from file for non-reduced k-point
   call getevecfv(vkl(:,ik),vgklnr,evecfv)
   call getevecsv(vkl(:,ik),evecsv)
+! calculate the wavefunctions for all states
+  call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
+   evecsv,wfmt2,ngrtot,wfir2)
 ! determine q-vector
   iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
@@ -185,9 +181,6 @@ do ik=1,nkptnr
   lmax=lmaxvr+npsden+1
   call genjlgpr(lmax,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
-! calculate the wavefunctions for all states
-  call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsvnr,apwalm,evecfv, &
-   evecsv,wfmt2,ngrtot,wfir2)
   do ist3=1,nstsv
     if (occsv(ist3,jk).gt.epsocc) then
 !$OMP PARALLEL DEFAULT(SHARED) &
@@ -235,7 +228,11 @@ end if
 ! add the non-local matrix elements to Hamiltonian
 h(:,:)=h(:,:)+vmat(:,:)
 ! diagonalise the Hartree-Fock Hamiltonian (eigenvalues in global array)
+allocate(rwork(3*nstsv))
+lwork=2*nstsv
+allocate(work(lwork))
 call zheev('V','U',nstsv,h,nstsv,evalsv(:,ikp),work,lwork,rwork,info)
+deallocate(rwork,work)
 if (info.ne.0) then
   write(*,*)
   write(*,'("Error(seceqnhf): diagonalisation of the Hartree-Fock Hamiltonian &
@@ -251,9 +248,9 @@ call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,h,nstsv,zzero,evecsvp, &
  nstsv)
 deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
 deallocate(vgqc,tpgqc,gqc,jlgqr,jlgq0r)
-deallocate(evalsvp,evalsvnr,evecfv,evecsv,rwork)
-deallocate(h,vmat,apwalm,sfacgknr,ylmgq,sfacgq)
-deallocate(wfmt1,wfmt2,wfir1,wfir2,zfmt,work)
+deallocate(sfacgknr,apwalm,evecfv,evecsv)
+deallocate(h,vmat,ylmgq,sfacgq)
+deallocate(wfmt1,wfmt2,wfir1,wfir2,zfmt)
 return
 end subroutine
 

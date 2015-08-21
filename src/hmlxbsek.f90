@@ -10,22 +10,12 @@ implicit none
 integer, intent(in) :: ik2
 real(8), intent(in) :: jlgr(0:lmaxvr+npsden+1,ngvec,nspecies)
 ! local variables
-integer ik1,ngknr,igk
 integer i1,i2,j1,j2
 integer a1,a2,b1,b2
-integer is,ia,ias
+integer ik1,is,ia,ias
 integer ist1,ist2,jst1,jst2
 complex(8) zrho0,zt1
 ! allocatable arrays
-integer, allocatable :: igkignr(:)
-real(8), allocatable :: vgklnr(:,:)
-real(8), allocatable :: vgkcnr(:,:)
-real(8), allocatable :: gkcnr(:)
-real(8), allocatable :: tpgkcnr(:,:)
-complex(8), allocatable :: sfacgknr(:,:)
-complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:,:)
-complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: wfmt1(:,:,:,:,:)
 complex(8), allocatable :: wfmt2(:,:,:,:,:)
 complex(8), allocatable :: wfir1(:,:,:)
@@ -39,15 +29,6 @@ complex(8), allocatable :: zfmt(:,:)
 complex(8) zfinp
 external zfinp
 ! allocate local arrays
-allocate(igkignr(ngkmax))
-allocate(vgklnr(3,ngkmax))
-allocate(vgkcnr(3,ngkmax))
-allocate(gkcnr(ngkmax))
-allocate(tpgkcnr(2,ngkmax))
-allocate(sfacgknr(ngkmax,natmtot))
-allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-allocate(evecfv(nmatmax,nstfv,nspnfv))
-allocate(evecsv(nstsv,nstsv))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir1(ngrtot,nspinor,nstsv))
@@ -57,22 +38,8 @@ allocate(zrhoir(ngrtot))
 allocate(zvclmt(lmmaxvr,nrcmtmax,natmtot))
 allocate(zvclir(ngrtot))
 allocate(zfmt(lmmaxvr,nrcmtmax))
-! generate G+k vectors for k-point ik2
-call gengpvec(vkl(:,ik2),vkc(:,ik2),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
-do igk=1,ngknr
-  call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-end do
-! generate the structure factors
-call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvectors from file
-call getevecfv(vkl(:,ik2),vgklnr,evecfv)
-call getevecsv(vkl(:,ik2),evecsv)
 ! calculate the wavefunctions for all states for k-point ik2
-call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm,evecfv, &
- evecsv,wfmt2,ngrtot,wfir2)
+call genwfsvp(.false.,.false.,vkl(:,ik2),wfmt2,ngrtot,wfir2)
 do i2=1,nvbse
   ist2=istbse(i2,ik2)
   do j2=1,ncbse
@@ -100,22 +67,7 @@ do i2=1,nvbse
         wfmt1(:,:,:,:,:)=wfmt2(:,:,:,:,:)
         wfir1(:,:,:)=wfir2(:,:,:)
       else
-! generate G+k vectors
-        call gengpvec(vkl(:,ik1),vkc(:,ik1),ngknr,igkignr,vgklnr,vgkcnr)
-! generate the spherical coordinates of the G+k vectors
-        do igk=1,ngknr
-          call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
-        end do
-! generate the structure factors
-        call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
-! find the matching coefficients
-        call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
-! get the eigenvectors from file
-        call getevecfv(vkl(:,ik1),vgklnr,evecfv)
-        call getevecsv(vkl(:,ik1),evecsv)
-! calculate the wavefunctions for all states for ik1
-        call genwfsv(.false.,.false.,.false.,ngknr,igkignr,evalsv,apwalm, &
-         evecfv,evecsv,wfmt1,ngrtot,wfir1)
+        call genwfsvp(.false.,.false.,vkl(:,ik1),wfmt1,ngrtot,wfir1)
       end if
       do i1=1,nvbse
         ist1=istbse(i1,ik1)
@@ -153,8 +105,6 @@ do i2=1,nvbse
   end do
 ! end loop over i2
 end do
-deallocate(igkignr,vgklnr,vgkcnr,gkcnr,tpgkcnr)
-deallocate(sfacgknr,apwalm,evecfv,evecsv)
 deallocate(wfmt1,wfmt2,wfir1,wfir2)
 deallocate(zrhomt,zrhoir,zvclmt,zvclir,zfmt)
 return
