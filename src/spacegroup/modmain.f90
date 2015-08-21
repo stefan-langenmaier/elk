@@ -73,10 +73,6 @@ real(8) bfcmt(3,maxatoms,maxspecies)
 !----------------------------------!
 !     atomic species variables     !
 !----------------------------------!
-! species file names
-character(256) spfname(maxspecies)
-! species name
-character(256) spname(maxspecies)
 ! species symbol
 character(256) spsymb(maxspecies)
 
@@ -90,7 +86,7 @@ real(8), parameter :: pi=3.1415926535897932385d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,1,3 /
+data version / 1,1,4 /
 
 end module
 !EOC

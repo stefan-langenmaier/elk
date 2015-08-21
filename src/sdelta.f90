@@ -72,8 +72,8 @@ subroutine getsdata(stype,sdescr)
 !   stype  : smearing type (in,integer)
 !   sdescr : smearing scheme description (out,character(256))
 ! !DESCRIPTION:
-!   Returns a description of the smearing scheme as string {\tt sdescr} up
-!   to 256 characters long.
+!   Returns a description of the smearing scheme as string {\tt sdescr} up to
+!   256 characters long.
 !
 ! !REVISION HISTORY:
 !   Created April 2003 (JKD)

@@ -19,6 +19,7 @@ use modmain
 !BOC
 implicit none
 ! local variables
+logical fnd
 integer is,ia,ja,ias,jas
 integer l,ilo,io,jo
 ! automatic arrays
@@ -49,7 +50,16 @@ do is=1,nspecies
 ! find the band energy starting from default
             apwe(io,l,ias)=apwe0(io,l,is)
             call findband(solsc,l,0,nprad,nrmt(is),spr(:,is),vr,deband, &
-             apwe(io,l,ias))
+             epsband,apwe(io,l,ias),fnd)
+            if (.not.fnd) then
+              write(*,*)
+              write(*,'("Warning(linengy): linearisation energy not found")')
+              write(*,'(" for species ",I4)') is
+              write(*,'(" atom ",I4)') ia
+              write(*,'(" APW angular momentum ",I4)') l
+              write(*,'(" order ",I4)') io
+              write(*,'(" and s.c. loop ",I5)') iscl
+            end if
           end if
 10 continue
         end do
@@ -73,7 +83,16 @@ do is=1,nspecies
 ! find the band energy starting from default
             lorbe(io,ilo,ias)=lorbe0(io,ilo,is)
             call findband(solsc,l,0,nprad,nrmt(is),spr(:,is),vr,deband, &
-             lorbe(io,ilo,ias))
+             epsband,lorbe(io,ilo,ias),fnd)
+            if (.not.fnd) then
+              write(*,*)
+              write(*,'("Warning(linengy): linearisation energy not found")')
+              write(*,'(" for species ",I4)') is
+              write(*,'(" atom ",I4)') ia
+              write(*,'(" local-orbital ",I4)') ilo
+              write(*,'(" order ",I4)') io
+              write(*,'(" and s.c. loop",I5)') iscl
+            end if
           end if
 20 continue
         end do

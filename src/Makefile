@@ -50,7 +50,7 @@ SRC_routines_flux = \
  hartfock.f90 genkinmat.f90 energykncr.f90 rfpack.f90 rfint.f90 \
  writefsm.f90 genbmatk.f90 seceqnit.f90 gdft.f90 genexpiqr.f90 writeexpiqr.f90 \
  elnes.f90 symdmat.f90 genlmirep.f90 rhomagsh.f90 testcheck.f90 mixander.f90 \
- fermisurfbxsf.f90 checkfsm.f90 readalphalu.f90
+ fermisurfbxsf.f90 checkfsm.f90 genzqrmt.f90 genbeffmt.f90 writesf.f90
 
 SRC_phonon = \
  phonon.f90 dyntask.f90 phcell.f90 phdisp.f90 readdyn.f90 dynqtor.f90 \
@@ -68,7 +68,7 @@ SRC_advanced = \
  oepvnlk.f90 oepmagmt.f90 oepmag.f90 zrhogp.f90
 
 SRC_LDAU = \
- gendmatlu.f90 genveelu.f90 genvmatlu.f90 writeldapu.f90
+ gendmatlu.f90 genveelu.f90 genvmatlu.f90 writeldapu.f90 readalphalu.f90
 
 SRC_rdmft = \
  rdmft.f90 rdmdkdc.f90 rdmminc.f90 rdmvaryc.f90 rdmdedc.f90 rdmdexcdc.f90 \
@@ -91,7 +91,6 @@ SRC_lib = \
  fderiv.f90 fsmooth.f90 rotaxang.f90 i3minv.f90 axangsu2.f90 z2mm.f90 \
  z2mctm.f90 z2mmct.f90 potnucl.f90 timesec.f90 rfirvec.f90 vecfbz.f90 \
  mixadapt.f90 mixpulay.f90 ylmrot.f90 ylmroty.f90 rlmrot.f90 rotrflm.f90
-
 
 SRC_lib_flux =
 
@@ -118,14 +117,11 @@ lapack:
 fft:
 	cd fftlib; $(MAKE); cp fftlib.a ..
 
-xc:
-	cd xclib; $(MAKE); cp xclib.a ..
-
 all:	blas lapack fft elk
 
 clean:
-	rm -f *.o *.mod *~ fort.* ifc* *.gcno gmon.out *.aux *.dvi *.log *.pdf \
-         *.tex *.toc $(EXE)
+	rm -f *.o *.mod *~ fort.* ifc* *.gcno gmon.out *.aux *.dvi *.log \
+         elk.pdf *.tex *.toc $(EXE)
 
 cleanall:
 	cd BLAS; $(MAKE) clean
@@ -147,7 +143,8 @@ doctemp:
 backup:
 	tar -czf elk.tgz $(SRC) fftlib eos spacegroup species junk BLAS LAPACK \
          Makefile notes.txt docs docedit ../examples ../tests protex COPYING \
-         README elk.bib depend ../release gentest genalltests checklist.txt
+         README elk.bib elk_silhouette.pdf depend ../release gentest genalltests \
+         checklist.txt
 
 VERSION = $$(awk -F"/" '/data version/ {print $$2}' modmain.f90 | sed 's/ //g;s/,/./g')$
 RELEASE = ../release/elk
@@ -169,7 +166,7 @@ release:
 	cp -r spacegroup $(RELEASE)/src
 	cp -r species $(RELEASE)/src
 	rm -f $(RELEASE)/src/species/*.in
-	cp $(SRC) Makefile protex elk.bib $(RELEASE)/src
+	cp $(SRC) Makefile protex elk.bib elk_silhouette.pdf $(RELEASE)/src
 	cd ../examples; find . -type f -name *~ -exec rm -f {} \;
 	cp -r ../examples $(RELEASE)
 	cd ../tests; find . -type f -name *~ -exec rm -f {} \;

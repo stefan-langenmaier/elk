@@ -214,6 +214,8 @@ do ispn=1,nspinor
     write(50,'(2G18.10)') w(iw),t1*g(iw,ispn)
   end do
   write(50,'("     ")')
+! write the total DOS to test file
+  call writetest(10,'total DOS',nv=nwdos,tol=2.d-2,rva=g)
 end do
 close(50)
 !----------------------------!
@@ -247,8 +249,6 @@ do is=1,nspecies
             g(iw,ispn)=g(iw,ispn)-gp(iw)
           end do
           write(50,'("     ")')
-! write the partial DOS to test file
-          call writetest(10,'partial DOS',nv=nwdos,tol=1.d-2,rva=gp)
         end do
       end do
     end do
@@ -287,6 +287,7 @@ do ispn=1,nspinor
   do iw=1,nwdos
     write(50,'(2G18.10)') w(iw),t1*g(iw,ispn)
   end do
+  write(50,'("     ")')
 end do
 close(50)
 write(*,*)

@@ -6,7 +6,7 @@
 !BOP
 ! !ROUTINE: findband
 ! !INTERFACE:
-subroutine findband(sol,l,k,np,nr,r,vr,de0,e)
+subroutine findband(sol,l,k,np,nr,r,vr,de0,eps,e,fnd)
 ! !INPUT/OUTPUT PARAMETERS:
 !   sol : speed of light in atomic units (in,real)
 !   l   : angular momentum quantum number (in,integer)
@@ -16,7 +16,9 @@ subroutine findband(sol,l,k,np,nr,r,vr,de0,e)
 !   r   : radial mesh (in,real(nr))
 !   vr  : potential on radial mesh (in,real(nr))
 !   de0 : default energy step size (in,real)
+!   eps : energy search tolerance (in,real)
 !   e   : input energy and returned band energy (inout,real)
+!   fnd : set to .true. if the band energy is found (out,logical)
 ! !DESCRIPTION:
 !   Finds the band energies for a given radial potential and angular momentum.
 !   This is done by first searching upwards in energy until the radial
@@ -41,16 +43,17 @@ integer, intent(in) :: nr
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
 real(8), intent(in) :: de0
+real(8), intent(in) :: eps
 real(8), intent(inout) :: e
+logical, intent(out) :: fnd
 ! local variables
 ! maximum number of steps
 integer, parameter :: maxstp=1000
 integer ie,nn
-! energy search tolerance
-real(8), parameter :: eps=1.d-5
 real(8) de,et,eb,t,tp
 ! automatic arrays
 real(8) p0(nr),p1(nr),q0(nr),q1(nr)
+fnd=.false.
 tp=0.d0
 ! find the top of the band
 de=abs(de0)
@@ -88,6 +91,7 @@ return
 20 continue
 ! set the band energy to the mid-point
 e=(et+eb)/2.d0
+fnd=.true.
 return
 end subroutine
 !EOC

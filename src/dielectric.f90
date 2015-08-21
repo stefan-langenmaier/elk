@@ -50,12 +50,10 @@ if (usegdft) then
     call gdft(ik,delta(:,:,ik))
   end do
 end if
-! energy interval should start from zero
-wdos(1)=0.d0
-! generate energy grid
-t1=(wdos(2)-wdos(1))/dble(nwdos)
+! generate energy grid (starting from zero)
+t1=wdos(2)/dble(nwdos)
 do iw=1,nwdos
-  w(iw)=t1*dble(iw-1)+wdos(1)
+  w(iw)=t1*dble(iw-1)
 end do
 ! find crystal symmetries which map non-reduced k-points to reduced equivalents
 do ik=1,nkptnr

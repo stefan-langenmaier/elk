@@ -43,23 +43,25 @@ end if
 lm1=0
 do l=0,lmax
   lm2=lm1+2*(l+1)
-  do m=-l,l
+  do m=-l,-1
     lm1=lm1+1
     lm2=lm2-1
-    if (m.gt.0) then
-      if (mod(m,2).ne.0) then
-        rflm(lm1)=c1*(dble(zflm(lm1))-dble(zflm(lm2)))
-      else
-        rflm(lm1)=c1*(dble(zflm(lm1))+dble(zflm(lm2)))
-      end if
-    else if (m.lt.0) then
-      if (mod(m,2).ne.0) then
-        rflm(lm1)=-c1*(aimag(zflm(lm1))+aimag(zflm(lm2)))
-      else
-        rflm(lm1)=c1*(aimag(zflm(lm2))-aimag(zflm(lm1)))
-      end if
+    if (mod(m,2).ne.0) then
+      rflm(lm1)=-c1*(aimag(zflm(lm1))+aimag(zflm(lm2)))
     else
-      rflm(lm1)=dble(zflm(lm1))
+      rflm(lm1)=c1*(aimag(zflm(lm2))-aimag(zflm(lm1)))
+    end if
+  end do
+  lm1=lm1+1
+  lm2=lm2-1
+  rflm(lm1)=dble(zflm(lm1))
+  do m=1,l
+    lm1=lm1+1
+    lm2=lm2-1
+    if (mod(m,2).ne.0) then
+      rflm(lm1)=c1*(dble(zflm(lm1))-dble(zflm(lm2)))
+    else
+      rflm(lm1)=c1*(dble(zflm(lm1))+dble(zflm(lm2)))
     end if
   end do
 end do

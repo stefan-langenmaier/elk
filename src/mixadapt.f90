@@ -52,29 +52,28 @@ real(8), intent(inout) :: f(n)
 real(8), intent(out) :: d
 ! local variables
 integer i
-real(8) b1,t1
+real(8) t1
 if (n.le.0) return
 if (iscl.le.1) then
   mu(:)=nu(:)
   f(:)=0.d0
-  beta(:)=betamax
+  beta(:)=beta0
   d=1.d0
   return
 end if
-b1=beta0+1.d0
 d=0.d0
 do i=1,n
-  nu(i)=beta(i)*nu(i)+(1.d0-beta(i))*mu(i)
   t1=nu(i)-mu(i)
   if (t1*f(i).gt.0.d0) then
-    beta(i)=b1*beta(i)+beta0
+    beta(i)=beta(i)+beta0
     if (beta(i).gt.betamax) beta(i)=betamax
   else
-    beta(i)=beta0*(1.d0+beta(i))
+    beta(i)=beta0
   end if
-  mu(i)=nu(i)
   f(i)=t1
+  nu(i)=beta(i)*nu(i)+(1.d0-beta(i))*mu(i)
   d=d+t1**2
+  mu(i)=nu(i)
 end do
 d=sqrt(d/dble(n))
 return

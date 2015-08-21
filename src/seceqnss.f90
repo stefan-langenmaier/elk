@@ -15,18 +15,17 @@ complex(8), intent(out) :: evecsv(nstsv,nstsv)
 ! local variables
 integer ispn,jspn,is,ia,ias
 integer ist,jst,i,j,k,l,lm,nm
-integer ir,irc,igk,ifg
+integer nrc,ir,igk,ifg
 integer lwork,info
 real(8) cb,t1
 real(8) ts0,ts1
 complex(8) zq
 ! allocatable arrays
-real(8), allocatable :: bmt(:,:,:)
 real(8), allocatable :: bir(:,:)
 real(8), allocatable :: rwork(:)
 complex(8), allocatable :: wfmt1(:,:,:,:)
 complex(8), allocatable :: wfmt2(:,:,:)
-complex(8), allocatable :: wfmt3(:,:,:)
+complex(8), allocatable :: wfmt3(:,:)
 complex(8), allocatable :: wfmt4(:,:,:)
 complex(8), allocatable :: zfft1(:,:)
 complex(8), allocatable :: zfft2(:)
@@ -45,12 +44,11 @@ end if
 call timesec(ts0)
 ! coupling constant of the external field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
-allocate(bmt(lmmaxvr,nrcmtmax,3))
 allocate(bir(ngrtot,3))
 allocate(rwork(3*nstsv))
 allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv,nspnfv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,nspnfv))
-allocate(wfmt3(lmmaxvr,nrcmtmax,3))
+allocate(wfmt3(lmmaxvr,nrcmtmax))
 allocate(wfmt4(lmmaxvr,nrcmtmax,3))
 allocate(zfft1(ngrtot,nspnfv))
 allocate(zfft2(ngrtot))
@@ -63,24 +61,9 @@ evecsv(:,:)=0.d0
 !     muffin-tin part     !
 !-------------------------!
 do is=1,nspecies
+  nrc=nrcmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-! exchange-correlation magnetic field in spherical coordinates
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
-      do i=1,3
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,bxcmt(:,ir,ias,i), &
-         1,0.d0,bmt(:,irc,i),1)
-      end do
-    end do
-! add the external magnetic field
-    do i=1,3
-      t1=cb*(bfcmt(i,ia,is)+bfieldc(i))
-      do irc=1,nrcmt(is)
-        bmt(:,irc,i)=bmt(:,irc,i)+t1
-      end do
-    end do
 ! compute the first-variational wavefunctions
     do ispn=1,nspnfv
       do ist=1,nstfv
@@ -94,20 +77,20 @@ do is=1,nspecies
     do jst=1,nstfv
       do ispn=1,nspnfv
 ! convert wavefunctions to spherical coordinates
-        call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zbshtvr,lmmaxvr, &
+        call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
          wfmt1(:,:,jst,ispn),lmmaxvr,zzero,wfmt2(:,:,ispn),lmmaxvr)
       end do
-! apply effective magnetic field
-      do irc=1,nrcmt(is)
-        wfmt3(:,irc,1)=wfmt2(:,irc,1)*bmt(:,irc,3)
-        wfmt3(:,irc,2)=-wfmt2(:,irc,2)*bmt(:,irc,3)
-        wfmt3(:,irc,3)=zq*wfmt2(:,irc,2)*cmplx(bmt(:,irc,1),-bmt(:,irc,2),8)
-      end do
-! convert to spherical harmonics
-      do k=1,3
-        call zgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,zone,zfshtvr,lmmaxvr, &
-         wfmt3(:,:,k),lmmaxvr,zzero,wfmt4(:,:,k),lmmaxvr)
-      end do
+! apply effective magnetic field and convert to spherical harmonics
+      wfmt3(:,1:nrc)=wfmt2(:,1:nrc,1)*beffmt(:,1:nrc,ias,3)
+      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
+       lmmaxvr,zzero,wfmt4(:,:,1),lmmaxvr)
+      wfmt3(:,1:nrc)=-wfmt2(:,1:nrc,2)*beffmt(:,1:nrc,ias,3)
+      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
+       lmmaxvr,zzero,wfmt4(:,:,2),lmmaxvr)
+      wfmt3(:,1:nrc)=zq*wfmt2(:,1:nrc,2) &
+       *cmplx(beffmt(:,1:nrc,ias,1),-beffmt(:,1:nrc,ias,2),8)
+      call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,wfmt3, &
+       lmmaxvr,zzero,wfmt4(:,:,3),lmmaxvr)
 ! apply LDA+U potential if required
       if ((ldapu.ne.0).and.(llu(is).ge.0)) then
         l=llu(is)
@@ -124,7 +107,7 @@ do is=1,nspecies
             ispn=1
             jspn=2
           end if
-          call zgemm('N','N',nm,nrcmt(is),nm,zone,vmatlu(lm,lm,ispn,jspn,ias), &
+          call zgemm('N','N',nm,nrc,nm,zone,vmatlu(lm,lm,ispn,jspn,ias), &
            lmmaxlu,wfmt1(lm,1,jst,jspn),lmmaxvr,zone,wfmt4(lm,1,k),lmmaxvr)
         end do
       end if
@@ -145,8 +128,8 @@ do is=1,nspecies
             j=jst+nstfv
           end if
           if (i.le.j) then
-            evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,lmaxvr,nrcmt(is), &
-             rcmt(:,is),lmmaxvr,wfmt1(:,:,ist,ispn),wfmt4(:,:,k))
+            evecsv(i,j)=evecsv(i,j)+zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is), &
+             lmmaxvr,wfmt1(:,:,ist,ispn),wfmt4(:,:,k))
           end if
         end do
       end do
@@ -229,8 +212,8 @@ if (info.ne.0) then
   write(*,*)
   stop
 end if
-deallocate(bmt,bir,rwork)
-deallocate(wfmt1,wfmt2,wfmt3,wfmt4,zfft1,zfft2,work)
+deallocate(bir,rwork,wfmt1,wfmt2,wfmt3,wfmt4)
+deallocate(zfft1,zfft2,zv,work)
 call timesec(ts1)
 !$OMP CRITICAL
 timesv=timesv+ts1-ts0

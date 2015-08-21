@@ -117,6 +117,7 @@ intraband=.false.
 evaltol=1.d-8
 evalmin=-4.5d0
 deband=0.0025d0
+epsband=1.d-6
 bfieldc(:)=0.d0
 fixspin=0
 momfix(:)=0.d0
@@ -173,6 +174,7 @@ sqados(3)=1.d0
 test=.false.
 frozencr=.false.
 solscf=1.d0
+emaxelnes=-1.2d0
 
 !--------------------------!
 !     read from elk.in     !
@@ -622,6 +624,14 @@ case('deband')
     write(*,*)
     stop
   end if
+case('epsband')
+  read(50,*,err=20) epsband
+  if (epsband.le.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): epsband <= 0 ",G18.10)') epsband
+    write(*,*)
+    stop
+  end if
 case('bfieldc')
   read(50,*,err=20) bfieldc
 case('fixspin')
@@ -889,6 +899,8 @@ case('solscf')
     write(*,*)
     stop
   end if
+case('emaxelnes')
+  read(50,*,err=20) emaxelnes
 case('')
   goto 10
 case default

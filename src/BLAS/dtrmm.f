@@ -114,6 +114,8 @@
 *           max( 1, m ).
 *           Unchanged on exit.
 *
+*  Further Details
+*  ===============
 *
 *  Level 3 Blas routine.
 *
@@ -123,6 +125,7 @@
 *     Jeremy Du Croz, Numerical Algorithms Group Ltd.
 *     Sven Hammarling, Numerical Algorithms Group Ltd.
 *
+*  =====================================================================
 *
 *     .. External Functions ..
       LOGICAL LSAME
@@ -182,7 +185,7 @@
 *
 *     Quick return if possible.
 *
-      IF (N.EQ.0) RETURN
+      IF (M.EQ.0 .OR. N.EQ.0) RETURN
 *
 *     And when  alpha.eq.zero.
 *

@@ -7,11 +7,10 @@ subroutine oepmain
 use modmain
 implicit none
 ! local variables
-integer is,ia,ias,ik
+integer is,ia,ias,ik,ld
 integer ir,irc,it,idm
 real(8) tau,resp,t1
 ! allocatable arrays
-real(8), allocatable :: rflm(:)
 real(8), allocatable :: rfmt(:,:,:)
 real(8), allocatable :: rfir(:)
 real(8), allocatable :: rvfmt(:,:,:,:)
@@ -22,22 +21,20 @@ real(8), allocatable :: dbxmt(:,:,:,:)
 real(8), allocatable :: dbxir(:,:)
 complex(8), allocatable :: vnlcv(:,:,:,:)
 complex(8), allocatable :: vnlvv(:,:,:)
-complex(8), allocatable :: zflm(:)
 ! external functions
 real(8) rfinp
 external rfinp
 if (iscl.lt.1) return
+ld=lmmaxvr*lradstp
 ! calculate nonlocal matrix elements
 allocate(vnlcv(ncrmax,natmtot,nstsv,nkpt))
 allocate(vnlvv(nstsv,nstsv,nkpt))
 call oepvnl(vnlcv,vnlvv)
 ! allocate local arrays
-allocate(rflm(lmmaxvr))
 allocate(rfmt(lmmaxvr,nrmtmax,natmtot))
 allocate(rfir(ngrtot))
 allocate(dvxmt(lmmaxvr,nrcmtmax,natmtot))
 allocate(dvxir(ngrtot))
-allocate(zflm(lmmaxvr))
 if (spinpol) then
   allocate(rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag))
   allocate(rvfir(ngrtot,ndmag))
@@ -78,15 +75,11 @@ do it=1,maxitoep
   do is=1,nspecies
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-      irc=0
-      do ir=1,nrmt(is),lradstp
-        irc=irc+1
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,dvxmt(:,irc,ias), &
-         1,0.d0,rfmt(:,ir,ias),1)
-        do idm=1,ndmag
-          call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
-           dbxmt(:,irc,ias,idm),1,0.d0,rvfmt(:,ir,ias,idm),1)
-        end do
+      call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+       dvxmt(:,:,ias),lmmaxvr,0.d0,rfmt(:,:,ias),ld)
+      do idm=1,ndmag
+        call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+         dbxmt(:,:,ias,idm),lmmaxvr,0.d0,rvfmt(:,:,ias,idm),ld)
       end do
     end do
   end do
@@ -120,13 +113,11 @@ do it=1,maxitoep
       do ir=1,nrmt(is),lradstp
         irc=irc+1
 ! convert residual to spherical coordinates and subtract from complex potential
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,rfmt(:,ir,ias),1, &
-         0.d0,rflm,1)
-        zvxmt(:,irc,ias)=zvxmt(:,irc,ias)-tau*rflm(:)
+        call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr,rfmt(:,ir,ias),1, &
+         1.d0,zvxmt(:,irc,ias),2)
         do idm=1,ndmag
-          call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-           rvfmt(:,ir,ias,idm),1,0.d0,rflm,1)
-          zbxmt(:,irc,ias,idm)=zbxmt(:,irc,ias,idm)-tau*rflm(:)
+          call dgemv('N',lmmaxvr,lmmaxvr,-tau,rbshtvr,lmmaxvr, &
+           rvfmt(:,ir,ias,idm),1,1.d0,zbxmt(:,irc,ias,idm),2)
         end do
       end do
     end do
@@ -145,13 +136,11 @@ do is=1,nspecies
     do ir=1,nrmt(is),lradstp
       irc=irc+1
 ! convert to real spherical harmonics
-      rflm(:)=dble(zvxmt(:,irc,ias))
-      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rflm,1,0.d0, &
-       rfmt(:,ir,ias),1)
+      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,zvxmt(:,irc,ias),2, &
+       0.d0,rfmt(:,ir,ias),1)
       do idm=1,ndmag
-        rflm(:)=dble(zbxmt(:,irc,ias,idm))
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr,rflm,1,0.d0, &
-         rvfmt(:,ir,ias,idm),1)
+        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
+         zbxmt(:,irc,ias,idm),2,0.d0,rvfmt(:,ir,ias,idm),1)
       end do
     end do
   end do
@@ -182,8 +171,8 @@ call symrf(1,vxcmt,vxcir)
 if (spinpol) then
   call symrvf(1,bxcmt,bxcir)
 end if
-deallocate(rflm,rfmt,rfir,vnlcv,vnlvv)
-deallocate(dvxmt,dvxir,zflm)
+deallocate(rfmt,rfir,vnlcv,vnlvv)
+deallocate(dvxmt,dvxir)
 if (spinpol) then
   deallocate(rvfmt,rvfir)
   deallocate(dbxmt,dbxir)

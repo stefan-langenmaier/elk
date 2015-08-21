@@ -89,7 +89,7 @@ timemat=timemat+ts1-ts0
 call timesec(ts0)
 vl=0.d0
 vu=0.d0
-! LAPACK 3.0 call
+! LAPACK 3.x call
 call zhpgvx(1,'V','I','U',nmatp,h,o,vl,vu,1,nstfv,evaltol,m,w,evecfv,nmatmax, &
  work,rwork,iwork,ifail,info)
 evalfv(1:nstfv)=w(1:nstfv)

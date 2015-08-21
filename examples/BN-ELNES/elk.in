@@ -1,50 +1,82 @@
 
-! Energy-loss Near-edge Structure (ELNES) of cubic boron-nitride. Note that
-! special B.in and N.in species files are required with the core states
-! represented by local-orbitals. Remember to check that the core linearisation
-! energies (in LINENGY.OUT) are determined correctly, i.e. not fixed to the
-! default energy. Compare with Phys. Rev. B 64, 115107 (2001).
+! Calculation of the electron loss near-edge spectroscopy (ELNES) for boron
+! nitride. Note that a 16 atom supercell has been constructed with a special
+! N atom (defined in the species file 'N+.in') for which the nuclear and
+! electronic charges have been increased by one, and the 1s core code state has
+! been included as a valence state by adding a local-orbital at the appropriate
+! energy. This approximates the local core-hole interation. Compare with Phys.
+! Rev. B 64, 115107 (2001).
+
+! This example is well converged and is of publication quality. However it is
+! fairly time-consuming and is best run on a multi-processor machine.
 
 tasks
-  0
-  140
+ 0
+ 140
 
-nempty
-  20
+! spin-orbit coupling required to obtain realistic 1s state in valence
+spinorb
+ .true.
 
-! lower the minimum allowed valence eigenvalue to accommodate core states
+! lower the minimum allowed valence eigenvalue
 evalmin
- -20.0
+ -30.0
 
-! select number of grid points and energy range (see manual)
-dos
-  300 100 0    : nwdos, ngrdos, nsmdos
-  6.0 9.0      : wdos (for the boron K edge)
-
-! q-vector in lattice coordinates
+! ELNES q-vector in lattice coordinates
 vecql
  0.0 0.0 0.125
 
-autormt
- .true.
+! energy range for ELNES plot
+dos
+ 300 150 3    : nwdos, ngrdos, nsmdos
+ 18.0 22.0    : wdos (for the nitrogen K-edge)
 
-avec
- 0.5 0.0 0.5
- 0.0 0.5 0.5
- 0.5 0.5 0.0
+! tight convergence for band (linearisation) energies required
+epsband
+ 1.e-7
 
-scale
-  6.8408
+! large initial step-length for band energy search
+deband
+ 0.01
 
-atoms
-  2
-  'B.in'
-  1
-  0.0 0.0 0.0    0.0 0.0 0.0
-  'N.in'
-  1
-  0.25 0.25 0.25 0.0 0.0 0.0
+! maximum allowed energy for the initial state in the double differential
+! cross-section formula
+emaxelnes
+ -10.0
+
+! large number of empty states required
+nempty
+ 60
 
 ngridk
-  8  8  8
+ 8  8  8
 
+avec
+   9.674352000       0.000000000       0.000000000    
+   4.837176000       8.378234597       0.000000000    
+   4.837176000       2.792744866       7.899075331    
+ 
+atoms
+   3                                    : nspecies
+'B.in'                                  : spfname
+   8                                    : natoms; atposl, bfcmt below
+    0.00000000    0.00000000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.00000000    0.00000000    0.50000000    0.00000000  0.00000000  0.00000000
+    0.00000000    0.50000000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.00000000    0.50000000    0.50000000    0.00000000  0.00000000  0.00000000
+    0.50000000    0.00000000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.50000000    0.00000000    0.50000000    0.00000000  0.00000000  0.00000000
+    0.50000000    0.50000000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.50000000    0.50000000    0.50000000    0.00000000  0.00000000  0.00000000
+'N+.in'                                 : spfname
+   1                                    : natoms; atposl, bfcmt below
+    0.12500000    0.12500000    0.12500000    0.00000000  0.00000000  0.00000000
+'N.in'                                  : spfname
+   7
+    0.12500000    0.12500000    0.62500000    0.00000000  0.00000000  0.00000000
+    0.12500000    0.62500000    0.12500000    0.00000000  0.00000000  0.00000000
+    0.12500000    0.62500000    0.62500000    0.00000000  0.00000000  0.00000000
+    0.62500000    0.12500000    0.12500000    0.00000000  0.00000000  0.00000000
+    0.62500000    0.12500000    0.62500000    0.00000000  0.00000000  0.00000000
+    0.62500000    0.62500000    0.12500000    0.00000000  0.00000000  0.00000000
+    0.62500000    0.62500000    0.62500000    0.00000000  0.00000000  0.00000000

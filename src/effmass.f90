@@ -42,6 +42,8 @@ call genlofr
 call olprad
 ! compute the Hamiltonian radial integrals
 call hmlrad
+! generate muffin-tin effective magnetic fields and s.o. coupling functions
+call genbeffmt
 ik0=0
 ! begin parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &

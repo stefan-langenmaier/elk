@@ -18,7 +18,7 @@ lradstp
 
 dos
   200 100 0 : nwdos, ngrdos, nsmdos
-  0.0 1.5   : wintdos
+  0.0 1.5   : wdos
 
 avec
   3.80402   3.80402   0.00000

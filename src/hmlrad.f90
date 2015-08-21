@@ -76,9 +76,9 @@ do is=1,nspecies
         end do
       end do
     end do
-!--------------------------------------!
-!     local-orbital-APW integtrals     !
-!--------------------------------------!
+!-------------------------------------!
+!     local-orbital-APW integrals     !
+!-------------------------------------!
     do ilo=1,nlorb(is)
       l1=lorbl(ilo,is)
       do l3=0,lmaxmat

@@ -13,7 +13,8 @@ complex(8), intent(in) :: dveffmt(lmmaxvr,nrcmtmax,natmtot,3*natmtot)
 complex(8), intent(in) :: dveffir(ngrtot,3*natmtot)
 complex(8), intent(out) :: epmat(nstsv,nstsv,3*natmtot)
 ! local variables
-integer is,ia,ias,lmax
+integer lmax,lmmax
+integer is,ia,ias
 integer ngp,ngpq,igp
 integer nrc,irc,ifg
 integer ist,jst,ispn
@@ -53,6 +54,7 @@ complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
 n=3*natmtot
 lmax=min(lmaxmat,lmaxvr)
+lmmax=(lmax+1)**2
 ! allocate local arrays
 allocate(igpig(ngkmax))
 allocate(igpqig(ngkmax))
@@ -135,7 +137,7 @@ do is=1,nspecies
           zfmt1(:,irc)=conjg(wfmt3(:,irc))*wfmt2(:,irc,ist)
         end do
 ! convert from spherical coordinates to spherical harmonics
-        call zgemm('N','N',lmmaxmat,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt1, &
+        call zgemm('N','N',lmmax,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr,zfmt1, &
          lmmaxvr,zzero,zfmt2,lmmaxvr)
         do i=1,n
           epm(ist,jst,i)=epm(ist,jst,i)+zfmtinp(.true.,lmax,nrc,rcmt(:,is), &

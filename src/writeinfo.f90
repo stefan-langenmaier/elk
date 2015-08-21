@@ -166,7 +166,7 @@ write(fnum,'("Number of Bravais lattice symmetries : ",I4)') nsymlat
 write(fnum,'("Number of crystal symmetries         : ",I4)') nsymcrys
 write(fnum,*)
 if (autokpt) then
-  write(fnum,'("radius of sphere used to determine k-point grid density : ",&
+  write(fnum,'("Radius of sphere used to determine k-point grid density : ",&
    &G18.10)') radkpt
 end if
 write(fnum,'("k-point grid : ",3I6)') ngridk

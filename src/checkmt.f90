@@ -21,8 +21,11 @@ implicit none
 ! local variables
 integer ia,is,ja,js
 integer i1,i2,i3
+! smallest allowed interatomic distance
+real(8), parameter :: dmin=0.25d0
 real(8) v1(3),v2(3),v3(3)
-real(8) t1,t2
+real(8) t0,t1,t2
+t0=dmin**2
 do i1=-1,1
   do i2=-1,1
     do i3=-1,1
@@ -37,6 +40,17 @@ do i1=-1,1
                (ia.ne.ja)) then
                 v3(:)=v2(:)-atposc(:,ja,js)
                 t2=v3(1)**2+v3(2)**2+v3(3)**2
+                if (t2.lt.t0) then
+                  write(*,*)
+                  write(*,'("Error(checkmt): interatomic distance too small&
+                   & for")')
+                  write(*,'("     species ",I4," atom ",I4)') is,ia
+                  write(*,'(" and species ",I4," atom ",I4)') js,ja
+                  write(*,*)
+                  write(*,'("Distance between atoms : ",G18.10)') sqrt(t2)
+                  write(*,*)
+                  stop
+                end if
                 if (t1.gt.t2) then
                   write(*,*)
                   write(*,'("Error(checkmt): muffin-tin tins overlap for")')

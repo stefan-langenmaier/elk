@@ -405,6 +405,10 @@ real(8), allocatable :: vxcir(:)
 real(8), allocatable :: bxcmt(:,:,:,:)
 ! interstitial exchange-correlation magnetic field
 real(8), allocatable :: bxcir(:,:)
+! muffin-tin effective magnetic field in spherical coordinates
+real(8), allocatable :: beffmt(:,:,:,:)
+! spin-orbit coupling radial function
+real(8), allocatable :: socfr(:,:)
 ! nosource is .true. if the field is to be made source-free
 logical nosource
 ! muffin-tin effective potential
@@ -516,6 +520,8 @@ logical lorbve(maxlorbord,maxlorb,maxspecies)
 real(8), allocatable :: lofr(:,:,:,:)
 ! energy step size for locating the band energy
 real(8) deband
+! band energy search tolerance
+real(8) epsband
 
 !-------------------------------------------!
 !     overlap and Hamiltonian variables     !
@@ -710,6 +716,8 @@ real(8) sqados(3)
 ! q-vector in lattice coordinates for calculating the matrix elements
 ! < i,k+q | exp(iq.r) | j,k >
 real(8) vecql(3)
+! maximum initial-state energy allowed in ELNES transitions
+real(8) emaxelnes
 
 !-------------------------------------!
 !     1D/2D/3D plotting variables     !
@@ -896,7 +904,7 @@ real(8), parameter :: gfacte=2.0023193043622d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 0,9,256 /
+data version / 0,9,262 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

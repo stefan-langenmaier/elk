@@ -6,10 +6,12 @@ implicit none
 integer nk,ik,jk,i,j
 real(8) vecqc(3),a,b
 ! allocatable arrays
+complex(8), allocatable :: zqrmt(:,:,:)
 complex(8), allocatable :: emat(:,:)
 ! initialise universal variables
 call init0
 call init1
+allocate(zqrmt(lmmaxvr,nrcmtmax,natmtot))
 ! allocate the matrix elements array for < i,k+G+q | exp(iq.r) | j,k >
 allocate(emat(nstsv,nstsv))
 ! read in the density and potentials from file
@@ -20,6 +22,8 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
+! generate the phase factor function exp(iq.r) in the muffin-tins
+call genzqrmt(zqrmt)
 ! number of k-points to write out
 if (kstlist(1,1).le.0) then
   nk=nkpt
@@ -54,7 +58,7 @@ do jk=1,nk
   write(50,*)
   write(50,'(" k-point (Cartesian coordinates) :")')
   write(50,'(3G18.10)') vkc(:,ik)
-  call genexpiqr(ik,emat)
+  call genexpiqr(vkl(:,ik),zqrmt,emat)
   do i=1,nstsv
     write(50,*)
     write(50,'(I6," : state i; state j, <...>, |<...>|^2 below")') i
@@ -73,7 +77,7 @@ write(*,'(" < i,k+q | exp(iq.r) | j,k > matrix elements written to&
  & EXPIQR.OUT")')
 write(*,'(" for the q-vector in vecql and all k-points in kstlist")')
 write(*,*)
-deallocate(emat)
+deallocate(zqrmt,emat)
 return
 end subroutine
 

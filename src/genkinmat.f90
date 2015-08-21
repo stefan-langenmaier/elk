@@ -8,11 +8,10 @@ subroutine genkinmat
 use modmain
 implicit none
 ! local variables
-integer is,ia,ias,idm
-integer ik,ist,ir,irc
+integer ld,is,ia,ias
+integer ik,ist
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:)
-real(8), allocatable :: rvfmt(:,:,:,:)
 real(8), allocatable :: evalfv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:)
 complex(8), allocatable :: evecfv(:,:)
@@ -25,7 +24,6 @@ complex(8), allocatable :: c(:,:)
 ! allocate local arrays
 allocate(rfmt(lmmaxvr,nrcmtmax,natmtot))
 allocate(evalfv(nstfv,nspnfv))
-if (spinpol) allocate(rvfmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv))
 allocate(evecsv(nstsv,nstsv))
@@ -34,23 +32,17 @@ allocate(wfir(ngrtot,nspinor,nstsv))
 allocate(vmat(nstsv,nstsv))
 allocate(bmat(nstsv,nstsv))
 allocate(c(nstsv,nstsv))
-! convert muffin-tin effective potential and magnetic field to spherical
-! coordinates
+! convert muffin-tin effective potential to spherical coordinates
+ld=lmmaxvr*lradstp
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    irc=0
-    do ir=1,nrmt(is),lradstp
-      irc=irc+1
-      call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr,veffmt(:,ir,ias),1, &
-       0.d0,rfmt(:,irc,ias),1)
-      do idm=1,ndmag
-        call dgemv('N',lmmaxvr,lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
-         bxcmt(:,ir,ias,idm),1,0.d0,rvfmt(:,irc,ias,idm),1)
-      end do
-    end do
+    call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rbshtvr,lmmaxvr, &
+     veffmt(:,:,ias),ld,0.d0,rfmt(:,:,ias),lmmaxvr)
   end do
 end do
+! generate muffin-tin effective magnetic fields and s.o. coupling functions
+call genbeffmt
 ! loop over k-points
 do ik=1,nkpt
 ! solve the first- and second-variational secular equations
@@ -73,7 +65,7 @@ do ik=1,nkpt
   end do
 ! compute the exchange-correlation magnetic field matrix elements
   if (spinpol) then
-    call genbmatk(rvfmt,bxcir,wfmt,wfir,bmat)
+    call genbmatk(beffmt,bxcir,wfmt,wfir,bmat)
     kinmatc(:,:,ik)=kinmatc(:,:,ik)-bmat(:,:)
   end if
 ! rotate kinetic matrix elements to Cartesian basis
@@ -82,7 +74,6 @@ do ik=1,nkpt
   call zgemm('N','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,c,nstsv,zzero, &
    kinmatc(:,:,ik),nstsv)
 end do
-if (spinpol) deallocate(rvfmt)
 deallocate(rfmt,evalfv,apwalm,evecfv,evecsv)
 deallocate(wfmt,wfir,vmat,bmat,c)
 return

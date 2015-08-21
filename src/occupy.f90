@@ -81,6 +81,7 @@ do ik=1,nkpt
   if (occsv(nstsv,ik).gt.epsocc) then
     write(*,*)
     write(*,'("Warning(occupy): not enough empty states for k-point ",I6)') ik
+    write(*,'(" and s.c. loop ",I5)') iscl
   end if
 end do
 fermidos=fermidos*occmax

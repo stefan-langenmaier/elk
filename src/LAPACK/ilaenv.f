@@ -1,8 +1,11 @@
       INTEGER FUNCTION ILAENV( ISPEC, NAME, OPTS, N1, N2, N3, N4 )
 *
-*  -- LAPACK auxiliary routine (version 3.1.1) --
-*     Univ. of Tennessee, Univ. of California Berkeley and NAG Ltd..
-*     January 2007
+*  -- LAPACK auxiliary routine (version 3.2.1)                        --
+*
+*  -- April 2009                                                      --
+*
+*  -- LAPACK is a software package provided by Univ. of Tennessee,    --
+*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
 *
 *     .. Scalar Arguments ..
       CHARACTER*( * )    NAME, OPTS
@@ -525,7 +528,7 @@
 *     ILAENV = 0
       ILAENV = 1
       IF( ILAENV.EQ.1 ) THEN
-         ILAENV = IEEECK( 0, 0.0, 1.0 )
+         ILAENV = IEEECK( 1, 0.0, 1.0 )
       END IF
       RETURN
 *
@@ -536,7 +539,7 @@
 *     ILAENV = 0
       ILAENV = 1
       IF( ILAENV.EQ.1 ) THEN
-         ILAENV = IEEECK( 1, 0.0, 1.0 )
+         ILAENV = IEEECK( 0, 0.0, 1.0 )
       END IF
       RETURN
 *

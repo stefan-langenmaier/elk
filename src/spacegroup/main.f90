@@ -17,7 +17,7 @@ stop
 end program
 
 !BOI
-! !TITLE: The Spacegroup Manual\\ Version 1.1.2
+! !TITLE: The Spacegroup Manual\\ Version 1.1.4
 ! !AUTHORS: J. K. Dewhurst, S. Sharma and L. Nordstr\"{o}m
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -39,7 +39,7 @@ end program
 !   1  1  1                              : ncell
 !   .true.                               : primcell
 !   3                                    : nspecies
-!   'La' 'La.in'                         : spsymb, spfname
+!   'La'                                 : spsymb
 !   1                                    : nwpos
 !   0.0000    0.0000    0.3608           : wpos
 !   'Cu' 'Cu.in'
@@ -72,8 +72,8 @@ end program
 ! {\tt nspecies}\\
 ! Number of atomic species
 ! \vskip 6pt
-! {\tt spsymb}, {\tt spfname}\\
-! The species symbol and the species filename required by {\sf Elk}
+! {\tt spsymb}\\
+! The atomic species symbol
 ! \vskip 6pt
 ! {\tt nwpos}\\
 ! The number of Wyckoff positional coordinates

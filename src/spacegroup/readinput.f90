@@ -34,7 +34,7 @@ if (nspecies.gt.maxspecies) then
   stop
 end if
 do is=1,nspecies
-  read(50,*) spsymb(is),spfname(is)
+  read(50,*) spsymb(is)
   read(50,*) nwpos(is)
   if (nwpos(is).le.0) then
     write(*,*)

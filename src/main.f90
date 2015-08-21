@@ -26,6 +26,8 @@ do itask=1,ntasks
     call hartfock
   case(10)
     call dos
+  case(14)
+    call writesf
   case(15,16)
     call writelsj
   case(20,21)
@@ -93,7 +95,7 @@ stop
 end program
 
 !BOI
-! !TITLE: The Elk Code Manual\\ Version 0.9.256
+! !TITLE: The Elk Code Manual\\ Version 0.9.262\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: J. K. Dewhurst, S. Sharma, L. Nordstr\"{o}m, F. Cricchio, F. Bultmark
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -131,7 +133,7 @@ end program
 !   Fredrik Bultmark
 !
 !   \vspace{12pt}
-!   Berlin and Uppsala, March 2009
+!   Berlin and Uppsala, April 2009
 !   \newpage
 !
 !   \section{Units}
@@ -314,14 +316,14 @@ end program
 !   \hline
 !   \end{tabularx}\newline\newline
 !   The initial step length used when searching for the band energy, which is
-!   used as the APW linearisation energy. This is done by first searching
-!   upwards in energy until the radial wavefunction at the muffin-tin radius is
-!   zero. This is the energy at the top of the band, denoted $E_{\rm t}$. A
-!   downward search is now performed from $E_{\rm t}$ until the slope of the
-!   radial wavefunction at the muffin-tin radius is zero. This energy,
-!   $E_{\rm b}$, is at the bottom of the band. The band energy is taken as
-!   $(E_{\rm t}+E_{\rm b})/2$. If either $E_{\rm t}$ or $E_{\rm b}$ cannot be
-!   found then the band energy is set to the default value.
+!   used as the APW and local-orbital linearisation energies. This is done by
+!   first searching upwards in energy until the radial wavefunction at the
+!   muffin-tin radius is zero. This is the energy at the top of the band,
+!   denoted $E_{\rm t}$. A downward search is now performed from $E_{\rm t}$
+!   until the slope of the radial wavefunction at the muffin-tin radius is zero.
+!   This energy, $E_{\rm b}$, is at the bottom of the band. The band energy is
+!   taken as $(E_{\rm t}+E_{\rm b})/2$. If either $E_{\rm t}$ or $E_{\rm b}$
+!   cannot be found then the band energy is set to the default value.
 !
 !   \subsection{{\tt deltaem}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -372,6 +374,17 @@ end program
 !   Alternatively, the output function can be artificially smoothed up to a
 !   level given by {\tt nsmdos}. This is the number of successive 3-point
 !   averages to be applied to the function $g$.
+!
+!   \subsection{{\tt epsband}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt epsband} & convergence tolerance for determining band energies & real &
+!    $1\times 10^{-6}$ \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   APW and local-orbital linearisation energies are determined from the band
+!   energies. Good convergence of these energies, especially for low-lying,
+!   states is required for accurate total energies. See also {\tt deband}.
 !
 !   \subsection{{\tt epschg}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -431,6 +444,14 @@ end program
 !   \end{tabularx}\newline\newline
 !   Any valence states with eigenvalues below {\tt evalmin} are not occupied and
 !   a warning message is issued.
+!
+!   \subsection{{\tt emaxelnes}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt emaxelnes} & maximum allowed initial-state eigenvalue for ELNES
+!    calculations & real & $-1.2$ \\
+!   \hline
+!   \end{tabularx}
 !
 !   \subsection{{\tt fixspin}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1077,6 +1098,8 @@ end program
 !    {\tt STATE.OUT} but with positions from {\tt elk.in}. \\
 !   5 & Ground state Hartree-Fock run. \\
 !   10 & Total, partial and interstitial density of states (DOS). \\
+!   14 & Plots the smooth Dirac delta and Heaviside step functions used by the
+!        code to calculate occupancies. \\
 !   15 & Output ${\bf L}$, ${\bf S}$ and ${\bf J}$ total expectation values. \\
 !   16 & Output ${\bf L}$, ${\bf S}$ and ${\bf J}$ expectation values for each
 !        {\bf k}-point and state in {\tt kstlist}. \\

@@ -22,7 +22,7 @@ write(50,'("!  number of conventional unit cells : ",3I4)') ncell
 write(50,'("!  reduction to primitive cell : ",L1)') primcell
 write(50,'("!  Wyckoff positions :")')
 do is=1,nspecies
-  write(50,'("!   species : ",I4,", ",A)') is,trim(spfname(is))
+  write(50,'("!   species : ",I4,", ",A)') is,trim(spsymb(is))
   do ip=1,nwpos(is)
     write(50,'("!   ",3G18.10)') wpos(:,ip,is)
   end do
@@ -36,7 +36,7 @@ write(50,*)
 write(50,'("atoms")')
 write(50,'(I4,T40," : nspecies")') nspecies
 do is=1,nspecies
-  write(50,'("''",A,"''",T40," : spfname")') trim(spfname(is))
+  write(50,'("''",A,"''",T40," : spfname")') trim(spsymb(is))//'.in'
   write(50,'(I4,T40," : natoms; atposl, bfcmt below")') natoms(is)
   do ia=1,natoms(is)
     write(50,'(3F14.8,"  ",3F12.8)') atposl(:,ia,is),0.d0,0.d0,0.d0

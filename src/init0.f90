@@ -100,6 +100,7 @@ natmtot=ias
 !------------------------!
 if (spinsprl) then
   spinpol=.true.
+  spinorb=.false.
   select case(task)
   case(2,3,15,51,52,53,61,62,63,120,121)
     write(*,*)
@@ -333,12 +334,19 @@ if (allocated(vxcmt)) deallocate(vxcmt)
 allocate(vxcmt(lmmaxvr,nrmtmax,natmtot))
 if (allocated(vxcir)) deallocate(vxcir)
 allocate(vxcir(ngrtot))
-! exchange-correlation magnetic field
+! exchange-correlation magnetic and effective fields
 if (allocated(bxcmt)) deallocate(bxcmt)
 if (allocated(bxcir)) deallocate(bxcir)
+if (allocated(beffmt)) deallocate(beffmt)
 if (spinpol) then
   allocate(bxcmt(lmmaxvr,nrmtmax,natmtot,ndmag))
   allocate(bxcir(ngrtot,ndmag))
+  allocate(beffmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
+end if
+! spin-orbit coupling radial function
+if (allocated(socfr)) deallocate(socfr)
+if (spinorb) then
+  allocate(socfr(nrcmtmax,natmtot))
 end if
 ! exchange energy density
 if (allocated(exmt)) deallocate(exmt)

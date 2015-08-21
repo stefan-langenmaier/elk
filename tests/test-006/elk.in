@@ -3,19 +3,24 @@
 
 tasks
  0
+ 10
  500
 
 test
  .true.
 
 maxscl
-  5
+  2
+
+dos
+ 50 100 4
+ 0.0 0.5
 
 rgkmax
  6.5
 
 xctype
-  20
+ 20
 
 spinorb
  .true.

@@ -86,9 +86,9 @@ do ist=1,nstfv
     ifg=igfft(igpig(igp))
     zt1=evecfv(igp,ist)
     wfir(ifg,ist)=zt1
-! calculate the gradient
+! calculate the gradient, i.e. multiply by i(G+p)
     do i=1,3
-      gwfir(ifg,i,ist)=zi*vgpc(i,igp)*zt1
+      gwfir(ifg,i,ist)=vgpc(i,igp)*cmplx(-aimag(zt1),dble(zt1))
     end do
   end do
 ! Fourier transform the wavefunction to real-space
