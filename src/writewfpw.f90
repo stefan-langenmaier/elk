@@ -5,11 +5,10 @@
 
 subroutine writewfpw
 use modmain
+use modmpi
 implicit none
 ! local variables
-integer ik,ist,igk,recl
-integer ispn,jspn
-real(8) chg,wfn0,wfn1,sum
+integer ik,recl
 ! allocatable arrays
 complex(8), allocatable :: wfpw(:,:,:)
 complex(8), allocatable :: wfpwh(:,:,:,:,:)
@@ -24,76 +23,61 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
+! delete existing WFPW.OUT and WFPWH.OUT
+if (mp_mpi) then
+  open(50,file='WFPW.OUT')
+  close(50,status='DELETE')
+  open(51,file='WFPWH.OUT')
+  close(51,status='DELETE')
+end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_world,ierror)
 ! determine the record length and open WFPW.OUT
 allocate(wfpw(ngkmax,nspinor,nstsv))
-inquire(iolength=recl) vkl(:,ik),ngkmax,nspinor,nstsv,wfpw
+inquire(iolength=recl) vkl(:,1),ngkmax,nspinor,nstsv,wfpw
 deallocate(wfpw)
 open(50,file='WFPW.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
- status='REPLACE',recl=recl)
+ recl=recl)
 ! determine the record length and open WFPWH.OUT
 allocate(wfpwh(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
-inquire(iolength=recl) vkl(:,ik),lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv,wfpwh
+inquire(iolength=recl) vkl(:,1),lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv,wfpwh
 deallocate(wfpwh)
 open(51,file='WFPWH.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
- status='REPLACE',recl=recl)
-chg=0.d0
-wfn0=1.d0
-wfn1=0.d0
+ recl=recl)
 ! begin parallel loop over k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(wfpw,wfpwh,ist) &
-!$OMP PRIVATE(sum,ispn,jspn,igk)
+!$OMP PRIVATE(wfpw,wfpwh)
 !$OMP DO
 do ik=1,nkpt
+! distribute among MPI processes
+  if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
   allocate(wfpw(ngkmax,nspinor,nstsv))
   allocate(wfpwh(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 !$OMP CRITICAL
   write(*,'("Info(writewfpw): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL
+! generate the plane wave wavefunctions
   call genwfpw(vkl(:,ik),ngk(1,ik),igkig(:,1,ik),vgkl(:,:,1,ik),gkc(:,1,ik), &
    tpgkc(:,:,1,ik),sfacgk(:,:,1,ik),wfpw,wfpwh)
 !$OMP CRITICAL
   write(50,rec=ik) vkl(:,ik),ngkmax,nspinor,nstsv,wfpw
   write(51,rec=ik) vkl(:,ik),lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv,wfpwh
 !$OMP END CRITICAL
-! read in the occupancies
-  call getoccsv(vkl(:,ik),occsv(:,ik))
-! calculate the total charge from the low G+k wavefunctions
-  do ist=1,nstsv
-    sum=0.d0
-    do ispn=1,nspinor
-      if (spinsprl) then
-        jspn=ispn
-      else
-        jspn=1
-      end if
-      do igk=1,ngk(jspn,ik)
-        sum=sum+dble(wfpw(igk,ispn,ist))**2+aimag(wfpw(igk,ispn,ist))**2
-      end do
-    end do
-!$OMP CRITICAL
-    if (sum.lt.wfn0) wfn0=sum
-    if (sum.gt.wfn1) wfn1=sum
-    chg=chg+wkpt(ik)*occsv(ist,ik)*sum
-!$OMP END CRITICAL
-  end do
   deallocate(wfpw,wfpwh)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
 close(50)
 close(51)
-write(*,*)
-write(*,'("Info(writewfpw): low and high plane wave wavefunctions written to")')
-write(*,'(" WFPW.OUT and WFPWH.OUT, respectively")')
-write(*,*)
-write(*,'(" Wavefunction norms")')
-write(*,'("  minimum : ",G18.10)') wfn0
-write(*,'("  maximum : ",G18.10)') wfn1
-write(*,*)
-write(*,'(" Total charge from low plane waves : ",G18.10)') chg
-write(*,'(" Total valence charge              : ",G18.10)') chgval
-write(*,*)
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_world,ierror)
+if (mp_mpi) then
+  write(*,*)
+  write(*,'("Info(writewfpw): low and high plane wave wavefunctions written &
+   &to")')
+  write(*,'(" WFPW.OUT and WFPWH.OUT, respectively")')
+  write(*,*)
+end if
 return
 end subroutine
 

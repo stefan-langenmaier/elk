@@ -165,7 +165,7 @@ do is=1,nspecies
           end do
         end do
       else
-        t1=fourpi*y00*rmtl(3,is)/3.d0
+        t1=(fourpi/3.d0)*rmtl(3,is)*y00
         qi(1,ias)=qi(1,ias)+t1*zvclir(ifg)
       end if
     end do
@@ -217,13 +217,13 @@ ifg=igfft(igp0)
 zrho0=zvclir(ifg)
 zvclir(ifg)=0.d0
 ! solve Poisson's equation in G-space for the pseudocharge
-do ig=1,ngvec
+do ig=1,igp0-1
   ifg=igfft(ig)
-  if (gpc(ig).gt.epslat) then
-    zvclir(ifg)=fourpi*zvclir(ifg)/(gpc(ig)**2)
-  else
-    zvclir(ifg)=0.d0
-  end if
+  zvclir(ifg)=fourpi*zvclir(ifg)/gpc(ig)**2
+end do
+do ig=igp0+1,ngvec
+  ifg=igfft(ig)
+  zvclir(ifg)=fourpi*zvclir(ifg)/gpc(ig)**2
 end do
 ! match potentials at muffin-tin boundary by adding homogeneous solution
 do is=1,nspecies

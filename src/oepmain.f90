@@ -5,10 +5,12 @@
 
 subroutine oepmain
 use modmain
+use modmpi
 implicit none
 ! local variables
-integer is,ia,ias,ik,ld
-integer ir,irc,it,idm
+integer is,ia,ias,ik
+integer ir,irc,idm
+integer ld,it,n
 real(8) tau,resp,t1
 ! allocatable arrays
 real(8), allocatable :: rfmt(:,:,:)
@@ -41,7 +43,7 @@ if (spinpol) then
   allocate(dbxmt(lmmaxvr,nrcmtmax,natmtot,ndmag))
   allocate(dbxir(ngrtot,ndmag))
 end if
-! zero the complex potential
+! set the exchange potential to zero
 zvxmt(:,:,:)=0.d0
 zvxir(:)=0.d0
 if (spinpol) then
@@ -51,12 +53,14 @@ end if
 resp=0.d0
 ! initial step size
 tau=tauoep(1)
-! start iteration loop
+!------------------------------!
+!     start iteration loop     !
+!------------------------------!
 do it=1,maxitoep
   if (mod(it,10).eq.0) then
     write(*,'("Info(oepmain): done ",I4," iterations of ",I4)') it,maxitoep
   end if
-! zero the residual
+! zero the residuals
   dvxmt(:,:,:)=0.d0
   dvxir(:)=0.d0
   if (spinpol) then
@@ -67,12 +71,33 @@ do it=1,maxitoep
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
   do ik=1,nkpt
+! distribute among MPI processes
+    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
     call oepresk(ik,vnlcv,vnlvv,dvxmt,dvxir,dbxmt,dbxir)
   end do
 !$OMP END DO
 !$OMP END PARALLEL
+! add residuals from each process and redistribute
+  if (np_mpi.gt.1) then
+    n=lmmaxvr*nrcmtmax*natmtot
+    call mpi_allreduce(mpi_in_place,dvxmt,n,mpi_double_precision,mpi_sum, &
+     mpi_comm_world,ierror)
+    call mpi_allreduce(mpi_in_place,dvxir,ngrtot,mpi_double_precision, &
+     mpi_sum,mpi_comm_world,ierror)
+    if (spinpol) then
+      n=n*ndmag
+      call mpi_allreduce(mpi_in_place,dbxmt,n,mpi_double_precision,mpi_sum, &
+       mpi_comm_world,ierror)
+      n=ngrtot*ndmag
+      call mpi_allreduce(mpi_in_place,dbxir,n,mpi_double_precision,mpi_sum, &
+       mpi_comm_world,ierror)
+    end if
+  end if
 ! convert muffin-tin residuals to spherical harmonics
   do is=1,nspecies
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(ias,idm)
+!$OMP DO
     do ia=1,natoms(is)
       ias=idxas(ia,is)
       call dgemm('N','N',lmmaxvr,nrcmt(is),lmmaxvr,1.d0,rfshtvr,lmmaxvr, &
@@ -82,6 +107,8 @@ do it=1,maxitoep
          dbxmt(:,:,ias,idm),lmmaxvr,0.d0,rvfmt(:,:,ias,idm),ld)
       end do
     end do
+!$OMP END DO
+!$OMP END PARALLEL
   end do
 ! symmetrise the residuals
   call symrf(lradstp,rfmt,dvxir)
@@ -103,10 +130,11 @@ do it=1,maxitoep
     end if
   end if
   resp=resoep
-!--------------------------------------------!
-!     update complex potential and field     !
-!--------------------------------------------!
+! update complex potential and field
   do is=1,nspecies
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(ias,irc,ir,idm)
+!$OMP DO
     do ia=1,natoms(is)
       ias=idxas(ia,is)
       irc=0
@@ -121,10 +149,16 @@ do it=1,maxitoep
         end do
       end do
     end do
+!$OMP END DO
+!$OMP END PARALLEL
   end do
+!$OMP PARALLEL WORKSHARE
   zvxir(:)=zvxir(:)-tau*dvxir(:)
+!$OMP END PARALLEL WORKSHARE
   do idm=1,ndmag
+!$OMP PARALLEL WORKSHARE
     zbxir(:,idm)=zbxir(:,idm)-tau*dbxir(:,idm)
+!$OMP END PARALLEL WORKSHARE
   end do
 ! end iteration loop
 end do
@@ -150,7 +184,7 @@ call rfmtctof(rfmt)
 do idm=1,ndmag
   call rfmtctof(rvfmt(:,:,:,idm))
 end do
-! add to existing correlation potential and field
+! add to existing (density derived) correlation potential and field
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
@@ -168,9 +202,7 @@ do idm=1,ndmag
 end do
 ! symmetrise the exchange potential and field
 call symrf(1,vxcmt,vxcir)
-if (spinpol) then
-  call symrvf(1,bxcmt,bxcir)
-end if
+if (spinpol) call symrvf(1,bxcmt,bxcir)
 deallocate(rfmt,rfir,vnlcv,vnlvv)
 deallocate(dvxmt,dvxir)
 if (spinpol) then

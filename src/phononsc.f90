@@ -9,7 +9,7 @@ use modphonon
 implicit none
 ! local variables
 integer is,ia,ja,ias,jas
-integer ip,nph,i,m
+integer ip,nph,i,m,task0
 real(8) dph,a,b,t1
 real(8) ftp(3,maxatoms*maxspecies)
 complex(8) zt1,zt2
@@ -58,6 +58,7 @@ do is=1,nspecies
 end do
 ngrid0(:)=ngrid(:)
 ngrtot0=ngrtot
+task0=task
 !---------------------------------------!
 !     compute dynamical matrix rows     !
 !---------------------------------------!
@@ -65,6 +66,7 @@ ngrtot0=ngrtot
 natoms(1:nspecies)=natoms0(1:nspecies)
 ! find a dynamical matrix to calculate
 call dyntask(80)
+! if nothing more to do then reset input values and return
 if (iqph.eq.0) then
   call readinput
   return
@@ -89,6 +91,8 @@ do m=0,nph
   call genphsc(m,deltaph)
 ! run the ground-state calculation
   call gndstate
+! subsequent calculations will read in this potential
+  task=1
 ! store the total force for the first displacement
   do ias=1,natmtot
     ftp(:,ias)=forcetot(:,ias)
@@ -105,10 +109,8 @@ do m=0,nph
 ! generate the supercell again with twice the displacement
   dph=deltaph+deltaph
   call genphsc(m,dph)
-! run the ground-state calculation again starting from the previous density
-  task=1
+! run the ground-state calculation again
   call gndstate
-  task=200
 ! compute the complex perturbing effective potential with implicit q-phase
   call phscdveff(m,veffmtp,veffirp)
   deallocate(veffmtp,veffirp)
@@ -133,6 +135,8 @@ do m=0,nph
     end do
   end do
 end do
+! restore task number
+task=task0
 20 continue
 ! write dynamical matrix row to file
 do is=1,nspecies

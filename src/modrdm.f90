@@ -33,6 +33,5 @@ real(8) rdmbeta
 real(8) rdmtemp
 ! entropy
 real(8) rdmentrpy
-logical wrtvnlijji
 
 end module

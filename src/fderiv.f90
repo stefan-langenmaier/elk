@@ -75,7 +75,7 @@ if (m.ge.4) then
   g(:)=0.d0
   return
 end if
-! high accuracy (anti-)derivatives from a clamped spline fit to the data
+! high accuracy integration/differentiation from a clamped spline interpolation
 call spline(n,x,1,f,cf)
 select case(m)
 case(:-1)

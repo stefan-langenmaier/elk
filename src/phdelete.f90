@@ -9,12 +9,12 @@ implicit none
 ! delete the eigenvector files
 call delevec
 ! delete the eigenvalue files
-open(70,file=trim(scrpath)//'EVALFV'//trim(filext))
+open(70,file='EVALFV'//trim(filext))
 close(70,status='DELETE')
-open(70,file=trim(scrpath)//'EVALSV'//trim(filext))
+open(70,file='EVALSV'//trim(filext))
 close(70,status='DELETE')
 ! delete the occupancy file
-open(70,file=trim(scrpath)//'OCCSV'//trim(filext))
+open(70,file='OCCSV'//trim(filext))
 close(70,status='DELETE')
 ! delete the STATE.OUT file
 open(50,file='STATE'//trim(filext))

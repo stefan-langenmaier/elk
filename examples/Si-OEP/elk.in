@@ -17,6 +17,10 @@ xctype
 maxitoep
  200
 
+! large number of empty states required
+nempty
+ 30
+
 avec
   5.13 5.13 0.00
   5.13 0.00 5.13

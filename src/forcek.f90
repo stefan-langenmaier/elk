@@ -78,7 +78,11 @@ do ispn=1,nspnfv
   call match(ngk(ispn,ik),gkc(:,ispn,ik),tpgkc(:,:,ispn,ik), &
    sfacgk(:,:,ispn,ik),apwalm)
   do j=1,ngk(ispn,ik)
-    k=((j-1)*j)/2
+    if (tpmat) then
+      k=((j-1)*j)/2
+    else
+      k=(j-1)*nmat(ispn,ik)
+    end if
     do i=1,j
       k=k+1
       iv(:)=ivg(:,igkig(i,ispn,ik))-ivg(:,igkig(j,ispn,ik))
@@ -101,7 +105,11 @@ do ispn=1,nspnfv
       do l=1,3
 ! APW-APW contribution
         do j=1,ngk(ispn,ik)
-          k=((j-1)*j)/2
+          if (tpmat) then
+            k=((j-1)*j)/2
+          else
+            k=(j-1)*nmat(ispn,ik)
+          end if
           do i=1,j
             k=k+1
             ig=ijg(k)
@@ -113,7 +121,11 @@ do ispn=1,nspnfv
         end do
 ! APW-local-orbital contribution
         do j=ngk(ispn,ik)+1,nmat(ispn,ik)
-          k=((j-1)*j)/2
+          if (tpmat) then
+            k=((j-1)*j)/2
+          else
+            k=(j-1)*nmat(ispn,ik)
+          end if
           do i=1,ngk(ispn,ik)
             k=k+1
             t1=vgkc(l,i,ispn,ik)
@@ -133,8 +145,19 @@ do ispn=1,nspnfv
         end do
 ! compute the force matrix elements in the first-variational basis
         do jst=1,nstfv
-          call zhpmv('U',nmat(ispn,ik),zone,dlh,evecfv(:,jst,ispn),1,zzero,vh,1)
-          call zhpmv('U',nmat(ispn,ik),zone,dlo,evecfv(:,jst,ispn),1,zzero,vo,1)
+          if (tpmat) then
+! packed matrices
+            call zhpmv('U',nmat(ispn,ik),zone,dlh,evecfv(:,jst,ispn),1,zzero, &
+             vh,1)
+            call zhpmv('U',nmat(ispn,ik),zone,dlo,evecfv(:,jst,ispn),1,zzero, &
+             vo,1)
+          else
+! upper triangular matrices
+            call zhemv('U',nmat(ispn,ik),zone,dlh,nmat(ispn,ik), &
+             evecfv(:,jst,ispn),1,zzero,vh,1)
+            call zhemv('U',nmat(ispn,ik),zone,dlo,nmat(ispn,ik), &
+             evecfv(:,jst,ispn),1,zzero,vo,1)
+          end if
           t1=evalfv(jst,ispn)
           do ist=1,nstfv
             zt1=zdotc(nmat(ispn,ik),evecfv(:,ist,ispn),1,vh,1)

@@ -41,25 +41,23 @@ complex(8), intent(in) :: zfir1(ngrtot)
 complex(8), intent(in) :: zfir2(ngrtot)
 ! local variables
 integer is,ia,ias,ir
-complex(8) zsum
 ! external functions
 complex(8) zfmtinp
 external zfmtinp
-zsum=0.d0
+zfinp=0.d0
 ! interstitial contribution
 do ir=1,ngrtot
-  zsum=zsum+cfunir(ir)*conjg(zfir1(ir))*zfir2(ir)
+  zfinp=zfinp+cfunir(ir)*conjg(zfir1(ir))*zfir2(ir)
 end do
-zsum=zsum*omega/dble(ngrtot)
+zfinp=zfinp*omega/dble(ngrtot)
 ! muffin-tin contribution
 do is=1,nspecies
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    zsum=zsum+zfmtinp(tsh,lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr,zfmt1(:,:,ias), &
-     zfmt2(:,:,ias))
+    zfinp=zfinp+zfmtinp(tsh,lmaxvr,nrcmt(is),rcmt(:,is),lmmaxvr, &
+     zfmt1(:,:,ias),zfmt2(:,:,ias))
   end do
 end do
-zfinp=zsum
 return
 end function
 !EOC

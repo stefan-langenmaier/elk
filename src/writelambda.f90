@@ -38,8 +38,8 @@ end do
 close(50)
 write(*,*)
 write(*,'("Info(writelambda):")')
-write(*,'(" wrote electron-phonon coupling constants for all q-points to&
- & LAMBDAQ.OUT")')
+write(*,'(" wrote electron-phonon coupling constants for all q-points to &
+ &LAMBDAQ.OUT")')
 write(*,*)
 return
 end subroutine

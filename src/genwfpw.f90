@@ -21,7 +21,7 @@ integer ispn,jspn,jspn0,jspn1
 integer ist,igp,ifg,nrc,irc
 integer is,ia,ias,l,m,lm
 real(8) x,t1,t2,t3
-complex(8) zsum,zt1,zt2,zt3
+complex(8) zsum1,zsum2,zt1,zt2,zt3
 ! automatic arrays
 real(8) fr1(nrcmtmax),fr2(nrcmtmax)
 real(8) gr(nrcmtmax),cf(4,nrcmtmax)
@@ -41,7 +41,7 @@ allocate(evecsv(nstsv,nstsv))
 allocate(wfmt(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir(ngrtot,nspinor,nstsv))
 allocate(zfft(ngrtot))
-! get the eigenvectors
+! get the eigenvectors from file
 call getevecfv(vpl,vgpl,evecfv)
 call getevecsv(vpl,evecsv)
 ! find the matching coefficients
@@ -111,35 +111,36 @@ do ispn=1,nspnfv
         do ist=1,nstsv
           do jspn=jspn0,jspn1
             do irc=1,nrc
-              zsum=0.d0
+              zsum1=0.d0
               lm=0
               do l=0,lmaxvr
-                zt2=jl(l,irc)*conjg(zil(l))
+                zsum2=0.d0
                 do m=-l,l
                   lm=lm+1
-                  zsum=zsum+zt2*wfmt(lm,irc,ias,jspn,ist)*ylm(lm)
+                  zsum2=zsum2+wfmt(lm,irc,ias,jspn,ist)*ylm(lm)
                 end do
+                zsum1=zsum1+jl(l,irc)*conjg(zil(l))*zsum2
               end do
-              zsum=zsum*rcmt(irc,is)**2
-              fr1(irc)=dble(zsum)
-              fr2(irc)=aimag(zsum)
+              zsum1=zsum1*rcmt(irc,is)**2
+              fr1(irc)=dble(zsum1)
+              fr2(irc)=aimag(zsum1)
             end do
             call fderiv(-1,nrc,rcmt(:,is),fr1,gr,cf)
             t2=gr(nrc)
             call fderiv(-1,nrc,rcmt(:,is),fr2,gr,cf)
             t3=gr(nrc)
-            zt3=t1*cmplx(t2,t3,8)
+            zt2=t1*cmplx(t2,t3,8)
 ! low G+p wavefunction
-            wfpw(igp,jspn,ist)=wfpw(igp,jspn,ist)+zt1*zt3
+            wfpw(igp,jspn,ist)=wfpw(igp,jspn,ist)+zt1*zt2
 ! high G+p wavefunction
             do irc=1,nrc
               lm=0
               do l=0,lmaxvr
-                zt2=t1*jl(l,irc)*zt3*zil(l)
+                zt3=t1*jl(l,irc)*zt2*zil(l)
                 do m=-l,l
                   lm=lm+1
                   wfpwh(lm,irc,ias,jspn,ist)=wfpwh(lm,irc,ias,jspn,ist) &
-                   -zt2*conjg(ylm(lm))
+                   -zt3*conjg(ylm(lm))
                 end do
               end do
             end do

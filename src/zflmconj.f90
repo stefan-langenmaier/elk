@@ -19,8 +19,7 @@ subroutine zflmconj(lmax,zflm1,zflm2)
 !   returns  $z'_{lm}=(-1)^m z^*_{l-m}$ so that
 !   $$ \sum_{lm}z'_{lm}Y_{lm}(\theta,\phi)=\left(\sum_{lm}z_{lm}Y_{lm}
 !    (\theta,\phi)\right)^* $$
-!   for all $(\theta,\phi)$. Note that {\tt zflm1} and {\tt zflm2} can refer to
-!   the same array.
+!   for all $(\theta,\phi)$.
 !
 ! !REVISION HISTORY:
 !   Created April 2004 (JKD)

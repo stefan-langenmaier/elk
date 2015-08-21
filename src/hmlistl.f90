@@ -18,7 +18,7 @@ use modmain
 !   v     : set of input vectors to which H is applied if tapp is .true.,
 !           otherwise not referenced (in,complex(*))
 !   h     : H applied to v if tapp is .true., otherwise it is the Hamiltonian
-!           matrix in packed form (inout,complex(*))
+!           matrix (inout,complex(*))
 ! !DESCRIPTION:
 !   Computes the interstitial contribution to the Hamiltonian matrix for the APW
 !   basis functions. The Hamiltonian is given by
@@ -41,7 +41,7 @@ real(8), intent(in) :: vgpc(3,ngkmax)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer iv(3),ig
+integer ld,iv(3),ig
 integer ist,i,j,k,ki,kj
 real(8) t1
 ! allocatable arrays
@@ -57,7 +57,7 @@ if (tapp) then
       hj(i)=veffig(ig)+t1*cfunig(ig)
     end do
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(i,k,ki,kj)
+!$OMP PRIVATE(i,k,ki,kj) SHARED(j)
 !$OMP DO
     do ist=1,nstfv
       k=(ist-1)*nmatmax
@@ -72,10 +72,19 @@ if (tapp) then
 !$OMP END DO
 !$OMP END PARALLEL
   end do
+  deallocate(hj)
 else
 ! calculate the matrix elements
-  k=0
+  ld=ngp+nlotot
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(i,k,iv,ig,t1)
+!$OMP DO
   do j=1,ngp
+    if (tpmat) then
+      k=((j-1)*j)/2
+    else
+      k=(j-1)*ld
+    end if
     do i=1,j
       k=k+1
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
@@ -84,8 +93,9 @@ else
       h(k)=h(k)+veffig(ig)+t1*cfunig(ig)
     end do
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end if
-if (tapp) deallocate(hj)
 return
 end subroutine
 !EOC

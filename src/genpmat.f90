@@ -46,8 +46,6 @@ integer ispn,jspn,ist,jst
 integer is,ia,ias,nrc,ir,irc
 integer igp,ifg,itp,i
 complex(8) z11,z12,z21,z22,z31,z32,zt1,zt2
-! automatic arrays
-complex(8) zv(ngkmax)
 ! allocatable arrays
 complex(8), allocatable :: wfmt(:,:,:,:,:)
 complex(8), allocatable :: wfir(:,:,:)
@@ -56,6 +54,7 @@ complex(8), allocatable :: gwfir(:,:)
 complex(8), allocatable :: gvmt(:,:,:)
 complex(8), allocatable :: zfmt1(:,:,:)
 complex(8), allocatable :: zfmt2(:,:,:,:)
+complex(8), allocatable :: zv(:)
 ! external functions
 complex(8) zfmtinp,zdotc
 external zfmtinp,zdotc
@@ -152,7 +151,7 @@ if (spinorb) deallocate(gvmt,zfmt1,zfmt2)
 !-----------------------------------!
 !     interstitial contribution     !
 !-----------------------------------!
-allocate(gwfir(ngrtot,3))
+allocate(gwfir(ngrtot,3),zv(ngkmax))
 do jst=1,nstsv
   do ispn=1,nspinor
     if (spinsprl) then
@@ -187,7 +186,7 @@ do jst=1,nstsv
     end do
   end do
 end do
-deallocate(gwfir)
+deallocate(gwfir,zv)
 ! multiply by -i and set lower triangular part
 do ist=1,nstsv
   do jst=ist,nstsv

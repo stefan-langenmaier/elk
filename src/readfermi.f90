@@ -17,8 +17,23 @@ use modmain
 !EOP
 !BOC
 implicit none
-open(50,file='EFERMI'//trim(filext),action='READ',form='FORMATTED',status='OLD')
-read(50,*) efermi
+! local variables
+integer iostat
+open(50,file='EFERMI'//trim(filext),action='READ',form='FORMATTED', &
+ status='OLD',iostat=iostat)
+if (iostat.ne.0) then
+  write(*,*)
+  write(*,'("Error(readfermi): error opening ",A)') 'EFERMI'//trim(filext)
+  write(*,*)
+  stop
+end if
+read(50,*,iostat=iostat) efermi
+if (iostat.ne.0) then
+  write(*,*)
+  write(*,'("Error(readfermi): error reading Fermi energy from EFERMI.OUT")')
+  write(*,*)
+  stop
+end if
 close(50)
 return
 end subroutine

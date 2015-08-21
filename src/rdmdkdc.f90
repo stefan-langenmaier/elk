@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmdkdc
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !DESCRIPTION:
 !   Calculates the derivative of kinetic energy w.r.t. the second-variational
 !   coefficients {\tt evecsv}.
@@ -22,13 +22,18 @@ implicit none
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:)
 integer ik
-allocate(evecsv(nstsv,nstsv))
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(evecsv)
+!$OMP DO
 do ik=1,nkpt
+  allocate(evecsv(nstsv,nstsv))
   call getevecsv(vkl(:,ik),evecsv)
   call zgemm('N','N',nstsv,nstsv,nstsv,zone,kinmatc(:,:,ik),nstsv,evecsv, &
    nstsv,zzero,dkdc(:,:,ik),nstsv)
+  deallocate(evecsv)
 end do
-deallocate(evecsv)
+!$OMP END DO
+!$OMP END PARALLEL
 return
 end subroutine
 !EOC

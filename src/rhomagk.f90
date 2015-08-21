@@ -52,7 +52,7 @@ complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: wfmt1(:,:)
 complex(8), allocatable :: wfmt2(:,:,:,:)
 complex(8), allocatable :: wfmt3(:,:,:)
-complex(8), allocatable :: zfft(:,:)
+complex(8), allocatable :: wfir(:,:)
 call timesec(ts0)
 !----------------------------------------------!
 !     muffin-tin density and magnetisation     !
@@ -169,12 +169,12 @@ if (tevecsv) deallocate(wfmt2)
 !------------------------------------------------!
 !     interstitial density and magnetisation     !
 !------------------------------------------------!
-allocate(zfft(ngrtot,nspinor))
+allocate(wfir(ngrtot,nspinor))
 do j=1,nstsv
   wo=wkpt(ik)*occsv(j,ik)
   if (abs(wo).gt.epsocc) then
     t3=wo/omega
-    zfft(:,:)=0.d0
+    wfir(:,:)=0.d0
     if (tevecsv) then
 ! generate spinor wavefunction from second-variational eigenvectors
       i=0
@@ -190,7 +190,7 @@ do j=1,nstsv
           if (abs(dble(zt1))+abs(aimag(zt1)).gt.epsocc) then
             do igk=1,ngk(jspn,ik)
               ifg=igfft(igkig(igk,jspn,ik))
-              zfft(ifg,ispn)=zfft(ifg,ispn)+zt1*evecfv(igk,ist,jspn)
+              wfir(ifg,ispn)=wfir(ifg,ispn)+zt1*evecfv(igk,ist,jspn)
             end do
           end if
         end do
@@ -199,12 +199,12 @@ do j=1,nstsv
 ! spin-unpolarised wavefunction
       do igk=1,ngk(1,ik)
         ifg=igfft(igkig(igk,1,ik))
-        zfft(ifg,1)=evecfv(igk,j,1)
+        wfir(ifg,1)=evecfv(igk,j,1)
       end do
     end if
 ! Fourier transform wavefunction to real-space
     do ispn=1,nspinor
-      call zfftifc(3,ngrid,1,zfft(:,ispn))
+      call zfftifc(3,ngrid,1,wfir(:,ispn))
     end do
 ! add to density and magnetisation
 !$OMP CRITICAL
@@ -213,8 +213,8 @@ do j=1,nstsv
       if (ncmag) then
 ! non-collinear
         do ir=1,ngrtot
-          zt1=zfft(ir,1)
-          zt2=zfft(ir,2)
+          zt1=wfir(ir,1)
+          zt2=wfir(ir,2)
           zt3=zt1*conjg(zt2)
           t1=dble(zt1)**2+aimag(zt1)**2
           t2=dble(zt2)**2+aimag(zt2)**2
@@ -226,20 +226,20 @@ do j=1,nstsv
       else
 ! collinear
         do ir=1,ngrtot
-          t1=dble(zfft(ir,1))**2+aimag(zfft(ir,1))**2
-          t2=dble(zfft(ir,2))**2+aimag(zfft(ir,2))**2
+          t1=dble(wfir(ir,1))**2+aimag(wfir(ir,1))**2
+          t2=dble(wfir(ir,2))**2+aimag(wfir(ir,2))**2
           rhoir(ir)=rhoir(ir)+t3*(t1+t2)
           magir(ir,1)=magir(ir,1)+t3*(t1-t2)
         end do
       end if
     else
 ! spin-unpolarised
-      rhoir(:)=rhoir(:)+t3*(dble(zfft(:,1))**2+aimag(zfft(:,1))**2)
+      rhoir(:)=rhoir(:)+t3*(dble(wfir(:,1))**2+aimag(wfir(:,1))**2)
     end if
 !$OMP END CRITICAL
   end if
 end do
-deallocate(zfft)
+deallocate(wfir)
 call timesec(ts1)
 !$OMP CRITICAL
 timerho=timerho+ts1-ts0

@@ -15,12 +15,12 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ias,ilo,io
-integer l,m,lm
+integer ld,ias,ilo,io,l,m,lm
 integer ist,i,j,k,ki,kj
 ! allocatable arrays
 complex(8), allocatable :: oj(:)
 if (tapp) allocate(oj(ngp))
+ld=ngp+nlotot
 ias=idxas(ia,is)
 do ilo=1,nlorb(is)
   l=lorbl(ilo,is)
@@ -52,7 +52,11 @@ do ilo=1,nlorb(is)
 !$OMP END PARALLEL
     else
 ! calculate the matrix elements
-      k=((j-1)*j)/2
+      if (tpmat) then
+        k=((j-1)*j)/2
+      else
+        k=(j-1)*ld
+      end if
       do i=1,ngp
         k=k+1
         do io=1,apword(l,is)

@@ -38,7 +38,7 @@ real(8), intent(in) :: rfir1(ngrtot)
 real(8), intent(in) :: rfir2(ngrtot)
 ! local variables
 integer is,ia,ias,ir
-real(8) sum
+real(8) sum,t1
 ! external functions
 real(8) rfmtinp
 external rfmtinp
@@ -50,11 +50,19 @@ end do
 sum=sum*omega/dble(ngrtot)
 ! muffin-tin contribution
 do is=1,nspecies
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(ias,t1)
+!$OMP DO
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    sum=sum+rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
+    t1=rfmtinp(lrstp,lmaxvr,nrmt(is),spr(:,is),lmmaxvr,rfmt1(:,:,ias), &
      rfmt2(:,:,ias))
+!$OMP CRITICAL
+    sum=sum+t1
+!$OMP END CRITICAL
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end do
 rfinp=sum
 return

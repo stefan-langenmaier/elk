@@ -15,7 +15,7 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ias,io,ilo
+integer ias,ld,io,ilo
 integer l1,l2,l3,m1,m2,m3
 integer lm1,lm2,lm3
 integer ist,i,j,k,ki,kj
@@ -23,6 +23,7 @@ complex(8) zsum
 ! allocatable arrays
 complex(8), allocatable :: hi(:)
 if (tapp) allocate(hi(ngp))
+ld=ngp+nlotot
 ias=idxas(ia,is)
 do ilo=1,nlorb(is)
   l1=lorbl(ilo,is)
@@ -50,7 +51,11 @@ do ilo=1,nlorb(is)
               hi(1:ngp)=hi(1:ngp)+zsum*apwalm(1:ngp,io,lm3,ias)
             else
 ! calculate the matrix elements
-              k=((i-1)*i)/2
+              if (tpmat) then
+                k=((i-1)*i)/2
+              else
+                k=(i-1)*ld
+              end if
               do j=1,ngp
                 k=k+1
                 h(k)=h(k)+conjg(zsum*apwalm(j,io,lm3,ias))

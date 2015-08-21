@@ -22,19 +22,16 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ik,jk,isym
-integer ist,jst,kst
+integer ik,jk,ist,jst,kst
 integer iw,a,b,c,l
 integer recl,iostat
 ! smallest eigenvalue difference allowed in denominator
 real(8), parameter :: etol=1.d-4
 real(8) eji,eki,ekj,t1
-real(8) sc(3,3),v1(3),v2(3),v3(3)
 complex(8) pii(3),dji(3),vji(3),vik(3),vkj(3)
 complex(8) eta,ztm(3,3),zt1
 character(256) fname
 ! allocatable arrays
-integer, allocatable :: lspl(:)
 real(8), allocatable :: w(:)
 complex(8), allocatable :: pmat(:,:,:)
 complex(8), allocatable :: chiw(:,:)
@@ -49,18 +46,11 @@ do ik=1,nkpt
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
-! allocate local arrays
-allocate(lspl(nkptnr))
-allocate(w(nwdos))
 ! generate energy grid (starting from zero)
+allocate(w(nwdos))
 t1=wdos(2)/dble(nwdos)
 do iw=1,nwdos
   w(iw)=t1*dble(iw-1)
-end do
-! find crystal symmetries which map non-reduced k-points to reduced equivalents
-do ik=1,nkptnr
-  call findkpt(vklnr(:,ik),isym,jk)
-  lspl(ik)=lsplsymc(isym)
 end do
 ! find the record length for momentum matrix element file
 allocate(pmat(3,nstsv,nstsv))
@@ -88,21 +78,17 @@ do l=1,noptcomp
   chi2w(:,:)=0.d0
 ! parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(pmat,jk,sc,ist,jst,kst) &
-!$OMP PRIVATE(eji,eki,ekj,t1,v1,v2,v3) &
+!$OMP PRIVATE(pmat,jk,ist,jst,kst) &
+!$OMP PRIVATE(eji,eki,ekj,t1,zt1) &
 !$OMP PRIVATE(pii,dji,vji,vik,vkj,ztm)
 !$OMP DO
   do ik=1,nkptnr
     allocate(pmat(3,nstsv,nstsv))
     write(*,'("Info(nonlinopt): ",I6," of ",I6," k-points")') ik,nkptnr
 ! equivalent reduced k-point
-    jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
-! store symmetry matrix
-    sc(:,:)=symlatc(:,:,lspl(ik))
-! read momentum matrix elements from direct-access file
-!$OMP CRITICAL
-    read(50,rec=jk) pmat
-!$OMP END CRITICAL
+    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+! read momentum matrix elements from file
+    call getpmat(vkl(:,ik),pmat)
 ! scissor correct the matrix elements
     do ist=1,nstsv
       if (evalsv(ist,jk).lt.efermi) then
@@ -115,31 +101,17 @@ do l=1,noptcomp
         end do
       end if
     end do
-    zt1=(wkptnr(ik)*occmax/omega)*zi
+    zt1=(wkptnr*occmax/omega)*zi
 ! loop over valence states
     do ist=1,nstsv
       if (evalsv(ist,jk).lt.efermi) then
-        v1(:)=dble(pmat(:,ist,ist))
-        call r3mv(sc,v1,v2)
-        v1(:)=aimag(pmat(:,ist,ist))
-        call r3mv(sc,v1,v3)
-        pii(:)=cmplx(v2(:),v3(:),8)
+        pii(:)=pmat(:,ist,ist)
 ! loop over conduction states
         do jst=1,nstsv
           if (evalsv(jst,jk).gt.efermi) then
             eji=evalsv(jst,jk)-evalsv(ist,jk)+scissor
-! rotate the matrix elements from the reduced to non-reduced k-point
-! (note that the inverse operation is used)
-            v1(:)=dble(pmat(:,jst,ist))
-            call r3mv(sc,v1,v2)
-            v1(:)=aimag(pmat(:,jst,ist))
-            call r3mv(sc,v1,v3)
-            vji(:)=cmplx(v2(:),v3(:),8)
-            v1(:)=dble(pmat(:,jst,jst))
-            call r3mv(sc,v1,v2)
-            v1(:)=aimag(pmat(:,jst,jst))
-            call r3mv(sc,v1,v3)
-            dji(:)=cmplx(v2(:),v3(:),8)-pii(:)
+            vji(:)=pmat(:,jst,ist)
+            dji(:)=pmat(:,jst,jst)-pii(:)
 ! loop over intermediate states
             do kst=1,nstsv
               if ((kst.ne.ist).and.(kst.ne.jst)) then
@@ -151,16 +123,8 @@ do l=1,noptcomp
                   ekj=ekj-scissor
                 end if
 ! rotate the matrix elements from the reduced to non-reduced k-point
-                v1(:)=dble(pmat(:,kst,jst))
-                call r3mv(sc,v1,v2)
-                v1(:)=aimag(pmat(:,kst,jst))
-                call r3mv(sc,v1,v3)
-                vkj(:)=cmplx(v2(:),v3(:),8)
-                v1(:)=dble(pmat(:,ist,kst))
-                call r3mv(sc,v1,v2)
-                v1(:)=aimag(pmat(:,ist,kst))
-                call r3mv(sc,v1,v3)
-                vik(:)=cmplx(v2(:),v3(:),8)
+                vkj(:)=pmat(:,kst,jst)
+                vik(:)=pmat(:,ist,kst)
 ! interband terms
                 t1=-eji*eki*(-ekj)*(eki+ekj)
                 if (abs(t1).gt.etol) then
@@ -301,7 +265,7 @@ do l=1,noptcomp
   write(*,'("  a = ",I1,", b = ",I1,", c = ",I1)') optcomp(1:3,l)
 end do
 write(*,*)
-deallocate(lspl,w,chiw,chi2w)
+deallocate(w,chiw,chi2w)
 return
 end subroutine
 !EOC

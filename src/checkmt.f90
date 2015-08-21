@@ -42,8 +42,8 @@ do i1=-1,1
                 t2=v3(1)**2+v3(2)**2+v3(3)**2
                 if (t2.lt.t0) then
                   write(*,*)
-                  write(*,'("Error(checkmt): interatomic distance too small&
-                   & for")')
+                  write(*,'("Error(checkmt): interatomic distance too small &
+                   &for")')
                   write(*,'("     species ",I4," atom ",I4)') is,ia
                   write(*,'(" and species ",I4," atom ",I4)') js,ja
                   write(*,*)

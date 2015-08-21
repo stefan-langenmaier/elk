@@ -30,7 +30,7 @@ complex(8) ylm(lmmaxvr)
 ! allocatable arrays
 real(8), allocatable :: jl(:,:)
 complex(8), allocatable :: wfpw(:,:,:)
-complex(8), allocatable :: zfft1(:,:),zfft2(:,:)
+complex(8), allocatable :: wfir(:,:),dwfir(:,:)
 complex(8), allocatable :: dwfmt(:,:,:,:,:)
 complex(8), allocatable :: wfpwh(:,:,:,:,:)
 complex(8), allocatable :: zfmt1(:,:,:),zfmt2(:,:,:)
@@ -40,8 +40,8 @@ call findkpt(vpl,isym,ik)
 !     low plane wave part     !
 !-----------------------------!
 allocate(wfpw(ngkmax,nspinor,nstsv))
-allocate(zfft1(ngrtot,nspinor))
-allocate(zfft2(ngrtot,nspinor))
+allocate(wfir(ngrtot,nspinor))
+allocate(dwfir(ngrtot,nspinor))
 ! read in the low plane wave part of the wavefunctions
 call getwfpw(vpl,vgpl,wfpw)
 do ist=1,nstsv
@@ -54,18 +54,18 @@ do ist=1,nstsv
       else
         jspn=1
       end if
-      zfft1(:,ispn)=0.d0
+      wfir(:,ispn)=0.d0
       do igp=1,ngp(jspn)
         ifg=igfft(igpig(igp,jspn))
-        zfft1(ifg,ispn)=wfpw(igp,ispn,ist)
+        wfir(ifg,ispn)=wfpw(igp,ispn,ist)
       end do
-      call zfftifc(3,ngrid,1,zfft1(:,ispn))
-      zfft2(:,ispn)=0.d0
+      call zfftifc(3,ngrid,1,wfir(:,ispn))
+      dwfir(:,ispn)=0.d0
       do igpq=1,ngpq(jspn)
         ifg=igfft(igpqig(igpq,jspn))
-        zfft2(ifg,ispn)=dwfpw(igpq,ispn,ist)
+        dwfir(ifg,ispn)=dwfpw(igpq,ispn,ist)
       end do
-      call zfftifc(3,ngrid,1,zfft2(:,ispn))
+      call zfftifc(3,ngrid,1,dwfir(:,ispn))
     end do
 ! add to density and magnetisation derivative
     if (spinpol) then
@@ -73,10 +73,10 @@ do ist=1,nstsv
       if (ncmag) then
 ! non-collinear
         do ir=1,ngrtot
-          zt1=conjg(zfft1(ir,1))*zfft2(ir,1)
-          zt2=conjg(zfft1(ir,2))*zfft2(ir,2)
-          zt3=conjg(zfft1(ir,1))*zfft2(ir,2)
-          zt4=conjg(zfft1(ir,2))*zfft2(ir,1)
+          zt1=conjg(wfir(ir,1))*dwfir(ir,1)
+          zt2=conjg(wfir(ir,2))*dwfir(ir,2)
+          zt3=conjg(wfir(ir,1))*dwfir(ir,2)
+          zt4=conjg(wfir(ir,2))*dwfir(ir,1)
           drhoir(ir)=drhoir(ir)+t1*(zt1+zt2)
           dmagir(ir,1)=dmagir(ir,1)+t1*(zt3+zt4)
           dmagir(ir,2)=dmagir(ir,2)+t1*zi*(-zt3+zt4)
@@ -85,19 +85,19 @@ do ist=1,nstsv
       else
 ! collinear
         do ir=1,ngrtot
-          zt1=conjg(zfft1(ir,1))*zfft2(ir,1)
-          zt2=conjg(zfft1(ir,2))*zfft2(ir,2)
+          zt1=conjg(wfir(ir,1))*dwfir(ir,1)
+          zt2=conjg(wfir(ir,2))*dwfir(ir,2)
           drhoir(ir)=drhoir(ir)+t1*(zt1+zt2)
           dmagir(ir,1)=dmagir(ir,1)+t1*(zt1-zt2)
         end do
       end if
     else
 ! spin-unpolarised
-      drhoir(:)=drhoir(:)+t1*conjg(zfft1(:,1))*zfft2(:,1)
+      drhoir(:)=drhoir(:)+t1*conjg(wfir(:,1))*dwfir(:,1)
     end if
   end if
 end do
-deallocate(wfpw,zfft1,zfft2)
+deallocate(wfpw,wfir,dwfir)
 !------------------------------!
 !     high plane wave part     !
 !------------------------------!

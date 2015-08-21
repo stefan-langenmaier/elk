@@ -5,11 +5,11 @@
 
 subroutine exxengy
 use modmain
+use modmpi
 implicit none
 ! local variables
 integer is,ia,nrc,m1,m2
 integer ik,ist,jst
-real(8) evv,ecv,ecc
 complex(8) zt1
 ! allocatable arrays
 complex(8), allocatable :: wfcr1(:,:,:)
@@ -25,19 +25,26 @@ allocate(wfcr2(lmmaxvr,nrcmtmax,2))
 allocate(zrhomt(lmmaxvr,nrcmtmax))
 allocate(zvclmt(lmmaxvr,nrcmtmax))
 allocate(zfmt(lmmaxvr,nrcmtmax))
-evv=0.d0
-ecv=0.d0
-ecc=0.d0
+! zero the exchange energy
+engyx=0.d0
+!--------------------------------------------------!
+!     val-val-val and val-cr-val contributions     !
+!--------------------------------------------------!
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP DO
 do ik=1,nkpt
+! distribute among MPI processes
+  if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
 !$OMP CRITICAL
   write(*,'("Info(exxengy): ",I6," of ",I6," k-points")') ik,nkpt
 !$OMP END CRITICAL
-  call exxengyk(ik,evv,ecv)
+  call exxengyk(ik)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
+! add energies from each process and redistribute
+call mpi_allreduce(mpi_in_place,engyx,1,mpi_double_precision,mpi_sum, &
+ mpi_comm_world,ierror)
 !-----------------------------------!
 !    core-core-core contribution    !
 !-----------------------------------!
@@ -54,13 +61,14 @@ do is=1,nspecies
               do m1=-spk(ist,is),spk(ist,is)-1
                 call wavefcr(lradstp,is,ia,ist,m1,nrcmtmax,wfcr1)
 ! calculate the complex overlap density
-                call vnlrhomt(.true.,is,wfcr1(:,:,1),wfcr2(:,:,1),zrhomt)
-                call vnlrhomt(.true.,is,wfcr1(:,:,2),wfcr2(:,:,2),zfmt)
-                zrhomt(:,1:nrc)=zrhomt(:,1:nrc)+zfmt(:,1:nrc)
+                zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfcr2(:,1:nrc,1) &
+                 +conjg(wfcr1(:,1:nrc,2))*wfcr2(:,1:nrc,2)
+                call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
+                 zfmt,lmmaxvr,zzero,zrhomt,lmmaxvr)
 ! calculate the Coulomb potential
                 call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
                 zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt,zvclmt)
-                ecc=ecc-0.5d0*dble(zt1)
+                engyx=engyx-0.5d0*dble(zt1)
               end do
 ! end loop over ist
             end if
@@ -72,8 +80,6 @@ do is=1,nspecies
 ! end loops over atoms and species
   end do
 end do
-! total exchange energy
-engyx=evv+ecv+ecc
 deallocate(wfcr1,wfcr2,zrhomt,zvclmt,zfmt)
 return
 end subroutine

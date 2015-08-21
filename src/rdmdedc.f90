@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmdedc(dedc)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   dedc : energy derivative (out,complex(nstsv,nstsv,nkpt))
 ! !DESCRIPTION:
@@ -28,10 +28,12 @@ integer ik,ist
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: c(:,:)
-! allocate local arrays
-allocate(evecsv(nstsv,nstsv))
-allocate(c(nstsv,nstsv))
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(evecsv,c,ist)
+!$OMP DO
 do ik=1,nkpt
+  allocate(evecsv(nstsv,nstsv))
+  allocate(c(nstsv,nstsv))
 ! get the eigenvectors from file
   call getevecsv(vkl(:,ik),evecsv)
 ! kinetic and Coulomb potential contribution
@@ -40,8 +42,10 @@ do ik=1,nkpt
   do ist=1,nstsv
     dedc(:,ist,ik)=occsv(ist,ik)*(dkdc(:,ist,ik)+c(:,ist))
   end do
+  deallocate(evecsv,c)
 end do
-deallocate(evecsv,c)
+!$OMP END DO
+!$OMP END PARALLEL
 ! exchange-correlation contribution
 call rdmdexcdc(dedc)
 return

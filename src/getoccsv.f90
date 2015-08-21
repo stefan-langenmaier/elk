@@ -18,8 +18,8 @@ call findkpt(vpl,isym,ik)
 ! find the record length
 inquire(iolength=recl) vkl_,nstsv_,occsvp
 !$OMP CRITICAL
-open(70,file=trim(scrpath)//'OCCSV'//trim(filext),action='READ', &
- form='UNFORMATTED',access='DIRECT',recl=recl)
+open(70,file='OCCSV'//trim(filext),action='READ',form='UNFORMATTED', &
+ access='DIRECT',recl=recl)
 read(70,rec=ik) vkl_,nstsv_,occsvp
 close(70)
 !$OMP END CRITICAL

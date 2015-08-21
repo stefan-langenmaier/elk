@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmwriteengy(fnum)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   fnum : file number for writing output (in,integer)
 ! !DESCRIPTION:

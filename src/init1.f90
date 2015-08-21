@@ -52,7 +52,7 @@ else
   lsym(:)=.false.
   do isym=1,nsymcrys
     if (reducek.eq.2) then
-! check symmetry is symmorphic if required
+! check symmetry is symmorphic
       t1=abs(vtlsymc(1,isym))+abs(vtlsymc(2,isym))+abs(vtlsymc(3,isym))
       if (t1.gt.epslat) goto 10
 ! check also that the spin rotation is the same as the spatial rotation
@@ -127,36 +127,23 @@ else
     ngridk(:)=np3d(:)
     if (task.ne.102) kptboxl(:,:)=vclp3d(:,:)
   end if
-! allocate the reduced k-point set arrays
+! allocate the k-point set arrays
   if (allocated(ikmap)) deallocate(ikmap)
   allocate(ikmap(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
-  nkpt=ngridk(1)*ngridk(2)*ngridk(3)
-  if (allocated(ivk)) deallocate(ivk)
-  allocate(ivk(3,nkpt))
-  if (allocated(vkl)) deallocate(vkl)
-  allocate(vkl(3,nkpt))
-  if (allocated(vkc)) deallocate(vkc)
-  allocate(vkc(3,nkpt))
-  if (allocated(wkpt)) deallocate(wkpt)
-  allocate(wkpt(nkpt))
-! generate the reduced k-point set
-  call genppts(.false.,nsymkpt,symkpt,ngridk,epslat,bvec,kptboxl,nkpt,ikmap, &
-   ivk,vkl,vkc,wkpt)
-! allocate the non-reduced k-point set arrays
   if (allocated(ikmapnr)) deallocate(ikmapnr)
   allocate(ikmapnr(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
   nkptnr=ngridk(1)*ngridk(2)*ngridk(3)
-  if (allocated(ivknr)) deallocate(ivknr)
-  allocate(ivknr(3,nkptnr))
-  if (allocated(vklnr)) deallocate(vklnr)
-  allocate(vklnr(3,nkptnr))
-  if (allocated(vkcnr)) deallocate(vkcnr)
-  allocate(vkcnr(3,nkptnr))
-  if (allocated(wkptnr)) deallocate(wkptnr)
-  allocate(wkptnr(nkptnr))
-! generate the non-reduced k-point set
-  call genppts(.false.,1,symkpt,ngridk,epslat,bvec,kptboxl,nkptnr,ikmapnr, &
-   ivknr,vklnr,vkcnr,wkptnr)
+  if (allocated(ivk)) deallocate(ivk)
+  allocate(ivk(3,nkptnr))
+  if (allocated(vkl)) deallocate(vkl)
+  allocate(vkl(3,nkptnr))
+  if (allocated(vkc)) deallocate(vkc)
+  allocate(vkc(3,nkptnr))
+  if (allocated(wkpt)) deallocate(wkpt)
+  allocate(wkpt(nkptnr))
+! generate the k-point set
+  call genppts(.false.,nsymkpt,symkpt,ngridk,nkptnr,epslat,bvec,kptboxl,nkpt, &
+   ikmap,ikmapnr,ivk,vkl,vkc,wkpt,wkptnr)
 end if
 ! write the k-points to test file
 call writetest(910,'k-points (Cartesian)',nv=3*nkpt,tol=1.d-8,rva=vkc)
@@ -283,8 +270,12 @@ do ik=1,nkpt
   do ispn=1,nspnfv
     nmat(ispn,ik)=ngk(ispn,ik)+nlotot
     nmatmax=max(nmatmax,nmat(ispn,ik))
-! packed matrix sizes
-    npmat(ispn,ik)=(nmat(ispn,ik)*(nmat(ispn,ik)+1))/2
+! packed matrix sizes (or nmat^2 if tpmat is .false.)
+    if (tpmat) then
+      npmat(ispn,ik)=(nmat(ispn,ik)*(nmat(ispn,ik)+1))/2
+    else
+      npmat(ispn,ik)=nmat(ispn,ik)**2
+    end if
 ! the number of first-variational states should not exceed the matrix size
     nstfv=min(nstfv,nmat(ispn,ik))
   end do

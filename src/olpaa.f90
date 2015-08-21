@@ -15,17 +15,21 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ias,l,m,lm,io
+integer ld,ias,l,m,lm,io
+ld=ngp+nlotot
 ias=idxas(ia,is)
 do l=0,lmaxmat
   do m=-l,l
     lm=idxlm(l,m)
     do io=1,apword(l,is)
       if (tapp) then
+! apply the overlap to a set of vectors
         call zmatinpv(ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias),nstfv, &
          nmatmax,v,o)
       else
-        call zmatinp(ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias),o)
+! compute the matrix explicitly
+        call zmatinp(tpmat,ngp,zhalf,apwalm(:,io,lm,ias),apwalm(:,io,lm,ias), &
+         ld,o)
       end if
     end do
   end do

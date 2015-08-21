@@ -7,8 +7,7 @@ subroutine energynn
 use modmain
 implicit none
 ! local variables
-integer is,ia,ias
-integer lmax,ir
+integer is,ia,ias,ir
 real(8) t1
 complex(8) zrho0
 ! automatic arrays
@@ -25,8 +24,7 @@ allocate(zvclir(ngrtot))
 ! set the density to zero
 zrhoir(:)=0.d0
 ! compute the required spherical Bessel functions
-lmax=lmaxvr+npsden+1
-call genjlgpr(lmax,gc,jlgr)
+call genjlgpr(lmaxvr+npsden+1,gc,jlgr)
 ! generate the nuclear monopole potentials
 t1=1.d0/y00
 do is=1,nspecies

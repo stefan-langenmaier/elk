@@ -14,8 +14,8 @@ use modmain
 !   igpig : index from G+p-vectors to G-vectors (in,integer(ngkmax))
 !   v     : set of input vectors to which O is applied if tapp is .true.,
 !           otherwise not referenced (in,complex(*))
-!   o     : O applied to v if tapp is .true., otherwise it is the overlap
-!           matrix in packed form (inout,complex(*))
+!   o     : O applied to v if tapp is .true., otherwise it is the overlap matrix
+!           (inout,complex(*))
 ! !DESCRIPTION:
 !   Computes the interstitial contribution to the overlap matrix for the APW
 !   basis functions. The overlap is given by
@@ -35,7 +35,7 @@ integer, intent(in) :: igpig(ngkmax)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer iv(3),ig
+integer ld,iv(3),ig
 integer ist,i,j,k,ki,kj
 ! allocatable arrays
 complex(8), allocatable :: oj(:)
@@ -49,7 +49,7 @@ if (tapp) then
       oj(i)=cfunig(ig)
     end do
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(i,k,ki,kj)
+!$OMP PRIVATE(i,k,ki,kj) SHARED(j)
 !$OMP DO
     do ist=1,nstfv
       k=(ist-1)*nmatmax
@@ -64,10 +64,19 @@ if (tapp) then
 !$OMP END DO
 !$OMP END PARALLEL
   end do
+  deallocate(oj)
 else
 ! calculate the matrix elements
-  k=0
+  ld=ngp+nlotot
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(i,k,iv,ig)
+!$OMP DO
   do j=1,ngp
+    if (tpmat) then
+      k=((j-1)*j)/2
+    else
+      k=(j-1)*ld
+    end if
     do i=1,j
       k=k+1
       iv(:)=ivg(:,igpig(i))-ivg(:,igpig(j))
@@ -75,8 +84,9 @@ else
       o(k)=o(k)+cfunig(ig)
     end do
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end if
-if (tapp) deallocate(oj)
 return
 end subroutine
 !EOC

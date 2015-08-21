@@ -16,7 +16,7 @@ real(8) v(3),wd,dw,w,t1
 real(8), allocatable :: e(:,:,:)
 real(8), allocatable :: f(:,:,:)
 real(8), allocatable :: ddcs(:)
-complex(8), allocatable :: zqrmt(:,:,:)
+complex(8), allocatable :: expmt(:,:,:)
 complex(8), allocatable :: emat(:,:)
 ! initialise universal variables
 call init0
@@ -36,7 +36,7 @@ end if
 allocate(e(nstsv,nstsv,nkptnr))
 allocate(f(nstsv,nstsv,nkptnr))
 allocate(ddcs(nwdos))
-allocate(zqrmt(lmmaxvr,nrcmtmax,natmtot))
+allocate(expmt(lmmaxvr,nrcmtmax,natmtot))
 ! read in the density and potentials from file
 call readstate
 ! read Fermi energy from file
@@ -52,8 +52,10 @@ do ik=1,nkpt
   call getevalsv(vkl(:,ik),evalsv(:,ik))
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
+! q-vector in Cartesian coordinates
+call r3mv(bvec,vecql,vecqc)
 ! generate the phase factor function exp(iq.r) in the muffin-tins
-call genzqrmt(zqrmt)
+call genexpmt(vecqc,expmt)
 e(:,:,:)=0.d0
 f(:,:,:)=0.d0
 ! begin parallel loop over non-reduced k-points
@@ -67,13 +69,13 @@ do ik=1,nkptnr
   write(*,'("Info(elnes): ",I6," of ",I6," k-points")') ik,nkptnr
 !$OMP END CRITICAL
 ! equivalent reduced k-point
-  jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
+  jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! k+q-vector in lattice coordinates
-  vkql(:)=vklnr(:,ik)+vecql(:)
+  vkql(:)=vkl(:,ik)+vecql(:)
 ! index to k+q-vector
   call findkpt(vkql,isym,ikq)
 ! compute < i,k+G+q | exp(iq.r) | j,k > matrix elements
-  call genexpiqr(vklnr(:,ik),zqrmt,emat)
+  call genexpmat(vkl(:,ik),expmt,emat)
 ! add to the double differential scattering cross-section
   do jst=1,nstsv
     if (evalsv(jst,jk).lt.emaxelnes) then
@@ -93,8 +95,6 @@ nsk(:)=max(ngrdos/ngridk(:),1)
 n=nstsv*nstsv
 ! integrate over the Brillouin zone
 call brzint(nsmdos,ngridk,nsk,ikmapnr,nwdos,wdos,n,n,e,f,ddcs)
-! q-vector in Cartesian coordinates
-call r3mv(bvec,vecql,vecqc)
 qc=sqrt(vecqc(1)**2+vecqc(2)**2+vecqc(3)**2)
 t1=2.d0/(omega*occmax)
 if (qc.gt.epslat) t1=t1/qc**4
@@ -113,7 +113,7 @@ write(*,'(" ELNES double differential cross-section written to ELNES.OUT")')
 write(*,*)
 ! write ELNES distribution to test file
 call writetest(140,'ELNES cross-section',nv=nwdos,tol=1.d-2,rva=ddcs)
-deallocate(e,f,ddcs,zqrmt)
+deallocate(e,f,ddcs,expmt)
 return
 end subroutine
 

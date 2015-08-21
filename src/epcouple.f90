@@ -177,14 +177,14 @@ do iq=1,nqpt
   do ik=1,nkptnr
     allocate(epmat(nstsv,nstsv,n))
 ! equivalent reduced k-point
-    jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
+    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
 ! compute the electron-phonon coupling matrix elements
-    call genepmat(iq,vklnr(:,ik),dveffmt,dveffir,epmat)
+    call genepmat(iq,vkl(:,ik),dveffmt,dveffir,epmat)
 ! k+q-vector in lattice coordinates
-    vkql(:)=vklnr(:,ik)+vql(:,iq)
+    vkql(:)=vkl(:,ik)+vql(:,iq)
 ! index to k+q-vector
     call findkpt(vkql,isym,ikq)
-    t1=twopi*wkptnr(ik)*(occmax/2.d0)
+    t1=twopi*wkptnr*(occmax/2.d0)
 ! loop over second-variational states
     do ist=1,nstsv
       x=(evalsv(ist,ikq)-efermi)/swidth

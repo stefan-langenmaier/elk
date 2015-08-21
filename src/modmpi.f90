@@ -13,6 +13,8 @@ integer np_mpi
 integer lp_mpi
 ! mp_mpi is .true. if the local MPI process is the master (0)
 logical mp_mpi
+! commonly used error variable
+integer ierror
 
 end module
 

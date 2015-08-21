@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmdexcdn(dedn)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   dedn : energy derivative (inout,real(nstsv,nkpt))
 ! !DESCRIPTION:
@@ -24,16 +24,13 @@ implicit none
 ! arguments
 real(8), intent(inout) :: dedn(nstsv,nkpt)
 ! local variables
-integer ik1,ik2,ik3
-integer ist2,ist1,iv(3)
+integer ik1,ik2,jk,iv(3)
+integer ist1,ist2
 ! parameter for calculating the functional derivatives
 real(8), parameter :: eps=1.d-12
 real(8) t1,t2,t3,t4
 ! allocatable arays
 real(8), allocatable :: vnlijji(:,:,:)
-! external functions
-real(8) r3taxi
-external r3taxi
 if (rdmxctype.eq.0) return
 ! calculate the pre-factor
 if (rdmxctype.eq.1) then
@@ -55,29 +52,29 @@ allocate(vnlijji(nstsv,nstsv,nkpt))
 ! start loop over non-reduced k-points
 do ik1=1,nkptnr
 ! get the non-local matrix
-  call rdmgetvnl_ijji(ik1,vnlijji)
+  call getvnlijji(ik1,vnlijji)
 ! find the equivalent reduced k-point
-  iv(:)=ivknr(:,ik1)
-  ik2=ikmap(iv(1),iv(2),iv(3))
-  do ist1=1,nstsv
-!  start loop over reduced k-points
-    do ik3=1,nkpt
+  iv(:)=ivk(:,ik1)
+  jk=ikmap(iv(1),iv(2),iv(3))
+!  loop over reduced k-points
+  do ik2=1,nkpt
+    do ist1=1,nstsv
       do ist2=1,nstsv
 ! Hartree-Fock functional
         if (rdmxctype.eq.1) then
-          t2=t1*occsv(ist1,ik2)
+          t2=t1*occsv(ist1,jk)
 ! power functional
         else if (rdmxctype.eq.2) then
-          if ((ist2.eq.ist1).and. &
-           (r3taxi(vkl(1,ik3),vklnr(1,ik1)).lt.epslat)) then
-            t2=(1.d0/occmax)*occsv(ist1,ik2)
+          t3=sum(abs(vkl(:,ik2)-vkl(:,ik1)))
+          if ((ist2.eq.ist1).and.(t3.lt.epslat)) then
+            t2=(1.d0/occmax)*occsv(ist1,jk)
           else
-            t3=max(occsv(ist2,ik3),eps)
-            t4=max(occsv(ist1,ik2),eps)
+            t3=max(occsv(ist2,ik2),eps)
+            t4=max(occsv(ist1,jk),eps)
             t2=t1*(t4**rdmalpha)/(t3**(1.d0-rdmalpha))
           end if
         end if
-        dedn(ist2,ik3)=dedn(ist2,ik3)+t2*vnlijji(ist2,ist1,ik3)
+        dedn(ist2,ik2)=dedn(ist2,ik2)+t2*vnlijji(ist2,ist1,ik2)
       end do
     end do
   end do

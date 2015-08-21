@@ -3,17 +3,15 @@
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine exxengyk(ikp,evv,ecv)
+subroutine exxengyk(ikp)
 use modmain
 implicit none
 ! arguments
 integer, intent(in) :: ikp
-real(8), intent(inout) :: evv
-real(8), intent(inout) :: ecv
 ! local variables
-integer ngknr,ik,ist,jst
-integer is,ia,ias,nrc,m,lmax
-integer iv(3),iq,ig,igq0,igk
+integer ik,ngknr,igk,ist,jst
+integer is,ia,ias,nrc,m
+integer iv(3),iq,ig,igq0
 real(8) cfq,v(3),t1
 complex(8) zrho0,zt1
 ! allocatable arrays
@@ -60,11 +58,11 @@ allocate(jlgqr(0:lmaxvr+npsden+1,ngvec,nspecies))
 allocate(evalsvp(nstsv))
 allocate(evalsvnr(nstsv))
 allocate(sfacgknr(ngkmax,natmtot))
-allocate(ylmgq(lmmaxvr,ngvec))
-allocate(sfacgq(ngvec,natmtot))
 allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot))
 allocate(evecfv(nmatmax,nstfv))
 allocate(evecsv(nstsv,nstsv))
+allocate(ylmgq(lmmaxvr,ngvec))
+allocate(sfacgq(ngvec,natmtot))
 allocate(wfmt1(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfmt2(lmmaxvr,nrcmtmax,natmtot,nspinor,nstsv))
 allocate(wfir1(ngrtot,nspinor,nstsv))
@@ -89,24 +87,24 @@ call genwfsv(.false.,.false.,.true.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm, &
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! generate G+k vectors
-  call gengpvec(vklnr(:,ik),vkcnr(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
+  call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
 ! generate the spherical coordinates of the G+k vectors
   do igk=1,ngknr
     call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
   end do
-! get the eigenvalues/vectors from file for non-reduced k-points
-  call getevalsv(vklnr(:,ik),evalsvnr)
-  call getevecfv(vklnr(:,ik),vgklnr,evecfv)
-  call getevecsv(vklnr(:,ik),evecsv)
 ! generate the structure factors
   call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
 ! find the matching coefficients
   call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
+! get the eigenvalues/vectors from file for non-reduced k-points
+  call getevalsv(vkl(:,ik),evalsvnr)
+  call getevecfv(vkl(:,ik),vgklnr,evecfv)
+  call getevecsv(vkl(:,ik),evecsv)
 ! determine q-vector
-  iv(:)=ivk(:,ikp)-ivknr(:,ik)
+  iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
   iq=iqmap(iv(1),iv(2),iv(3))
-  v(:)=vkc(:,ikp)-vkcnr(:,ik)
+  v(:)=vkc(:,ikp)-vkc(:,ik)
   do ig=1,ngvec
 ! determine G+q vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
@@ -120,8 +118,7 @@ do ik=1,nkptnr
 ! find the shortest G+q-vector
   call findigp0(ngvec,gqc,igq0)
 ! compute the required spherical Bessel functions
-  lmax=lmaxvr+npsden+1
-  call genjlgpr(lmax,gqc,jlgqr)
+  call genjlgpr(lmaxvr+npsden+1,gqc,jlgqr)
 ! calculate the wavefunctions for occupied states
   call genwfsv(.false.,.false.,.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv, &
    evecsv,wfmt2,ngrtot,wfir2)
@@ -133,7 +130,7 @@ do ik=1,nkptnr
       do ist=1,nstsv
         if (evalsvp(ist).lt.efermi) then
 ! calculate the complex overlap density
-          call vnlrho(.true.,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
+          call genzrho(.true.,wfmt2(:,:,:,:,jst),wfmt1(:,:,:,:,ist), &
            wfir2(:,:,jst),wfir1(:,:,ist),zrhomt,zrhoir)
 ! calculate the Coulomb potential
           call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
@@ -142,7 +139,7 @@ do ik=1,nkptnr
           zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
           t1=cfq*wiq2(iq)*(dble(zrho0)**2+aimag(zrho0)**2)
 !$OMP CRITICAL
-          evv=evv-0.5d0*occmax*wkpt(ikp)*(wkptnr(ik)*dble(zt1)+t1)
+          engyx=engyx-0.5d0*occmax*wkpt(ikp)*(wkptnr*dble(zt1)+t1)
 !$OMP END CRITICAL
 ! end loop over ist
         end if
@@ -167,20 +164,21 @@ do is=1,nspecies
           call wavefcr(lradstp,is,ia,jst,m,nrcmtmax,wfcr)
           do ist=1,nstsv
             if (evalsvp(ist).lt.efermi) then
-! calculate the complex overlap density
-              call vnlrhomt(.true.,is,wfcr(:,:,1),wfmt1(:,:,ias,1,ist), &
-               zrhomt(:,:,ias))
+! calculate the complex overlap density in spherical harmonics
+              zfmt(:,1:nrc)=conjg(wfcr(:,1:nrc,1))*wfmt1(:,1:nrc,ias,1,ist)
               if (spinpol) then
-                call vnlrhomt(.true.,is,wfcr(:,:,2),wfmt1(:,:,ias,2,ist),zfmt)
-                zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias)+zfmt(:,1:nrc)
+                zfmt(:,1:nrc)=zfmt(:,1:nrc) &
+                 +conjg(wfcr(:,1:nrc,2))*wfmt1(:,1:nrc,ias,2,ist)
               end if
+              call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
+               zfmt,lmmaxvr,zzero,zrhomt(:,:,ias),lmmaxvr)
 ! calculate the Coulomb potential
               call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ias), &
                zvclmt(:,:,ias))
               zt1=zfmtinp(.true.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                zrhomt(:,:,ias),zvclmt(:,:,ias))
 !$OMP CRITICAL
-              ecv=ecv-occmax*wkpt(ikp)*dble(zt1)
+              engyx=engyx-occmax*wkpt(ikp)*dble(zt1)
 !$OMP END CRITICAL
 ! end loop over ist
             end if

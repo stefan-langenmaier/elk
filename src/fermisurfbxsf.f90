@@ -110,8 +110,8 @@ end do
 write(*,*)
 write(*,'("Info(fermisurfbxsf):")')
 if (ndmag.eq.1) then
-  write(*,'(" 3D Fermi surface data written to FERMISURF_UP.bxsf and&
-   & FERMISURF_DN.bxsf")')
+  write(*,'(" 3D Fermi surface data written to FERMISURF_UP.bxsf and &
+   &FERMISURF_DN.bxsf")')
 else
   write(*,'(" 3D Fermi surface data written to FERMISURF.bxsf")')
 end if

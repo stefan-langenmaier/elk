@@ -14,9 +14,9 @@ integer, intent(in) :: ngp
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: o(*)
 ! local variables
-integer ias,ilo1,ilo2
-integer l,m,lm
+integer ld,ias,ilo1,ilo2,l,m,lm
 integer ist,i,j,k,ki,kj
+ld=ngp+nlotot
 ias=idxas(ia,is)
 do ilo1=1,nlorb(is)
   l=lorbl(ilo1,is)
@@ -43,7 +43,11 @@ do ilo1=1,nlorb(is)
 !$OMP END PARALLEL
           else
 ! calculate the matrix elements
-            k=i+((j-1)*j)/2
+            if (tpmat) then
+              k=i+((j-1)*j)/2
+            else
+              k=i+(j-1)*ld
+            end if
             o(k)=o(k)+ololo(ilo1,ilo2,ias)
           end if
         end if

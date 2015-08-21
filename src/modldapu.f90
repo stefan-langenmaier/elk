@@ -24,7 +24,7 @@ real(8) ujlu(2,maxspecies)
 real(8), allocatable :: alphalu(:)
 ! readalu is .true. if alphalu is to be read from file
 logical readalu
-! tmomlu is .true. if tensor moments are written out at every iteration
+! tmomlu is .true. if tensor moments are written out at every s.c. loop
 logical tmomlu
 ! LDA+U density matrix
 complex(8), allocatable :: dmatlu(:,:,:,:,:)

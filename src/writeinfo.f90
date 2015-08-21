@@ -238,8 +238,12 @@ write(fnum,'("Total number of valence states : ",I4)') nstsv
 write(fnum,*)
 write(fnum,'("Total number of local-orbitals : ",I4)') nlotot
 write(fnum,*)
-if ((task.eq.5).or.(task.eq.6)) &
- write(fnum,'("Hartree-Fock calculation using Kohn-Sham states")')
+if ((task.eq.5).or.(task.eq.6)) then
+  write(fnum,'("Hartree-Fock calculation using Kohn-Sham states")')
+  if (hybmix.lt.1.d0) then
+    write(fnum,'(" hybrid functional, mixing parameter : ",G18.10)') hybmix
+  end if
+end if
 if (xctype(1).lt.0) then
   write(fnum,'("Optimised effective potential (OEP) and exact exchange (EXX)")')
   write(fnum,'(" Phys. Rev. B 53, 7024 (1996)")')

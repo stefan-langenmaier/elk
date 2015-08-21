@@ -22,8 +22,8 @@ Elk can be compiled by first running "./setup" in this directory followed by
 "make all". This will compile the main code as well as several auxiliary
 programs. For optimal performance we strongly recommend that you tune the
 Fortran compiler options in the file "make.inc" and use machine-optimised
-BLAS/LAPACK libraries. Setting the OpenMP options of your compiler will enable
-Elk to run in parallel mode on multiprocessor systems.
+BLAS/LAPACK libraries. Setting the OpenMP and MPI options of your compiler will
+enable Elk to run in parallel mode on multiprocessor systems and clusters.
 
 A test suite is available: entering "make test" will check the output of your
 executable against a standard set. This may take some time to complete.

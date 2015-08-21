@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmvaryc
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !DESCRIPTION:
 !   Calculates new {\tt evecsv} from old by using the derivatives of the total
 !   energy w.r.t. {\tt evecsv}. A single step of steepest-descent is made.
@@ -20,45 +20,43 @@ use modmain
 !BOC
 implicit none
 ! local variables
-integer ik,ist1,ist2
+integer ik,ist,jst
 real(8) t1
 complex(8) zt1
 ! allocatable arrays
 complex(8), allocatable :: dedc(:,:,:)
 complex(8), allocatable :: evecsv(:,:)
-complex(8), allocatable :: evecsvt(:)
+complex(8), allocatable :: zv(:)
 ! external functions
 real(8) dznrm2
 complex(8) zdotc
 external dznrm2,zdotc
-! compute and write non-local matrix elements of the type (i-jj-k)
-call rdmputvnl_ijjk
 ! compute the derivative w.r.t. evecsv
 allocate(dedc(nstsv,nstsv,nkpt))
 call rdmdedc(dedc)
 allocate(evecsv(nstsv,nstsv))
-allocate(evecsvt(nstsv))
+allocate(zv(nstsv))
 do ik=1,nkpt
 ! get the eigenvectors from file
   call getevecsv(vkl(:,ik),evecsv)
 ! calculate new evecsv
   evecsv(:,:)=evecsv(:,:)-taurdmc*dedc(:,:,ik)
 ! othogonalise evecsv (Gram-Schmidt)
-  do ist1=1,nstsv
-    evecsvt(:)=evecsv(:,ist1)
-    do ist2=1,ist1-1
-      zt1=zdotc(nstsv,evecsv(:,ist2),1,evecsv(:,ist1),1)
-      evecsvt(:)=evecsvt(:)-zt1*evecsv(:,ist2)
+  do ist=1,nstsv
+    zv(:)=evecsv(:,ist)
+    do jst=1,ist-1
+      zt1=zdotc(nstsv,evecsv(:,jst),1,evecsv(:,ist),1)
+      zv(:)=zv(:)-zt1*evecsv(:,jst)
     end do
-    t1=dznrm2(nstsv,evecsvt,1)
+    t1=dznrm2(nstsv,zv,1)
     t1=1.d0/t1
-    evecsv(:,ist1)=t1*evecsvt(:)
+    evecsv(:,ist)=t1*zv(:)
   end do
 ! write new evecsv to file
   call putevecsv(ik,evecsv)
 ! end loop over k-points
 end do
-deallocate(dedc,evecsv,evecsvt)
+deallocate(dedc,evecsv,zv)
 return
 end subroutine
 !EOC

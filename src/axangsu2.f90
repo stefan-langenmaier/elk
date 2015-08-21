@@ -28,10 +28,9 @@ real(8), intent(in) :: v(3)
 real(8), intent(in) :: th
 complex(8), intent(out) :: su2(2,2)
 ! local variables
-real(8), parameter :: eps=1.d-6
 real(8) vn(3),cs,sn,t1
 t1=sqrt(v(1)**2+v(2)**2+v(3)**2)
-if (t1.lt.eps) then
+if (t1.lt.1.d-6) then
   write(*,*)
   write(*,'("Error(axangsu2): zero length axis vector")')
   write(*,*)

@@ -1,5 +1,5 @@
 
-! Copyright (C) 2002-2010 J. K. Dewhurst, S. Sharma, C. Ambrosch-Draxl
+! Copyright (C) 2002-2010 J. K. Dewhurst, S. Sharma, C. Ambrosch-Draxl,
 ! F. Bultmark, F. Cricchio and L. Nordstrom.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
@@ -71,21 +71,30 @@ evecsv(:,:)=0.d0
 !-------------------------!
 lmax=min(lmaxmat,lmaxvr)
 allocate(wfmt1(lmmaxvr,nrcmtmax,nstfv))
-allocate(wfmt2(lmmaxvr,nrcmtmax))
-allocate(wfmt3(lmmaxvr,nrcmtmax))
-allocate(wfmt4(lmmaxvr,nrcmtmax,nsc))
-if (afieldpol) allocate(gwfmt(lmmaxvr,nrcmtmax,3))
 do is=1,nspecies
   nrc=nrcmt(is)
   do ia=1,natoms(is)
     ias=idxas(ia,is)
 ! compute the first-variational wavefunctions
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
     do ist=1,nstfv
       call wavefmt(lradstp,lmaxvr,is,ia,ngk(1,ik),apwalm,evecfv(:,ist), &
        lmmaxvr,wfmt1(:,:,ist))
     end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! begin loop over states
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(wfmt2,wfmt3,wfmt4,gwfmt) &
+!$OMP PRIVATE(irc,t1,lm,l,nm,i,j,k) &
+!$OMP PRIVATE(zlflm,ispn,jspn,ist)
+!$OMP DO
     do jst=1,nstfv
+      allocate(wfmt2(lmmaxvr,nrcmtmax))
+      allocate(wfmt3(lmmaxvr,nrcmtmax))
+      allocate(wfmt4(lmmaxvr,nrcmtmax,nsc))
+      if (afieldpol) allocate(gwfmt(lmmaxvr,nrcmtmax,3))
       if (spinpol) then
 ! convert wavefunction to spherical coordinates
         call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zbshtvr,lmmaxvr, &
@@ -110,7 +119,8 @@ do is=1,nspecies
             do lm=1,lmmaxvr
               wfmt4(lm,irc,1)=wfmt4(lm,irc,1)+t1*zlflm(lm,3)
               wfmt4(lm,irc,2)=wfmt4(lm,irc,2)-t1*zlflm(lm,3)
-              wfmt4(lm,irc,3)=wfmt4(lm,irc,3)+t1*(zlflm(lm,1)-zi*zlflm(lm,2))
+              wfmt4(lm,irc,3)=wfmt4(lm,irc,3)+t1*(zlflm(lm,1) &
+               +cmplx(aimag(zlflm(lm,2)),-dble(zlflm(lm,2)),8))
             end do
           end do
         end if
@@ -170,19 +180,20 @@ do is=1,nspecies
           end if
         end do
       end do
+      deallocate(wfmt2,wfmt3,wfmt4)
+      if (afieldpol) deallocate(gwfmt)
+! end loop over states
     end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! end loops over atoms and species
   end do
 end do
-deallocate(wfmt1,wfmt2,wfmt3,wfmt4)
-if (afieldpol) deallocate(gwfmt)
+deallocate(wfmt1)
 !---------------------------!
 !     interstitial part     !
 !---------------------------!
 allocate(bir(ngrtot,3))
-allocate(wfir1(ngrtot))
-allocate(wfir2(ngrtot))
-allocate(zv(ngkmax,nsc))
 if (spinpol) then
   if (ncmag) then
 ! non-collinear
@@ -196,7 +207,15 @@ if (spinpol) then
       bir(ir,3)=(bxcir(ir,1)+cb*bfieldc(3))*cfunir(ir)
     end do
   end if
+! begin loop over states
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(wfir1,wfir2,zv) &
+!$OMP PRIVATE(igk,ifg,t1,ist,i,j,k)
+!$OMP DO
   do jst=1,nstfv
+    allocate(wfir1(ngrtot))
+    allocate(wfir2(ngrtot))
+    allocate(zv(ngkmax,nsc))
     wfir1(:)=0.d0
     do igk=1,ngk(1,ik)
       ifg=igfft(igkig(igk,1,ik))
@@ -245,9 +264,13 @@ if (spinpol) then
         end if
       end do
     end do
+    deallocate(wfir1,wfir2,zv)
+! end loop over states
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 end if
-deallocate(bir,wfir1,wfir2,zv)
+deallocate(bir)
 ! add the diagonal first-variational part
 i=0
 do ispn=1,nspinor

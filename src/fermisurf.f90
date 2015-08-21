@@ -60,15 +60,15 @@ if (ndmag.eq.1) then
     write(50,'(3I6," : grid size")') np3d(:)
     write(51,'(3I6," : grid size")') np3d(:)
     do ik=1,nkptnr
-      jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
+      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
       prd1=1.d0
       prd2=1.d0
       do ist=1,nstfv
         prd1=prd1*(evalsv(ist,jk)-efermi)
         prd2=prd2*(evalsv(nstfv+ist,jk)-efermi)
       end do
-      write(50,'(4G18.10)') vkcnr(:,ik),prd1
-      write(51,'(4G18.10)') vkcnr(:,ik),prd2
+      write(50,'(4G18.10)') vkc(:,ik),prd1
+      write(51,'(4G18.10)') vkc(:,ik),prd2
     end do
   else
 ! write the eigenvalues minus the Fermi energy separately
@@ -79,9 +79,9 @@ if (ndmag.eq.1) then
     write(50,'(4I6," : grid size, number of states")') np3d(:),nst
     write(51,'(4I6," : grid size, number of states")') np3d(:),nst
     do ik=1,nkptnr
-      jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
-      write(50,'(G18.10,40F14.8)') vkcnr(:,ik),evalsv(ist0:ist1,jk)-efermi
-      write(51,'(G18.10,40F14.8)') vkcnr(:,ik),evalsv(nstfv+ist0:ist1,jk)-efermi
+      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+      write(50,'(G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
+      write(51,'(G18.10,40F14.8)') vkc(:,ik),evalsv(nstfv+ist0:ist1,jk)-efermi
     end do
   end if
   close(50)
@@ -93,12 +93,12 @@ else
 ! write product of eigenstates minus the Fermi energy
     write(50,'(3I6," : grid size")') np3d(:)
     do ik=1,nkptnr
-      jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
+      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
       prd1=1.d0
       do ist=1,nstsv
         prd1=prd1*(evalsv(ist,jk)-efermi)
       end do
-      write(50,'(4G18.10)') vkcnr(:,ik),prd1
+      write(50,'(4G18.10)') vkc(:,ik),prd1
     end do
   else
 ! write the eigenvalues minus the Fermi energy separately
@@ -108,8 +108,8 @@ else
     nst=ist1-ist0+1
     write(50,'(4I6," : grid size, number of states")') np3d(:),nst
     do ik=1,nkptnr
-      jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
-      write(50,'(3G18.10,40F14.8)') vkcnr(:,ik),evalsv(ist0:ist1,jk)-efermi
+      jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+      write(50,'(3G18.10,40F14.8)') vkc(:,ik),evalsv(ist0:ist1,jk)-efermi
     end do
   end if
   close(50)
@@ -117,8 +117,8 @@ end if
 write(*,*)
 write(*,'("Info(fermisurf):")')
 if (ndmag.eq.1) then
-  write(*,'(" 3D Fermi surface data written to FERMISURF_UP.OUT and&
-   & FERMISURF_DN.OUT")')
+  write(*,'(" 3D Fermi surface data written to FERMISURF_UP.OUT and &
+   &FERMISURF_DN.OUT")')
 else
   write(*,'(" 3D Fermi surface data written to FERMISURF.OUT")')
 end if

@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmdedn(dedn)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   dedn : free energy derivative (out,real(nstsv,nkpt))
 ! !DESCRIPTION:
@@ -27,26 +27,28 @@ real(8), intent(out) :: dedn(nstsv,nkpt)
 complex(8), allocatable :: evecsv(:,:)
 complex(8), allocatable :: c(:,:)
 integer ik,ist
-allocate(evecsv(nstsv,nstsv),c(nstsv,nstsv))
-dedn(:,:)=0.d0
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(evecsv,c,ist)
+!$OMP DO
 do ik=1,nkpt
-! get evecsv from a file
+  allocate(evecsv(nstsv,nstsv))
+  allocate(c(nstsv,nstsv))
+! get eigenvectors from file
   call getevecsv(vkl(:,ik),evecsv)
-! kinetic contribution
+! kinetic and Coulomb potential contribution
   call zgemm('C','N',nstsv,nstsv,nstsv,zone,evecsv,nstsv,dkdc(:,:,ik),nstsv, &
    zzero,c,nstsv)
   do ist=1,nstsv
-! include Coulomb contribution
-    dedn(ist,ik)=dedn(ist,ik)-(dble(c(ist,ist))+dble(vclmat(ist,ist,ik)))
+    dedn(ist,ik)=-(dble(c(ist,ist))+dble(vclmat(ist,ist,ik)))
   end do
+  deallocate(evecsv,c)
 end do
-deallocate(evecsv,c)
+!$OMP END DO
+!$OMP END PARALLEL
 ! add exchange correlation contribution
 call rdmdexcdn(dedn)
 ! add entropic contribution if needed
-if (rdmtemp.gt.0.d0) then
-  call rdmdtsdn(dedn)
-end if
+if (rdmtemp.gt.0.d0) call rdmdtsdn(dedn)
 return
 end subroutine
 !EOC

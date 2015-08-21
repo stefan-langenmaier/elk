@@ -8,11 +8,13 @@ use modmain
 use modphonon
 implicit none
 integer nsym,isym,sym(3,3,48)
-integer nppt,ik,ip,ispn
+integer nppt,npptnr,ik,ip,ispn
 integer igp
+real(8) wpptnr
 real(8) s(3,3),vl(3),vc(3),t1
 ! allocatable arrays
 integer, allocatable :: ipmap(:,:,:)
+integer, allocatable :: ipmapnr(:,:,:)
 integer, allocatable :: ivp(:,:)
 integer, allocatable :: ngp(:,:)
 integer, allocatable :: ngpq(:,:)
@@ -38,25 +40,25 @@ call init1
 call init2
 ! allocate local arrays
 allocate(ipmap(0:ngridk(1)-1,0:ngridk(2)-1,0:ngridk(3)-1))
-nppt=ngridk(1)*ngridk(2)*ngridk(3)
-allocate(ivp(3,nppt))
-allocate(ngp(nspnfv,nppt))
-allocate(ngpq(nspnfv,nppt))
-allocate(igpig(ngkmax,nspnfv,nppt))
-allocate(igpqig(ngkmax,nspnfv,nppt))
-allocate(vpl(3,nppt))
-allocate(vpc(3,nppt))
-allocate(wppt(nppt))
-allocate(vgpl(3,ngkmax,nspnfv,nppt))
-allocate(vgpql(3,ngkmax,nspnfv,nppt))
-allocate(vgpc(3,ngkmax,nspnfv,nppt))
-allocate(vgpqc(3,ngkmax,nspnfv,nppt))
-allocate(gpc(ngkmax,nspnfv,nppt))
-allocate(gpqc(ngkmax,nspnfv,nppt))
-allocate(tpgpc(2,ngkmax,nspnfv,nppt))
-allocate(tpgpqc(2,ngkmax,nspnfv,nppt))
-allocate(sfacgp(ngkmax,natmtot,nspnfv,nppt))
-allocate(sfacgpq(ngkmax,natmtot,nspnfv,nppt))
+npptnr=ngridk(1)*ngridk(2)*ngridk(3)
+allocate(ivp(3,npptnr))
+allocate(ngp(nspnfv,npptnr))
+allocate(ngpq(nspnfv,npptnr))
+allocate(igpig(ngkmax,nspnfv,npptnr))
+allocate(igpqig(ngkmax,nspnfv,npptnr))
+allocate(vpl(3,npptnr))
+allocate(vpc(3,npptnr))
+allocate(wppt(npptnr))
+allocate(vgpl(3,ngkmax,nspnfv,npptnr))
+allocate(vgpql(3,ngkmax,nspnfv,npptnr))
+allocate(vgpc(3,ngkmax,nspnfv,npptnr))
+allocate(vgpqc(3,ngkmax,nspnfv,npptnr))
+allocate(gpc(ngkmax,nspnfv,npptnr))
+allocate(gpqc(ngkmax,nspnfv,npptnr))
+allocate(tpgpc(2,ngkmax,nspnfv,npptnr))
+allocate(tpgpqc(2,ngkmax,nspnfv,npptnr))
+allocate(sfacgp(ngkmax,natmtot,nspnfv,npptnr))
+allocate(sfacgpq(ngkmax,natmtot,nspnfv,npptnr))
 allocate(dwfpw(ngkmax,nspinor,nstsv))
 !***** deallocate
 ! read density and potential from file
@@ -86,8 +88,8 @@ do isym=1,nsymkpt
   end if
 end do
 ! generate the reduced k-point set for current q vector perturbation
-call genppts(.false.,nsym,sym,ngridk,epslat,bvec,kptboxl,nppt,ipmap,ivp,vpl, &
- vpc,wppt)
+call genppts(.false.,nsym,sym,ngridk,npptnr,epslat,bvec,kptboxl,nppt,ipmap, &
+ ipmapnr,ivp,vpl,vpc,wppt,wpptnr)
 do ip=1,nppt
   do ispn=1,nspnfv
     vl(:)=vpl(:,ip)
@@ -140,6 +142,8 @@ do iscl=1,maxscl
     call drhomagk(vpl(:,ip),ngp(:,ip),ngpq(:,ip),igpig(:,:,ip),igpqig(:,:,ip), &
      vgpl(:,:,:,ip),gpqc(:,:,ip),tpgpqc(:,:,:,ip),sfacgpq(:,:,:,ip),dwfpw)
   end do
+! convert muffin-tin density/magnetisation derivatives to spherical harmonics
+  call drhomagsh
 ! end the self-consistent loop
 end do
 goto 10

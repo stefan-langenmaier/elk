@@ -83,8 +83,8 @@ natoms(:)=0
 atposl(:,:,:)=0.d0
 atposc(:,:,:)=0.d0
 bfcmt0(:,:,:)=0.d0
-sppath='./'
-scrpath='./'
+sppath=''
+scrpath=''
 nvp1d=2
 if (allocated(vvlp1d)) deallocate(vvlp1d)
 allocate(vvlp1d(3,nvp1d))
@@ -107,6 +107,7 @@ wdos(1)=-0.5d0
 wdos(2)=0.5d0
 dosocc=.false.
 dosmsum=.false.
+dosssum=.false.
 lmirep=.true.
 spinpol=.false.
 spinorb=.false.
@@ -122,7 +123,7 @@ usegdft=.false.
 intraband=.false.
 evaltol=-1.d0
 deband=0.0025d0
-epsband=1.d-6
+epsband=1.d-12
 autolinengy=.false.
 dlefe=-0.1d0
 bfieldc0(:)=0.d0
@@ -145,7 +146,7 @@ vqlwrt(:,:)=0.d0
 notelns=0
 tforce=.false.
 tfibs=.true.
-maxitoep=120
+maxitoep=200
 tauoep(1)=1.d0
 tauoep(2)=0.75d0
 tauoep(3)=1.25d0
@@ -176,15 +177,14 @@ readalu=.false.
 
 ! reduced density matrix functional theory (RMDFT) defaults
 rdmxctype=2
-rdmmaxscl=1
-maxitn=250
-maxitc=10
-taurdmn=1.d0
-taurdmc=0.5d0
-rdmalpha=0.7d0
+rdmmaxscl=2
+maxitn=200
+maxitc=0
+taurdmn=0.5d0
+taurdmc=0.25d0
+rdmalpha=0.565d0
 rdmbeta=0.25d0
 rdmtemp=0.d0
-wrtvnlijji=.true.
 
 reducebf=1.d0
 ptnucl=.true.
@@ -200,6 +200,21 @@ frozencr=.false.
 spincore=.false.
 solscf=1.d0
 emaxelnes=-1.2d0
+hmax=6.d0
+vhmat(:,:)=0.d0
+vhmat(1,1)=1.d0
+vhmat(2,2)=1.d0
+vhmat(3,3)=1.d0
+hybmix=1.d0
+tpmat=.true.
+ecvcut=-3.5d0
+esccut=-0.4d0
+gmaxrpa=3.d0
+
+! BSE defaults
+nvbse=2
+ncbse=3
+bsefull=.false.
 
 !--------------------------!
 !     read from elk.in     !
@@ -554,9 +569,9 @@ case('dos')
     stop
   end if
   read(50,*,err=20) wdos(:)
-  if (wdos(1).ge.wdos(2)) then
+  if (wdos(1).gt.wdos(2)) then
     write(*,*)
-    write(*,'("Error(readinput): wdos(1) >= wdos(2) : ",2G18.10)') wdos
+    write(*,'("Error(readinput): wdos(1) > wdos(2) : ",2G18.10)') wdos
     write(*,*)
     stop
   end if
@@ -564,6 +579,8 @@ case('dosocc')
   read(50,*,err=20) dosocc
 case('dosmsum')
   read(50,*,err=20) dosmsum
+case('dosssum')
+  read(50,*,err=20) dosssum
 case('lmirep')
   read(50,*,err=20) lmirep
 case('tau0atm')
@@ -902,8 +919,6 @@ case('rdmtemp')
     write(*,*)
     stop
   end if
-case('wrtvnlijji')
-  read(50,*,err=20) wrtvnlijji
 case('reducebf')
   read(50,*,err=20) reducebf
   if ((reducebf.lt.0.d0).or.(reducebf.gt.1.d0)) then
@@ -954,6 +969,58 @@ case('solscf')
   end if
 case('emaxelnes')
   read(50,*,err=20) emaxelnes
+case('hmax')
+  read(50,*,err=20) hmax
+  if (hmax.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): hmax < 0 : ",G18.10)') hmax
+    write(*,*)
+    stop
+  end if
+case('vhmat')
+  read(50,*,err=20) vhmat(1,:)
+  read(50,*,err=20) vhmat(2,:)
+  read(50,*,err=20) vhmat(3,:)
+case('hybmix')
+  read(50,*,err=20) hybmix
+  if ((hybmix.lt.0.d0).or.(hybmix.gt.1.d0)) then
+    write(*,*)
+    write(*,'("Error(readinput): invalid hybmix : ",G18.10)') hybmix
+    write(*,*)
+    stop
+  end if
+case('tpmat')
+  read(50,*,err=20) tpmat
+case('ecvcut')
+  read(50,*,err=20) ecvcut
+case('esccut')
+  read(50,*,err=20) esccut
+case('nvbse')
+  read(50,*,err=20) nvbse
+  if (nvbse.lt.1) then
+    write(*,*)
+    write(*,'("Error(readinput): nvbse < 1 : ",I8)') nvbse
+    write(*,*)
+    stop
+  end if
+case('ncbse')
+  read(50,*,err=20) ncbse
+  if (ncbse.lt.1) then
+    write(*,*)
+    write(*,'("Error(readinput): ncbse < 1 : ",I8)') ncbse
+    write(*,*)
+    stop
+  end if
+case('bsefull')
+  read(50,*,err=20) bsefull
+case('gmaxrpa')
+  read(50,*,err=20) gmaxrpa
+  if (gmaxrpa.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): gmaxrpa < 0 : ",G18.10)') gmaxrpa
+    write(*,*)
+    stop
+  end if
 case('')
   goto 10
 case default

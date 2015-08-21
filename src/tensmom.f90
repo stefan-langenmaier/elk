@@ -57,9 +57,9 @@ if (mp_mpi) then
   end if
   if (iscl.ge.1) then
     write(fnum,*)
-    write(fnum,'("+-------------------------+")')
-    write(fnum,'("| Iteration number : ",I4," |")') iscl
-    write(fnum,'("+-------------------------+")')
+    write(fnum,'("+--------------------+")')
+    write(fnum,'("| Loop number : ",I4," |")') iscl
+    write(fnum,'("+--------------------+")')
   end if
 end if
 ! allocate arrays

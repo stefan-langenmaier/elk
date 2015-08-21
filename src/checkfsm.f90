@@ -37,8 +37,8 @@ do isym=1,nsymcrys
         t1=sum(abs(mommtfix(:,ia,is)-v(:)))
         if (t1.gt.epslat) then
           write(*,*)
-          write(*,'("Error(checkfsm): mommtfix not invariant under symmetry&
-           & group")')
+          write(*,'("Error(checkfsm): mommtfix not invariant under symmetry &
+           &group")')
           write(*,'(" for species ",I4)') is
           write(*,'(" and equivalent atoms ",2I4)') ia,ja
           write(*,*)

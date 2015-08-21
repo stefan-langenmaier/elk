@@ -80,7 +80,7 @@ do i=0,999
         if (j.ne.k) goto 20
         t1=abs(rv_-rv)
         t2=abs(rv_)*tol
-        if ((t1.gt.t2).and.(abs(rv_).gt.1.d-6)) then
+        if ((t1.gt.t2).and.(abs(rv_).gt.1.d-4)) then
           write(*,*)
           write(*,'("Error(testcheck): variable ",I8," outside tolerance")') j
           write(*,'(" for quantity ''",A,"''")') trim(descr)

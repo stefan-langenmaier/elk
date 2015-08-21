@@ -47,10 +47,10 @@ do iq=1,nqpt
 ! diagonalise the dynamical matrix
   call dyndiag(dynq(:,:,iq),wq,ev)
 ! construct a complex matrix from the phonon eigenvectors such that its
-! eigenvalues are the phonon linewidths
+! eigenvalues squared are the phonon linewidths
   do i=1,n
     do j=1,n
-      b(i,j)=gq(i,iq)*conjg(ev(j,i))
+      b(i,j)=sqrt(abs(gq(i,iq)))*conjg(ev(j,i))
     end do
   end do
   call zgemm('N','N',n,n,n,zone,ev,n,b,n,zzero,gmq(:,:,iq),n)
@@ -67,6 +67,8 @@ do iq=1,npp1d
   call dynrtoq(vplp1d(:,iq),gmr,gmp)
 ! diagonalise the gamma matrix
   call zheev('N','U',n,gmp,n,gp(:,iq),work,lwork,rwork,info)
+! square the eigenvalues to recover the linewidths
+  gp(:,iq)=gp(:,iq)**2
   gmin=min(gmin,gp(1,iq))
   gmax=max(gmax,gp(n,iq))
 end do

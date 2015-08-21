@@ -73,10 +73,10 @@ do iq=1,nqpt
 ! diagonalise the dynamical matrix
   call dyndiag(dynq(:,:,iq),wq(:,iq),ev)
 ! construct a complex matrix from the phonon eigenvectors such that its
-! eigenvalues are the phonon linewidths divided by the frequency
+! eigenvalues squared are the phonon linewidths divided by the frequency
   do i=1,n
     if (wq(i,iq).gt.1.d-8) then
-      t1=gq(i,iq)/wq(i,iq)
+      t1=sqrt(abs(gq(i,iq)/wq(i,iq)))
     else
       t1=0.d0
     end if
@@ -119,6 +119,8 @@ do i1=0,ngrdos-1
       call dynrtoq(v,a2fmr,a2fmp)
 ! diagonlise the alpha^2F matrix
       call zheev('N','U',n,a2fmp,n,a2fp,work,lwork,rwork,info)
+! square the eigenvalues to recover the linewidths divided by the frequency
+      a2fp(:)=a2fp(:)**2
       do i=1,n
         t1=(wp(i)-wmin)/dw+1.d0
         iw=nint(t1)
@@ -166,8 +168,8 @@ write(50,'("Electron-phonon mass enhancement parameter, lambda : ",G18.10)') &
 close(50)
 write(*,*)
 write(*,'("Info(alpha2f):")')
-write(*,'(" Electron-phonon mass enhancement parameter, lambda, written to&
- & LAMBDA.OUT")')
+write(*,'(" Electron-phonon mass enhancement parameter, lambda, written to &
+ &LAMBDA.OUT")')
 ! write lambda to test file
 call writetest(251,'Electron-phonon mass enhancement parameter, lambda', &
  tol=1.d-2,rv=lambda)

@@ -8,8 +8,9 @@
 ! !INTERFACE:
 subroutine rdmft
 ! !USES:
-use modrdm
 use modmain
+use modrdm
+use modmpi
 ! !DESCRIPTION:
 !  Main routine for one-body reduced density matrix functional theory (RDMFT).
 !
@@ -20,6 +21,7 @@ use modmain
 implicit none
 ! local variables
 integer ik
+! initialise global variables
 call init0
 call init1
 ! generate q-point set and wiq2 array
@@ -40,56 +42,80 @@ call olprad
 call hmlrad
 ! compute the kinetic energy of the core
 call energykncr
-! generate the kinetic matrix elements
-call genkinmat
+! delete any existing non-local matrix elements files
+if (mp_mpi) then
+  open(95,file='VNLIJJI.OUT'); close(95,status='DELETE')
+  open(95,file='VNLIJJK.OUT'); close(95,status='DELETE')
+end if
+! generate the kinetic matrix elements in the Cartesian basis
+call genkinmatc
 ! read in the occupancies
 do ik=1,nkpt
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
-! calculate Coulomb potential matrix elements
-call genvmat(vclmt,vclir,vclmat)
-! derivative of kinetic energy w.r.t. evecsv
-call rdmdkdc
-! open information files
-open(60,file='RDM_INFO.OUT',action='WRITE',form='FORMATTED')
+! open information files (MPI master process only)
+if (mp_mpi) then
+  open(60,file='RDM_INFO.OUT',action='WRITE',form='FORMATTED')
+  open(61,file='RDMN_ENERGY.OUT',action='WRITE',form='FORMATTED')
+  open(62,file='RDMC_ENERGY.OUT',action='WRITE',form='FORMATTED')
+  if (spinpol) then
+    open(63,file='RDMN_MOMENT.OUT',action='WRITE',form='FORMATTED')
+    open(64,file='RDMC_MOMENT.OUT',action='WRITE',form='FORMATTED')
+  end if
 ! write out general information to RDM_INFO.OUT
-call writeinfo(60)
-! check if non-local matrix should be written
-if ((rdmxctype.eq.0).or.(maxitc.ge.1)) wrtvnlijji=.false.
-! begin main self-consistent loop
-do iscl=1,rdmmaxscl
+  call writeinfo(60)
   write(60,*)
-  write(60,'("+-------------------------+")')
-  write(60,'("| Iteration number : ",I4," |")') iscl
-  write(60,'("+-------------------------+")')
-  call flushifc(60)
+  write(60,'("+------------------------------+")')
+  write(60,'("| Self-consistent loop started |")')
+  write(60,'("+------------------------------+")')
+end if
+! begin main RDMFT self-consistent loop
+do iscl=1,rdmmaxscl
+  if (mp_mpi) then
+    write(60,*)
+    write(60,'("+--------------------+")')
+    write(60,'("| Loop number : ",I4," |")') iscl
+    write(60,'("+--------------------+")')
+    call flushifc(60)
+    write(*,*)
+    write(*,'("Info(rdmft): self-consistent loop number : ",I4)') iscl
+  end if
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
 ! minimisation over natural orbitals
-  if (maxitc.ge.1) then
-    call rdmminc
-    write(60,*)
-    write(60,'("Natural orbital minimisation done")')
-    call rdmwriteengy(60)
-    call writechg(60)
-  end if
+  call rdmminc
 ! minimisation over occupation number
-  if (maxitn.ge.1) then
-    call rdmminn
-    write(60,*)
-    write(60,'("Occupation number minimisation done")')
+  call rdmminn
+! compute the RDMFT 'eigenvalues'
+  call rdmeval
+  if (mp_mpi) then
     call rdmwriteengy(60)
     call writechg(60)
-    call rdmeval
+    call writeeval
   end if
-! end loop over iscl
 end do
+if (mp_mpi) then
+  write(60,*)
+  write(60,'("+------------------------------+")')
+  write(60,'("| Self-consistent loop stopped |")')
+  write(60,'("+------------------------------+")')
 ! write density to STATE.OUT
-call writestate
-! write occupation numbers for restart
-do ik=1,nkpt
-  call putoccsv(ik,occsv(:,ik))
-end do
-! close RDM_INFO.OUT file
-close(60)
+  call writestate
+  write(60,*)
+  write(60,'("Wrote STATE.OUT")')
+  write(60,*)
+  write(60,'("+----------------------------+")')
+  write(60,'("| Elk version ",I1.1,".",I1.1,".",I2.2," stopped |")') version
+  write(60,'("+----------------------------+")')
+! close information files
+  close(60)
+  close(61)
+  close(62)
+  if (spinpol) then
+    close(63)
+    close(64)
+  end if
+end if
 return
 end subroutine
 !EOC

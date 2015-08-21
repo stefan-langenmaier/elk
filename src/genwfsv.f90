@@ -146,6 +146,10 @@ if (.not.tsh) deallocate(wfmt2)
 !     interstitial wavefunction     !
 !-----------------------------------!
 t1=1.d0/sqrt(omega)
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(i,ispn,jspn,ist) &
+!$OMP PRIVATE(zt1,igp,ifg)
+!$OMP DO
 do j=1,nstsv
   wfir(:,:,j)=0.d0
   if ((.not.tocc).or.((tocc).and.(evalsvp(j).lt.efermi))) then
@@ -199,6 +203,8 @@ do j=1,nstsv
     end if
   end if
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 return
 end subroutine
 !EOC

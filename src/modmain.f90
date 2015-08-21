@@ -81,6 +81,10 @@ integer, parameter :: maxspst=40
 integer spnst(maxspecies)
 ! maximum spnst over all the species
 integer spnstmax
+! core-valence cut-off energy for species file generation
+real(8) ecvcut
+! semi-core-valence cut-off energy for species file generation
+real(8) esccut
 ! state principle quantum number for each species
 integer spn(maxspst,maxspecies)
 ! state l value for each species
@@ -183,7 +187,7 @@ real(8) bfieldc0(3)
 real(8) bfcmt(3,maxatoms,maxspecies)
 ! initial field
 real(8) bfcmt0(3,maxatoms,maxspecies)
-! external magnetic fields are multiplied by reducebf after each iteration
+! external magnetic fields are multiplied by reducebf after each s.c. loop
 real(8) reducebf
 ! spinsprl is .true. if a spin-spiral is to be calculated
 logical spinsprl
@@ -233,6 +237,8 @@ integer, parameter :: maxsymcrys=192
 integer nsymcrys
 ! crystal symmetry translation vector in lattice coordinates
 real(8) vtlsymc(3,maxsymcrys)
+! tvzsymc is .true. if the translation vector is zero
+logical tvzsymc(maxsymcrys)
 ! spatial rotation element in lattice point group for each crystal symmetry
 integer lsplsymc(maxsymcrys)
 ! global spin rotation element in lattice point group for each crystal symmetry
@@ -304,28 +310,22 @@ integer nsymkpt
 integer symkpt(3,3,48)
 ! total number of reduced k-points
 integer nkpt
-! map from non-reduced grid to reduced set
+! total number of non-reduced k-points
+integer nkptnr
+! map from non-reduced grid to reduced index
 integer, allocatable :: ikmap(:,:,:)
+! map from non-reduced grid to non-reduced index
+integer, allocatable :: ikmapnr(:,:,:)
 ! locations of k-points on integer grid
 integer, allocatable :: ivk(:,:)
 ! k-points in lattice coordinates
 real(8), allocatable :: vkl(:,:)
 ! k-points in Cartesian coordinates
 real(8), allocatable :: vkc(:,:)
-! k-point weights
+! reduced k-point weights
 real(8), allocatable :: wkpt(:)
-! total number of non-reduced k-points
-integer nkptnr
-! map from non-reduced grid to non-reduced set
-integer, allocatable :: ikmapnr(:,:,:)
-! locations of non-reduced k-points on integer grid
-integer, allocatable :: ivknr(:,:)
-! non-reduced k-points in lattice coordinates
-real(8), allocatable :: vklnr(:,:)
-! non-reduced k-points in Cartesian coordinates
-real(8), allocatable :: vkcnr(:,:)
-! non-reduced k-point weights
-real(8), allocatable :: wkptnr(:)
+! weight of each non-reduced k-point
+real(8) wkptnr
 ! k-point at which to determine effective mass tensor
 real(8) vklem(3)
 ! displacement size for computing the effective mass tensor
@@ -370,8 +370,12 @@ integer nsymqpt
 integer symqpt(3,3,48)
 ! total number of reduced q-points
 integer nqpt
-! map from non-reduced grid to reduced set
+! total number of non-reduced q-points
+integer nqptnr
+! map from non-reduced grid to reduced index
 integer, allocatable :: iqmap(:,:,:)
+! map from non-reduced grid to non-reduced index
+integer, allocatable :: iqmapnr(:,:,:)
 ! locations of q-points on integer grid
 integer, allocatable :: ivq(:,:)
 ! q-points in lattice coordinates
@@ -380,6 +384,10 @@ real(8), allocatable :: vql(:,:)
 real(8), allocatable :: vqc(:,:)
 ! q-point weights
 real(8), allocatable :: wqpt(:)
+! weight for each non-reduced q-opint
+real(8) wqptnr
+! index to q = 0 point
+integer iq0
 ! weights associated with the integral of 1/q^2
 real(8), allocatable :: wiq2(:)
 
@@ -402,10 +410,12 @@ complex(8), allocatable :: zfshtvr(:,:)
 integer xctype(3)
 ! exchange-correlation functional description
 character(512) xcdescr
-! exchange-correlation functional spin treatment
+! exchange-correlation functional spin requirement
 integer xcspin
-! exchange-correlation functional density gradient treatment
+! exchange-correlation functional density gradient requirement
 integer xcgrad
+! exchange-correlation functional kinetic energy density requirement
+integer xctau
 ! muffin-tin charge density
 real(8), allocatable :: rhomt(:,:,:)
 ! interstitial real-space charge density
@@ -568,7 +578,9 @@ real(8) dlefe
 integer, allocatable :: nmat(:,:)
 ! maximum nmat over all k-points
 integer nmatmax
-! size of packed matrices
+! tpmat is .true. if packed matrices are to be used
+logical tpmat
+! size of packed matrices (or nmat^2 if tpmat is .false.)
 integer, allocatable :: npmat(:,:)
 ! index to the position of the local-orbitals in the H and O matrices
 integer, allocatable :: idxlo(:,:,:)
@@ -747,6 +759,8 @@ real(8) wdos(2)
 logical dosocc
 ! dosmsum is .true. if the partial DOS is to be summed over m
 logical dosmsum
+! dosssum is .true. if the partial DOS is to be summed over spin
+logical dosssum
 ! number of optical matrix components required
 integer noptcomp
 ! required optical matrix components
@@ -766,6 +780,16 @@ real(8) sqados(3)
 real(8) vecql(3)
 ! maximum initial-state energy allowed in ELNES transitions
 real(8) emaxelnes
+! maximum |H| for diffraction vectors
+real(8) hmax
+! H-vector transformation matrix
+real(8) vhmat(3,3)
+! number of H-vectors
+integer nhvec
+! H-vector integer coordinates
+integer, allocatable :: ivh(:,:)
+! H-vector multiplicity
+integer, allocatable :: mulh(:)
 
 !-------------------------------------!
 !     1D/2D/3D plotting variables     !
@@ -804,13 +828,57 @@ integer maxitoep
 real(8) tauoep(3)
 ! magnitude of the OEP residual
 real(8) resoep
-! kinetic matrix elements
+! kinetic matrix elements in Cartesian basis
 complex(8), allocatable :: kinmatc(:,:,:)
 ! complex versions of the exchange potential and field
 complex(8), allocatable :: zvxmt(:,:,:)
 complex(8), allocatable :: zvxir(:)
 complex(8), allocatable :: zbxmt(:,:,:,:)
 complex(8), allocatable :: zbxir(:,:)
+! hybrid functional mixing parameter
+real(8) hybmix
+
+!------------------------------------!
+!     many-body theory variables     !
+!------------------------------------!
+! |G| cut-off for the RPA dielectric response function
+real(8) gmaxrpa
+! number of G vectors for the RPA dielectric response function
+integer ngrpa
+! number of RPA frequencies
+integer nwrpa
+! complex RPA frequencies
+complex(8), allocatable :: wrpa(:)
+! exp(iG.r) functions for all RPA G vectors
+complex(8), allocatable :: expgmt(:,:,:,:)
+complex(8), allocatable :: expgir(:,:)
+! Coulomb interation regulator for RPA: 1/(q^2+lambda^2)
+real(8) lmda2rpa
+
+!-------------------------------------------------!
+!     Bethe-Salpeter equation (BSE) variables     !
+!-------------------------------------------------!
+! number of valence and conduction states for transitions
+integer nvbse,ncbse
+! total number of transitions
+integer nvcbse
+! size of blocks in BSE Hamiltonian matrix
+integer nbbse
+! size of BSE matrix (= 2*nbbse)
+integer nmbse
+! index from BSE valence states to second-variational states
+integer, allocatable :: istbse(:,:)
+! index from BSE conduction states to second-variational states
+integer, allocatable :: jstbse(:,:)
+! index from BSE valence-conduction pair and k-point to location in BSE matrix
+integer, allocatable :: ijkbse(:,:,:)
+! BSE Hamiltonian
+complex(8), allocatable :: hmlbse(:,:)
+! BSE Hamiltonian eigenvalues
+real(8), allocatable :: evalbse(:)
+! if bsefull is .true. then the full BSE Hamiltonian is calculated, otherwise
+! only the Hermitian block
+logical bsefull
 
 !--------------------------!
 !     timing variables     !
@@ -836,8 +904,6 @@ real(8) timefor
 real(8), parameter :: pi=3.1415926535897932385d0
 real(8), parameter :: twopi=6.2831853071795864769d0
 real(8), parameter :: fourpi=12.566370614359172954d0
-! square root of two
-real(8), parameter :: sqtwo=1.4142135623730950488d0
 ! spherical harmonic for l=m=0
 real(8), parameter :: y00=0.28209479177387814347d0
 ! complex constants
@@ -874,13 +940,15 @@ real(8), parameter :: e_si=1.602176487d-19
 real(8), parameter :: b_si=hbar_si/(e_si*au_si**2)
 ! atomic unit of time in SI
 real(8), parameter :: t_si=hbar_si/ha_si
+! mass of 1/12 times carbon-12 in electron masses (CODATA 2006)
+real(8), parameter :: amu=1822.88848426d0
 
 !---------------------------------!
 !     miscellaneous variables     !
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,1,4 /
+data version / 1,2,15 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks
@@ -889,7 +957,7 @@ integer ntasks
 integer tasks(maxtasks)
 ! current task
 integer task
-! tlast is .true. if self-consistent loop is on the last iteration
+! tlast is .true. if the calculation is on the last self-consistent loop
 logical tlast
 ! number of self-consistent loops after which STATE.OUT is written
 integer nwrite

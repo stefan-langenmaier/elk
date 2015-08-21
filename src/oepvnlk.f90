@@ -14,7 +14,7 @@ complex(8), intent(out) :: vnlvv(nstsv,nstsv)
 integer ngknr,ik,igk
 integer ist1,ist2,ist3
 integer is,ia,ias,nrc
-integer ic,m1,m2,lmax
+integer ic,m1,m2
 integer iq,ig,iv(3),igq0
 real(8) v(3),cfq
 complex(8) zrho01,zrho02,zt1,zt2
@@ -101,24 +101,24 @@ call genwfsv(.false.,.false.,.false.,ngk(1,ikp),igkig(:,1,ikp),evalsvp,apwalm, &
 ! start loop over non-reduced k-point set
 do ik=1,nkptnr
 ! generate G+k vectors
-  call gengpvec(vklnr(:,ik),vkcnr(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
+  call gengpvec(vkl(:,ik),vkc(:,ik),ngknr,igkignr,vgklnr,vgkcnr)
 ! generate the spherical coordinates of the G+k vectors
   do igk=1,ngknr
     call sphcrd(vgkcnr(:,igk),gkcnr(igk),tpgkcnr(:,igk))
   end do
 ! get the eigenvalues/vectors from file for non-reduced k-points
-  call getevalsv(vklnr(:,ik),evalsvnr)
-  call getevecfv(vklnr(:,ik),vgklnr,evecfv)
-  call getevecsv(vklnr(:,ik),evecsv)
+  call getevalsv(vkl(:,ik),evalsvnr)
+  call getevecfv(vkl(:,ik),vgklnr,evecfv)
+  call getevecsv(vkl(:,ik),evecsv)
 ! generate the structure factors
   call gensfacgp(ngknr,vgkcnr,ngkmax,sfacgknr)
 ! find the matching coefficients
   call match(ngknr,gkcnr,tpgkcnr,sfacgknr,apwalm)
 ! determine q vector
-  iv(:)=ivk(:,ikp)-ivknr(:,ik)
+  iv(:)=ivk(:,ikp)-ivk(:,ik)
   iv(:)=modulo(iv(:),ngridk(:))
   iq=iqmap(iv(1),iv(2),iv(3))
-  v(:)=vkc(:,ikp)-vkcnr(:,ik)
+  v(:)=vkc(:,ikp)-vkc(:,ik)
   do ig=1,ngvec
 ! determine G+q vectors
     vgqc(:,ig)=vgc(:,ig)+v(:)
@@ -133,8 +133,7 @@ do ik=1,nkptnr
   call findigp0(ngvec,gqc,igq0)
   sfacgq0(:)=sfacgq(igq0,:)
 ! compute the required spherical Bessel functions
-  lmax=lmaxvr+npsden+1
-  call genjlgpr(lmax,gqc,jlgqr)
+  call genjlgpr(lmaxvr+npsden+1,gqc,jlgqr)
   call genjlgq0r(gqc(igq0),jlgq0r)
 ! calculate the wavefunctions for occupied states
   call genwfsv(.false.,.false.,.true.,ngknr,igkignr,evalsvnr,apwalm,evecfv, &
@@ -144,7 +143,7 @@ do ik=1,nkptnr
       do ist2=1,nstsv
         if (evalsvp(ist2).gt.efermi) then
 ! calculate the complex overlap density
-          call vnlrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist2), &
+          call genzrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist2), &
            wfir2(:,:,ist3),wfir1(:,:,ist2),zrhomt,zrhoir)
 ! calculate the Coulomb potential
           call genzvclmt(nrcmt,nrcmtmax,rcmt,nrcmtmax,zrhomt,zvclmt)
@@ -156,13 +155,13 @@ do ik=1,nkptnr
           do ist1=1,nstsv
             if (evalsvp(ist1).lt.efermi) then
 ! calculate the complex overlap density
-              call vnlrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
+              call genzrho(.true.,wfmt2(:,:,:,:,ist3),wfmt1(:,:,:,:,ist1), &
                wfir2(:,:,ist3),wfir1(:,:,ist1),zrhomt,zrhoir)
               zt1=zfinp(.true.,zrhomt,zvclmt,zrhoir,zvclir)
 ! compute the density coefficient of the smallest G+q-vector
               call zrhogp(jlgq0r,ylmgq(:,igq0),sfacgq0,zrhomt,zrhoir,zrho01)
               zt2=cfq*wiq2(iq)*(conjg(zrho01)*zrho02)
-              vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-(wkptnr(ik)*zt1+zt2)
+              vnlvv(ist1,ist2)=vnlvv(ist1,ist2)-(wkptnr*zt1+zt2)
             end if
           end do
 !-------------------------------------------!
@@ -182,17 +181,16 @@ do ik=1,nkptnr
                     ic=ic+1
 ! pass m-1/2 to wavefcr
                     call wavefcr(lradstp,is,ia,ist1,m1,nrcmtmax,wfcr1)
-! calculate the complex overlap density
-                    call vnlrhomt(.false.,is,wfmt2(:,:,ias,1,ist3), &
-                     wfcr1(:,:,1),zrhomt(:,:,ias))
+! calculate the complex overlap density in spherical coordinates
+                    zrhomt(:,1:nrc,ias)=conjg(wfmt2(:,1:nrc,ias,1,ist3)) &
+                     *wfcr1(:,1:nrc,1)
                     if (spinpol) then
-                      call vnlrhomt(.false.,is,wfmt2(:,:,ias,2,ist3), &
-                       wfcr1(:,:,2),zfmt)
-                      zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias)+zfmt(:,1:nrc)
+                      zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias) &
+                       +conjg(wfmt2(:,1:nrc,ias,2,ist3))*wfcr1(:,1:nrc,2)
                     end if
                     zt1=zfmtinp(.false.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                      zrhomt(:,:,ias),zvcltp)
-                    vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-wkptnr(ik)*zt1
+                    vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-wkptnr*zt1
                   end do
 ! end loop over ist1
                 end if
@@ -221,12 +219,13 @@ do is=1,nspecies
           do ist2=1,nstsv
             if (evalsvp(ist2).gt.efermi) then
 ! calculate the complex overlap density
-              call vnlrhomt(.true.,is,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist2), &
-               zrhomt(:,:,ias))
+              zfmt(:,1:nrc)=conjg(wfcr1(:,1:nrc,1))*wfmt1(:,1:nrc,ias,1,ist2)
               if (spinpol) then
-                call vnlrhomt(.true.,is,wfcr1(:,:,2),wfmt1(:,:,ias,2,ist2),zfmt)
-                zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias)+zfmt(:,1:nrc)
+                zfmt(:,1:nrc)=zfmt(:,1:nrc) &
+                 +conjg(wfcr1(:,1:nrc,2))*wfmt1(:,1:nrc,ias,2,ist2)
               end if
+              call zgemm('N','N',lmmaxvr,nrc,lmmaxvr,zone,zfshtvr,lmmaxvr, &
+               zfmt,lmmaxvr,zzero,zrhomt(:,:,ias),lmmaxvr)
 ! calculate the Coulomb potential
               call zpotclmt(lmaxvr,nrc,rcmt(:,is),lmmaxvr,zrhomt(:,:,ias),zfmt)
 ! convert muffin-tin potential to spherical coordinates
@@ -238,12 +237,11 @@ do is=1,nspecies
               do ist1=1,nstsv
                 if (evalsvp(ist1).lt.efermi) then
 ! calculate the complex overlap density
-                  call vnlrhomt(.false.,is,wfcr1(:,:,1),wfmt1(:,:,ias,1,ist1), &
-                   zrhomt(:,:,ias))
+                  zrhomt(:,1:nrc,ias)=conjg(wfcr1(:,1:nrc,1)) &
+                   *wfmt1(:,1:nrc,ias,1,ist1)
                   if (spinpol) then
-                    call vnlrhomt(.false.,is,wfcr1(:,:,2), &
-                     wfmt1(:,:,ias,2,ist1),zfmt)
-                    zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias)+zfmt(:,1:nrc)
+                    zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias) &
+                     +conjg(wfcr1(:,1:nrc,2))*wfmt1(:,1:nrc,ias,2,ist1)
                   end if
                   zt1=zfmtinp(.false.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                    zrhomt(:,:,ias),zvcltp)
@@ -261,10 +259,9 @@ do is=1,nspecies
 ! pass m-1/2 to wavefcr
                     call wavefcr(lradstp,is,ia,ist1,m2,nrcmtmax,wfcr2)
 ! calculate the complex overlap density
-                    call vnlrhomt(.false.,is,wfcr1(:,:,1),wfcr2(:,:,1), &
-                     zrhomt(:,:,ias))
-                    call vnlrhomt(.false.,is,wfcr1(:,:,2),wfcr2(:,:,2),zfmt)
-                    zrhomt(:,1:nrc,ias)=zrhomt(:,1:nrc,ias)+zfmt(:,1:nrc)
+                    zrhomt(:,1:nrc,ias)= &
+                      conjg(wfcr1(:,1:nrc,1))*wfcr2(:,1:nrc,1) &
+                     +conjg(wfcr1(:,1:nrc,2))*wfcr2(:,1:nrc,2)
                     zt1=zfmtinp(.false.,lmaxvr,nrc,rcmt(:,is),lmmaxvr, &
                      zrhomt(:,:,ias),zvcltp)
                     vnlcv(ic,ias,ist2)=vnlcv(ic,ias,ist2)-zt1

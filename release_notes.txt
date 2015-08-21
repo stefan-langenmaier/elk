@@ -1,3 +1,38 @@
+elk-1.2.15
+-SS and JKD added the Bethe-Salpeter equation (BSE) for linear optics
+ calculations. This feature works with LDA+U, magnetism and spin-orbit coupling.
+ It is also parallelised with MPI and can be run across a cluster. See the
+ 'LiF-BSE' and 'Si-BSE' examples. Currently an experimental feature
+-Alexey Baranov added density and magnetic structure factors: see the
+ 'MnO-str-factors' example
+-AB also fixed a problem with output of the spacegroup code
+-full frequency and G vector dependent RPA inverse dielectric function now
+ available with 'task=180'. Works with metals, insulators, magnetism and SOC,
+ and can be calculated for arbitrary complex frequencies. Also parallelised with
+ OpenMP and MPI. Thanks to Anton Kozhevnikov for discussions
+-added lots more MPI parallelism and made the code more MPI-friendly
+-many optimisations across the whole code
+-Simone Chiesa, Anton Kozhevnikov and Adolfo Eguiluz found a problem in the
+ plotting of the partial DOS which has now been fixed
+-the first-variational eigenvalue matrices can now be stored and diagonalised in
+ non-packed storage mode: use 'tpmat=.false.'. This can speed up calculations at the expense of memory
+-Tyrel McQueen found a bug in the 'findprim' routine, now fixed
+-TMcQ also suggested a change to how the code connects the points of the
+ 'plot1d' vertices
+-Martin Stankovski suggested that 'ecvcut' be made into an input variable,
+ allowing the core-valence cut-off to be adjusted
+-added the phonon calculation of Ni to the examples
+-Jerzy Goraus contributed a script for calculating VB-XPS spectra from PDOS*
+ files; and also one for converting the Wien2K struct file to spacegroup.in
+-modified some species files thanks to tests done by J. Goraus
+-Henning Glawe suggested including the version number in the release directory
+-upgraded to LAPACK 3.3.0
+-made tolerance for finding the linearisation energies (epsband) much smaller:
+ this improves the overall stability of the self-consistent loop
+Notes for developers
+-arguments to 'genppts' have changed; also the non-reduced k-points are now
+ stored in the remaining part of the reduced k-point arrays
+
 elk-1.1.4
 -message passing interface (MPI) parallel runs now available; scalable to
  hundreds of cores across a cluster; can also be used as hybrid OpenMP+MPI

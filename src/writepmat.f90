@@ -9,6 +9,7 @@
 subroutine writepmat
 ! !USES:
 use modmain
+use modmpi
 ! !DESCRIPTION:
 !   Calculates the momentum matrix elements using routine {\tt genpmat} and
 !   writes them to direct access file {\tt PMAT.OUT}.
@@ -20,9 +21,9 @@ use modmain
 implicit none
 ! local variables
 integer ik,ispn,recl
-complex(8), allocatable :: apwalm(:,:,:,:,:)
-complex(8), allocatable :: evecfv(:,:)
+complex(8), allocatable :: evecfv(:,:,:)
 complex(8), allocatable :: evecsv(:,:)
+complex(8), allocatable :: apwalm(:,:,:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
 ! initialise universal variables
 call init0
@@ -35,19 +36,28 @@ call linengy
 call genapwfr
 ! generate the local-orbital radial functions
 call genlofr
-! find the record length
+! delete existing PMAT.OUT
+if (mp_mpi) then
+  open(85,file='PMAT.OUT')
+  close(85,status='DELETE')
+end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_world,ierror)
+! determine the record length for PMAT.OUT
 allocate(pmat(3,nstsv,nstsv))
-inquire(iolength=recl) pmat
+inquire(iolength=recl) vkl(:,1),nstsv,pmat
 deallocate(pmat)
-open(50,file='PMAT.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
- status='REPLACE',recl=recl)
+open(85,file='PMAT.OUT',action='WRITE',form='UNFORMATTED',access='DIRECT', &
+ recl=recl)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(apwalm,evecfv,evecsv,pmat,ispn)
+!$OMP PRIVATE(evecfv,evecsv,apwalm,pmat,ispn)
 !$OMP DO
 do ik=1,nkpt
-  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
-  allocate(evecfv(nmatmax,nstfv))
+! distribute among MPI processes
+  if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
+  allocate(evecfv(nmatmax,nstfv,nspnfv))
   allocate(evecsv(nstsv,nstsv))
+  allocate(apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv))
   allocate(pmat(3,nstsv,nstsv))
 !$OMP CRITICAL
   write(*,'("Info(writepmat): ",I6," of ",I6," k-points")') ik,nkpt
@@ -64,17 +74,21 @@ do ik=1,nkpt
   call genpmat(ngk(:,ik),igkig(:,:,ik),vgkc(:,:,:,ik),apwalm,evecfv,evecsv,pmat)
 ! write the matrix elements to direct-access file
 !$OMP CRITICAL
-  write(50,rec=ik) pmat
+  write(85,rec=ik) vkl(:,ik),nstsv,pmat
 !$OMP END CRITICAL
-  deallocate(apwalm,evecfv,evecsv,pmat)
+  deallocate(evecfv,evecsv,apwalm,pmat)
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-close(50)
-write(*,*)
-write(*,'("Info(writepmat):")')
-write(*,'(" momentum matrix elements written to file PMAT.OUT")')
-write(*,*)
+close(85)
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_world,ierror)
+if (mp_mpi) then
+  write(*,*)
+  write(*,'("Info(writepmat):")')
+  write(*,'(" momentum matrix elements written to file PMAT.OUT")')
+  write(*,*)
+end if
 end subroutine
 !EOC
 

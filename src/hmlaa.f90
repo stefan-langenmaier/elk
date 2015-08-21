@@ -20,7 +20,7 @@ use modmain
 !   v      : set of input vectors to which H is applied if tapp is .true.,
 !            otherwise not referenced (in,complex(*))
 !   h      : H applied to v if tapp is .true., otherwise it is the Hamiltonian
-!            matrix in packed form (inout,complex(*))
+!            matrix (inout,complex(*))
 ! !DESCRIPTION:
 !   Calculates the APW-APW contribution to the Hamiltonian matrix.
 !
@@ -38,12 +38,13 @@ complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 complex(8), intent(in) :: v(*)
 complex(8), intent(inout) :: h(*)
 ! local variables
-integer ias,io1,io2
+integer ias,ld,io1,io2
 integer l1,l2,l3,m1,m2,m3,lm1,lm2,lm3
 real(8) t1
 complex(8) zt1,zsum
 ! automatic arrays
 complex(8) zv(ngp)
+ld=ngp+nlotot
 ias=idxas(ia,is)
 do l1=0,lmaxmat
   do m1=-l1,l1
@@ -78,9 +79,11 @@ do l1=0,lmaxmat
         end do
       end do
       if (tapp) then
+! apply the Hamiltonian to a set of vectors
         call zmatinpv(ngp,zone,apwalm(:,io1,lm1,ias),zv,nstfv,nmatmax,v,h)
       else
-        call zmatinp(ngp,zone,apwalm(:,io1,lm1,ias),zv,h)
+! compute the matrix explicitly
+        call zmatinp(tpmat,ngp,zone,apwalm(:,io1,lm1,ias),zv,ld,h)
       end if
     end do
   end do
@@ -97,7 +100,8 @@ do l1=0,lmaxmat
           call zmatinpv(ngp,zt1,apwalm(:,io1,lm1,ias),apwalm(:,io2,lm1,ias), &
            nstfv,nmatmax,v,h)
         else
-          call zmatinp(ngp,zt1,apwalm(:,io1,lm1,ias),apwalm(:,io2,lm1,ias),h)
+          call zmatinp(tpmat,ngp,zt1,apwalm(:,io1,lm1,ias), &
+           apwalm(:,io2,lm1,ias),ld,h)
         end if
       end do
     end do

@@ -11,10 +11,7 @@ real(8), intent(out) :: gq(3*natmtot,nqpt)
 ! local variables
 integer iq,i
 integer natmtot_,nqpt_,iq_,i_
-real(8) vql_(3),vqc_(3)
-! external functions
-real(8) r3taxi
-external r3taxi
+real(8) vql_(3),vqc_(3),t1
 open(50,file='GAMMAQ.OUT',action='READ',form='FORMATTED',status='OLD')
 read(50,*)
 read(50,*) natmtot_
@@ -40,26 +37,28 @@ do iq=1,nqpt
   read(50,*) iq_
   if (iq.ne.iq_) then
     write(*,*)
-    write(*,'("Error(readgamma): incorrect q-point index in GAMMAQ.OUT for&
-     & q-point ",I6)') iq
+    write(*,'("Error(readgamma): incorrect q-point index in GAMMAQ.OUT for &
+     &q-point ",I6)') iq
     write(*,*)
     stop
   end if
   read(50,*) vql_
-  if (r3taxi(vql(:,iq),vql_).gt.epslat) then
+  t1=sum(abs(vql(:,iq)-vql_(:)))
+  if (t1.gt.epslat) then
     write(*,*)
-    write(*,'("Error(readgamma): differing q-vectors in lattice coordinates for&
-     & q-point ",I6)') iq
+    write(*,'("Error(readgamma): differing q-vectors in lattice coordinates &
+     &for q-point ",I6)') iq
     write(*,'(" current    : ",3G18.10)') vql(:,iq)
     write(*,'(" GAMMAQ.OUT : ",3G18.10)') vql_
     write(*,*)
     stop
   end if
   read(50,*) vqc_
-  if (r3taxi(vqc(:,iq),vqc_).gt.epslat) then
+  t1=sum(abs(vqc(:,iq)-vqc_(:)))
+  if (t1.gt.epslat) then
     write(*,*)
-    write(*,'("Error(readgamma): differing q-vectors in Cartesian coordinates&
-     & for q-point ",I6)') iq
+    write(*,'("Error(readgamma): differing q-vectors in Cartesian coordinates &
+     &for q-point ",I6)') iq
     write(*,'(" current    : ",3G18.10)') vqc(:,iq)
     write(*,'(" GAMMAQ.OUT : ",3G18.10)') vqc_
     write(*,*)
@@ -69,8 +68,8 @@ do iq=1,nqpt
     read(50,*) i_,gq(i,iq)
     if (i.ne.i_) then
       write(*,*)
-      write(*,'("Error(readgamma): incorrect mode index in GAMMAQ.OUT for&
-       & q-point ",I6)') iq
+      write(*,'("Error(readgamma): incorrect mode index in GAMMAQ.OUT for &
+       &q-point ",I6)') iq
       write(*,*)
       stop
     end if

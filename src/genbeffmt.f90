@@ -21,8 +21,8 @@ ld=lmmaxvr*lradstp
 do is=1,nspecies
   nrc=nrcmt(is)
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ias,i,t1,vr,drv) &
-!$OMP PRIVATE(cf,irc,ir,rm)
+!$OMP PRIVATE(ias,i,t1,vr,drv,cf) &
+!$OMP PRIVATE(irc,ir,rm)
 !$OMP DO
   do ia=1,natoms(is)
     ias=idxas(ia,is)

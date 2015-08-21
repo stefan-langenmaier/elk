@@ -8,8 +8,8 @@
 ! !INTERFACE:
 subroutine rdmdexcdc(dedc)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   dedc : energy derivative (inout,complex(nstsv,nstsv,nkpt))
 ! !DESCRIPTION:
@@ -26,13 +26,10 @@ complex(8), intent(inout) :: dedc(nstsv,nstsv,nkpt)
 ! local variables
 integer ik1,ik2,jk,iv(3)
 integer ist1,ist2,ist3,ist4
-real(8) t1,t2
+real(8) t1,t2,t3
 ! allocatable arrays
 complex(8), allocatable :: vnlijjk(:,:,:,:)
 complex(8), allocatable :: evecsv(:,:)
-! external functions
-real(8) r3taxi
-external r3taxi
 if (rdmxctype.eq.0) return
 ! calculate the prefactor
 if (rdmxctype.eq.1) then
@@ -56,15 +53,15 @@ allocate(evecsv(nstsv,nstsv))
 ! start loop over non-reduced k-points
 do ik1=1,nkptnr
 ! get non-local matrix elements
-  call rdmgetvnl_ijjk(ik1,vnlijjk)
+  call getvnlijjk(ik1,vnlijjk)
 ! find the equivalent reduced k-point
-  iv(:)=ivknr(:,ik1)
+  iv(:)=ivk(:,ik1)
   jk=ikmap(iv(1),iv(2),iv(3))
-  do ist4=1,nstsv
 ! start loop over reduced k-points
-    do ik2=1,nkpt
+  do ik2=1,nkpt
 ! get the eigenvectors from file
-      call getevecsv(vkl(:,ik2),evecsv)
+    call getevecsv(vkl(:,ik2),evecsv)
+    do ist4=1,nstsv
       do ist3=1,nstsv
         do ist2=1,nstsv
           do ist1=1,nstsv
@@ -73,8 +70,8 @@ do ik1=1,nkptnr
               t2=t1*occsv(ist3,ik2)*occsv(ist4,jk)
             else if (rdmxctype.eq.2) then
 ! power functional
-              if ((ist3.eq.ist4).and. &
-               (r3taxi(vkl(:,ik2),vklnr(:,jk)).lt.epslat)) then
+              t3=sum(abs(vkl(:,ik2)-vkl(:,ik1)))
+              if ((ist3.eq.ist4).and.(t3.lt.epslat)) then
                 t2=(1.d0/occmax)*occsv(ist4,jk)**2
               else
                 t2=t1*(occsv(ist3,ik2)*occsv(ist4,jk))**rdmalpha
@@ -85,8 +82,8 @@ do ik1=1,nkptnr
           end do
         end do
       end do
-! end loop over reduced k-points
     end do
+! end loop over reduced k-points
   end do
 ! end loop over non-reduced k-points
 end do

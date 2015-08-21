@@ -6,29 +6,35 @@
 !BOP
 ! !ROUTINE: genppts
 ! !INTERFACE:
-subroutine genppts(tfbz,nsym,sym,ngridp,epslat,bvec,boxl,nppt,ipmap,ivp,vpl, &
- vpc,wppt)
+subroutine genppts(tfbz,nsym,sym,ngridp,npptnr,epslat,bvec,boxl,nppt,ipmap, &
+ ipmapnr,ivp,vpl,vpc,wppt,wpptnr)
 ! !INPUT/OUTPUT PARAMETERS:
-!   tfbz   : .true. if vpl and vpc should be mapped to the first Brillouin zone
-!            (in,logical)
-!   nsym   : number of point group symmetries used for reduction, set to 0 for
-!            no reduction (in,integer)
-!   sym    : symmetry matrices (in,integer(3,3,*))
-!   ngridp : p-point grid size (in,integer(3))
-!   epslat : tolerance for determining identical vectors (in,real)
-!   bvec   : reciprocal lattice vectors (in,real(3,3))
-!   boxl   : corners of box containing p-points in lattice coordinates, the
-!            first vector is the origin (in,real(3,4))
-!   nppt   : total number of p-points (out,integer)
-!   ipmap  : map from integer grid to p-point index
-!            (out,integer(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1))
-!   ivp    : integer coordinates of the p-points
-!            (out,integer(3,ngridp(1)*ngridp(2)*ngridp(3)))
-!   vpl    : lattice coordinates of each p-point
-!            (out,real(3,ngridp(1)*ngridp(2)*ngridp(3)))
-!   vpc    : Cartesian coordinates of each p-point
-!            (out,real(3,ngridp(1)*ngridp(2)*ngridp(3)))
-!   wppt   : weights of each p-point (out,real(ngridp(1)*ngridp(2)*ngridp(3)))
+!   tfbz    : .true. if vpl and vpc should be mapped to the first Brillouin zone
+!             (in,logical)
+!   nsym    : number of point group symmetries used for reduction, set to 0 for
+!             no reduction (in,integer)
+!   sym     : symmetry matrices (in,integer(3,3,*))
+!   ngridp  : p-point grid sizes (in,integer(3))
+!   npptnr  : number of non-reduced p-points: ngridp(1)*ngridp(2)*ngridp(3)
+!             (in,integer)
+!   epslat  : tolerance for determining identical vectors (in,real)
+!   bvec    : reciprocal lattice vectors (in,real(3,3))
+!   boxl    : corners of box containing p-points in lattice coordinates, the
+!             first vector is the origin (in,real(3,4))
+!   nppt    : total number of p-points (out,integer)
+!   ipmap   : map from integer grid to reduced p-point index
+!             (out,integer(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1))
+!   ipmapnr : map from integer grid to non-reduced p-point index
+!             (out,integer(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1))
+!   ivp     : integer coordinates of the p-points
+!             (out,integer(3,ngridp(1)*ngridp(2)*ngridp(3)))
+!   vpl     : lattice coordinates of each p-point
+!             (out,real(3,ngridp(1)*ngridp(2)*ngridp(3)))
+!   vpc     : Cartesian coordinates of each p-point
+!             (out,real(3,ngridp(1)*ngridp(2)*ngridp(3)))
+!   wppt    : weights of each reduced p-point
+!             (out,real(ngridp(1)*ngridp(2)*ngridp(3)))
+!   wpptnr  : weight of each non-reduced p-point (out,real)
 ! !DESCRIPTION:
 !   This routine is used for generating $k$-point or $q$-point sets. Since these
 !   are stored in global arrays, the points passed to this and other routines
@@ -60,23 +66,33 @@ logical, intent(in) :: tfbz
 integer, intent(in) :: nsym
 integer, intent(in) :: sym(3,3,*)
 integer, intent(in) :: ngridp(3)
+integer, intent(in) :: npptnr
 real(8), intent(in) :: epslat
 real(8), intent(in) :: bvec(3,3)
 real(8), intent(in) :: boxl(3,4)
 integer, intent(out) :: nppt
 integer, intent(out) :: ipmap(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1)
-integer, intent(out) :: ivp(3,ngridp(1)*ngridp(2)*ngridp(3))
-real(8), intent(out) :: vpl(3,ngridp(1)*ngridp(2)*ngridp(3))
-real(8), intent(out) :: vpc(3,ngridp(1)*ngridp(2)*ngridp(3))
-real(8), intent(out) :: wppt(ngridp(1)*ngridp(2)*ngridp(3))
+integer, intent(out) :: ipmapnr(0:ngridp(1)-1,0:ngridp(2)-1,0:ngridp(3)-1)
+integer, intent(out) :: ivp(3,npptnr)
+real(8), intent(out) :: vpl(3,npptnr)
+real(8), intent(out) :: vpc(3,npptnr)
+real(8), intent(out) :: wppt(npptnr)
+real(8), intent(out) :: wpptnr
 ! local variables
-integer i1,i2,i3,ip,jp
-integer isym,iv(3)
+integer i1,i2,i3,iv(3)
+integer isym,ip,jp,i
 real(8) v1(3),v2(3),v3(3)
-real(8) b(3,3),s(3,3),t1,t2
+real(8) b(3,3),s(3,3),t1
 if ((ngridp(1).le.0).or.(ngridp(2).le.0).or.(ngridp(3).le.0)) then
   write(*,*)
   write(*,'("Error(genppts): invalid ngridp : ",3I8)') ngridp
+  write(*,*)
+  stop
+end if
+if (npptnr.ne.ngridp(1)*ngridp(2)*ngridp(3)) then
+  write(*,*)
+  write(*,'("Error(genppts): mismatched npptnr and ngridp : ",4I8)') npptnr, &
+   ngridp
   write(*,*)
   stop
 end if
@@ -84,8 +100,10 @@ end if
 b(:,1)=boxl(:,2)-boxl(:,1)
 b(:,2)=boxl(:,3)-boxl(:,1)
 b(:,3)=boxl(:,4)-boxl(:,1)
-t1=1.d0/dble(ngridp(1)*ngridp(2)*ngridp(3))
+! weight of each non-reduced p-point
+wpptnr=1.d0/dble(ngridp(1)*ngridp(2)*ngridp(3))
 ip=0
+jp=npptnr+1
 do i3=0,ngridp(3)-1
   v1(3)=dble(i3)/dble(ngridp(3))
   do i2=0,ngridp(2)-1
@@ -101,12 +119,18 @@ do i3=0,ngridp(3)-1
           s(:,:)=dble(sym(:,:,isym))
           call r3mtv(s,v2,v3)
           call r3frac(epslat,v3,iv)
-          do jp=1,ip
-            t2=abs(vpl(1,jp)-v3(1))+abs(vpl(2,jp)-v3(2))+abs(vpl(3,jp)-v3(3))
-            if (t2.lt.epslat) then
-! equivalent k-point found so add to current weight
-              ipmap(i1,i2,i3)=jp
-              wppt(jp)=wppt(jp)+t1
+          do i=1,ip
+            t1=abs(vpl(1,i)-v3(1))+abs(vpl(2,i)-v3(2))+abs(vpl(3,i)-v3(3))
+            if (t1.lt.epslat) then
+! equivalent p-point found so add to existing weight
+              ipmap(i1,i2,i3)=i
+              wppt(i)=wppt(i)+wpptnr
+! add new point to back of set
+              jp=jp-1
+              ipmapnr(i1,i2,i3)=jp
+              ivp(1,jp)=i1; ivp(2,jp)=i2; ivp(3,jp)=i3
+              vpl(:,jp)=v2(:)
+              wppt(jp)=0.d0
               goto 10
             end if
           end do
@@ -115,15 +139,16 @@ do i3=0,ngridp(3)-1
 ! add new point to set
       ip=ip+1
       ipmap(i1,i2,i3)=ip
+      ipmapnr(i1,i2,i3)=ip
       ivp(1,ip)=i1; ivp(2,ip)=i2; ivp(3,ip)=i3
       vpl(:,ip)=v2(:)
-      wppt(ip)=t1
+      wppt(ip)=wpptnr
 10 continue
     end do
   end do
 end do
 nppt=ip
-do ip=1,nppt
+do ip=1,npptnr
 ! map vpl to the first Brillouin zone if required
   if (tfbz) call vecfbz(epslat,bvec,vpl(:,ip),iv)
 ! determine the Cartesian coordinates of the p-points

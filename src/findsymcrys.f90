@@ -108,6 +108,11 @@ do i=1,n
       stop
     end if
     vtlsymc(:,nsymcrys)=vtl(:,i)
+    if (i.eq.1) then
+      tvzsymc(nsymcrys)=.true.
+    else
+      tvzsymc(nsymcrys)=.false.
+    end if
     lsplsymc(nsymcrys)=lspl(isym)
     lspnsymc(nsymcrys)=lspn(isym)
     do is=1,nspecies

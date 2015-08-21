@@ -6,20 +6,21 @@
 !BOP
 ! !ROUTINE: zmatinp
 ! !INTERFACE:
-subroutine zmatinp(n,alpha,x,y,a)
+subroutine zmatinp(tpmat,n,alpha,x,y,ld,a)
 ! !INPUT/OUTPUT PARAMETERS:
+!   tpmat : .true. if A is in packed storage (in,logical)
 !   n     : length of vectors (in,integer)
 !   alpha : complex constant (in,complex)
 !   x     : first input vector (in,complex(n))
 !   y     : second input vector (in,complex(n))
-!   a     : output matrix in packed form (inout,complex(*))
+!   ld    : leading dimension of A, not used if A is packed (in,integer)
+!   a     : output matrix A (inout,complex(*))
 ! !DESCRIPTION:
 !   Performs the rank-2 operation
 !   $$ A_{ij}\rightarrow\alpha{\bf x}_i^*{\bf y}_j+\alpha^*{\bf y}_i^*{\bf x}_j
-!    +A_{ij}, $$
-!   where $A$ is stored in packed form. This is similar to the {\tt BLAS}
-!   routine {\tt zhpr2}, except that here a matrix of inner products is formed
-!   instead of an outer product of vectors.
+!    +A_{ij}. $$
+!   This is similar to the {\tt BLAS} routine {\tt zhpr2}, except that here a
+!   matrix of inner products is formed instead of an outer product of vectors.
 !
 ! !REVISION HISTORY:
 !   Created June 2003 (JKD)
@@ -27,10 +28,12 @@ subroutine zmatinp(n,alpha,x,y,a)
 !BOC
 implicit none
 ! arguments
+logical, intent(in) :: tpmat
 integer, intent(in) :: n
 complex(8), intent(in) :: alpha
 complex(8), intent(in) :: x(n)
 complex(8), intent(in) :: y(n)
+integer, intent(in) :: ld
 complex(8), intent(inout) :: a(*)
 ! local variables
 integer j,k
@@ -38,8 +41,15 @@ integer j,k
 real(8), parameter :: eps=1.d-10
 real(8) a1,b1
 complex(8) zt1
-k=0
+!$OMP PARALLEL DEFAULT(SHARED) &
+!$OMP PRIVATE(k,zt1,a1,b1)
+!$OMP DO
 do j=1,n
+  if (tpmat) then
+    k=((j-1)*j)/2
+  else
+    k=(j-1)*ld
+  end if
   zt1=alpha*conjg(x(j))
   if (abs(dble(zt1)).gt.eps) then
     if (abs(aimag(zt1)).gt.eps) then
@@ -61,25 +71,22 @@ do j=1,n
   if (abs(dble(zt1)).gt.eps) then
     if (abs(aimag(zt1)).gt.eps) then
       a(k+1:k+j-1)=a(k+1:k+j-1)+conjg(zt1*x(1:j-1))
-      k=k+j
-      a(k)=dble(a(k))+2.d0*dble(zt1*x(j))
+      a(k+j)=dble(a(k+j))+2.d0*dble(zt1*x(j))
     else
       a1=dble(zt1)
       a(k+1:k+j-1)=a(k+1:k+j-1)+a1*conjg(x(1:j-1))
-      k=k+j
-      a(k)=dble(a(k))+2.d0*a1*dble(x(j))
+      a(k+j)=dble(a(k+j))+2.d0*a1*dble(x(j))
     end if
   else
     if (abs(aimag(zt1)).gt.eps) then
       b1=aimag(zt1)
       a(k+1:k+j-1)=a(k+1:k+j-1)-b1*cmplx(aimag(x(1:j-1)),dble(x(1:j-1)),8)
-      k=k+j
-      a(k)=dble(a(k))-2.d0*b1*aimag(x(j))
-    else
-      k=k+j
+      a(k+j)=dble(a(k+j))-2.d0*b1*aimag(x(j))
     end if
   end if
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 return
 end subroutine
 !EOC

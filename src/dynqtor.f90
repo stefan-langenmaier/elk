@@ -19,9 +19,6 @@ real(8) s(3,3),t1
 complex(8) zt1
 ! allocatable arrays
 complex(8), allocatable :: dyns(:,:)
-! external functions
-real(8) r3taxi
-external r3taxi
 allocate(dyns(3*natmtot,3*natmtot))
 dynr(:,:,:)=0.d0
 ! loop over q-vectors
@@ -43,7 +40,8 @@ do j1=0,ngridq(1)-1
         s(:,:)=dble(symlat(:,:,lspl))
         call r3mtv(s,vql(:,iq),v3)
         call vecfbz(epslat,bvec,v3,iv)
-        if (r3taxi(v2,v3).lt.epslat) then
+        t1=abs(v2(1)-v3(1))+abs(v2(2)-v3(2))+abs(v2(3)-v3(3))
+        if (t1.lt.epslat) then
           call dynsymapp(isym,vql(:,iq),dynq(:,:,iq),dyns)
           n=n+1
         end if

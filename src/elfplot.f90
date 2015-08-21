@@ -86,10 +86,10 @@ do ik=1,nkpt
   call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
   call getevecsv(vkl(:,ik),evecsv)
 ! add the valence wavefunction gradient squared
-  call gwf2val(ik,evecfv,evecsv,gwf2mt,gwf2ir)
+  call gradwf2(ik,evecfv,evecsv,gwf2mt,gwf2ir)
 end do
 ! add core wavefunction gradient squared
-call gwf2cr(gwf2mt)
+call gradwfcr2(gwf2mt)
 !------------------------!
 !     muffin-tin ELF     !
 !------------------------!

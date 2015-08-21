@@ -9,8 +9,8 @@
 ! !INTERFACE:
 subroutine rdmdtsdn(dedn)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   dedn : energy derivative (inout,real(nstsv,nkpt))
 ! !DESCRIPTION:

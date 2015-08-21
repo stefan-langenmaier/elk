@@ -13,7 +13,7 @@ logical lsym(48)
 integer isym,is,ia
 integer ist,ic,m
 real(8) ts0,ts1
-real(8) boxl(3,4)
+real(8) boxl(3,4),t1
 
 call timesec(ts0)
 
@@ -39,30 +39,42 @@ else
     end if
   end do
 end if
-! OEP, Hartree-Fock or RDMFT
-if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.300)) then
+! OEP, Hartree-Fock, RPA epsilon, BSE or RDMFT
+if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6).or.(task.eq.180).or. &
+ (task.eq.185).or.(task.eq.300)) then
   ngridq(:)=ngridk(:)
-  reduceq=0
 end if
 ! allocate the q-point arrays
 if (allocated(iqmap)) deallocate(iqmap)
 allocate(iqmap(0:ngridq(1)-1,0:ngridq(2)-1,0:ngridq(3)-1))
-nqpt=ngridq(1)*ngridq(2)*ngridq(3)
+if (allocated(iqmapnr)) deallocate(iqmapnr)
+allocate(iqmapnr(0:ngridq(1)-1,0:ngridq(2)-1,0:ngridq(3)-1))
+nqptnr=ngridq(1)*ngridq(2)*ngridq(3)
 if (allocated(ivq)) deallocate(ivq)
-allocate(ivq(3,nqpt))
+allocate(ivq(3,nqptnr))
 if (allocated(vql)) deallocate(vql)
-allocate(vql(3,nqpt))
+allocate(vql(3,nqptnr))
 if (allocated(vqc)) deallocate(vqc)
-allocate(vqc(3,nqpt))
+allocate(vqc(3,nqptnr))
 if (allocated(wqpt)) deallocate(wqpt)
-allocate(wqpt(nqpt))
+allocate(wqpt(nqptnr))
 ! setup the q-point box (offset should always be zero)
 boxl(:,:)=0.d0
 boxl(1,2)=1.d0; boxl(2,3)=1.d0; boxl(3,4)=1.d0;
 ! generate the q-point set, note that the vectors vql and vqc are mapped to the
 ! first Brillouin zone
-call genppts(.true.,nsymqpt,symqpt,ngridq,epslat,bvec,boxl,nqpt,iqmap,ivq,vql, &
- vqc,wqpt)
+call genppts(.true.,nsymqpt,symqpt,ngridq,nqptnr,epslat,bvec,boxl,nqpt,iqmap, &
+ iqmapnr,ivq,vql,vqc,wqpt,wqptnr)
+! find the index for q = 0
+do iq0=1,nqpt
+  t1=sum(abs(vql(:,iq0)))
+  if (t1.lt.epslat) goto 10
+end do
+write(*,*)
+write(*,'("Error(init2): q = 0 not in q-point set")')
+write(*,*)
+stop
+10 continue
 
 !-----------------------------------------------!
 !     OEP, Hartree-Fock and RDMFT variables     !
@@ -118,6 +130,12 @@ if (task.eq.300) then
   if (allocated(dkdc)) deallocate(dkdc)
   allocate(dkdc(nstsv,nstsv,nkpt))
 end if
+! Coulomb interaction regulator for RPA: 1/(q^2+lambda^2)
+t1=twopi**3/omega
+t1=t1/dble(nqptnr)
+t1=t1**(1.d0/3.d0)
+t1=t1/2.d0
+lmda2rpa=t1**2
 
 !--------------------------!
 !     phonon variables     !

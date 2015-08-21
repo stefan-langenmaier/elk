@@ -15,7 +15,7 @@ tasks
   400
 
 ! lda+u block
-! here FLL double countimg is used (ldapu=1)
+! here FLL double counting is used (ldapu=1)
 ! llu(is) represents the l-shell we would like to apply LDA+U
 ! flu(0,is),flu(2,is),flu(4,is) are the Slater parameters in htr (inptype=2)
 lda+u

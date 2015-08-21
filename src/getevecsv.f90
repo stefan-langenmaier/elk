@@ -16,8 +16,6 @@ real(8) vkl_(3),det,v(3),th,t1
 complex(8) su2(2,2),zt1,zt2
 ! find the k-point number
 call findkpt(vpl,isym,ik)
-! index to global spin rotation in lattice point group
-lspn=lspnsymc(isym)
 ! find the record length
 inquire(iolength=recl) vkl_,nstsv_,evecsv
 !$OMP CRITICAL
@@ -43,6 +41,8 @@ if (nstsv.ne.nstsv_) then
   write(*,*)
   stop
 end if
+! index to global spin rotation in lattice point group
+lspn=lspnsymc(isym)
 ! if symmetry element is the identity return
 if (lspn.eq.1) return
 ! if eigenvectors are spin-unpolarised return

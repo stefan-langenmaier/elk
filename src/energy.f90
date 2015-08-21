@@ -65,14 +65,14 @@ implicit none
 ! local variables
 integer is,ia,ias
 integer ik,ist,idm,jdm
-real(8) cb,vn,sum,f
+real(8) cb,vn,sum,f,t1
 complex(8) zt1
 ! allocatable arrays
 complex(8), allocatable :: evecsv(:,:),c(:,:)
 ! external functions
 real(8) rfinp
 complex(8) zdotc
-external rfmtinp,rfinp,rfint,zdotc
+external rfinp,rfint,zdotc
 ! coupling constant of the external field (g_e/4c)
 cb=gfacte/(4.d0*solsc)
 !-----------------------------------------------!
@@ -141,16 +141,30 @@ engycl=engynn+engyen+engyhar
 !-------------------------!
 ! exchange energy from the density
 engyx=rfinp(1,rhomt,exmt,rhoir,exir)
-! exact exchange for OEP-EXX or Hartree-Fock on last iteration
 if ((xctype(1).lt.0).or.(task.eq.5).or.(task.eq.6)) then
+! exact exchange for OEP-EXX or Hartree-Fock on last self-consistent loop
   if (tlast) call exxengy
+! mix exact and DFT exchange energies for hybrid functionals
+  if (hybmix.lt.1.d0) then
+    t1=rfinp(1,rhomt,exmt,rhoir,exir)
+    engyx=hybmix*engyx+(1.d0-hybmix)*t1
+  end if
 end if
 !----------------------------!
 !     correlation energy     !
 !----------------------------!
+! correlation energy from the density
 engyc=rfinp(1,rhomt,ecmt,rhoir,ecir)
-! zero correlation energy for Hartree-Fock
-if ((task.eq.5).or.(task.eq.6)) engyc=0.d0
+if ((task.eq.5).or.(task.eq.6)) then
+  if (hybmix.lt.1.d0) then
+! fraction of DFT correlation energy for hybrid functionals
+    t1=rfinp(1,rhomt,ecmt,rhoir,ecir)
+    engyc=(1.d0-hybmix)*t1
+  else
+! zero correlation energy for pure Hartree-Fock
+    engyc=0.d0
+  end if
+end if
 !----------------------!
 !     LDA+U energy     !
 !----------------------!

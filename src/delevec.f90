@@ -5,13 +5,19 @@
 
 subroutine delevec
 use modmain
+use modmpi
 implicit none
+! only the master process should delete the file
+if (mp_mpi) then
 ! delete the first-variational eigenvector file
-open(70,file=trim(scrpath)//'EVECFV'//trim(filext))
-close(70,status='DELETE')
+  open(70,file=trim(scrpath)//'EVECFV'//trim(filext))
+  close(70,status='DELETE')
 ! delete the second-variational eigenvector file
-open(70,file=trim(scrpath)//'EVECSV'//trim(filext))
-close(70,status='DELETE')
+  open(70,file=trim(scrpath)//'EVECSV'//trim(filext))
+  close(70,status='DELETE')
+end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_world,ierror)
 return
 end subroutine
 

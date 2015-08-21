@@ -86,6 +86,7 @@ end if
 ! if p = k then return
 t1=abs(vpl(1)-vkl(1,ik))+abs(vpl(2)-vkl(2,ik))+abs(vpl(3)-vkl(3,ik))
 if (t1.lt.epslat) return
+! allocate temporary eigenvector array
 allocate(evecfvt(nmatmax,nstfv))
 ! index to spatial rotation in lattice point group
 lspl=lsplsymc(isym)
@@ -96,22 +97,31 @@ si(:,:)=dble(symlat(:,:,ilspl))
 !     translate and rotate APW coefficients     !
 !-----------------------------------------------!
 do ispn=1,nspnfv
-  do igk=1,ngk(ispn,ik)
-    ig=igkig(igk,ispn,ik)
-    v(:)=dble(ivg(:,ig))
-    t1=-twopi*dot_product(v(:),vtlsymc(:,isym))
-    zt1=cmplx(cos(t1),sin(t1),8)
-    evecfvt(igk,:)=zt1*evecfv(igk,:,ispn)
-  end do
+  if (tvzsymc(isym)) then
+! translation vector is zero
+    do igk=1,ngk(ispn,ik)
+      evecfvt(igk,:)=evecfv(igk,:,ispn)
+    end do
+  else
+! non-zero translation vector gives a phase factor
+    do igk=1,ngk(ispn,ik)
+      ig=igkig(igk,ispn,ik)
+      t1=-twopi*dot_product(dble(ivg(:,ig)),vtlsymc(:,isym))
+      zt1=cmplx(cos(t1),sin(t1),8)
+      evecfvt(igk,:)=zt1*evecfv(igk,:,ispn)
+    end do
+  end if
 ! inverse rotation used because transformation is passive
+  i=1
   do igk=1,ngk(ispn,ik)
     call r3mtv(si,vgkl(:,igk,ispn,ik),v)
-    do igp=1,ngk(ispn,ik)
+    do igp=i,ngk(ispn,ik)
       t1=abs(v(1)-vgpl(1,igp,ispn)) &
         +abs(v(2)-vgpl(2,igp,ispn)) &
         +abs(v(3)-vgpl(3,igp,ispn))
       if (t1.lt.epslat) then
         evecfv(igp,:,ispn)=evecfvt(igk,:)
+        if (igp.eq.i) i=i+1
         goto 10
       end if
     end do

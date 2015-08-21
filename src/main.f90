@@ -9,13 +9,13 @@ use modmain
 use modmpi
 implicit none
 ! local variables
-integer ierr,itask
+integer itask
 ! initialise MPI execution environment
-call mpi_init(ierr)
+call mpi_init(ierror)
 ! determine the number of MPI processes
-call mpi_comm_size(mpi_comm_world,np_mpi,ierr)
+call mpi_comm_size(mpi_comm_world,np_mpi,ierror)
 ! determine the local MPI process number
-call mpi_comm_rank(mpi_comm_world,lp_mpi,ierr)
+call mpi_comm_rank(mpi_comm_world,lp_mpi,ierror)
 ! determine if the local process is the master
 if (lp_mpi.eq.0) then
   mp_mpi=.true.
@@ -27,12 +27,13 @@ call readinput
 ! perform the appropriate task
 do itask=1,ntasks
   task=tasks(itask)
-  if ((np_mpi.gt.1).and.(task.gt.3)) then
+! synchronise MPI processes
+  call mpi_barrier(mpi_comm_world,ierror)
+  if ((lp_mpi.gt.0).and.(task.ge.10).and.(task.ne.120).and.(task.ne.170).and. &
+   (task.ne.180).and.(task.ne.185).and.(task.ne.300)) then
     write(*,*)
-    write(*,'("Error(main): cannot run task ",I8," as a multi-process")') task
-    write(*,'(" run again with the number of MPI processes set to 1")')
-    write(*,*)
-    stop
+    write(*,'("Info(main): MPI process ",I8," idle for task ",I8)') lp_mpi,task
+    cycle
   end if
   select case(task)
   case(-1)
@@ -60,6 +61,8 @@ do itask=1,ntasks
     call elfplot
   case(61,62,63,162)
     call wfplot
+  case(65)
+    call wfcrplot
   case(72,73,82,83,142,143,152,153)
     call vecplot
   case(91,92,93)
@@ -81,18 +84,22 @@ do itask=1,ntasks
   case(125)
     call nonlinopt
   case(130)
-    call writeexpiqr
+    call writeexpmat
   case(140)
     call elnes
   case(170)
     call writewfpw
-  case(172)
-    call dielectricq
-  case(175)
-    call yambo
+  case(180)
+    call epsinv_rpa
+  case(185)
+    call bse
   case(190)
     call geomplot
-  case(201)
+  case(195)
+    call sfacrho
+  case(196)
+    call sfacmag
+  case(201,202)
     call phonon
   case(200)
     call phononsc
@@ -122,12 +129,12 @@ do itask=1,ntasks
   end select
 end do
 ! terminate MPI execution environment
-call mpi_finalize(ierr)
+call mpi_finalize(ierror)
 stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.1.4}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.2.15}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -155,12 +162,12 @@ end program
 !   S\'{e}bastien Leb\`{e}gue, Yigang Zhang, Fritz K\"{o}rmann, Alexey Baranov,
 !   Anton Kozhevnikov, Shigeru Suehara, Frank Essenberger, Antonio Sanna, Tyrel
 !   McQueen, Tim Baldsiefen, Marty Blaber, Anton Filanovich and Torbj\"{o}rn
-!   Bj\"{o}rkman. Special mention of David Singh's very useful book on the LAPW
-!   method\footnote{D. J. Singh, {\it Planewaves, Pseudopotentials and the LAPW
-!   Method} (Kluwer Academic Publishers, Boston, 1994).} must also be made.
-!   Finally we would like to acknowledge the generous support of
-!   Karl-Franzens-Universit\"{a}t Graz, as well as the EU Marie-Curie Research
-!   Training Networks initiative.
+!   Bj\"{o}rkman, Martin Stankovski and Jerzy Goraus. Special mention of David
+!   Singh's very useful book on the LAPW method\footnote{D. J. Singh, {\it
+!   Planewaves, Pseudopotentials and the LAPW Method} (Kluwer Academic
+!   Publishers, Boston, 1994).} must also be made. Finally we would like to
+!   acknowledge the generous support of Karl-Franzens-Universit\"{a}t Graz, as
+!   well as the EU Marie-Curie Research Training Networks initiative.
 !
 !   \vspace{24pt}
 !   Kay Dewhurst\newline
@@ -342,6 +349,15 @@ end program
 !   \end{tabularx}\newline\newline
 !   See {\tt radkpt} for details.
 !
+!   \subsection{{\tt autolinengy}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt autolinengy} & {\tt .true.} if the fixed linearisation energies are
+!    to be determined automatically & logical & {\tt .false.} \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   See {\tt dlefe} for details.
+!
 !   \subsection{{\tt autormt}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
@@ -392,10 +408,10 @@ end program
 !   {\tt beta0} & adaptive mixing parameter & real & $0.05$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   This determines how much of the potential from the previous iteration is
-!   mixed with the current potential during the self-consistent loop. It should
-!   be made smaller if the calculation is unstable. See {\tt betamax} and also
-!   the routine {\tt mixadapt}.
+!   This determines how much of the potential from the previous self-consistent
+!   loop is mixed with the potential from the current loop. It should be made
+!   smaller if the calculation is unstable. See {\tt betamax} and also the
+!   routine {\tt mixadapt}.
 !
 !   \subsection{{\tt betamax}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -438,7 +454,7 @@ end program
 !   \subsection{{\tt deband}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt deband} & initial band energy step size & real & $0.0025$ \\
+!   {\tt deband} & initial band energy step size & real & $0.05$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   The initial step length used when searching for the band energy, which is
@@ -474,6 +490,16 @@ end program
 !   This should not be made too large, as anharmonic terms could then become
 !   significant, neither should it be too small as this can introduce numerical
 !   error.
+!
+!   \subsection{{\tt dlefe}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt dlefe} & difference between the fixed linearisation energy and the
+!    Fermi energy & real & $-0.1$ \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   When {\tt autolinengy} is {\tt .true.} then the fixed linearisation energies
+!   are set to the Fermi energy plus {\tt dlefe}.
 !
 !   \subsection{{\tt dos}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -516,7 +542,7 @@ end program
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
 !   {\tt epsband} & convergence tolerance for determining band energies & real &
-!    $1\times 10^{-6}$ \\
+!    $1\times 10^{-12}$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   APW and local-orbital linearisation energies are determined from the band
@@ -601,6 +627,14 @@ end program
 !   \end{tabularx}\newline\newline
 !   See {\tt lmaxinr}.
 !
+!   \subsection{{\tt gmaxrpa}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt gmaxrpa} & maximum length of $|{\bf G}|$ for computing the RPA inverse
+!    dielectric function with local field contributions & real & $4.0$ \\
+!   \hline
+!   \end{tabularx}
+!
 !   \subsection{{\tt gmaxvr}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
@@ -612,6 +646,15 @@ end program
 !   $$ {\rm gmaxvr}\rightarrow\max\,({\rm gmaxvr},2\times{\rm gkmax}
 !    +{\rm epslat}) $$
 !   See {\tt rgkmax}.
+!
+!   \subsection{{\tt hmax}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt hmax} & maximum length of reciprocal vectors $|{\bf H}|$ used for
+!    calculating X-ray and magnetic structure factors & real & $6.0$ \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   See also {\tt vhmat}.
 !
 !   \subsection{{\tt intraband}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -745,7 +788,7 @@ end program
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
 !   {\tt maxitoep} & maximum number of iterations when solving the exact
-!   exchange integral equations & integer & 120 \\
+!    exchange integral equations & integer & 200 \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   See {\tt tau0oep}.
@@ -829,6 +872,15 @@ end program
 !    {\lambda-\mu^*(1+0.62\lambda)}\right], $$
 !   where $\omega_{\rm log}$ is the logarithmic average frequency and $\lambda$
 !   is the electron-phonon coupling constant.
+!
+!   \subsection{{\tt ncbse}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt ncbse} & number of conduction states to be used for BSE calculations &
+!    integer & 3 \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   See also {\tt nvbse}.
 !
 !   \subsection{{\tt ndspem}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -932,17 +984,26 @@ end program
 !   \hline
 !   \end{tabularx}
 !
+!   \subsection{{\tt nvbse}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt nvbse} & number of valence states to be used for BSE calculations &
+!    integer & 2 \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   See also {\tt ncbse}.
+!
 !   \subsection{{\tt nwrite}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt nwrite} & number of iterations after which {\tt STATE.OUT} is to be
-!    written & integer & 0 \\
+!   {\tt nwrite} & number of self-consistent loops after which {\tt STATE.OUT}
+!    is to be written & integer & 0 \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   Normally, the density and potentials are written to the file {\tt STATE.OUT}
 !   only after completion of the self-consistent loop. By setting {\tt nwrite}
-!   to a positive integer the file will be written during the loop every
-!   {\tt nwrite} iterations.
+!   to a positive integer the file will instead be written every {\tt nwrite}
+!   loops.
 !
 !   \subsection{{\tt optcomp}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -952,7 +1013,8 @@ end program
 !   \hline
 !   \end{tabularx}\newline\newline
 !   This selects which components of the optical tensor you would like to plot.
-!   Only the first two are used for the first-order tensor.
+!   Only the first two are used for the first-order tensor. Several components
+!   can be listed one after the other with a blank line terminating the list.
 !
 !   \subsection{{\tt phwrite}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1063,10 +1125,10 @@ end program
 !    $1.0$ \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   After each iteration the external magnetic fields are multiplied with
-!   {\tt reducebf}. This allows for a large external magnetic field at the start
-!   of the self-consistent loop to break spin symmetry, while at the end of the
-!   loop the field will be effectively zero, i.e. infinitesimal. See
+!   After each self-consistent loop, the external magnetic fields are multiplied
+!   with {\tt reducebf}. This allows for a large external magnetic field at the
+!   start of the self-consistent loop to break spin symmetry, while at the end
+!   of the loop the field will be effectively zero, i.e. infinitesimal. See
 !   {\tt bfieldc} and {\tt atoms}.
 !
 !   \subsection{{\tt reducek}}
@@ -1148,14 +1210,14 @@ end program
 !   \subsection{{\tt scrpath}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt scrpath} & scratch space path & string & {\tt ./} \\
+!   {\tt scrpath} & scratch space path & string & null \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   This is the path to scratch space where the eigenvector file
-!   {\tt EIGVEC.OUT} will be written. If the local directory is accessed via a
+!   This is the scratch space path where the eigenvector files {\tt EVALFV.OUT}
+!   and {\tt EVALSV.OUT} will be written. If the run directory is accessed via a
 !   network then {\tt scrpath} can be set to a directory on the local disk, for
 !   example {\tt /tmp/}. Note that the forward slash {\tt /} at the end of the
-!   string must be included.
+!   path must be included.
 !
 !   \subsection{{\tt spincore}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1200,12 +1262,10 @@ end program
 !   \subsection{{\tt sppath}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
 !   \hline
-!   {\tt sppath} & path where the species files can be found & string &
-!    {\tt ./} \\
+!   {\tt sppath} & path where the species files can be found & string & null \\
 !   \hline
 !   \end{tabularx}\newline\newline
-!   Note that the forward slash {\tt /} at the end of the string must be
-!   included.
+!   Note that the forward slash {\tt /} at the end of the path must be included.
 !
 !   \subsection{{\tt stype}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
@@ -1248,7 +1308,7 @@ end program
 !   \begin{tabularx}{\textwidth}[h]{lX}
 !   -1 & Write out the version number of the code. \\
 !   0 & Ground state run starting from the atomic densities. \\
-!   1 & Resumption of ground state run using density in {\tt STATE.OUT}. \\
+!   1 & Resumption of ground-state run using density in {\tt STATE.OUT}. \\
 !   2 & Structural optimisation run starting from the atomic densities, with
 !    atomic positions written to {\tt GEOMETRY.OUT}. \\
 !   3 & Resumption of structural optimisation run using density in
@@ -1270,6 +1330,7 @@ end program
 !   51, 52, 53 & 1/2/3D electron localisation function (ELF) plot. \\
 !   61, 62, 63 & 1/2/3D wavefunction plot:
 !    $\left|\Psi_{i{\bf k}}({\bf r})\right|^2$. \\
+!   65 & Write the core wavefunctions to file for plotting. \\
 !   72, 73 & 2/3D plot of magnetisation vector field, ${\bf m}({\bf r})$. \\
 !   82, 83 & 2/3D plot of exchange-correlation magnetic vector field,
 !    ${\bf B}_{\rm xc}({\bf r})$. \\
@@ -1278,6 +1339,7 @@ end program
 !    $p({\bf k})=\Pi_i(\epsilon_{i{\bf k}}-\epsilon_{\rm F})$. \\
 !   101 & 3D Fermi surface plot using separate bands (minus the Fermi
 !    energy). \\
+!   102 & 3D Fermi surface which can be plotted with XCrysDen. \\
 !   110 & Calculation of M\"{o}ssbauer contact charge densities and magnetic
 !    fields at the nuclear sites. \\
 !   115 & Calculation of the electric field gradient (EFG) at the nuclear
@@ -1295,11 +1357,18 @@ end program
 !    ${\bf E}({\bf r})\equiv\nabla V_{\rm C}({\bf r})$. \\
 !   152, 153 & 2/3D plot of
 !    ${\bf m}({\bf r})\times{\bf B}_{\rm xc}({\bf r})$. \\
-!   162 & Scanning-tunneling microscopy (STM) image. \\
-!   190 & Write the atomic geometry to file for plotting with XCrySDen and
-!    V\_Sim.
+!   162 & Scanning-tunneling microscopy (STM) image.
 !   \end{tabularx}
 !   \begin{tabularx}{\textwidth}[h]{lX}
+!   170 & Write the low and high plane wave wavefunctions to file. \\
+!   180 & Generate the RPA inverse dielectric function with local contributions
+!    and write it to file. \\
+!   185 & Solve the Bethe-Salpeter equation (BSE) and compute the BSE linear
+!    optical response tensor. \\
+!   190 & Write the atomic geometry to file for plotting with XCrySDen and
+!    V\_Sim. \\
+!   195 & Calculation of X-ray density structure factors. \\
+!   196 & Calculation of magnetic structure factors. \\
 !   200 & Calculation of dynamical matrices on a $q$-point set defined by
 !    {\tt ngridq}. \\
 !   201 & Phonon dry run: just produce a set of empty DYN files. \\
@@ -1390,7 +1459,7 @@ end program
 !   \hline
 !   {\tt tmomlu} & set to {\tt .true.} if the tensor moments and the
 !   corresponding decomposition of LDA+U energy should be calculated
-!   at every iteration of the self-consistent cycle & logical & {\tt .false.} \\
+!   at every loop of the self-consistent cycle & logical & {\tt .false.} \\
 !   \hline
 !   \end{tabularx}\newline\newline
 !   This variable is useful to check the convergence of the tensor moments in
@@ -1416,6 +1485,20 @@ end program
 !    logical & {\tt .true.} \\
 !   \hline
 !   \end{tabularx}
+!
+!   \subsection{{\tt vhmat}}
+!   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}
+!   \hline
+!   {\tt vhmat(1)} & matrix row 1 & real(3) & $(1.0,0.0,0.0)$ \\
+!   {\tt vhmat(2)} & matrix row 2 & real(3) & $(0.0,1.0,0.0)$ \\
+!   {\tt vhmat(3)} & matrix row 3 & real(3) & $(0.0,0.0,1.0)$ \\
+!   \hline
+!   \end{tabularx}\newline\newline
+!   This is the transformation matrix $M$ applied to every vector $\bf H$ in the
+!   structure factor output files {\tt SFACRHO.OUT} and {\tt SFACMAG.OUT}. It is
+!   stored in the usual row-column setting and applied directly as
+!   ${\bf H}'=M{\bf H}$ to every vector but {\em only} when writing the output
+!   files. See also {\tt hmax}.
 !
 !   \subsection{{\tt vklem}}
 !   \begin{tabularx}{\textwidth}[h]{|l|X|c|c|}

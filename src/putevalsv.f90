@@ -14,8 +14,8 @@ integer recl
 ! find the record length
 inquire(iolength=recl) vkl(:,ik),nstsv,evalsvp
 !$OMP CRITICAL
-open(70,file=trim(scrpath)//'EVALSV'//trim(filext),action='WRITE', &
- form='UNFORMATTED',access='DIRECT',recl=recl)
+open(70,file='EVALSV'//trim(filext),action='WRITE',form='UNFORMATTED', &
+ access='DIRECT',recl=recl)
 write(70,rec=ik) vkl(:,ik),nstsv,evalsvp
 close(70)
 !$OMP END CRITICAL

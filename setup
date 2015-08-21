@@ -150,7 +150,7 @@ echo "LIB_FFT = $LIB_FFT" >> make.inc
 
 echo
 echo "You can now edit the compiler options in \"make.inc\" for optimal"
-echo "performance on your system as well as enabling OpenMP parallelisation."
+echo "performance on your system as well as enabling OpenMP/MPI parallelisation."
 echo
 echo "Then run \"make\" to compile the code."
 echo

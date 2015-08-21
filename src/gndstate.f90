@@ -26,8 +26,8 @@ use modldapu
 implicit none
 ! local variables
 logical exist
-integer ik,is,ia,idm
-integer n,nwork,ierr
+integer ik,is,ia
+integer n,nwork,lp
 real(8) dv,etp,de,timetot
 ! allocatable arrays
 real(8), allocatable :: v(:)
@@ -95,7 +95,7 @@ end if
 if (mp_mpi) call flushifc(60)
 ! size of mixing vector
 n=lmmaxvr*nrmtmax*natmtot+ngrtot
-if (spinpol) n=n*(1+ndmag)
+if (spinpol) n=n+n*ndmag
 if (ldapu.ne.0) n=n+2*lmmaxlu*lmmaxlu*nspinor*nspinor*natmtot
 ! allocate mixing arrays
 allocate(v(n))
@@ -104,13 +104,11 @@ nwork=-1
 call mixerifc(mixtype,n,v,dv,nwork,v)
 allocate(work(nwork))
 10 continue
-! set last iteration flag
+! set last self-consistent loop flag
 tlast=.false.
 etp=0.d0
 ! delete any existing eigenvector files
-if (((task.eq.0).or.(task.eq.2)).and.mp_mpi) call delevec
-! synchronise MPI processes
-call mpi_barrier(mpi_comm_world,ierr)
+if ((task.eq.0).or.(task.eq.2)) call delevec
 ! begin the self-consistent loop
 if (mp_mpi) then
   write(60,*)
@@ -121,9 +119,9 @@ end if
 do iscl=1,maxscl
   if (mp_mpi) then
     write(60,*)
-    write(60,'("+-------------------------+")')
-    write(60,'("| Iteration number : ",I4," |")') iscl
-    write(60,'("+-------------------------+")')
+    write(60,'("+--------------------+")')
+    write(60,'("| Loop number : ",I4," |")') iscl
+    write(60,'("+--------------------+")')
   end if
   if (iscl.ge.maxscl) then
     if (mp_mpi) then
@@ -171,85 +169,30 @@ do iscl=1,maxscl
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-! synchronise MPI processes and read the complete eigenvalue array
-  call mpi_barrier(mpi_comm_world,ierr)
-  if (np_mpi.gt.1) then
-    do ik=1,nkpt
-      call getevalsv(vkl(:,ik),evalsv(:,ik))
-    end do
-  end if
+! broadcast eigenvalue array to every process
+  do ik=1,nkpt
+    lp=mod(ik-1,np_mpi)
+    call mpi_bcast(evalsv(:,ik),nstsv,mpi_double_precision,lp,mpi_comm_world, &
+     ierror)
+  end do
 ! find the occupation numbers and Fermi energy
   call occupy
   if (autoswidth.and.mp_mpi) then
     write(60,*)
     write(60,'("New smearing width : ",G18.10)') swidth
   end if
-! write out the eigenvalues and occupation numbers
-  if (mp_mpi) call writeeval
+  if (mp_mpi) then
+! write the occupation numbers to file
+    do ik=1,nkpt
+      call putoccsv(ik,occsv(:,ik))
+    end do
+! write eigenvalues to file
+    call writeeval
 ! write the Fermi energy to file
-  if (mp_mpi) call writefermi
-! set the charge density and magnetisation to zero
-  rhomt(:,:,:)=0.d0
-  rhoir(:)=0.d0
-  if (spinpol) then
-    magmt(:,:,:,:)=0.d0
-    magir(:,:)=0.d0
+    call writefermi
   end if
-!$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(evecfv,evecsv)
-!$OMP DO
-  do ik=1,nkpt
-! distribute among MPI processes
-    if (mod(ik-1,np_mpi).ne.lp_mpi) cycle
-    allocate(evecfv(nmatmax,nstfv,nspnfv))
-    allocate(evecsv(nstsv,nstsv))
-! write the occupancies to file
-    call putoccsv(ik,occsv(:,ik))
-! get the eigenvectors from file
-    call getevecfv(vkl(:,ik),vgkl(:,:,:,ik),evecfv)
-    call getevecsv(vkl(:,ik),evecsv)
-! add to the density and magnetisation
-    call rhomagk(ik,evecfv,evecsv)
-    deallocate(evecfv,evecsv)
-  end do
-!$OMP END DO
-!$OMP END PARALLEL
-! convert muffin-tin density/magnetisation to spherical harmonics
-  call rhomagsh
-! symmetrise the density
-  call symrf(lradstp,rhomt,rhoir)
-! symmetrise the magnetisation
-  if (spinpol) call symrvf(lradstp,magmt,magir)
-! convert the density from a coarse to a fine radial mesh
-  call rfmtctof(rhomt)
-! convert the magnetisation from a coarse to a fine radial mesh
-  do idm=1,ndmag
-    call rfmtctof(magmt(:,:,:,idm))
-  end do
-! add densities from each process and redistribute
-  if (np_mpi.gt.1) then
-    n=lmmaxvr*nrmtmax*natmtot
-    call mpi_allreduce(mpi_in_place,rhomt,n,mpi_real8,mpi_sum,mpi_comm_world, &
-     ierr)
-    call mpi_allreduce(mpi_in_place,rhoir,ngrtot,mpi_real8,mpi_sum, &
-     mpi_comm_world,ierr)
-    if (spinpol) then
-      n=lmmaxvr*nrmtmax*natmtot*ndmag
-      call mpi_allreduce(mpi_in_place,magmt,n,mpi_real8,mpi_sum, &
-       mpi_comm_world,ierr)
-      n=ngrtot*ndmag
-      call mpi_allreduce(mpi_in_place,magir,n,mpi_real8,mpi_sum, &
-       mpi_comm_world,ierr)
-    end if
-  end if
-! add the core density to the total density
-  call addrhocr
-! calculate the charges
-  call charge
-! calculate the moments
-  if (spinpol) call moment
-! normalise the density
-  call rhonorm
+! generate the density and magnetisation
+  call rhomag
 ! LDA+U
   if (ldapu.ne.0) then
 ! generate the LDA+U density matrix
@@ -320,7 +263,7 @@ do iscl=1,maxscl
       end if
     end if
   end if
-! exit self-consistent loop if last iteration is complete
+! exit self-consistent loop if required
   if (tlast) goto 20
 ! check for convergence
   if (iscl.ge.2) then
@@ -363,7 +306,7 @@ do iscl=1,maxscl
     end if
   end if
 ! broadcast tlast from master process to all other processes
-  call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_world,ierr)
+  call mpi_bcast(tlast,1,mpi_logical,0,mpi_comm_world,ierror)
 ! output the current total CPU time
   timetot=timeinit+timemat+timefv+timesv+timerho+timepot+timefor
   if (mp_mpi) then

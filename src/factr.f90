@@ -44,10 +44,11 @@ if (d.eq.1) then
   return
 end if
 if (n.lt.d) then
-  factr=1.d0/dble(n+1)
+  factr=dble(n+1)
   do i=n+2,d
-    factr=factr/dble(i)
+    factr=factr*dble(i)
   end do
+  factr=1.d0/factr
 else if (n.eq.d) then
   factr=1.d0
 else

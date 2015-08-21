@@ -32,10 +32,10 @@ real(8) t1
 r=sqrt(v(1)**2+v(2)**2+v(3)**2)
 if (r.gt.eps) then
   t1=v(3)/r
-  if (t1.gt.0.d0) then
-    t1=min(t1,1.d0)
-  else
-    t1=max(t1,-1.d0)
+  if (t1.gt.1.d0) then
+    t1=1.d0
+  else if (t1.lt.-1.d0) then
+    t1=-1.d0
   end if
   tp(1)=acos(t1)
   if ((abs(v(1)).gt.eps).or.(abs(v(2)).gt.eps)) then

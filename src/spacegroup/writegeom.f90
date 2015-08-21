@@ -17,7 +17,7 @@ write(50,'("!  Hall symbol            : ",A)') trim(hall)
 write(50,'("!  Schoenflies symbol     : ",A)') trim(schn)
 write(50,'("!  space group number     : ",A)') trim(num)
 write(50,'("!  lattice constants (a,b,c) : ",3G18.10)') a,b,c
-write(50,'("!  angles in degrees (ab,ac,bc) : ",3G18.10)') ab,ac,bc
+write(50,'("!  angles in degrees (bc,ac,ab) : ",3G18.10)') bc,ac,ab
 write(50,'("!  number of conventional unit cells : ",3I4)') ncell
 write(50,'("!  reduction to primitive cell : ",L1)') primcell
 write(50,'("!  Wyckoff positions :")')

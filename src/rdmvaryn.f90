@@ -8,12 +8,13 @@
 ! !INTERFACE:
 subroutine rdmvaryn
 ! !USES:
-use modrdm
 use modmain
+use modrdm
+use modmpi
 ! !DESCRIPTION:
 !   Calculates new occupation numbers from old by using the derivatives of the
-!   total energy: $n_i^{\rm new} = n_i^{\rm old}-\tau \gamma_i$, where $\tau$
-!   is chosen such that $0 \le n_i \le n_{\rm max}$ with
+!   total energy: $n_i^{\rm new} = n_i^{\rm old}-\tau \gamma_i$, where $\tau$ is
+!   chosen such that $0 \le n_i \le n_{\rm max}$ with
 !   $$ \gamma_i=\begin{cases}
 !    g_i(n_{\rm max}-n_i) & g_i > 0 \\
 !    g_i n_i & g_i\le 0 \end{cases} $$
@@ -116,7 +117,7 @@ write(*,'("Error(rdmvaryn): could not find offset")')
 write(*,*)
 stop
 10 continue
-! write derivatives and occupancies to a file
+! write derivatives and occupancies to file
 call rdmwritededn(dedn)
 deallocate(dedn)
 ! normalize gamma if sum of squares is greater than 1
@@ -152,11 +153,12 @@ do ik=1,nkpt
   end do
 end do
 30 continue
-! update occupancies
+! update occupancies and write to file
 do ik=1,nkpt
   do ist=1,nstsv
     occsv(ist,ik)=occsv(ist,ik)+tau*gamma(ist,ik)
   end do
+  call putoccsv(ik,occsv(:,ik))
 end do
 deallocate(gamma)
 return

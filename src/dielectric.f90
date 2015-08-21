@@ -24,15 +24,13 @@ use modtest
 !BOC
 implicit none
 ! local variables
-integer ik,jk,isym
-integer ist,jst,iw,i,j,l
-integer recl,iostat
-real(8) eji,wplas,sc(3,3),x
-real(8) v1(3),v2(3),v3(3),t1,t2
-complex(8) zv(3),eta,zt1
+integer ik,jk,ist,jst
+integer iw,i,j,l
+real(8) w1,w2,wplas
+real(8) eji,x,t1,t2
+complex(8) eta,zt1
 character(256) fname
 ! allocatable arrays
-integer, allocatable :: lspl(:)
 real(8), allocatable :: w(:)
 real(8), allocatable :: delta(:,:,:)
 complex(8), allocatable :: pmat(:,:,:)
@@ -51,7 +49,6 @@ do ik=1,nkpt
   call getoccsv(vkl(:,ik),occsv(:,ik))
 end do
 ! allocate local arrays
-allocate(lspl(nkptnr))
 allocate(w(nwdos))
 if (usegdft) allocate(delta(nstsv,nstsv,nkpt))
 allocate(sigma(nwdos))
@@ -66,28 +63,13 @@ if (usegdft) then
     call gdft(ik,delta(:,:,ik))
   end do
 end if
-! generate energy grid (starting from zero)
-t1=wdos(2)/dble(nwdos)
+! generate energy grid (always non-negative)
+w1=max(wdos(1),0.d0)
+w2=max(wdos(2),w1)
+t1=(w2-w1)/dble(nwdos)
 do iw=1,nwdos
-  w(iw)=t1*dble(iw-1)
+  w(iw)=w1+t1*dble(iw-1)
 end do
-! find crystal symmetries which map non-reduced k-points to reduced equivalents
-do ik=1,nkptnr
-  call findkpt(vklnr(:,ik),isym,jk)
-  lspl(ik)=lsplsymc(isym)
-end do
-! find the record length for momentum matrix element file
-allocate(pmat(3,nstsv,nstsv))
-inquire(iolength=recl) pmat
-deallocate(pmat)
-open(50,file='PMAT.OUT',action='READ',form='UNFORMATTED',access='DIRECT', &
- recl=recl,iostat=iostat)
-if (iostat.ne.0) then
-  write(*,*)
-  write(*,'("Error(dielectric): error opening PMAT.OUT")')
-  write(*,*)
-  stop
-end if
 ! i divided by the complex relaxation time
 eta=cmplx(0.d0,swidth,8)
 ! loop over dielectric tensor components
@@ -98,31 +80,20 @@ do l=1,noptcomp
   sigma(:)=0.d0
 ! parallel loop over non-reduced k-points
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(pmat,jk,sc,ist,jst,v1,v2,v3) &
-!$OMP PRIVATE(zv,zt1,eji,t1,t2,x)
+!$OMP PRIVATE(pmat,jk,ist,jst) &
+!$OMP PRIVATE(zt1,eji,t1,x)
 !$OMP DO
   do ik=1,nkptnr
     allocate(pmat(3,nstsv,nstsv))
 ! equivalent reduced k-point
-    jk=ikmap(ivknr(1,ik),ivknr(2,ik),ivknr(3,ik))
-! store symmetry matrix
-    sc(:,:)=symlatc(:,:,lspl(ik))
-! read momentum matrix elements from direct-access file
-!$OMP CRITICAL
-    read(50,rec=jk) pmat
-!$OMP END CRITICAL
+    jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
+! read in the momentum matrix elements
+    call getpmat(vkl(:,ik),pmat)
 ! valance states
     do ist=1,nstsv
 ! conduction states
       do jst=1,nstsv
-! rotate the matrix elements from the reduced to non-reduced k-point
-! (note that the inverse operation is used)
-        v1(:)=dble(pmat(:,ist,jst))
-        call r3mv(sc,v1,v2)
-        v1(:)=aimag(pmat(:,ist,jst))
-        call r3mv(sc,v1,v3)
-        zv(:)=cmplx(v2(:),v3(:),8)
-        zt1=zv(i)*conjg(zv(j))
+        zt1=pmat(i,ist,jst)*conjg(pmat(j,ist,jst))
         eji=evalsv(jst,jk)-evalsv(ist,jk)
         if ((evalsv(ist,jk).le.efermi).and.(evalsv(jst,jk).gt.efermi)) then
 ! generalised DFT correction
@@ -144,7 +115,7 @@ do l=1,noptcomp
             if (ist.eq.jst) then
               x=(evalsv(ist,jk)-efermi)/swidth
 !$OMP CRITICAL
-              wplas=wplas+wkptnr(ik)*dble(zt1)*sdelta(stype,x)/swidth
+              wplas=wplas+wkptnr*dble(zt1)*sdelta(stype,x)/swidth
 !$OMP END CRITICAL
             end if
           end if
@@ -155,7 +126,7 @@ do l=1,noptcomp
   end do
 !$OMP END DO
 !$OMP END PARALLEL
-  zt1=zi/(omega*dble(nkptnr))
+  zt1=zi*wkptnr/omega
   sigma(:)=zt1*sigma(:)
 ! intraband contribution
   if (intraband) then
@@ -216,7 +187,7 @@ do l=1,noptcomp
   write(*,'("  i = ",I1,", j = ",I1)') optcomp(1:2,l)
 end do
 write(*,*)
-deallocate(lspl,w,sigma)
+deallocate(w,sigma)
 if (usegdft) deallocate(delta)
 return
 end subroutine

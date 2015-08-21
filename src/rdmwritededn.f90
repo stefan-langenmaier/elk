@@ -9,13 +9,13 @@
 ! !INTERFACE:
 subroutine rdmwritededn(dedn)
 ! !USES:
-use modrdm
 use modmain
+use modrdm
 ! !INPUT/OUTPUT PARAMETERS:
 !   dedn : derivative of energy (in,real(nstsv,nkpt))
 ! !DESCRIPTION:
-!   Writes the derivative of total energy w.r.t. occupation numbers to file
-!   {\tt RDM\_DEDN.OUT}.
+!   Writes the derivative of total energy with respect to occupation numbers to
+!   file {\tt RDM\_DEDN.OUT}.
 !
 ! !REVISION HISTORY:
 !   Created 2008 (Sharma)
@@ -26,18 +26,18 @@ implicit none
 real(8), intent(in) :: dedn(nstsv,nkpt)
 ! local variables
 integer ik,ist
-open(93,file='RDM_DEDN.OUT',action='WRITE',form='FORMATTED')
-write(93,'(I6," : nkpt")') nkpt
-write(93,'(I6," : nstsv")') nstsv
+open(50,file='RDM_DEDN.OUT',action='WRITE',form='FORMATTED')
+write(50,'(I6," : nkpt")') nkpt
+write(50,'(I6," : nstsv")') nstsv
 do ik=1,nkpt
-  write(93,*)
-  write(93,'(I6,3G18.10," : k-point, vkl")') ik,vkl(:,ik)
-  write(93,'("     (state, occupancy and derivative below)")')
+  write(50,*)
+  write(50,'(I6,3G18.10," : k-point, vkl")') ik,vkl(:,ik)
+  write(50,'("     (state, occupancy and derivative below)")')
   do ist=1,nstsv
-    write(93,'(I6,4G18.10)') ist,occsv(ist,ik),-dedn(ist,ik)
+    write(50,'(I6,4G18.10)') ist,occsv(ist,ik),-dedn(ist,ik)
   end do
 end do
-close(93)
+close(50)
 return
 end subroutine
 !EOC

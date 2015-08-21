@@ -97,7 +97,7 @@ if (spinsprl) then
   spinpol=.true.
   spinorb=.false.
   select case(task)
-  case(51,52,53,61,62,63,120,121)
+  case(51,52,53,61,62,63)
     write(*,*)
     write(*,'("Error(init0): spin-spirals do not work with task ",I4)') task
     write(*,*)

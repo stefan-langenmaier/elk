@@ -71,7 +71,7 @@ do is=1,nspecies
             vr(ir)=veffmt(1,ir,ias)*y00
           end do
         end if
-! spin-up and down potentials for polarised core
+! spin-up and -down potentials for polarised core
         if (spincore) then
           if (ispn.eq.1) then
             do ir=1,nrmt(is)
@@ -90,7 +90,7 @@ do is=1,nspecies
         end do
         rhocr(:,ias,ispn)=0.d0
 !$OMP PARALLEL DEFAULT(SHARED) &
-!$OMP PRIVATE(ir,t1)
+!$OMP PRIVATE(t1,ir)
 !$OMP DO
         do ist=1,spnst(is)
           if (spcore(ist,is)) then

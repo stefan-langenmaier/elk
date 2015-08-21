@@ -113,10 +113,9 @@ ngvec=1
 do ig=ngrtot,1,-1
   if (gc(ig).lt.gmaxvr) then
     ngvec=ig
-    goto 10
+    exit
   end if
 end do
-10 continue
 ! write number of G-vectors to test file
 call writetest(900,'number of G-vectors',iv=ngvec)
 deallocate(idx,iar,rar)

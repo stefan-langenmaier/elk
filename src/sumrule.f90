@@ -31,9 +31,8 @@ implicit none
 ! arguments
 complex(8), intent(inout) :: dynq(3*natmtot,3*natmtot,nqpt)
 ! local variables
-integer n,iq,iq0,i,j,k
+integer n,iq,i,j,k
 integer lwork,info
-real(8) t1
 ! allocatable arrays
 real(8), allocatable :: w(:)
 real(8), allocatable :: rwork(:)
@@ -45,24 +44,14 @@ allocate(rwork(3*n))
 lwork=2*n
 allocate(work(lwork))
 allocate(ev(n,n))
-! find the Gamma-point phonon
-do iq0=1,nqpt
-  t1=sqrt(vql(1,iq0)**2+vql(2,iq0)**2+vql(3,iq0)**2)
-  if (t1.lt.epslat) goto 10
-end do
-write(*,*)
-write(*,'("Error(sumrule): no zero length q-vector")')
-write(*,*)
-stop
-10 continue
-! compute the eigenvalues and vectors of the q=0 dynamical matrix
+! compute the eigenvalues and vectors of the q = 0 dynamical matrix
 do i=1,n
   do j=i,n
     ev(i,j)=0.5d0*(dynq(i,j,iq0)+conjg(dynq(j,i,iq0)))
   end do
 end do
 call zheev('V','U',n,ev,n,w,work,lwork,rwork,info)
-! subtract outer products of 3 lowest eigenvectors for q=0 from all the
+! subtract outer products of 3 lowest eigenvectors for q = 0 from all the
 ! dynamical matrices
 do iq=1,nqpt
   do i=1,n

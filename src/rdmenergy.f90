@@ -8,8 +8,9 @@
 ! !INTERFACE:
 subroutine rdmenergy
 ! !USES:
-use modrdm
 use modmain
+use modrdm
+use modmpi
 ! !DESCRIPTION:
 !   Calculates RDMFT total energy (free energy for finite temperatures).
 !
@@ -79,18 +80,6 @@ if (rdmtemp.gt.0.d0) then
   call rdmentropy
   engytot=engytot-rdmtemp*rdmentrpy
 end if
-write(*,*)
-write(*,'("Info(rdmengy): Energies :")')
-write(*,'(" electronic kinetic",T30,": ",G18.10)') engykn
-write(*,'(" core electron kinetic",T30,": ",G18.10)') engykncr
-write(*,'(" Coulomb",T30,": ",G18.10)') engyvcl
-write(*,'(" Madelung",T30,": ",G18.10)') engymad
-write(*,'(" exchange-correlation",T30,": ",G18.10)') engyx
-if (rdmtemp.gt.0.d0) then
-  write(*,'(" entropy",T30,": ",G18.10)') rdmtemp*rdmentrpy
-end if
-write(*,'(" total",T30,": ",G18.10)') engytot
-write(*,*)
 return
 end subroutine
 !EOC

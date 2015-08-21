@@ -83,11 +83,9 @@ end do
 fpso=fourpi/sqrt(omega)
 ! begin loops over atoms and species
 do is=1,nspecies
+! maximum APW order for this species
+  omax=maxval(apword(1:lmaxapw,is))
 ! evaluate the spherical Bessel function derivatives for all G+p-vectors
-  omax=0
-  do l=0,lmaxapw
-    omax=max(omax,apword(l,is))
-  end do
   do igp=1,ngp
     t1=gpc(igp)*rmt(is)
     do io=1,omax

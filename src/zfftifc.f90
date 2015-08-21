@@ -69,23 +69,23 @@ call cfftnd(nd,n,sgn,z)
 !----------------------------------!
 ! (with thanks to Torbjorn Bjorkman)
 !use MKL_DFTI ! this module required by MKL
-!integer dftistatus,i,p
-!real(8) dftiscale
+!integer status,i,p
+!real(8) t1
 !type(DFTI_DESCRIPTOR), POINTER :: handle
 !p=1
 !do i=1,nd
 !  p=p*n(i)
 !end do
-!dftiscale=1.d0/dble(p)
-!dftistatus=DftiCreateDescriptor(handle,DFTI_DOUBLE,DFTI_COMPLEX,nd,n)
-!dftistatus=DftiSetValue(handle, DFTI_FORWARD_SCALE,dftiscale)
-!dftistatus=DftiCommitDescriptor(handle)
+!t1=1.d0/dble(p)
+!status=DftiCreateDescriptor(handle,DFTI_DOUBLE,DFTI_COMPLEX,nd,n)
+!status=DftiSetValue(handle,DFTI_FORWARD_SCALE,t1)
+!status=DftiCommitDescriptor(handle)
 !if (sgn.eq.-1) then
-!  dftistatus=DftiComputeForward(handle,z)
+!  status=DftiComputeForward(handle,z)
 !else
-!  dftistatus=DftiComputeBackward(handle,z)
+!  status=DftiComputeBackward(handle,z)
 !end if
-!dftistatus=DftiFreeDescriptor(handle)
+!status=DftiFreeDescriptor(handle)
 
 return
 end subroutine
