@@ -63,9 +63,7 @@ real(8) clebgor
 external clebgor
 do ir=1,nr
   ri(ir)=1.d0/r(ir)
-end do
-do i=1,3
-  call zfmtzero(nr,nri,gzfmt(:,:,i))
+  gzfmt(:,ir,:)=0.d0
 end do
 lm=0
 do l=0,lmaxvr

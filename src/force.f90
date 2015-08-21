@@ -129,7 +129,7 @@ if (tfibs) then
     nri=nrmtinr(is)
     call gradrfmt(nr,nri,spr(:,is),rhomt(:,:,ias),nrmtmax,grfmt)
     do i=1,3
-      t1=rfmtinp(nr,nri,1,spr(:,is),vsmt(:,:,ias),grfmt(:,:,i))
+      t1=rfmtinp(1,nr,nri,spr(:,is),vsmt(:,:,ias),grfmt(:,:,i))
       forceibs(i,ias)=forceibs(i,ias)+t1
     end do
   end do

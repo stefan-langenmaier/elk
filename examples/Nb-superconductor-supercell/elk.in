@@ -51,28 +51,22 @@ mixtype
 tasks
   200
 
+! good convergence required for accurate forces
+epspot
+  1.d-7
+
 ! the q-point grid
 ngridq
   4  4  4
-
-! add extra local-orbitals for accurate electron-phonon coupling
-nxlo
-  1
-
-! larger cut-off required
-rgkmax
-  8.0
 
 ! this is an important parameter which fixes the k-point density irrespective
 ! of the size of the phonon supercell
 radkpt
   40.0
 
-! large smearing width required
 swidth
   0.01
 
-! Gaussian smearing
 stype
   0
 
@@ -101,6 +95,10 @@ stype
 ! also be commensurate with the q-point grid
 ngridk
   32 32 32
+
+! mu* appropriate for Nb
+mustar
+  0.21
 
 ! vertex location lines for the dispersion curves and phonon linewidths
 plot1d

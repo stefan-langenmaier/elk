@@ -32,7 +32,8 @@ implicit none
 ! arguments
 integer, intent(in) :: nmatp,ngp
 integer, intent(in) :: igpig(ngkmax)
-real(8), intent(in) :: vpc(3),vgpc(3,ngkmax)
+real(8), intent(in) :: vpc(3)
+real(8), intent(in) :: vgpc(3,ngkmax)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot)
 real(8), intent(out) :: evalfv(nstfv)
 complex(8), intent(out) :: evecfv(nmatmax,nstfv)

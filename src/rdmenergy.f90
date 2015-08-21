@@ -45,7 +45,7 @@ do ias=1,natmtot
   else
     rfmt(1,1:nr)=rhocr(1:nr,ias,1)/y00
   end if
-  engyvcl=engyvcl+rfmtinp(nr,nrmtinr(is),1,spr(:,is),rfmt,vclmt(:,:,ias))
+  engyvcl=engyvcl+rfmtinp(1,nr,nrmtinr(is),spr(:,is),rfmt,vclmt(:,:,ias))
 end do
 deallocate(rfmt)
 engykn=engykncr

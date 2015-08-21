@@ -29,10 +29,11 @@ use modmain
 implicit none
 ! arguments
 integer, intent(in) :: lrstp
-real(8), intent(inout) :: rfmt(lmmaxvr,nrmtmax,natmtot),rfir(ngtot)
+real(8), intent(inout) :: rfmt(lmmaxvr,nrmtmax,natmtot)
+real(8), intent(inout) :: rfir(ngtot)
 ! local variables
 integer is,ia,ja,ias,jas
-integer nr,nri
+integer nrc,ld,ir
 integer isym,lspl,ilspl
 real(8) t1
 ! automatic arrays
@@ -46,19 +47,23 @@ allocate(rfmt1(lmmaxvr,nrmtmax,natmmax))
 allocate(rfmt2(lmmaxvr,nrmtmax))
 t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
-  nr=nrmt(is)
-  nri=nrmtinr(is)
+  ld=lmmaxvr*lrstp
+  nrc=(nrmt(is)-1)/lrstp+1
 ! make a copy of the input function
   do ia=1,natoms(is)
     ias=idxas(ia,is)
-    call rfmtcopy(nr,nri,lrstp,rfmt(:,:,ias),rfmt1(:,:,ia))
+    do ir=1,nrmt(is),lrstp
+      rfmt1(:,ir,ia)=rfmt(:,ir,ias)
+    end do
   end do
   done(:)=.false.
 ! loop over atoms
   do ia=1,natoms(is)
     if (done(ia)) cycle
     ias=idxas(ia,is)
-    call rfmtzero(nr,nri,lrstp,rfmt(:,:,ias))
+    do ir=1,nrmt(is),lrstp
+      rfmt(:,ir,ias)=0.d0
+    end do
 ! loop over crystal symmetries
     do isym=1,nsymcrys
 ! index to spatial rotation lattice symmetry
@@ -66,12 +71,16 @@ do is=1,nspecies
 ! equivalent atom index (symmetry rotates atom ja into atom ia)
       ja=ieqatom(ia,is,isym)
 ! apply the rotation to the muffin-tin function
-      call rotrfmt(symlatc(:,:,lspl),nr,nri,lrstp,rfmt1(:,:,ja),rfmt2)
+      call rotrflm(symlatc(:,:,lspl),lmaxvr,nrc,ld,rfmt1(:,:,ja),rfmt2)
 ! accumulate in original function array
-      call rfmtadd(nr,nri,lrstp,rfmt2,rfmt(:,:,ias))
+      do ir=1,nrmt(is),lrstp
+        rfmt(:,ir,ias)=rfmt(:,ir,ias)+rfmt2(:,ir)
+      end do
     end do
 ! normalise
-    call rfmtscal(nr,nri,lrstp,t1,rfmt(:,:,ias))
+    do ir=1,nrmt(is),lrstp
+      rfmt(:,ir,ias)=t1*rfmt(:,ir,ias)
+    end do
     done(ia)=.true.
 ! rotate into equivalent atoms
     do isym=1,nsymcrys
@@ -82,7 +91,7 @@ do is=1,nspecies
 ! inverse symmetry (which rotates atom ia into atom ja)
         ilspl=isymlat(lspl)
 ! rotate symmetrised function into equivalent muffin-tin
-        call rotrfmt(symlatc(:,:,ilspl),nr,nri,lrstp,rfmt(:,:,ias), &
+        call rotrflm(symlatc(:,:,ilspl),lmaxvr,nrc,ld,rfmt(:,:,ias), &
          rfmt(:,:,jas))
         done(ja)=.true.
       end if

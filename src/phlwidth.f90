@@ -10,7 +10,7 @@ implicit none
 ! local variables
 integer i,j,iq,iv
 integer lwork,info
-real(8) gmin,gmax,t1
+real(8) gmin,gmax
 ! allocatable arrays
 real(8), allocatable :: wq(:),gq(:,:),gp(:,:)
 real(8), allocatable :: rwork(:)
@@ -43,9 +43,8 @@ do iq=1,nqpt
 ! construct a complex matrix from the phonon eigenvectors such that its
 ! eigenvalues squared are the phonon linewidths
   do i=1,nbph
-    t1=sqrt(abs(gq(i,iq)))
     do j=1,nbph
-      b(i,j)=t1*conjg(ev(j,i))
+      b(i,j)=sqrt(abs(gq(i,iq)))*conjg(ev(j,i))
     end do
   end do
   call zgemm('N','N',nbph,nbph,nbph,zone,ev,nbph,b,nbph,zzero,gmq(:,:,iq),nbph)

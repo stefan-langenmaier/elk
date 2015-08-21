@@ -5,28 +5,53 @@
 
 ! See: https://sourceforge.net/p/elk/discussion/897820/thread/aecdbcf1/#cb4d
 
-! This is also part of the effort to systematically compare solid state codes,
-! basis sets and potentials and encapsulate the results in a single number, the
-! Delta-value. See https://molmod.ugent.be/deltacodesdft .
-
 tasks
  0
+
+spinorb
+ .true.
 
 mixtype
  3
 
+epspot
+ 1.e-7
+
 xctype
  20
 
-! set very high quality options
-vhighq
- .true.
+rgkmax
+ 8.5
 
-! parameters from Delta-value dataset
+gmaxvr
+ 18.0
+
+lmaxapw
+ 10
+
+lmaxvr
+ 8
+
+lmaxmat
+ 10
+
+fracinr
+ 0.01
+
+ngridk
+ 12 12 12
+
+swidth
+ 0.001
+
+stype
+ 1
+
+! parameters used on Elk forum
 avec
- 5.21365989 0.00000000 0.00000000
- 2.60682995 4.51516191 0.00000000
- 0.00000000 0.00000000 8.23342334
+ 5.21365943 0.00000000 0.00000000
+ 2.60682972 4.51516152 0.00000000
+ 0.00000000 0.00000000 8.23342262
 
 ! Journal of Physics: Conference Series 410 (2013) 012049
 !avec

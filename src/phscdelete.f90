@@ -5,17 +5,22 @@
 
 subroutine phscdelete
 use modmain
+use modmpi
 implicit none
 ! delete the eigenvector files
 call delevec
+if (mp_mpi) then
 ! delete the eigenvalue files
-open(70,file='EVALFV'//trim(filext))
-close(70,status='DELETE')
-open(70,file='EVALSV'//trim(filext))
-close(70,status='DELETE')
+  open(70,file='EVALFV'//trim(filext))
+  close(70,status='DELETE')
+  open(70,file='EVALSV'//trim(filext))
+  close(70,status='DELETE')
 ! delete the occupancy file
-open(70,file='OCCSV'//trim(filext))
-close(70,status='DELETE')
+  open(70,file='OCCSV'//trim(filext))
+  close(70,status='DELETE')
+end if
+! synchronise MPI processes
+call mpi_barrier(mpi_comm_kpt,ierror)
 return
 end subroutine
 

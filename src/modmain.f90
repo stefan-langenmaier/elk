@@ -127,7 +127,7 @@ real(8), allocatable :: spvr(:,:)
 !     muffin-tin radial mesh and angular momentum variables     !
 !---------------------------------------------------------------!
 ! scale factor for number of muffin-tin points
-real(8) nrmtscf
+integer nrmtscf
 ! number of muffin-tin radial points for each species
 integer nrmt(maxspecies)
 ! maximum nrmt over all the species
@@ -152,14 +152,14 @@ integer, parameter :: maxlapw=50
 integer lmaxapw
 ! (lmaxapw+1)^2
 integer lmmaxapw
-! maximum angular momentum used when evaluating the Hamiltonian matrix elements
-integer lmaxmat
-! (lmaxmat+1)^2
-integer lmmaxmat
 ! maximum angular momentum for potentials and densities
 integer lmaxvr
 ! (lmaxvr+1)^2
 integer lmmaxvr
+! maximum angular momentum used when evaluating the Hamiltonian matrix elements
+integer lmaxmat
+! (lmaxmat+1)^2
+integer lmmaxmat
 ! maximum angular momentum in the inner part of the muffin-int
 integer lmaxinr
 ! (lmaxinr+1)^2
@@ -671,9 +671,7 @@ logical lorbcnd
 ! conduction state local-orbital order
 integer lorbordc
 ! excess order of the APW and local-orbital functions
-integer nxoapwlo
-! excess local orbitals
-integer nxlo
+integer nxapwlo
 
 !-------------------------------------------!
 !     overlap and Hamiltonian variables     !
@@ -1089,7 +1087,7 @@ real(8), parameter :: amu=amu_si/em_si
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 3,0,18 /
+data version / 3,0,4 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

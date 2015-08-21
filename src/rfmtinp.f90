@@ -6,14 +6,14 @@
 !BOP
 ! !ROUTINE: rfmtinp
 ! !INTERFACE:
-real(8) function rfmtinp(nr,nri,lrstp,r,rfmt1,rfmt2)
+real(8) function rfmtinp(lrstp,nr,nri,r,rfmt1,rfmt2)
 ! !USES:
 use modmain
 ! !INPUT/OUTPUT PARAMETERS:
+!   lrstp : radial step length (in,integer)
 !   nr    : number of radial mesh points (in,integer)
 !   nri   : number of radial mesh points on the inner part of the muffin-tin
 !           (in,integer)
-!   lrstp : radial step length (in,integer)
 !   r     : radial mesh (in,real(nr))
 !   rfmt1 : first real function inside muffin-tin (in,real(lmmaxvr,nr))
 !   rfmt2 : second real function inside muffin-tin (in,real(lmmaxvr,nr))
@@ -34,8 +34,8 @@ use modmain
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: nr,nri
 integer, intent(in) :: lrstp
+integer, intent(in) :: nr,nri
 real(8), intent(in) :: r(nr)
 real(8), intent(in) :: rfmt1(lmmaxvr,nr),rfmt2(lmmaxvr,nr)
 ! local variables

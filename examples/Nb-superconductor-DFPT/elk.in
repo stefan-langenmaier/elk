@@ -8,51 +8,39 @@
 ! example in the files PHDISP.OUT and PHDLINES.OUT, respectively.
 
 tasks
-  0       : generate the ground-state
-  205     : generate the dynamical matrices with DFPT
-
-! number of phonon q-points
-ngridq
-  4 4 4
-
-! add extra local-orbitals for accurate electron-phonon coupling
-nxlo
-  1
-
-! larger cut-off required
-rgkmax
-  8.5
+ 0       : generate the ground-state
+ 205     : generate the dynamical matrices with DFPT
 
 ngridk
-  12 12 12
-
-! use a large smearing width
-swidth
-  0.01
-
-! Gaussian smearing
-stype
-  0
+ 16 16 16
 
 ! after all the dynamical matrix DYN---.OUT files have been calculated then
 ! uncomment the following lines and run again
 
 ! large k-point required for accurate electron-phonon coupling
 !ngridk
-!  32 32 32
+! 32 32 32
 
 !tasks
-!  1       : ground state with larger k-point set
-!  210     : phonon DOS
-!  220     : plot the phonon dispersion
-!  240     : electron-phonon matrix elements
-!  245     : phonon line-widths
-!  250     : Eliashberg function, alpha^2F
-!  260     : solving the Eliashberg equations
+! 1       : ground state with larger k-point set
+! 210     : phonon DOS
+! 220     : plot the phonon dispersion
+! 240     : electron-phonon matrix elements
+! 245     : phonon line-widths
+! 250     : Eliashberg function, alpha^2F
+! 260     : solving the Eliashberg equations
+
+! mu* appropriate for Nb
+mustar
+  0.21
 
 ! number of temperature steps for Eliashberg calculation
 ntemp
   40
+
+! number of phonon q-points
+ngridq
+  4  4  4
 
 avec
   1.0  1.0 -1.0
@@ -62,6 +50,12 @@ avec
 ! use LDA equilibrium lattice constant
 scale
   3.071
+
+swidth
+  0.01
+
+stype
+  0
 
 sppath
  '../../species/'

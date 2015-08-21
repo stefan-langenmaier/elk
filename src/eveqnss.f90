@@ -8,7 +8,8 @@ use modmain
 use moddftu
 implicit none
 ! arguments
-integer, intent(in) :: ngp(nspnfv),igpig(ngkmax,nspnfv)
+integer, intent(in) :: ngp(nspnfv)
+integer, intent(in) :: igpig(ngkmax,nspnfv)
 complex(8), intent(in) :: apwalm(ngkmax,apwordmax,lmmaxapw,natmtot,nspnfv)
 real(8), intent(in) :: evalfv(nstfv,nspnfv)
 complex(8), intent(in) :: evecfv(nmatmax,nstfv,nspnfv)

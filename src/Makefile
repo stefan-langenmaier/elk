@@ -15,8 +15,8 @@ SRC_elk = elk.f90
 SRC_main0 = \
  spline.f90 factnm.f90 factr.f90 genylm.f90 genrlm.f90 rfinp.f90 rfmtinp.f90 \
  rfinterp.f90 mixpack.f90 rfpack.f90 genvsig.f90 potnucl.f90 ztorflm.f90 \
- rtozflm.f90 fderiv.f90 wavefmt.f90 charge.f90 moment.f90 rfmtaddc.f90 \
- rfmtadd.f90 zfinp.f90 zfmtinp.f90 delevec.f90 zbsht.f90 zfsht.f90 genkmat.f90
+ rtozflm.f90 fderiv.f90 wavefmt.f90 charge.f90 moment.f90 rfmtadd.f90 \
+ zfinp.f90 zfmtinp.f90 delevec.f90 zbsht.f90 zfsht.f90 genkmat.f90
 
 SRC_main1 = \
  findprimcell.f90 genppts.f90 rbsht.f90 rfsht.f90 \
@@ -25,7 +25,8 @@ SRC_main1 = \
  hmlrad.f90 olprad.f90 potks.f90 bfieldks.f90 zpotclmt.f90 zpotcoul.f90 \
  writeengy.f90 writechg.f90 potplot.f90 plot1d.f90 \
  plot2d.f90 plot3d.f90 findswidth.f90 sphcover.f90 allatoms.f90 \
- fsmooth.f90 lopzflm.f90 rhomag.f90 erf.f90 mae.f90 \
+ fsmooth.f90 zheri.f90 \
+ zher2i.f90 lopzflm.f90 rhomag.f90 erf.f90 mae.f90 \
  writestate.f90 readstate.f90 rotaxang.f90 axangrot.f90 i3minv.f90 i3mdet.f90 \
  i3mtv.f90 r3mv.f90 r3mtv.f90 r3cross.f90 r3minv.f90 r3mdet.f90 r3frac.f90 \
  r3mm.f90 r3mtm.f90 r3mmt.f90 zflmconj.f90 rotzflm.f90 z2mm.f90 z2mctm.f90 \
@@ -80,8 +81,7 @@ SRC_main1 = \
  rvfcross.f90 rfplot.f90 rotdmat.f90 hrmdmat.f90 genfspecies.f90 \
  writespecies.f90 massnucl.f90 rzfmtinp.f90 rzfmtadd.f90 rzfadd.f90 \
  rzfinp.f90 zfcmtinp.f90 genpmat.f90 reademd.f90 emdplot.f90 rfhkintp.f90 \
- emdplot3d.f90 emdplot2d.f90 emdplot1d.f90 plotpt3d.f90 plotpt2d.f90 \
- rfmtscal.f90 rfmtcopy.f90 rfmtzero.f90 rotrfmt.f90 zfmtzero.f90
+ emdplot3d.f90 emdplot2d.f90 emdplot1d.f90 plotpt3d.f90 plotpt2d.f90
 
 SRC_main = $(SRC_main0) $(SRC_main1)
 
@@ -98,7 +98,7 @@ SRC_phonon = \
  dpotcoul.f90 dpotxc.f90 gendvsig.f90 dpotks.f90 phmixpack.f90 zfpack.f90 \
  gendwfsv.f90 drhomagk.f90 gradrhomt.f90 phdelete.f90 gengvsmt.f90 dforcek.f90 \
  hmlaaq.f90 hmlaloq.f90 olpaaq.f90 olpaloq.f90 gengkqvec.f90 gengqvec.f90 \
- doccupy.f90 putdevalsv.f90 getdevalsv.f90
+ doccupy.f90
 
 SRC_SCDFT = \
  hmlbdg.f90 eveqnbdg.f90 scdft.f90 genachi.f90 bdginv.f90 achiinit.f90 \
@@ -204,7 +204,6 @@ release:
 	cp -r eos $(RELEASE)/src
 	cp -r spacegroup $(RELEASE)/src
 	cp $(SRC) Makefile protex elk_silhouette.pdf $(RELEASE)/src
-	cp $(SRC) rmspaces grepelk vimelk $(RELEASE)/src
 	cp libxc_funcs.f90 libxc.f90 libxcifc.f90 libxcifc_stub.f90 $(RELEASE)/src
 	cp zfftifc.f90 zfftifc_fftw.f90 zfftifc_mkl.f90 $(RELEASE)/src
 	cp -r ../examples $(RELEASE)
@@ -222,7 +221,6 @@ release:
 	cp elk.pdf ../docs
 	cd spacegroup;$(MAKE) doc;cp spacegroup.pdf ../../docs;$(MAKE) clean
 	cp -r ../docs $(RELEASE)
-	mkdir $(RELEASE)/release
 	tar -C ../release -czf ../release/$(NAME).tgz $(NAME)
 	cp ../docs/elk.pdf ../release
 	cp ../docs/spacegroup.pdf ../release
@@ -232,7 +230,4 @@ lines:
 
 spaces:
 	./rmspaces $(SRC)
-
-vim:
-	./vimelk
 

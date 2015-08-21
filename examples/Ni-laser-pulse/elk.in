@@ -42,7 +42,7 @@ ngridk
   8  8  8
 
 ! automatic conversion of species to LAPW + linearised l.o. instead of APW+l.o.
-nxoapwlo
+nxapwlo
   1
 
 ! large number of empty states required

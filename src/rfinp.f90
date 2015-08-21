@@ -52,7 +52,7 @@ sum=sum*omega/dble(ngtot)
 !$OMP DO
 do ias=1,natmtot
   is=idxis(ias)
-  sum=sum+rfmtinp(nrmt(is),nrmtinr(is),lrstp,spr(:,is),rfmt1(:,:,ias), &
+  sum=sum+rfmtinp(lrstp,nrmt(is),nrmtinr(is),spr(:,is),rfmt1(:,:,ias), &
    rfmt2(:,:,ias))
 end do
 !$OMP END DO

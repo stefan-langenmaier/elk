@@ -21,8 +21,9 @@ complex(8), intent(in) :: evecsv(nstsv,nstsv),devecsv(nstsv,nstsv)
 ! local variables
 integer nst,ist,jst,is,ias
 integer nr,nrci,ir,irc
-integer lmmax
-real(8) wo,dwo
+integer lmmax,itp
+real(8) wo,dwo,t1,t2
+complex(8) z1,z2,z3,z4,z5,z6
 ! automatic arrays
 integer idx(nstsv)
 ! allocatable arrays
@@ -156,7 +157,7 @@ complex(8), intent(inout) :: drho(n)
 complex(8), intent(inout) :: dmag1(n),dmag2(n),dmag3(n)
 ! local variables
 integer i
-complex(8) z1,z2,z3,z4,z5,z6
+complex(8) z1,z2,z3,z4,z5
 do i=1,n
   z1=conjg(wf1(i))
   z2=conjg(wf2(i))

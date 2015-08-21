@@ -38,10 +38,10 @@ real(8), intent(inout) :: rvfmt(lmmaxvr,nrmtmax,natmtot,ndmag)
 real(8), intent(inout) :: rvfir(ngtot,ndmag)
 ! local variables
 integer is,ia,ja,ias,jas
-integer nr,nri,ir,lmmax,lm
+integer nrc,ld,ir,lm
 integer isym,lspl,ilspl
 integer lspn,ilspn,md,i
-real(8) sc(3,3),v(3),t0,t1
+real(8) sc(3,3),v(3),t1
 ! automatic arrays
 logical done(natmmax)
 ! allocatable arrays
@@ -51,23 +51,25 @@ real(8), allocatable :: rvfmt1(:,:,:,:),rvfmt2(:,:,:)
 !-------------------------!
 allocate(rvfmt1(lmmaxvr,nrmtmax,natmmax,ndmag))
 allocate(rvfmt2(lmmaxvr,nrmtmax,ndmag))
-t0=1.d0/dble(nsymcrys)
+t1=1.d0/dble(nsymcrys)
 do is=1,nspecies
-  nr=nrmt(is)
-  nri=nrmtinr(is)
+  ld=lmmaxvr*lrstp
+  nrc=(nrmt(is)-1)/lrstp+1
 ! make copy of vector field for all atoms of current species
   do i=1,ndmag
     do ia=1,natoms(is)
       ias=idxas(ia,is)
-      call rfmtcopy(nr,nri,lrstp,rvfmt(:,:,ias,i),rvfmt1(:,:,ia,i))
+      do ir=1,nrmt(is),lrstp
+        rvfmt1(:,ir,ia,i)=rvfmt(:,ir,ias,i)
+      end do
     end do
   end do
   done(:)=.false.
   do ia=1,natoms(is)
     if (done(ia)) cycle
     ias=idxas(ia,is)
-    do i=1,ndmag
-      call rfmtzero(nr,nri,lrstp,rvfmt(:,:,ias,i))
+    do ir=1,nrmt(is),lrstp
+      rvfmt(:,ir,ias,:)=0.d0
     end do
 ! begin loop over crystal symmetries
     do isym=1,nsymcrys
@@ -76,7 +78,7 @@ do is=1,nspecies
 ! parallel transport of vector field
       lspl=lsplsymc(isym)
       do i=1,ndmag
-        call rotrfmt(symlatc(:,:,lspl),nr,nri,lrstp,rvfmt1(:,:,ja,i), &
+        call rotrflm(symlatc(:,:,lspl),lmaxvr,nrc,ld,rvfmt1(:,:,ja,i), &
          rvfmt2(:,:,i))
       end do
 ! global spin proper rotation matrix in Cartesian coordinates
@@ -86,31 +88,27 @@ do is=1,nspecies
 ! global spin rotation of vector field
       if (ncmag) then
 ! non-collinear case
-        lmmax=lmmaxinr
-        do ir=1,nr,lrstp
-          do lm=1,lmmax
+        do ir=1,nrmt(is),lrstp
+          do lm=1,lmmaxvr
             v(:)=sc(:,1)*rvfmt2(lm,ir,1) &
                 +sc(:,2)*rvfmt2(lm,ir,2) &
                 +sc(:,3)*rvfmt2(lm,ir,3)
             rvfmt(lm,ir,ias,:)=rvfmt(lm,ir,ias,:)+v(:)
           end do
-          if (ir.eq.nri) lmmax=lmmaxvr
         end do
       else
 ! collinear case
-        t1=sc(3,3)
-        lmmax=lmmaxinr
-        do ir=1,nr,lrstp
-          rvfmt(1:lmmax,ir,ias,1)=rvfmt(1:lmmax,ir,ias,1) &
-           +t1*rvfmt2(1:lmmax,ir,1)
-          if (ir.eq.nri) lmmax=lmmaxvr
+        do ir=1,nrmt(is),lrstp
+          do lm=1,lmmaxvr
+            rvfmt(lm,ir,ias,1)=rvfmt(lm,ir,ias,1)+sc(3,3)*rvfmt2(lm,ir,1)
+          end do
         end do
       end if
 ! end loop over crystal symmetries
     end do
 ! normalise
-    do i=1,ndmag
-      call rfmtscal(nr,nri,lrstp,t0,rvfmt(:,:,ias,i))
+    do ir=1,nrmt(is),lrstp
+      rvfmt(:,ir,ias,:)=t1*rvfmt(:,ir,ias,:)
     end do
 ! mark atom as done
     done(ia)=.true.
@@ -123,7 +121,7 @@ do is=1,nspecies
         lspl=lsplsymc(isym)
         ilspl=isymlat(lspl)
         do i=1,ndmag
-          call rotrfmt(symlatc(:,:,ilspl),nr,nri,lrstp,rvfmt(:,:,ias,i), &
+          call rotrflm(symlatc(:,:,ilspl),lmaxvr,nrc,ld,rvfmt(:,:,ias,i), &
            rvfmt(:,:,jas,i))
         end do
 ! inverse of global proper rotation matrix in Cartesian coordinates
@@ -134,21 +132,18 @@ do is=1,nspecies
 ! global spin rotation of vector field
         if (ncmag) then
 ! non-collinear case
-          lmmax=lmmaxinr
-          do ir=1,nr,lrstp
-            do lm=1,lmmax
+          do ir=1,nrmt(is),lrstp
+            do lm=1,lmmaxvr
               v(:)=rvfmt(lm,ir,jas,:)
               rvfmt(lm,ir,jas,:)=sc(:,1)*v(1)+sc(:,2)*v(2)+sc(:,3)*v(3)
             end do
-            if (ir.eq.nri) lmmax=lmmaxvr
           end do
         else
 ! collinear case
-          t1=sc(3,3)
-          lmmax=lmmaxinr
-          do ir=1,nr,lrstp
-            rvfmt(1:lmmax,ir,jas,1)=t1*rvfmt(1:lmmax,ir,jas,1)
-            if (ir.eq.nri) lmmax=lmmaxvr
+          do ir=1,nrmt(is),lrstp
+            do lm=1,lmmaxvr
+              rvfmt(lm,ir,jas,1)=sc(3,3)*rvfmt(lm,ir,jas,1)
+            end do
           end do
         end if
 ! mark atom as done

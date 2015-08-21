@@ -17,7 +17,7 @@ mixtype
  1
 
 maxscl
- 8
+ 5
 
 wplot
  50 100 2
@@ -30,10 +30,10 @@ ngridk
  4  4  4
 
 radkpt
- 4.5
+ 4.0
 
 swidth
- 0.05
+ 0.1
 
 rgkmax
  5.0

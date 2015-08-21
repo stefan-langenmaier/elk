@@ -41,8 +41,6 @@ end do
 !-----------------------------------------------!
 !     interstitial Kohn-Sham magnetic field     !
 !-----------------------------------------------!
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(t1)
-!$OMP DO
 do idm=1,ndmag
   if (ncmag) then
     t1=cb*bfieldc(idm)
@@ -52,8 +50,6 @@ do idm=1,ndmag
 ! multiply by characteristic function
   bsir(:,idm)=(bxcir(:,idm)+t1)*cfunir(:)
 end do
-!$OMP END DO
-!$OMP END PARALLEL
 return
 end subroutine
 

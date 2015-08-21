@@ -63,8 +63,8 @@ do itask=1,ntasks
 ! check if task can be run with MPI
   if (lp_mpi.gt.0) then
     select case(task)
-    case(0,1,2,3,5,28,29,120,135,136,170,180,185,188,200,201,205,240,300,320, &
-     330,331,440,460,461)
+    case(0,1,2,3,5,28,29,120,135,136,170,180,185,188,200,201,240,300,320,330, &
+     331,440,460,461)
       continue
     case default
       write(*,'("Info(elk): MPI process ",I6," idle for task ",I6)') lp_mpi,task
@@ -209,7 +209,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 3.0.18}\\ \vskip 20pt \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 3.0.4}\\ \vskip 20pt \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -258,7 +258,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, April 2015
+!   Halle and Uppsala, February 2015
 !   \newpage
 !
 !   \section{Units}
@@ -480,7 +480,7 @@ end program
 !   with a LAPW, which has variable linearisation energy.
 !   \vskip 6pt
 !   {\tt nlorb} \\
-!   Number of local-orbitals.
+!   Number of local orbitals.
 !   \vskip 6pt
 !   {\tt lorbl}, {\tt lorbord} \\
 !   Respectively, the angular momentum $l$ of the local-orbital; and the order
@@ -833,11 +833,12 @@ end program
 !    Hamiltonian & logical & {\tt .true.}}
 !
 !   \block{highq}{
-!   {\tt highq} & {\tt .true.} if a high quality parameter set should be used &
+!   {\tt highq} & {\tt .true.} if a high-quality parameter set should be used &
 !    logical & {\tt .false.}}
 !   Setting this to {\tt .true.} results in some default parameters being
-!   changed to ensure good convergence in most situations. These changes can be
-!   overruled by subsequent blocks in the input file. See also {\tt vhighq}.
+!   changed to ensure good convergence in most situations. See the subroutine
+!   {\tt readinput} for the list of changed parameters and their values. These
+!   changes can be overruled by subsequent blocks in the input file.
 !
 !   \block{hmaxvr}{
 !   {\tt hmaxvr} & maximum length of ${\bf H}$-vectors & real & $6.0$}
@@ -1020,7 +1021,7 @@ end program
 !   {\tt ncgga} & set to {\tt .true.} for non-collinear GGA calculations which
 !    are difficult to converge & logical & {\tt .false.}}
 !   Setting this variable to {\tt .true.} results in the second-order
-!   gradients of the spin-density in the interstitial being averaged. This can
+!   gradients of the spin-density in the intersitial being averaged. This can
 !   improve convergence for non-collinear GGA calculations, but necessarily
 !   makes the exchange-correlation potential non-variational.
 !
@@ -1101,12 +1102,12 @@ end program
 !   to a positive integer the file will instead be written every {\tt nwrite}
 !   loops.
 !
-!   \block{nxoapwlo}{
-!   {\tt nxoapwlo} & extra order of radial functions to be added to the existing
+!   \block{nxapwlo}{
+!   {\tt nxapwlo} & extra order of radial functions to be added to the existing
 !    APW and local-orbital set & integer & 0}
 !   Setting this variable will result in the APWs and local-orbitals for all
 !   species becoming higher order with corresponding increase in derivative
-!   matching at the muffin-tin surface. For example, setting {\tt nxoapwlo}=1
+!   matching at the muffin-tin surface. For example, setting {\tt nxapwlo}=1
 !   turns all APWs into LAPWs.
 !
 !   \block{optcomp}{
@@ -1574,13 +1575,6 @@ end program
 !   stored in the usual row-column setting and applied directly as
 !   ${\bf H}'=M{\bf H}$ to every vector but {\em only} when writing the output
 !   files. See also {\tt hmaxvr} and {\tt reduceh}.
-!
-!   \block{vhighq}{
-!   {\tt vhighq} & {\tt .true.} if a very high quality parameter set should be
-!    used & logical & {\tt .false.}}
-!   Setting this to {\tt .true.} results in some default parameters being
-!   changed to ensure excellent convergence in most situations. See also
-!   {\tt highq}.
 !
 !   \block{vklem}{
 !   {\tt vklem} & the $k$-point in lattice coordinates at which to compute the

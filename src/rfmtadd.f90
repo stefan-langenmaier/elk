@@ -1,26 +1,46 @@
 
-! Copyright (C) 2015 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
+! Copyright (C) 2014 J. K. Dewhurst, S. Sharma and E. K. U. Gross.
 ! This file is distributed under the terms of the GNU General Public License.
 ! See the file COPYING for license details.
 
-subroutine rfmtadd(nr,nri,lrstp,rfmt1,rfmt2)
+!BOP
+! !ROUTINE: rfmtadd
+! !INTERFACE:
+subroutine rfmtadd(nr,nri,a,rfmt1,rfmt2)
+! !USES:
 use modmain
+! !INPUT/OUTPUT PARAMETERS:
+!   nr    : number of radial mesh points (in,integer)
+!   nri   : number of points on the inner part of the muffin-tin (in,integer)
+!   a     : real constant (in,real)
+!   rfmt1 : first real muffin-tin function (in,real(lmmaxvr,nr))
+!   rfmt2 : second real muffin-tin function (inout,real(lmmaxvr,nr))
+! !DESCRIPTION:
+!   Adds a real muffin-tin function times a constant to another:
+!   $f_2\rightarrow f_2+a f_1$.
+!
+! !REVISION HISTORY:
+!   Created August 2014 (JKD)
+!EOP
+!BOC
 implicit none
 ! arguments
 integer, intent(in) :: nr,nri
-integer, intent(in) :: lrstp
+real(8), intent(in) :: a
 real(8), intent(in) :: rfmt1(lmmaxvr,nr)
 real(8), intent(inout) :: rfmt2(lmmaxvr,nr)
 ! local variables
-integer ir
-! inner part of muffin-tin
-do ir=1,nri,lrstp
-  rfmt2(1:lmmaxinr,ir)=rfmt2(1:lmmaxinr,ir)+rfmt1(1:lmmaxinr,ir)
+integer nro,iro,ir
+! add on inner part of muffin-tin
+do ir=1,nri
+  call daxpy(lmmaxinr,a,rfmt1(:,ir),1,rfmt2(:,ir),1)
 end do
-! outer part of muffin-tin
-do ir=nri+lrstp,nr,lrstp
-  rfmt2(:,ir)=rfmt2(:,ir)+rfmt1(:,ir)
-end do
+! add on outer part of muffin-tin
+nro=nr-nri
+if (nro.eq.0) return
+iro=nri+1
+call daxpy(lmmaxvr*nro,a,rfmt1(:,iro),1,rfmt2(:,iro),1)
 return
 end subroutine
+!EOC
 

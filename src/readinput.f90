@@ -64,7 +64,7 @@ rgkmax=7.d0
 gmaxvr=12.d0
 lmaxapw=8
 lmaxvr=7
-lmaxmat=7
+lmaxmat=6
 lmaxinr=3
 fracinr=0.01d0
 trhonorm=.true.
@@ -248,7 +248,7 @@ hmaxvr=20.d0
 hkmax=12.d0
 lorbcnd=.false.
 lorbordc=3
-nrmtscf=1.d0
+nrmtscf=1
 lmaxdos=3
 epsph=0.005d0
 msmooth=0
@@ -265,8 +265,7 @@ tstime=1000.d0
 dtimes=0.1d0
 npulse=0
 ntswrite=10
-nxoapwlo=0
-nxlo=0
+nxapwlo=0
 tdrho1d=.false.
 tdrho2d=.false.
 tdrho3d=.false.
@@ -1327,67 +1326,24 @@ case('c_tb09')
   tc_tb09=.true.
 case('rndachi')
   read(50,*,err=20) rndachi
-case('highq','vhighq')
+case('highq')
   read(50,*,err=20) highq
+! parameter set for high-quality calculation
   if (highq) then
-! parameter set for high quality calculation
-    if (trim(block).eq.'highq') then
-      rgkmax=8.d0
-      gmaxvr=18.d0
-      lmaxapw=10
-      lmaxvr=8
-      lmaxinr=4
-      lmaxmat=8
-      fracinr=0.005d0
-      nrmtscf=1.5d0
-      nxlo=2
-      radkpt=50.d0
-      autokpt=.true.
-      vkloff(:)=0.d0
-      nempty0=10.d0
-      epspot=1.d-7
-      epsengy=1.d-5
-      epsforce=1.d-4
-      autolinengy=.true.
-    else
-! parameter set for very high quality calculation
-      rgkmax=9.d0
-      gmaxvr=24.d0
-      lmaxapw=12
-      lmaxvr=9
-      lmaxinr=5
-      lmaxmat=12
-      fracinr=0.005d0
-      nrmtscf=2.d0
-      nxlo=3
-      radkpt=60.d0
-      autokpt=.true.
-      vkloff(:)=0.d0
-      nempty0=20.d0
-      epspot=1.d-7
-      epsengy=1.d-5
-      epsforce=1.d-4
-      autolinengy=.true.
-    end if
-    write(*,*)
-    write(*,'("Info(readinput): parameters set by ",A," option")') trim(block)
-    write(*,'(" rgkmax : ",G18.10)') rgkmax
-    write(*,'(" gmaxvr : ",G18.10)') gmaxvr
-    write(*,'(" lmaxapw : ",I4)') lmaxapw
-    write(*,'(" lmaxmat : ",I4)') lmaxmat
-    write(*,'(" lmaxvr : ",I4)') lmaxvr
-    write(*,'(" lmaxinr : ",I4)') lmaxinr
-    write(*,'(" fracinr : ",G18.10)') fracinr
-    write(*,'(" nrmtscf : ",G18.10)') nrmtscf
-    write(*,'(" nxlo : ",I4)') nxlo
-    write(*,'(" radkpt : ",G18.10)') radkpt
-    write(*,'(" autokpt : ",L1)') autokpt
-    write(*,'(" vkloff : ",3G18.10)') vkloff
-    write(*,'(" nempty0 : ",G18.10)') nempty0
-    write(*,'(" epspot : ",G18.10)') epspot
-    write(*,'(" epsengy : ",G18.10)') epsengy
-    write(*,'(" epsforce : ",G18.10)') epsforce
-    write(*,'(" autolinengy : ",L1)') autolinengy
+    rgkmax=8.d0
+    gmaxvr=18.d0
+    lmaxapw=10
+    lmaxvr=8
+    lmaxmat=8
+    fracinr=0.005d0
+    nrmtscf=2
+    radkpt=50.d0
+    autokpt=.true.
+    vkloff(:)=0.d0
+    nempty0=10.d0
+    epspot=1.d-7
+    epsengy=1.d-5
+    epsforce=1.d-4
   end if
 case('hmaxvr')
   read(50,*,err=20) hmaxvr
@@ -1424,9 +1380,9 @@ case('lorbordc')
   end if
 case('nrmtscf')
   read(50,*,err=20) nrmtscf
-  if (nrmtscf.lt.0.5d0) then
+  if (nrmtscf.lt.1) then
     write(*,*)
-    write(*,'("Error(readinput): nrmtscf < 0.5 : ",G18.10)') nrmtscf
+    write(*,'("Error(readinput): nrmtscf < 1 : ",I8)') nrmtscf
     write(*,*)
     stop
   end if
@@ -1565,19 +1521,11 @@ case('ncgga')
   read(50,*,err=20) ncgga
 case('ntswrite')
   read(50,*,err=20) ntswrite
-case('nxoapwlo','nxapwlo')
-  read(50,*,err=20) nxoapwlo
-  if (nxoapwlo.lt.0) then
+case('nxapwlo')
+  read(50,*,err=20) nxapwlo
+  if (nxapwlo.lt.0) then
     write(*,*)
-    write(*,'("Error(readinput): nxoapwlo < 0 : ",I8)') nxoapwlo
-    write(*,*)
-    stop
-  end if
-case('nxlo')
-  read(50,*,err=20) nxlo
-  if (nxlo.lt.0) then
-    write(*,*)
-    write(*,'("Error(readinput): nxlo < 0 : ",I8)') nxlo
+    write(*,'("Error(readinput): nxapwlo < 0 : ",I8)') nxapwlo
     write(*,*)
     stop
   end if

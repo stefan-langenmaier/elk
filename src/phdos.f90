@@ -22,7 +22,9 @@ complex(8), allocatable :: dynp(:,:),ev(:,:)
 ! initialise universal variables
 call init0
 call init2
-allocate(wp(nbph),w(nwplot),gw(nwplot))
+allocate(wp(nbph))
+allocate(w(nwplot))
+allocate(gw(nwplot))
 allocate(f(nwplot),g(nwplot))
 allocate(dynq(nbph,nbph,nqpt))
 allocate(dynr(nbph,nbph,nqptnr))
