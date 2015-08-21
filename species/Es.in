@@ -2,7 +2,7 @@
  'einsteinium'                              : spname
   -99.0000                                  : spzn
    459367.8980                              : spmass
-  0.201008E-06    3.0000   30.8922   800    : sprmin, rmt, sprmax, nrmt
+  0.201008E-06    3.0000   48.9609   800    : sprmin, rmt, sprmax, nrmt
   27                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

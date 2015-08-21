@@ -69,7 +69,7 @@ rgkmax
 ! convergence of magnetic moment with number of empty states 
 ! must be checked
 nempty
-  10
+  8
 
 sppath
   '../../species/'

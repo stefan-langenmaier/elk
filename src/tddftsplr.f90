@@ -108,7 +108,7 @@ if (.not.ncmag) then
   end do
 end if
 ! write chi0 to file
-if (task.eq.330) then
+if (mp_mpi) then
 ! write chi0 to file in 1x3 basis
   do i=1,4
     do j=1,4
@@ -193,7 +193,7 @@ if (.not.ncmag) then
     end do
   end do
 end if
-if (task.eq.330) then
+if (mp_mpi) then
 ! write chi in the 1x3 basis
   do i=1,4
     do j=1,4

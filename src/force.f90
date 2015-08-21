@@ -96,7 +96,7 @@ allocate(grfmt(lmmaxvr,nrmtmax,3))
 do ias=1,natmtot
   is=idxis(ias)
   call gradrfmt(1,nrmt(is),spr(:,is),lmmaxvr,nrmtmax,vclmt(:,:,ias),grfmt)
-  forcehf(:,ias)=-spzn(is)*grfmt(1,1,:)*y00
+  forcehf(:,ias)=-spzn(is)*grfmt(1,irfhf(is),:)*y00
 end do
 ! symmetrise Hellmann-Feynman force
 call symvect(.false.,forcehf)

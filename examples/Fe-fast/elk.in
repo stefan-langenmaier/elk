@@ -25,7 +25,7 @@ mixtype
 
 ! fairly large number of empty states required for magnetic cases
 nempty
-  10
+  8
 
 avec
   1.0  1.0 -1.0

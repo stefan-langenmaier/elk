@@ -24,12 +24,12 @@ if (lp_mpi.eq.0) then
   mp_mpi=.true.
   write(*,*)
   write(*,'("Elk code started")')
+  if (np_mpi.gt.1) then
+    write(*,*)
+    write(*,'("Using MPI, number of processes : ",I8)') np_mpi
+  end if
 else
   mp_mpi=.false.
-end if
-if (np_mpi.gt.1) then
-  write(*,*)
-  write(*,'("Using MPI, number of processes : ",I8)') np_mpi
 end if
 ! read input files
 call readinput
@@ -192,7 +192,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.1.22}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 2.1.25}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark, O. Gr\aa n\"{a}s} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -239,7 +239,7 @@ end program
 !   Hardy Gross
 !
 !   \vspace{12pt}
-!   Halle and Uppsala, June 2013
+!   Halle and Uppsala, July 2013
 !   \newpage
 !
 !   \section{Units}
@@ -609,28 +609,6 @@ end program
 !   When {\tt autolinengy} is {\tt .true.} then the fixed linearisation energies
 !   are set to the Fermi energy plus {\tt dlefe}.
 !
-!   \block{wplot}{
-!   {\tt nwplot} & number of frequency/energy points in the DOS or optics plot &
-!    integer & $500$ \\
-!   {\tt ngrkf} & fine $k$-point grid size used for integrating functions in the
-!    Brillouin zone & integer & $100$ \\
-!   {\tt nswplot} & level of smoothing applied to DOS/optics output & integer &
-!    $1$ \\
-!   \hline
-!   {\tt wplot} & frequency/energy window for the DOS or optics plot & real(2) &
-!    $(-0.5,0.5)$}
-!   DOS and optics plots require integrals of the kind
-!   $$ g(\omega_i)=\frac{\Omega}{(2\pi)^3}\int_{\rm BZ} f({\bf k})
-!    \delta(\omega_i-e({\bf k}))d{\bf k}. $$
-!   These are calculated by first interpolating the functions $e({\bf k})$ and
-!   $f({\bf k})$ with the trilinear method on a much finer mesh whose size is
-!   determined by {\tt ngrkf}. Then the $\omega$-dependent histogram of the
-!   integrand is accumulated over the fine mesh. If the output function is noisy
-!   then either {\tt ngrkf} should be increased or {\tt nwplot} decreased.
-!   Alternatively, the output function can be artificially smoothed up to a
-!   level given by {\tt nswplot}. This is the number of successive 3-point
-!   averages to be applied to the function $g$.
-!
 !   \block{dosmsum}{
 !   {\tt dosmsum} & {\tt .true.} if the partial DOS is to be summed over $m$ &
 !    logical & {\tt .false.}}
@@ -696,6 +674,25 @@ end program
 !   {\tt emaxelnes} & maximum allowed initial-state eigenvalue for ELNES
 !    calculations & real & $-1.2$}
 !
+!   \block{emaxrf}{
+!   {\tt emaxrf} & energy cut-off used when calculating Kohn-Sham response
+!    functions & real & $10^6$}
+!   A typical Kohn-Sham response function is of the form
+!   \begin{align*}
+!    \chi_s({\bf r},{\bf r}',\omega)
+!    \equiv\frac{\delta\rho({\bf r},\omega)}{\delta v_s({\bf r}',\omega)}
+!    =\frac{1}{N_k}\sum_{i{\bf k},j{\bf k}'}(f_{i{\bf k}}-f_{j{\bf k}'})
+!    \frac{\langle i{\bf k}|\hat{\rho}({\bf r})|j{\bf k}'\rangle
+!    \langle j{\bf k}'|\hat{\rho}({\bf r}')|i{\bf k}\rangle}
+!    {w+(\varepsilon_{i{\bf k}}-\varepsilon_{j{\bf k}'})+i\eta},
+!   \end{align*}
+!   where $\hat{\rho}$ is the density operator; $N_k$ is the number of
+!   $k$-points; $\varepsilon_{i{\bf k}}$ and $f_{i{\bf k}}$ are the eigenvalues
+!   and occupation numbers, respectively. The variable {\tt emaxrf} is an energy
+!   window which limits the summation over states in the formula above so that
+!   $|\varepsilon_{i{\bf k}}-\varepsilon_{\rm Fermi}|<{\tt emaxrf}$. Reducing
+!   this can result in a faster calculation at the expense of accuracy.
+!
 !   \block{fixspin}{
 !   {\tt fixspin} & 0 for no fixed spin moment (FSM), 1 for total FSM, 2 for
 !    local muffin-tin FSM, and 3 for both total and local FSM & integer & 0}
@@ -709,12 +706,26 @@ end program
 !   See {\tt lmaxinr}.
 !
 !   \block{fxclrc}{
-!   {\tt fxclrc} & parameters for the dynamical long-range contribution to the
-!    TDDFT exchange-correlation kernel & real(2) & $(0.0,0.0)$}
+!   {\tt fxclrc} & parameters for the dynamical long-range contribution (LRC) to
+!    the TDDFT exchange-correlation kernel & real(2) & $(0.0,0.0)$}
 !   These are the parameters $\alpha$ and $\beta$ for the kernel proposed in
 !   {\it Phys. Rev. B} {\bf 72}, 125203 (2005), namely
 !   $$ f_{xc}({\bf G},{\bf G}',{\bf q},\omega)=-\frac{\alpha+\beta\omega^2}{q^2}
 !    \delta_{{\bf G},{\bf G}'}\delta_{{\bf G},{\bf 0}}. $$
+!
+!   \block{fxtype}{
+!   {\tt fxctype} & integer defining the type of exchange-correlation kernel
+!    $f_{\rm xc}$ & integer & -1}
+!   The acceptable values are:
+!
+!   \begin{tabularx}{\textwidth}[h]{lX}
+!   $-1$ & $f_{\rm xc}$ defined by {\tt xctype} \\
+!   0,1 & RPA ($f_{\rm xc}=0$) \\
+!   200 & Long-range contribution (LRC) kernel, S. Botti {\it et al.},
+!    {\it Phys. Rev. B} {\bf 72}, 125203 (2005); see {\tt fxclrc} \\
+!   210 & `Bootstrap' kernel, S. Sharma, J. K. Dewhurst, A. Sanna and
+!    E. K. U. Gross, {\it Phys. Rev. Lett.} {\bf 107}, 186401 (2011) \\
+!   \end{tabularx}
 !
 !   \block{gmaxrf}{
 !   {\tt gmaxrf} & maximum length of $|{\bf G}|$ for computing response
@@ -728,9 +739,13 @@ end program
 !    +{\rm epslat}) $$
 !   See {\tt rgkmax} and {\tt trimvg}.
 !
+!   \block{hdbse}{
+!   {\tt hdbse} & {\tt .true.} if the direct term is to be included in the BSE
+!    Hamiltonian & logical & {\tt .true.}}
+!
 !   \block{highq}{
 !   {\tt highq} & {\tt .true.} if a high quality parameter set should be used &
-!    logical & {\tt .false}}
+!    logical & {\tt .false.}}
 !   Setting this to {\tt .true.} results in some default parameters being
 !   changed to ensure good convergence in most situations. See the subroutine
 !   {\tt readinput} for the list of changed parameters and their values. These
@@ -743,10 +758,17 @@ end program
 !   expanding the density and potential in plane waves. See also {\tt gmaxvr},
 !   {\tt vhmat}, {\tt reduceh}, {\tt wsfac} and {\tt hkmax}.
 !
+!   \block{hxbse}{
+!   {\tt hxbse} & {\tt .true.} if the exchange term is to be included in the BSE
+!    Hamiltonian & {\tt .true.}}
+!
 !   \block{hybrid}{
 !   {\tt hybrid} & {\tt .true} if a hybrid functional is to be used when running
 !    a Hartree-Fock calculation & logical & {\tt .false}}
 !   See also {\tt hybridc} and {\tt xctype}.
+!
+!   \block{hybridc}{
+!   {\tt hybridc} & hybrid functional mixing coefficient & real & $1.0$}
 !
 !   \block{intraband}{
 !   {\tt intraband} & {\tt .true.} if the intraband (Drude-like) contribution is
@@ -804,6 +826,10 @@ end program
 !   {\tt lmaxapw} & angular momentum cut-off for the APW functions & integer &
 !    $8$}
 !
+!   \block{lmaxdos}{
+!   {\tt lmaxdos} & angular momentum cut-off for the partial DOS plot &
+!    integer & $3$}
+!
 !   \block{lmaxinr}{
 !   {\tt lmaxinr} & angular momentum cut-off for the muffin-tin density and
 !    potential on the inner part of the muffin-tin & integer & 2}
@@ -828,6 +854,18 @@ end program
 !   determined from the density matrix expressed in this basis correspond to
 !   irreducible representations, and allow the partial DOS to be resolved into
 !   physically relevant contributions, for example $e_g$ and $t_{2g}$.
+!
+!   \block{lorbcnd}{
+!   {\tt lorbcnd} & {\tt .true.} if conduction state local-orbitals are to be
+!    automatically added to the basis & logical & {\tt .false.}}
+!   Adding these higher energy local-orbitals can improve calculations which
+!   rely on accurate unoccupied states, such as the response function. See also
+!   {\tt lorbordc}.
+!
+!   \block{lorbordc}{
+!   {\tt lorbordc} & the order of the conduction state local-orbitals &
+!    integer & 3}
+!   See {\tt lorbcnd}.
 !
 !   \block{lradstp}{
 !   {\tt lradstp} & radial step length for determining coarse radial mesh &
@@ -1165,7 +1203,7 @@ end program
 !
 !   \block{stype}{
 !   {\tt stype} & integer defining the type of smearing to be used & integer &
-!    $0$}
+!    $3$}
 !   A smooth approximation to the Dirac delta function is needed to compute the
 !   occupancies of the Kohn-Sham states. The variable {\tt swidth} determines
 !   the width of the approximate delta function. Currently implemented are
@@ -1180,7 +1218,7 @@ end program
 !
 !   \block{swidth}{
 !   {\tt swidth} & width of the smooth approximation to the Dirac delta
-!    function & real & $0.01$}
+!    function & real & $0.001$}
 !   See {\tt stype} for details.
 !
 !   \newpage
@@ -1261,9 +1299,11 @@ end program
 !    V\_Sim. \\
 !   195 & Calculation of X-ray density structure factors. \\
 !   196 & Calculation of magnetic structure factors. \\
-!   200 & Calculation of dynamical matrices on a $q$-point set defined by
-!    {\tt ngridq}. \\
+!   200 & Calculation of phonon dynamical matrices on a $q$-point set defined by
+!    {\tt ngridq} using the supercell method. \\
 !   201 & Phonon dry run: just produce a set of empty DYN files. \\
+!   205 & Calculation of phonon dynamical matrices using density functional
+!    perturbation theory (DFPT). \\
 !   210 & Phonon density of states. \\
 !   220 & Phonon dispersion plot. \\
 !   230 & Phonon frequencies and eigenvectors for an arbitrary $q$-point. \\
@@ -1402,6 +1442,28 @@ end program
 !   $$ {\bf m}^{\bf q}({\bf r})=(m_x({\bf r})\cos({\bf q \cdot r}),
 !    m_y({\bf r})\sin({\bf q \cdot r}),m_z({\bf r})), $$
 !   where $m_x$, $m_y$ and $m_z$ are lattice periodic. See also {\tt spinsprl}.
+!
+!   \block{wplot}{
+!   {\tt nwplot} & number of frequency/energy points in the DOS or optics plot &
+!    integer & $500$ \\
+!   {\tt ngrkf} & fine $k$-point grid size used for integrating functions in the
+!    Brillouin zone & integer & $100$ \\
+!   {\tt nswplot} & level of smoothing applied to DOS/optics output & integer &
+!    $1$ \\
+!   \hline
+!   {\tt wplot} & frequency/energy window for the DOS or optics plot & real(2) &
+!    $(-0.5,0.5)$}
+!   DOS and optics plots require integrals of the kind
+!   $$ g(\omega_i)=\frac{\Omega}{(2\pi)^3}\int_{\rm BZ} f({\bf k})
+!    \delta(\omega_i-e({\bf k}))d{\bf k}. $$
+!   These are calculated by first interpolating the functions $e({\bf k})$ and
+!   $f({\bf k})$ with the trilinear method on a much finer mesh whose size is
+!   determined by {\tt ngrkf}. Then the $\omega$-dependent histogram of the
+!   integrand is accumulated over the fine mesh. If the output function is noisy
+!   then either {\tt ngrkf} should be increased or {\tt nwplot} decreased.
+!   Alternatively, the output function can be artificially smoothed up to a
+!   level given by {\tt nswplot}. This is the number of successive 3-point
+!   averages to be applied to the function $g$.
 !
 !   \block{wsfac}{
 !   {\tt wsfac} & energy window to be used when calculating density or magnetic

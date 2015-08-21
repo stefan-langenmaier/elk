@@ -141,8 +141,11 @@ do iscl=1,maxscl
     write(60,*)
     write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
     write(60,'(" (states/Hartree/unit cell)")')
-    write(60,'("Estimated indirect band gap : ",G18.10)') bandgap
+    write(60,*)
+    write(60,'("Estimated indirect band gap : ",G18.10)') bandgap(1)
     write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
+    write(60,'("Estimated direct band gap   : ",G18.10)') bandgap(2)
+    write(60,'(" at k-point ",I6)') ikgap(3)
 ! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)
@@ -157,8 +160,8 @@ do iscl=1,maxscl
       call flushifc(63)
     end if
   end if
-! write estimated Hartree-Fock band gap
-  write(64,'(G22.12)') bandgap
+! write estimated Hartree-Fock indirect band gap
+  write(64,'(G22.12)') bandgap(1)
   call flushifc(64)
   if (tlast) goto 10
 ! compute the change in total energy and check for convergence

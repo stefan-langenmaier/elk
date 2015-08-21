@@ -2,7 +2,7 @@
  'erbium'                                   : spname
   -68.0000                                  : spzn
    304894.5050                              : spmass
-  0.242536E-06    2.8000   34.2150   700    : sprmin, rmt, sprmax, nrmt
+  0.242536E-06    2.8000   49.0284   700    : sprmin, rmt, sprmax, nrmt
   20                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

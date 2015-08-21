@@ -50,7 +50,7 @@ sppath
 
 ! fair number of empty states
 nempty
-  10
+  8
 
 ! fair number of k-points
 ngridk

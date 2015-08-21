@@ -44,7 +44,7 @@ do ias=1,natmtot
             call zgemm('N','N',lmmaxvr,nr,lmmaxvr,zone,zbshtvr,lmmaxvr, &
              gzfmt(:,:,i),lmmaxvr,zzero,zfmt,lmmaxvr)
             taumt(:,1:nr,ias,jspn)=taumt(:,1:nr,ias,jspn) &
-             +dble(zfmt(:,1:nr))**2+aimag(zfmt(:,1:nr))**2
+             +0.5d0*(dble(zfmt(:,1:nr))**2+aimag(zfmt(:,1:nr))**2)
           end do
         end do
       end do

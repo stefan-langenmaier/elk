@@ -30,16 +30,14 @@ subroutine fderiv(m,n,x,f,g)
 !BOC
 implicit none
 ! arguments
-integer, intent(in) :: m
-integer, intent(in) :: n
-real(8), intent(in) :: x(n)
-real(8), intent(in) :: f(n)
+integer, intent(in) :: m,n
+real(8), intent(in) :: x(n),f(n)
 real(8), intent(out) :: g(n)
 ! local variables
 integer i
 real(8) x0,x1,x2,dx
 ! automatic arrays
-real(8) cf(4,n)
+real(8) cf(3,n)
 if (n.le.0) then
   write(*,*)
   write(*,'("Error(fderiv): invalid number of points : ",I8)') n

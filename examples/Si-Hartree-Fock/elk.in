@@ -13,7 +13,7 @@ tasks
 ! Hartree-Fock is treated as a second-variational correction to the Kohn-Sham
 ! problem. Thus a large number of empty states are required for convergence.
 nempty
-  10
+  8
 
 avec
   5.13 5.13 0.00

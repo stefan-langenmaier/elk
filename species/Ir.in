@@ -2,7 +2,7 @@
  'iridium'                                  : spname
   -77.0000                                  : spzn
    350390.1558                              : spmass
-  0.227921E-06    2.8000   26.6954   700    : sprmin, rmt, sprmax, nrmt
+  0.227921E-06    2.8000   36.5109   700    : sprmin, rmt, sprmax, nrmt
   22                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -20,9 +20,9 @@
    4   2   3   6.00000    T
    4   3   3   6.00000    F
    4   3   4   8.00000    F
-   5   0   1   2.00000    F
-   5   1   1   2.00000    T
-   5   1   2   4.00000    T
+   5   0   1   2.00000    T
+   5   1   1   2.00000    F
+   5   1   2   4.00000    F
    5   2   2   4.00000    F
    5   2   3   3.00000    F
    6   0   1   2.00000    F
@@ -45,12 +45,12 @@
    3   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -1.9884   0  T
-   0   3                                    : lorbl, lorbord
+ -2.4794   0  T
+   1   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -3.5431   0  T
+ -2.1216   0  T
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.4981   0  T
+ -0.4978   0  T

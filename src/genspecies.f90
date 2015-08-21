@@ -79,7 +79,7 @@ do i=1,2
   call atom(sol,.true.,zn,nst,n,l,k,occ,3,0,nprad,nr,r,eval,rho,vr,rwf)
   do ir=nr,1,-1
     if (rho(ir).gt.1.d-20) then
-      rmax=1.25d0*r(ir)
+      rmax=1.75d0*r(ir)
       goto 10
     end if
   end do

@@ -100,10 +100,10 @@ end do
 dyn(ipph,iasph)=dyn(ipph,iasph)-zsum
 ! nuclear-nuclear term
 zvclmt(:,:,iasph)=zvnmt(:,:)-zfmt(:,:)
-call gradzf(nrmt,spnrmax,spr,vgqc,nrmtmax,zvclmt,zvclir,gvclmt,gvclir)
+call gradzf(nrmt,spnrmax,spr,vgc,nrmtmax,zvclmt,zvclir,gvclmt,gvclir)
 do ias=1,natmtot
   is=idxis(ias)
-  z1=spzn(is)*gvclmt(1,1,ias,ipph)*y00
+  z1=spzn(is)*gvclmt(1,irfhf(is),ias,ipph)*y00
   dyn(ipph,iasph)=dyn(ipph,iasph)+z1
 end do
 !-------------------------------------------------------------------!
@@ -124,7 +124,7 @@ do ias=1,natmtot
   call gradzfmt(1,nr,spr(:,is),lmmaxvr,nrmtmax,dvclmt(:,:,ias),gzfmt)
   do i=1,3
     if ((ias.eq.iasph).and.(i.eq.ipph)) cycle
-    dyn(i,ias)=spzn(is)*gzfmt(1,1,i)*y00
+    dyn(i,ias)=spzn(is)*gzfmt(1,irfhf(is),i)*y00
   end do
 end do
 !--------------------------------------------!

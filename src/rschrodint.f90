@@ -61,10 +61,8 @@ real(8), intent(in) :: r(nr)
 real(8), intent(in) :: vr(nr)
 integer, intent(out) :: nn
 real(8), intent(in) :: p0p(nr)
-real(8), intent(out) :: p0(nr)
-real(8), intent(out) :: p1(nr)
-real(8), intent(out) :: q0(nr)
-real(8), intent(out) :: q1(nr)
+real(8), intent(out) :: p0(nr),p1(nr)
+real(8), intent(out) :: q0(nr),q1(nr)
 ! local variables
 integer ir,ir0,npl
 real(8) ri,t1,t2,t3,t4
@@ -79,8 +77,8 @@ t2=dble(l*(l+1))
 ri=1.d0/r(1)
 t3=2.d0-t1*vr(1)
 t4=t2/(t3*r(1)**2)+vr(1)-e
-q0(1)=r(1)
-q1(1)=1.d0
+q0(1)=1.d0
+q1(1)=0.d0
 p0(1)=(q1(1)+q0(1)*ri)/t4
 p1(1)=t3*q0(1)+p0(1)*ri
 if (m.ne.0) then

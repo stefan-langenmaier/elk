@@ -1,4 +1,16 @@
-elk-2.1.22
+elk-2.1.25
+-fixed several problems with the previous (beta) release; thanks to Markus
+ Meinert for the exhaustive checking
+-magnetic hyperfine fields are now correctly calculated thanks to MM
+-added missing items to the manual
+-added the example 'Si-phonon-DFPT'
+-thanks to Kari Ruotsalainen, Aleksay Golovchan and Vladimir Nazarov for
+ pointing out bugs in 2.1.22 - now fixed
+-added estimation of direct gap to INFO.OUT; thanks to user Sean for the idea
+-this is the version that will be used for the Elk Turorial
+-see you in Lausanne!
+
+elk-2.1.22 (beta)
 -Important: this is a beta version and should not be used for production work;
  a production release will be made in a few weeks
 -Important: this version is not backwards compatible; calculations will have to

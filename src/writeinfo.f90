@@ -241,6 +241,9 @@ write(fnum,'("Number of empty states         : ",I4)') nempty
 write(fnum,'("Total number of valence states : ",I4)') nstsv
 write(fnum,'("Total number of core states    : ",I4)') nstcr
 write(fnum,*)
+if (lorbcnd) then
+  write(fnum,'("Conduction state local-orbitals added automatically")')
+end if
 write(fnum,'("Total number of local-orbitals : ",I4)') nlotot
 if (tseqit) then
   write(fnum,*)

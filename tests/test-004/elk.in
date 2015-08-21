@@ -33,9 +33,6 @@ ncbse
 swidth
   0.01
 
-nempty
-  8
-
 wplot
   50 100 2
   0.0 0.1

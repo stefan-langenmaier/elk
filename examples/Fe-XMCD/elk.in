@@ -55,7 +55,7 @@ reducebf
 
 ! large number of empty states necessary for "continuum" absorption
 nempty
-  40
+  20
 
 ! a Lorentzian broadening is applied to the spectrum
 swidth

@@ -2,7 +2,7 @@
  'dysprosium'                               : spname
   -66.0000                                  : spzn
    296219.3787                              : spmass
-  0.246183E-06    2.8000   34.1434   700    : sprmin, rmt, sprmax, nrmt
+  0.246183E-06    2.8000   50.0753   700    : sprmin, rmt, sprmax, nrmt
   20                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

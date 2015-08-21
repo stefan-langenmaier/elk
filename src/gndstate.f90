@@ -211,8 +211,11 @@ do iscl=1,maxscl
     write(60,*)
     write(60,'("Density of states at Fermi energy : ",G18.10)') fermidos
     write(60,'(" (states/Hartree/unit cell)")')
-    write(60,'("Estimated indirect band gap : ",G18.10)') bandgap
+    write(60,*)
+    write(60,'("Estimated indirect band gap : ",G18.10)') bandgap(1)
     write(60,'(" from k-point ",I6," to k-point ",I6)') ikgap(1),ikgap(2)
+    write(60,'("Estimated direct band gap   : ",G18.10)') bandgap(2)
+    write(60,'(" at k-point ",I6)') ikgap(3)
 ! write total energy to TOTENERGY.OUT and flush
     write(61,'(G22.12)') engytot
     call flushifc(61)
@@ -226,8 +229,8 @@ do iscl=1,maxscl
       write(63,'(3G18.10)') momtot(1:ndmag)
       call flushifc(63)
     end if
-! write estimated Kohn-Sham band gap
-    write(64,'(G22.12)') bandgap
+! write estimated Kohn-Sham indirect band gap
+    write(64,'(G22.12)') bandgap(1)
     call flushifc(64)
 ! output effective fields for fixed spin moment calculations
     if (fixspin.ne.0) call writefsm(60)

@@ -16,12 +16,12 @@ test
 mixtype
  3
 
-epspot
- 1.e-6
+maxscl
+ 30
 
 wplot
-  50 100 2
-  0.0 1.0
+ 50 100 2
+ 0.0 1.0
 
 ngridq
  2  1  1

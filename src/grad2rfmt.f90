@@ -16,7 +16,7 @@ real(8), intent(out) :: g2rfmt(ld,nr)
 integer l,m,lm,ir
 real(8) t1
 ! automatic arrays
-real(8) ri(nr),ri2(nr),cf(4,nr)
+real(8) ri(nr),ri2(nr),cf(3,nr)
 ! tabulate 1/r and 1/r^2
 do ir=1,nr
   ri(ir)=1.d0/r(ir)

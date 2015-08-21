@@ -18,9 +18,6 @@ spinpol
 bfieldc
   0.0  0.0  0.5
 
-nempty
-  10
-
 avec
   1.0  1.0 -1.0
   1.0 -1.0  1.0

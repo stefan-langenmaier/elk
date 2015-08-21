@@ -14,6 +14,8 @@ integer jspn,idm,iv(3)
 integer is,ia,ias,ip
 integer ik,jk,ig,igkq
 integer nwork,n
+! use Broyden mixing only
+integer, parameter :: mtype=3
 real(8) vl(3),vc(3)
 real(8) tp(2),ddv,a,b
 character(256) fext
@@ -83,7 +85,7 @@ if (allocated(v)) deallocate(v)
 allocate(v(n))
 ! determine the size of the mixer work array
 nwork=-1
-call mixerifc(mixtype,n,v,ddv,nwork,work)
+call mixerifc(mtype,n,v,ddv,nwork,work)
 allocate(work(nwork))
 allocate(dyn(3,natmtot))
 ! begin new phonon task
@@ -249,7 +251,7 @@ devecsv=0.d0
 ! pack interstitial and muffin-tin potential and field into one array
   call phmixpack(.true.,n,v)
 ! mix in the old potential and field with the new
-  call mixerifc(mixtype,n,v,ddv,nwork,work)
+  call mixerifc(mtype,n,v,ddv,nwork,work)
 ! unpack potential and field
   call phmixpack(.false.,n,v)
   write(65,'(G18.10)') ddv

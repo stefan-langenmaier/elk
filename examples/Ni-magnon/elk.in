@@ -69,7 +69,7 @@ vqlss
   0.1 0.1 0.0
 
 nempty
-  15
+  10
 
 ! very fine k-point grid required for good convergence
 ngridk

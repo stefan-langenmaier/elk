@@ -62,7 +62,7 @@ lmaxmat
   6
 
 nempty
-  8
+  5
 
 ! this is an important parameter which fixes the k-point density irrespective
 ! of the size of the phonon supercell

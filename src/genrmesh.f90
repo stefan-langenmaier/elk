@@ -61,6 +61,12 @@ do is=1,nspecies
     end if
   end do
 end do
+! determine at which radius the Hellmann-Feynman force is to be evaluated
+do is=1,nspecies
+  do ir=1,nrmt(is)
+    if (spr(ir,is).lt.radfhf) irfhf(is)=ir
+  end do
+end do
 return
 end subroutine
 !EOC

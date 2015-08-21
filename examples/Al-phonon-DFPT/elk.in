@@ -11,10 +11,6 @@ tasks
 ngridq
   2  2  2
 
-! Broyden mixing works well for phonon calculations
-mixtype
-  3
-
 ! vertices for dispersion plot
 plot1d
   4 200                               : nvp1d, npp1d

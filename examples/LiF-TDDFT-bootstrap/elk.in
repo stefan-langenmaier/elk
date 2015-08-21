@@ -24,12 +24,16 @@ xctype
 fxctype
   210
 
+! smearing width
+swidth
+  0.01
+
 ! G-vector cut-off of exchange-correlation kernel and response function
 gmaxrf
   0.0
 
 nempty
-  10
+  8
 
 lradstp
   2

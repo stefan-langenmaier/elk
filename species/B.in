@@ -2,7 +2,7 @@
  'boron'                                    : spname
   -5.00000                                  : spzn
    19707.24740                              : spmass
-  0.894427E-06    1.8000   29.4826   300    : sprmin, rmt, sprmax, nrmt
+  0.894427E-06    1.8000   41.2756   300    : sprmin, rmt, sprmax, nrmt
    3                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    F

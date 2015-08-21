@@ -55,7 +55,7 @@ reducebf
 
 ! fairly high number of empty states
 nempty
-  10
+  8
 
 sppath
   '../../species/'

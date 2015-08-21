@@ -20,7 +20,7 @@ wplot
  28.0 32.0    : wplot
 
 nempty
- 40
+ 20
 
 ! q-vector in lattice coordinates
 vecql

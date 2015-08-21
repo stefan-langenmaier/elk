@@ -2,7 +2,7 @@
  'terbium'                                  : spname
   -65.0000                                  : spzn
    289703.1721                              : spmass
-  0.248069E-06    2.8000   35.7291   700    : sprmin, rmt, sprmax, nrmt
+  0.248069E-06    2.8000   48.8720   700    : sprmin, rmt, sprmax, nrmt
   20                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

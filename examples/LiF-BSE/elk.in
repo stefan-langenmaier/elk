@@ -12,14 +12,14 @@ tasks
   187       ! generate BSE dielectric function
 
 scissor
- 0.21
+  0.21
 
 lmaxvr
- 5
+  5
 
 ! automatically determine the smallest possible G-vector grid
 gmaxvr
- 0.0
+  0.0
 
 ! number of BSE valence states
 nvbse
@@ -37,7 +37,7 @@ swidth
   0.005
 
 nempty
-  10
+  8
 
 wplot
   800 100 0 : nwplot, ngrkf, nswplot

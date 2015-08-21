@@ -39,7 +39,7 @@ mixtype
 
 ! large number of empty states required for hyperfine field
 nempty
-  60
+  30
 
 rgkmax
   7.5

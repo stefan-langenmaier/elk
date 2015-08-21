@@ -153,6 +153,7 @@ vqlwrt(:,:)=0.d0
 notelns=0
 tforce=.false.
 tfibs=.true.
+radfhf=0.001d0
 maxitoep=200
 tauoep(1)=1.d0
 tauoep(2)=0.75d0
@@ -822,6 +823,14 @@ case('tforce')
   read(50,*,err=20) tforce
 case('tfibs')
   read(50,*,err=20) tfibs
+case('radfhf')
+  read(50,*,err=20) radfhf
+  if (radfhf.lt.0.d0) then
+    write(*,*)
+    write(*,'("Error(readinput): radfhf < 0 : ",G18.10)') radfhf
+    write(*,*)
+    stop
+  end if
 case('maxitoep')
   read(50,*,err=20) maxitoep
   if (maxitoep.lt.1) then

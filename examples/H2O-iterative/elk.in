@@ -10,6 +10,12 @@
 tasks
   0
 
+maxscl
+  30
+
+lorbcnd
+ .true.
+
 ! solve the secular equation iteratively
 tseqit
  .true.

@@ -60,7 +60,7 @@ sppath
 
 ! fairly high number of empty states
 nempty
-  10
+  8
 
 ! this grid is too small for accurate magnetic moment
 ngridk

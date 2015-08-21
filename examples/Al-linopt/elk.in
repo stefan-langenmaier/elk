@@ -3,24 +3,24 @@
 ! The plasma frequency is also determined and written to PLASMA.OUT.
 
 tasks
-   0
- 120
- 121
+  0
+  120
+  121
 
 ! include intra-band excitations
 intraband
  .true.
 
 swidth
- 0.01
+  0.01
 
 ! dense k-point set required
 ngridk
- 24 24 24
+  24 24 24
 
 ! larger number of empty states required
 nempty
- 10
+  8
 
 avec
   1.0  1.0  0.0

@@ -64,10 +64,8 @@ logical, intent(in) :: trsc
 integer, intent(out) :: nn
 real(8), intent(in) :: g0p(nr)
 real(8), intent(in) :: f0p(nr)
-real(8), intent(out) :: g0(nr)
-real(8), intent(out) :: g1(nr)
-real(8), intent(out) :: f0(nr)
-real(8), intent(out) :: f1(nr)
+real(8), intent(out) :: g0(nr),g1(nr)
+real(8), intent(out) :: f0(nr),f1(nr)
 ! local variables
 integer ir,ir0,npl
 ! rescaling limit
@@ -99,8 +97,8 @@ t1=2.d0*e0+e
 t2=dble(kpa)/r(1)
 t3=ci*(t1-vr(1))
 t4=ci*(vr(1)-e)
-f0(1)=r(1)
-f1(1)=1.d0
+f0(1)=1.d0
+f1(1)=0.d0
 g0(1)=(f1(1)-t2*f0(1))/t4
 g1(1)=t3*f0(1)-t2*g0(1)
 if (m.ne.0) then

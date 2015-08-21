@@ -132,30 +132,32 @@ if (fxctype(1).eq.210) then
   if (abs(t1).gt.1.d-8) goto 10
 end if
 ! write G = G' = 0 components to file
-open(50,file="EPSILON_TDDFT.OUT",action='WRITE',form='FORMATTED')
-open(51,file="EELS_TDDFT.OUT",action='WRITE',form='FORMATTED')
-do iw=1,nwrf
-  z1=1.d0/eps(1,1,iw)
-  write(50,'(2G18.10)') dble(wrf(iw)),dble(z1)
-  write(51,'(2G18.10)') dble(wrf(iw)),-dble(eps(1,1,iw))
-end do
-write(50,*)
-write(51,*)
-do iw=1,nwrf
-  z1=1.d0/eps(1,1,iw)
-  write(50,'(2G18.10)') dble(wrf(iw)),aimag(z1)
-  write(51,'(2G18.10)') dble(wrf(iw)),-aimag(eps(1,1,iw))
-end do
-close(50)
-close(51)
-write(*,*)
-write(*,'("Info(tddftlr):")')
-write(*,'(" Dielectric tensor written to EPSILON_TDDFT.OUT")')
-write(*,'(" Electron loss function written to EELS_TDDFT.OUT")')
-write(*,'(" for component i, j = ",I1)') optcomp(1,1)
-write(*,'(" q-vector (lattice coordinates) : ")')
-write(*,'(3G18.10)') vecql
-write(*,'(" q-vector length : ",G18.10)') gqc(1)
+if (mp_mpi) then
+  open(50,file="EPSILON_TDDFT.OUT",action='WRITE',form='FORMATTED')
+  open(51,file="EELS_TDDFT.OUT",action='WRITE',form='FORMATTED')
+  do iw=1,nwrf
+    z1=1.d0/eps(1,1,iw)
+    write(50,'(2G18.10)') dble(wrf(iw)),dble(z1)
+    write(51,'(2G18.10)') dble(wrf(iw)),-dble(eps(1,1,iw))
+  end do
+  write(50,*)
+  write(51,*)
+  do iw=1,nwrf
+    z1=1.d0/eps(1,1,iw)
+    write(50,'(2G18.10)') dble(wrf(iw)),aimag(z1)
+    write(51,'(2G18.10)') dble(wrf(iw)),-aimag(eps(1,1,iw))
+  end do
+  close(50)
+  close(51)
+  write(*,*)
+  write(*,'("Info(tddftlr):")')
+  write(*,'(" Dielectric tensor written to EPSILON_TDDFT.OUT")')
+  write(*,'(" Electron loss function written to EELS_TDDFT.OUT")')
+  write(*,'(" for component i, j = ",I1)') optcomp(1,1)
+  write(*,'(" q-vector (lattice coordinates) : ")')
+  write(*,'(3G18.10)') vecql
+  write(*,'(" q-vector length : ",G18.10)') gqc(1)
+end if
 deallocate(vgqc,gqc,ylmgq,sfacgq)
 deallocate(vchi0,vfxc,eps0,eps)
 return

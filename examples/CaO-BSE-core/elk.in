@@ -18,61 +18,61 @@
 ! Example by Markus Meinert.
 
 tasks
- 0      ! ground-state calculation
- 120    ! compute momentum matrix elements
- 121    ! compute RPA dielectric function without local field contributions
- 180    ! generate RPA dielectric function with local field contributions
- 185    ! write the BSE Hamiltonian matrix to file
- 186    ! diagonalise BSE matrix
- 187    ! compute BSE dielectric function
+  0      ! ground-state calculation
+  120    ! compute momentum matrix elements
+  121    ! compute RPA dielectric function without local field contributions
+  180    ! generate RPA dielectric function with local field contributions
+  185    ! write the BSE Hamiltonian matrix to file
+  186    ! diagonalise BSE matrix
+  187    ! compute BSE dielectric function
 
 ! do not include valence bands right below E_F
 nvbse
- 0
+  0
 
 ! additional valence bands for the BSE calculation - these are the six 2p states
 ! of Ca (check EIGVAL.OUT)
 istxbse
- 1
- 2
- 3
- 4
- 5
- 6
+  1
+  2
+  3
+  4
+  5
+  6
 
 ! number of conduction band states for the BSE calculation
 ncbse
- 20
+  20
 
 ! large number of empty states required
 nempty
- 50
+  20
 
 ! enhanced G-vector cut-off of local contribution to RPA
 gmaxrf
- 5.0
+  5.0
 
 ! automatically determine the smallest possible G vector cutoff
 gmaxvr
- 0.0
+  0.0
 
 ! the spectrum is very sensitive to the k-point mesh
 ngridk
- 2 2 2
+  2 2 2
 
 ! use a symmetry breaking shift for more efficient use of the k-points
 vkloff
- 0.05 0.15 0.25
+  0.05 0.15 0.25
 
 ! Broyden mixing for fast convergence
 mixtype
- 3
+  3
 
 ! the energy window for the plot starts at zero by default;
 ! sufficient energy points needed
 wplot
- 5000 100 0
- 0.0 14.0
+  5000 100 0
+  0.0 14.0
 
 ! include spin-orbit coupling for the 2p 1/2 - 2p 3/2 splitting
 spinorb
@@ -80,15 +80,15 @@ spinorb
 
 ! about 0.27 eV Lorentzian broadening to simulate lifetime effects
 swidth
- 0.01
+  0.01
 
 sppath
   './'
 
 avec
-   4.545000000       4.545000000       0.000000000
-   4.545000000      -4.545000000       0.000000000
-   4.545000000       0.000000000       4.545000000
+  4.545000000       4.545000000       0.000000000
+  4.545000000      -4.545000000       0.000000000
+  4.545000000       0.000000000       4.545000000
 
 atoms
    2                                    : nspecies

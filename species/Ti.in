@@ -2,7 +2,7 @@
  'titanium'                                 : spname
   -22.0000                                  : spzn
    87256.20308                              : spmass
-  0.426401E-06    2.4000   33.0191   500    : sprmin, rmt, sprmax, nrmt
+  0.426401E-06    2.4000   43.4348   500    : sprmin, rmt, sprmax, nrmt
    9                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T

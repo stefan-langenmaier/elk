@@ -9,7 +9,7 @@ spinpol
 
 ! fairly large number of empty states required for magnetic cases
 nempty
-  10
+  8
 
 avec
   0.5  0.5  0.0

@@ -699,10 +699,10 @@ real(8) efermi
 real(8) scissor
 ! density of states at the Fermi energy
 real(8) fermidos
-! estimated indirect band gap
-real(8) bandgap
-! k-points of indirect gap
-integer ikgap(2)
+! estimated indirect and direct band gaps
+real(8) bandgap(2)
+! k-points of indirect and direct gaps
+integer ikgap(3)
 ! error tolerance for the first-variational eigenvalues
 real(8) evaltol
 ! second-variational eigenvalues
@@ -781,6 +781,10 @@ real(8) engytot
 logical tforce
 ! tfibs is .true. if the IBS contribution to the force is to be calculated
 logical tfibs
+! radial distance at which Hellmann-Feynman force is to be evaluated
+real(8) radfhf
+! nearest radial mesh point to radfhf
+integer irfhf(maxspecies)
 ! Hellmann-Feynman force on each atom
 real(8), allocatable :: forcehf(:,:)
 ! incomplete basis set (IBS) force on each atom
@@ -895,7 +899,7 @@ complex(8), allocatable :: zbxmt(:,:,:,:)
 complex(8), allocatable :: zbxir(:,:)
 ! hybrid is .true. if a hybrid functional is to be used
 logical hybrid
-! hybrid functional coefficient
+! hybrid functional mixing coefficient
 real(8) hybridc
 
 !-------------------------------------------------------------!
@@ -944,8 +948,8 @@ real(8), allocatable :: evalbse(:)
 ! if bsefull is .true. then the full BSE Hamiltonian is calculated, otherwise
 ! only the Hermitian block
 logical bsefull
-! if hxbse/hdbse is .true. then the exchange/direct term is included in the
-! BSE Hamiltonian
+! if hxbse/hdbse is .true. then the exchange/direct term is included in the BSE
+! Hamiltonian
 logical hxbse,hdbse
 
 !--------------------------------------------------------------------!
@@ -1026,7 +1030,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 2,1,22 /
+data version / 2,1,25 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

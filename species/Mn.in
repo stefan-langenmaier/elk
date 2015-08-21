@@ -2,7 +2,7 @@
  'manganese'                                : spname
   -25.0000                                  : spzn
    100145.9369                              : spmass
-  0.400000E-06    2.4000   27.6406   500    : sprmin, rmt, sprmax, nrmt
+  0.400000E-06    2.4000   39.9263   500    : sprmin, rmt, sprmax, nrmt
   10                                        : spnst
    1   0   1   2.00000    T                 : spn, spl, spk, spocc, spcore
    2   0   1   2.00000    T
@@ -38,4 +38,4 @@
    2   3                                    : lorbl, lorbord
   0.1500   0  F                             : lorbe0, lorbdm, lorbve
   0.1500   1  F
- -0.5052   0  T
+ -0.5053   0  T

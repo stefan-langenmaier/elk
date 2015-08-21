@@ -17,7 +17,7 @@ spinpol
 ! note that the number of empty states should be large because non-collinear
 ! effects are obtained in the second-variational step
 nempty
-  10
+  8
 
 avec
   1.5  0.86602540378  0.0

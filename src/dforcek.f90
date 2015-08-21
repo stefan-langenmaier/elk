@@ -26,10 +26,10 @@ complex(8), allocatable :: devalfv(:,:)
 complex(8), allocatable :: apwalm(:,:,:,:),apwalmq(:,:,:,:),dapwalm(:,:,:)
 complex(8), allocatable :: evecfv(:,:,:),devecfv(:,:,:)
 complex(8), allocatable :: evecsv(:,:),devecsv(:,:)
-complex(8), allocatable :: h(:),o(:),hq(:,:),oq(:,:),dh(:,:),od(:,:)
-complex(8), allocatable :: dlh(:),dlo(:),dlhq(:,:),dloq(:,:)
+complex(8), allocatable :: o(:),hq(:,:),oq(:,:),dh(:,:),od(:,:)
+complex(8), allocatable :: dlo(:),dlhq(:,:),dloq(:,:)
 complex(8), allocatable :: ddlh(:,:),ddlo(:,:)
-complex(8), allocatable :: vo(:),vhq(:),voq(:),dvh(:),dvo(:)
+complex(8), allocatable :: vo(:),dvh(:),dvo(:)
 complex(8), allocatable :: ffv(:,:),dffv(:,:),y(:),dy(:)
 ! external functions
 complex(8) zdotc
@@ -45,12 +45,11 @@ allocate(dapwalm(ngkmax,apwordmax,lmmaxapw))
 allocate(evecfv(nmatmax,nstfv,nspnfv))
 allocate(devecfv(nmatmax,nstfv,nspnfv))
 allocate(evecsv(nstsv,nstsv),devecsv(nstsv,nstsv))
-allocate(h(nm2),o(nm2),hq(nmatmax,nmatmax),oq(nmatmax,nmatmax))
+allocate(o(nm2),hq(nmatmax,nmatmax),oq(nmatmax,nmatmax))
 allocate(dh(nmatmax,nmatmax),od(nmatmax,nmatmax))
-allocate(dlh(nm2),dlo(nm2),dlhq(nmatmax,nmatmax),dloq(nmatmax,nmatmax))
+allocate(dlo(nm2),dlhq(nmatmax,nmatmax),dloq(nmatmax,nmatmax))
 allocate(ddlh(nmatmax,nmatmax),ddlo(nmatmax,nmatmax))
-allocate(vo(nmatmax),vhq(nmatmax),voq(nmatmax))
-allocate(dvh(nmatmax),dvo(nmatmax))
+allocate(vo(nmatmax),dvh(nmatmax),dvo(nmatmax))
 allocate(ffv(nstfv,nstfv),dffv(nstfv,nstfv),y(nstfv),dy(nstfv))
 ! equivalent reduced k-point
 jk=ikmap(ivk(1,ik),ivk(2,ik),ivk(3,ik))
@@ -93,14 +92,12 @@ do jspn=1,nspnfv
   call match(n,gkc(:,jspn,ik),tpgkc(:,:,jspn,ik),sfacgk(:,:,jspn,ik),apwalm)
   call match(nq,gkqc(:,jspn,ik),tpgkqc(:,:,jspn,ik),sfacgkq(:,:,jspn,ik), &
    apwalmq)
+! find the matching coefficient derivatives
   call dmatch(iasph,ipph,n,vgkc(:,:,jspn,ik),apwalm,dapwalm)
 ! loop over species and atoms
   do ias=1,natmtot
     is=idxis(ias)
 ! Hamiltonian and overlap matrices
-    h(:)=0.d0
-    call hmlaa(ias,n,apwalm,nm,h)
-    call hmlalo(ias,n,apwalm,nm,h)
     o(:)=0.d0
     call olpaa(ias,n,apwalm,nm,o)
     call olpalo(ias,n,apwalm,nm,o)
@@ -127,8 +124,6 @@ do jspn=1,nspnfv
           ig=ijg(i,j)
           t1=vgc(l,ig)
           z1=-ffacg(ig,is)*conjg(sfacg(ig,ias))
-          z2=t1*(dp(i,j)*z1+h(k))
-          dlh(k)=cmplx(-aimag(z2),dble(z2),8)
           z2=t1*(z1+o(k))
           dlo(k)=cmplx(-aimag(z2),dble(z2),8)
         end do
@@ -139,15 +134,12 @@ do jspn=1,nspnfv
         do i=1,n
           k=k+1
           t1=vgkc(l,i,jspn,ik)
-          z1=t1*h(k)
-          dlh(k)=cmplx(-aimag(z1),dble(z1),8)
           z1=t1*o(k)
           dlo(k)=cmplx(-aimag(z1),dble(z1),8)
         end do
 ! zero the local-orbital-local-orbital contribution
         do i=n+1,j
           k=k+1
-          dlh(k)=0.d0
           dlo(k)=0.d0
         end do
       end do
@@ -182,7 +174,7 @@ do jspn=1,nspnfv
           dloq(i,j)=cmplx(-aimag(z1),dble(z1),8)
         end do
 ! zero the local-orbital-local-orbital contribution
-        do i=nq,nmq
+        do i=nq+1,nmq
           dlhq(i,j)=0.d0
           dloq(i,j)=0.d0
         end do
@@ -231,10 +223,6 @@ do jspn=1,nspnfv
       dffv(:,:)=0.d0
       do jst=1,nstfv
         call zhemv('U',nm,zone,dlo,nm,evecfv(:,jst,jspn),1,zzero,vo,1)
-        call zgemv('N',nmq,nm,zone,dlhq,nmatmax,evecfv(:,jst,jspn),1,zzero, &
-         vhq,1)
-        call zgemv('N',nmq,nm,zone,dloq,nmatmax,evecfv(:,jst,jspn),1,zzero, &
-         voq,1)
         call zgemv('N',nm,nm,zone,ddlh,nmatmax,evecfv(:,jst,jspn),1,zzero,dvh,1)
         call zgemv('N',nm,nm,zone,ddlo,nmatmax,evecfv(:,jst,jspn),1,zzero,dvo,1)
         t1=evalfv(jst,jspn)
@@ -244,10 +232,15 @@ do jspn=1,nspnfv
           dz1=zdotc(nm,evecfv(:,ist,jspn),1,dvh,1)
           dz2=zdotc(nm,evecfv(:,ist,jspn),1,dvo,1)
           dffv(ist,jst)=dffv(ist,jst)+dz1-dt1*z2-t1*dz2
-          dz1=zdotc(nmq,devecfv(:,ist,jspn),1,vhq,1)
-          dz2=zdotc(nmq,devecfv(:,ist,jspn),1,voq,1)
+        end do
+        call zgemv('C',nmq,nm,zone,dlhq,nmatmax,devecfv(:,jst,jspn),1,zzero, &
+         dvh,1)
+        call zgemv('C',nmq,nm,zone,dloq,nmatmax,devecfv(:,jst,jspn),1,zzero, &
+         dvo,1)
+        do ist=1,nstfv
+          dz1=2.d0*zdotc(nm,evecfv(:,ist,jspn),1,dvh,1)
+          dz2=2.d0*zdotc(nm,evecfv(:,ist,jspn),1,dvo,1)
           dffv(ist,jst)=dffv(ist,jst)+dz1-t1*dz2
-          dffv(jst,ist)=dffv(jst,ist)+conjg(dz1-t1*dz2)
         end do
       end do
       zsum=0.d0
@@ -282,8 +275,9 @@ end do
 deallocate(ijg,ijgq,dp,dpq,evalfv,devalfv)
 deallocate(apwalm,apwalmq,dapwalm)
 deallocate(evecfv,devecfv,evecsv,devecsv)
-deallocate(h,o,hq,oq,dh,od,dlh,dlo,dlhq,dloq,ddlh,ddlo)
-deallocate(vo,vhq,voq,dvh,dvo,ffv,dffv,y,dy)
+deallocate(o,hq,oq,dh,od)
+deallocate(dlo,dlhq,dloq,ddlh,ddlo)
+deallocate(vo,dvh,dvo,ffv,dffv,y,dy)
 return
 end subroutine
 
