@@ -1,0 +1,50 @@
+
+! Energy-loss Near-edge Structure (ELNES) of cubic boron-nitride.
+
+tasks
+  0
+  140
+  500
+
+test
+ .true.
+
+maxscl
+  3
+
+rgkmax
+ 6.5
+
+evalmin
+ -20.0
+
+dos
+  50 100 2
+  6.5 7.0
+
+vecql
+ 0.0 0.0 0.25
+
+autormt
+ .true.
+
+avec
+ 0.5 0.0 0.5
+ 0.0 0.5 0.5
+ 0.5 0.5 0.0
+
+scale
+  6.8408
+
+atoms
+  2
+  'B.in'
+  1
+  0.0 0.0 0.0    0.0 0.0 0.0
+  'N.in'
+  1
+  0.25 0.25 0.25 0.0 0.0 0.0
+
+ngridk
+  8  8  8
+

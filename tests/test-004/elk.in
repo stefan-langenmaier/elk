@@ -1,0 +1,49 @@
+
+tasks
+  0
+  120
+  121
+  500
+
+test
+ .true.
+
+maxscl
+ 5
+
+mixtype
+ 2
+
+rgkmax
+ 6.0
+
+swidth
+  0.01
+
+nempty
+  10
+
+dos
+  50 100 2
+  0.0 0.1
+
+avec
+  3.80402   3.80402   0.00000
+  3.80402   0.00000   3.80402
+  0.00000   3.80402   3.80402
+
+sppath
+  '../../species/'
+
+atoms
+  2                                       : nspecies
+  'Li.in'                                 : spfname
+  1                                       : natoms
+  0.0000  0.0000  0.0000    0.0 0.0 0.0   : atposl, bfcmt
+  'F.in'                                  : spfname
+  1                                       : natoms
+  0.5000  0.5000  0.5000    0.0 0.0 0.0   : atposl, bfcmt
+
+ngridk
+ 8  8  8
+

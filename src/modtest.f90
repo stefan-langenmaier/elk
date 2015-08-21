@@ -1,0 +1,91 @@
+
+! Copyright (C) 2009 J. K. Dewhurst, S. Sharma and E. K. U. Gross
+! This file is distributed under the terms of the GNU Lesser General Public
+! License. See the file COPYING for license details.
+
+module modtest
+
+! if test is .true. then the test variables are written to file
+logical test
+
+contains
+
+subroutine writetest(id,descr,nv,iv,iva,tol,rv,rva,zv,zva)
+implicit none
+! arguments
+integer, intent(in) :: id
+character(*), intent(in) :: descr
+integer, optional, intent(in) :: nv
+integer, optional, intent(in) :: iv
+integer, optional, intent(in) :: iva(*)
+real(8), optional, intent(in) :: tol
+real(8), optional, intent(in) :: rv
+real(8), optional, intent(in) :: rva(*)
+complex(8), optional, intent(in) :: zv
+complex(8), optional, intent(in) :: zva(*)
+! local variables
+integer i
+character(256) fname
+if (.not.test) return
+if ((id.lt.0).or.(id.gt.999)) then
+  write(*,*)
+  write(*,'("Error(writetest): id out of range : ",I8)') id
+  write(*,*)
+  stop
+end if
+if ((present(iva)).or.(present(rva)).or.(present(zva))) then
+  if (.not.present(nv)) then
+    write(*,*)
+    write(*,'("Error(writetest): missing argument nv")')
+    write(*,*)
+    stop
+  end if
+end if
+if ((present(rv)).or.(present(rva)).or.(present(zv)).or.(present(zva))) then
+  if (.not.present(tol)) then
+    write(*,*)
+    write(*,'("Error(writetest): missing argument tol")')
+    write(*,*)
+    stop
+  end if
+end if
+write(fname,'("TEST",I3.3,".OUT")') id
+open(90,file=trim(fname),action='WRITE',form='FORMATTED')
+write(90,'("''",A,"''")') trim(descr)
+if (present(iv)) then
+  write(90,'(I8,I4)') 1,1
+  write(90,'(2I8)') 1,iv
+else if (present(rv)) then
+  write(90,'(I8,I4)') 1,2
+  write(90,'(G22.12)') tol
+  write(90,'(I8,G22.12)') 1,rv
+else if (present(zv)) then
+  write(90,'(I8,I4)') 2,2
+  write(90,'(G22.12)') tol
+  write(90,'(I8,G22.12)') 1,dble(zv)
+  write(90,'(I8,G22.12)') 2,aimag(zv)
+else if (present(iva)) then
+  write(90,'(I8,I4)') nv,1
+  do i=1,nv
+    write(90,'(2I8)') i,iva(i)
+  end do
+else if (present(rva)) then
+  write(90,'(I8,I4)') nv,2
+  write(90,'(G22.12)') tol
+  do i=1,nv
+    write(90,'(I8,G22.12)') i,rva(i)
+  end do
+else if (present(zva)) then
+  write(90,'(I8,I4)') 2*nv,2
+  write(90,'(G22.12)') tol
+  do i=1,nv
+    write(90,'(I8,G22.12)') 2*i-1,dble(zva(i))
+    write(90,'(I8,G22.12)') 2*i,aimag(zva(i))
+  end do
+end if
+close(90)
+return
+end subroutine
+
+end module
+
