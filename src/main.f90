@@ -32,7 +32,7 @@ if (mp_mpi) then
   inquire(file='RUNNING',exist=exist)
   if (exist) then
     write(*,*)
-    write(*,'("Info(main): multiple copies of Elk running in this directory")')
+    write(*,'("Info(main): several copies of Elk may be running in this path")')
     write(*,'("(this could be intentional, or result from a previous crash,")')
     write(*,'(" or arise from an incorrect MPI compilation)")')
   else
@@ -162,7 +162,7 @@ stop
 end program
 
 !BOI
-! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.30}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
+! !TITLE: {\huge{\sc The Elk Code Manual}}\\ \Large{\sc Version 1.3.31}\\ \vskip 0.5cm \includegraphics[height=1cm]{elk_silhouette.pdf}
 ! !AUTHORS: {\sc J. K. Dewhurst, S. Sharma} \\ {\sc L. Nordstr\"{o}m, F. Cricchio, F. Bultmark} \\ {\sc E. K. U. Gross}
 ! !AFFILIATION:
 ! !INTRODUCTION: Introduction
@@ -424,7 +424,9 @@ end program
 !   \vskip 6pt
 !   {\tt nlx} \\
 !   The number of exceptions to the default APW configuration. These should be
-!   listed on subsequent lines for particular angular momenta ({\tt lx}).
+!   listed on subsequent lines for particular angular momenta. In this example,
+!   the fixed energy APW with angular momentum $d$ ({\tt lx} $=2$) is replaced
+!   with a LAPW, which has variable linearisation energy.
 !   \vskip 6pt
 !   {\tt nlorb} \\
 !   Number of local orbitals.

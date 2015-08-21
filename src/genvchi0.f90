@@ -47,7 +47,7 @@ call getpmat(vkl(:,ikp),pmat)
 !$OMP PRIVATE(zrhomt,zrhoir,zw,zv) &
 !$OMP PRIVATE(ispn,ias,is,irc,jst) &
 !$OMP PRIVATE(t1,t2,eij,iw,ig,jg) &
-!$OMP PRIVATE(zt1,zt2) REDUCTION(+:vchi0)
+!$OMP PRIVATE(zt1,zt2)
 !$OMP DO
 do ist=1,nstsv
   allocate(zrhomt(lmmaxvr,nrcmtmax,natmtot),zrhoir(ngrtot))
@@ -89,6 +89,7 @@ do ist=1,nstsv
 !------------------------!
 !     body of matrix     !
 !------------------------!
+!$OMP CRITICAL
       do ig=1,ngrpa
         zt1=conjg(zv(ig))
         do jg=1,ngrpa
@@ -99,6 +100,7 @@ do ist=1,nstsv
           end if
         end do
       end do
+!$OMP END CRITICAL
 ! special case of q = 0
       if ((iq.eq.iq0).and.(abs(eij).gt.1.d-8)) then
 !----------------------------------------!
@@ -112,6 +114,7 @@ do ist=1,nstsv
           t1=dble(pmat(icmp,ist,jst))**2+aimag(pmat(icmp,ist,jst))**2
         end if
         t1=fourpi*t1/eij**2
+!$OMP CRITICAL
         vchi0(1,1,:)=vchi0(1,1,:)+t1*zw(:)
 !-------------------------!
 !     wings of matrix     !
@@ -132,6 +135,7 @@ do ist=1,nstsv
           zt2=conjg(zt1)*zv(jg)/gqc(jg)
           vchi0(1,jg,:)=vchi0(1,jg,:)+zt2*zw(:)
         end do
+!$OMP END CRITICAL
       end if
     end if
 ! end loop over jst

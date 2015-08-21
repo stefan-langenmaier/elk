@@ -70,8 +70,22 @@ allocate(hv(nmatp,nstfv),ov(nmatp,nstfv))
 ! start iteration loop
 do it=1,nseqit
 ! operate with H and O on the current vectors
-  call zhemm('L','U',nmatp,nstfv,zone,h,nmatp,evecfv,nmatmax,zzero,hv,nmatp)
-  call zhemm('L','U',nmatp,nstfv,zone,o,nmatp,evecfv,nmatmax,zzero,ov,nmatp)
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
+  do ist=1,nstfv
+    call zhemv('U',nmatp,zone,h,nmatp,evecfv(:,ist),1,zzero,hv(:,ist),1)
+  end do
+!$OMP END DO
+!$OMP END PARALLEL
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
+  do ist=1,nstfv
+    call zhemv('U',nmatp,zone,o,nmatp,evecfv(:,ist),1,zzero,ov(:,ist),1)
+  end do
+!$OMP END DO
+!$OMP END PARALLEL
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(t1)
+!$OMP DO
   do ist=1,nstfv
 ! normalise
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,ov(:,ist),1))
@@ -88,8 +102,18 @@ do it=1,nseqit
     evecfv(1:nmatp,ist)=evecfv(1:nmatp,ist)-tauseq*(hv(1:nmatp,ist) &
      -t1*ov(1:nmatp,ist))
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! normalise again
-  call zhemm('L','U',nmatp,nstfv,zone,o,nmatp,evecfv,nmatmax,zzero,ov,nmatp)
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP DO
+  do ist=1,nstfv
+    call zhemv('U',nmatp,zone,o,nmatp,evecfv(:,ist),1,zzero,ov(:,ist),1)
+  end do
+!$OMP END DO
+!$OMP END PARALLEL
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(t1)
+!$OMP DO
   do ist=1,nstfv
     t1=dble(zdotc(nmatp,evecfv(:,ist),1,ov(:,ist),1))
     if (t1.gt.0.d0) then
@@ -97,8 +121,9 @@ do it=1,nseqit
       call zdscal(nmatp,t1,evecfv(:,ist),1)
       call zdscal(nmatp,t1,ov(:,ist),1)
     end if
-! end loop over states
   end do
+!$OMP END DO
+!$OMP END PARALLEL
 ! perform Gram-Schmidt orthonormalisation
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(jst,zt1,t1)
 !$OMP DO ORDERED

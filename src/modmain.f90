@@ -994,7 +994,7 @@ real(8), parameter :: amu=1822.88848426d0
 !---------------------------------!
 ! code version
 integer version(3)
-data version / 1,3,30 /
+data version / 1,3,31 /
 ! maximum number of tasks
 integer, parameter :: maxtasks=40
 ! number of tasks

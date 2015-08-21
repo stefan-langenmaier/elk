@@ -39,6 +39,8 @@ integer j,k
 real(8), parameter :: eps=1.d-10
 real(8) a1,b1
 complex(8) zt1
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k,zt1,a1,b1)
+!$OMP DO
 do j=1,n
   k=(j-1)*ld
   zt1=alpha*y(j)
@@ -79,6 +81,8 @@ do j=1,n
     end if
   end if
 end do
+!$OMP END DO
+!$OMP END PARALLEL
 return
 end subroutine
 !EOC
