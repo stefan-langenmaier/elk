@@ -32,7 +32,7 @@ character(256) fname
 ! allocatable arrays
 real(8), allocatable :: evalfv(:,:),e(:,:)
 ! low precision for band character array saves memory
-real(4), allocatable :: bc(:,:,:,:)
+real(4), allocatable :: bc(:,:,:,:,:)
 complex(8), allocatable :: dmat(:,:,:,:,:),apwalm(:,:,:,:,:)
 complex(8), allocatable :: evecfv(:,:,:),evecsv(:,:)
 ! initialise universal variables
@@ -44,7 +44,7 @@ allocate(e(nstsv,nkpt))
 lmax=min(3,lmaxvr)
 lmmax=(lmax+1)**2
 if (task.eq.21) then
-  allocate(bc(0:lmax,natmtot,nstsv,nkpt))
+  allocate(bc(0:lmmax,0:lmax,natmtot,nstsv,nkpt))
 end if
 ! read density and potentials from file
 call readstate
@@ -103,14 +103,14 @@ do ik=1,nkpt
        lmmax,dmat)
       do ist=1,nstsv
         do l=0,lmax
-          sum=0.d0
           do m=-l,l
+            sum=0.d0
             lm=idxlm(l,m)
             do ispn=1,nspinor
               sum=sum+dble(dmat(lm,ispn,lm,ispn,ist))
             end do
+            bc(m,l,ias,ist,ik)=real(sum)
           end do
-          bc(l,ias,ist,ik)=real(sum)
         end do
       end do
     end do
@@ -147,10 +147,18 @@ else
 ! sum band character over l
           sum=0.d0
           do l=0,lmax
-            sum=sum+bc(l,ias,ist,ik)
+            do m=-l,l
+	      sum=sum+bc(m,l,ias,ist,ik)
+	    end do
           end do
-          write(50,'(2G18.10,8F12.6)') dpp1d(ik),e(ist,ik),sum, &
-           (bc(l,ias,ist,ik),l=0,lmax)
+          write(50,'(2G18.10,8F12.6)', advance='NO') dpp1d(ik),e(ist,ik),sum
+          do l=0,lmax
+            do m=-l,l
+	      write(50,'(8F12.6)', advance='NO') bc(m,l,ias,ist,ik)
+	    end do
+          end do
+          write(50, *)
+          ! (bc(l,ias,ist,ik),l=0,lmax)
         end do
         write(50,'("     ")')
       end do
